@@ -20,7 +20,7 @@ steps:
       sudo sh -c '
         mkdir -p /opt && \
         cd /opt && \
-        git clone git@github.com:blackburnd/cloud_machine_repo.git && \
+        GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone git@github.com:blackburnd/cloud_machine_repo.git && \
         chown -R blackburnd:blackburnd /opt/cloud_machine_repo
       '
       cd /opt/cloud_machine_repo
