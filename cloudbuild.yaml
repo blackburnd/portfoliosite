@@ -48,3 +48,4 @@ steps:
 
     # Start the application
     ./start.sh 8000
+# End of build steps
