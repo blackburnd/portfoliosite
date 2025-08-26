@@ -1,12 +1,5 @@
 steps:
-- name: 'g    else
-      echo "Repository does not exist. Cloning."
-      # Clone the repository as the current user.
-      # This works now that the repository is public.
-      git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
-    fi
-    
-    cd /opt/cloud_machine_repoud-builders/gcloud'
+- name: 'gcr.io/cloud-builders/gcloud'
   args:
   - 'compute'
   - 'ssh'
@@ -15,22 +8,21 @@ steps:
   - 'us-central1-c'
   - '--command'
   - |
-    _REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
-    _REPO_DIR="/opt/cloud_machine_repo"
+    set -e
+    REPO_DIR="/opt/cloud_machine_repo"
     
-    if [ -d "$_REPO_DIR/.git" ]; then
+    if [ -d "$REPO_DIR/.git" ]; then
       echo "Repository exists. Pulling latest changes."
-      cd $_REPO_DIR
+      cd $REPO_DIR
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
-      sudo mkdir -p /opt/cloud_machine_repo
-      sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
-      cd /opt/cloud_machine_repo
-      GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone git@github.com:blackburnd/cloud_machine_repo.git .
+      sudo mkdir -p $REPO_DIR
+      sudo chown -R blackburnd:blackburnd $REPO_DIR
+      git clone https://github.com/blackburnd/cloud_machine_repo.git $REPO_DIR
     fi
     
-    cd $_REPO_DIR
+    cd $REPO_DIR
     
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
