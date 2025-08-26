@@ -1,6 +1,6 @@
 steps:
 - name: 'ubuntu'
   args: ['echo', 'Hello, Cloud Build!']
+logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
   logging: GCS_ONLY
-  logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
