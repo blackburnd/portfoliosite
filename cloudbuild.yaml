@@ -24,6 +24,8 @@ steps:
       cd $REPO_DIR
     fi
     
+    cd $REPO_DIR
+    
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
       python3 -m venv venv

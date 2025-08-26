@@ -4,16 +4,18 @@ import os
 
 app = FastAPI()
 
+# Get the absolute path of the directory containing main.py
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    with open("templates/index.html") as f:
+    with open(os.path.join(APP_DIR, "templates/index.html")) as f:
         return HTMLResponse(content=f.read(), status_code=200)
 
 
 @app.get("/resume")
 async def get_resume():
-    file_path = "resume.pdf"
+    file_path = os.path.join(APP_DIR, "resume.pdf")
     if os.path.exists(file_path):
         headers = {"Content-Disposition": "inline; filename=resume.pdf"}
         return FileResponse(
