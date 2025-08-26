@@ -1,26 +1,13 @@
 steps:
-# Build the container image
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/cloud-machine-repo', '.']
-
-# Push the container image to Container Registry
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/cloud-machine-repo']
-
-# Deploy container image to Cloud Run
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
+- name: 'gcr.io/cloud-builders/gcloud'
   args:
-  - 'run'
-  - 'deploy'
-  - 'cloud-machine-repo'
-  - '--image'
-  - 'gcr.io/$PROJECT_ID/cloud-machine-repo'
-  - '--region'
-  - 'us-central1'
-  - '--platform'
-  - 'managed'
-  - '--allow-unauthenticated'
-
-images:
-- 'gcr.io/$PROJECT_ID/cloud-machine-repo'
+  - 'compute'
+  - 'ssh'
+  - '--zone'
+  'us-central1-c'
+  - 'instance-20250825-143058' # e.g. us-central1-a
+  - '--command'
+  - |
+    cd //home/blackburnd/sites/cloud_machine_repo
+    git pull origin main
+    ./start.sh 80
