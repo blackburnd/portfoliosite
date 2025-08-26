@@ -4,10 +4,36 @@ steps:
   - 'compute'
   - 'ssh'
   - '--zone'
-  'us-central1-c'
-  - 'instance-20250825-143058' # e.g. us-central1-a
+  - 'us-central1-c'
+  - 'instance-20250825-143058'
   - '--command'
   - |
-    cd //home/blackburnd/sites/cloud_machine_repo
-    git pull origin main
-    ./start.sh 80
+    REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
+    REPO_DIR="/home/blackburnd/sites/cloud_machine_repo"
+    
+    if [ -d "$REPO_DIR/.git" ]; then
+      echo "Repository exists. Pulling latest changes."
+      cd $REPO_DIR
+      git pull origin main
+    else
+      echo "Repository does not exist. Cloning."
+      mkdir -p /home/blackburnd/sites
+      cd /home/blackburnd/sites
+      git clone $REPO_URL
+      cd $REPO_DIR
+    fi
+    
+    # Make scripts executable
+    chmod +x setup_ssl.sh
+    chmod +x start.sh
+
+    # Run SSL setup
+    sudo ./setup_ssl.sh
+
+    # Copy Nginx config
+    sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
+    sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
+    sudo systemctl restart nginx
+
+    # Start the application
+    ./start.sh 8000
