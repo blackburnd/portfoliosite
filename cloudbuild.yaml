@@ -3,9 +3,9 @@ steps:
   args:
   - 'compute'
   - 'ssh'
+  - 'blackburnd@instance-20250825-143058'
   - '--zone'
   - 'us-central1-c'
-  - 'instance-20250825-143058'
   - '--command'
   - |
     _REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
