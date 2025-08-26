@@ -8,23 +8,23 @@ steps:
   - 'instance-20250825-143058'
   - '--command'
   - |
-    REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
-    REPO_DIR="/opt/cloud_machine_repo"
+    _REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
+    _REPO_DIR="/opt/cloud_machine_repo"
     
-    if [ -d "$REPO_DIR/.git" ]; then
+    if [ -d "$_REPO_DIR/.git" ]; then
       echo "Repository exists. Pulling latest changes."
-      cd $REPO_DIR
+      cd $_REPO_DIR
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
       sudo mkdir -p /opt
       cd /opt
-      sudo git clone $REPO_URL
-      sudo chown -R $(whoami):$(whoami) $REPO_DIR
-      cd $REPO_DIR
+      sudo git clone $_REPO_URL
+      sudo chown -R $(whoami):$(whoami) $_REPO_DIR
+      cd $_REPO_DIR
     fi
     
-    cd $REPO_DIR
+    cd $_REPO_DIR
     
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
