@@ -9,20 +9,19 @@ steps:
   - '--command'
   - |
     set -e
-    _REPO_DIR="/opt/cloud_machine_repo"
     
-    if [ -d "$_REPO_DIR/.git" ]; then
+    if [ -d "/opt/cloud_machine_repo/.git" ]; then
       echo "Repository exists. Pulling latest changes."
-      cd "$_REPO_DIR"
+      cd /opt/cloud_machine_repo
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
       sudo mkdir -p /opt/cloud_machine_repo
       sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
-      git clone https://github.com/blackburnd/cloud_machine_repo.git "$_REPO_DIR"
+      git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
     fi
     
-    cd "$_REPO_DIR"
+    cd /opt/cloud_machine_repo
     
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
