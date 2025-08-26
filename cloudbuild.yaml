@@ -1,3 +1,4 @@
+logsBucket: 'gs://impactful-study-470015-g5_cloudbuild/logs'
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
@@ -47,5 +48,3 @@ steps:
 
     # Start the application
     ./start.sh 8000
-options:
-  logging: CLOUD_LOGGING_ONLY
