@@ -1,5 +1,12 @@
 steps:
-- name: 'gcr.io/cloud-builders/gcloud'
+- name: 'g    else
+      echo "Repository does not exist. Cloning."
+      # Clone the repository as the current user.
+      # This works now that the repository is public.
+      git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
+    fi
+    
+    cd /opt/cloud_machine_repoud-builders/gcloud'
   args:
   - 'compute'
   - 'ssh'
