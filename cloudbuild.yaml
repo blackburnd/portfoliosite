@@ -30,16 +30,16 @@ steps:
     source venv/bin/activate
     pip install -r requirements.txt
     
-    # Copy Nginx config
-    sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
-    sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
-    
     # Make scripts executable
     chmod +x setup_ssl.sh
     chmod +x start.sh
 
-    # Run SSL setup
+    # Run SSL setup to obtain certificates
     sudo ./setup_ssl.sh
+
+    # Copy Nginx config now that certs exist
+    sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
+    sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
     
     # Restart nginx to apply changes from certbot
     sudo systemctl restart nginx
