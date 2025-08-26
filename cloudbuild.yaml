@@ -9,7 +9,7 @@ steps:
   - '--command'
   - |
     REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
-    REPO_DIR="/home/blackburnd/sites/cloud_machine_repo"
+    REPO_DIR="/opt/cloud_machine_repo"
     
     if [ -d "$REPO_DIR/.git" ]; then
       echo "Repository exists. Pulling latest changes."
@@ -17,11 +17,19 @@ steps:
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
-      mkdir -p /home/blackburnd/sites
-      cd /home/blackburnd/sites
-      git clone $REPO_URL
+      sudo mkdir -p /opt
+      cd /opt
+      sudo git clone $REPO_URL
+      sudo chown -R $(whoami):$(whoami) $REPO_DIR
       cd $REPO_DIR
     fi
+    
+    # Create a virtual environment and install dependencies
+    if [ ! -d "venv" ]; then
+      python3 -m venv venv
+    fi
+    source venv/bin/activate
+    pip install -r requirements.txt
     
     # Make scripts executable
     chmod +x setup_ssl.sh
