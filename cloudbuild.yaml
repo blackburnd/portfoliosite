@@ -49,3 +49,5 @@ steps:
 
     # Start the application
     ./start.sh 8000
+options:
+  logging: CLOUD_LOGGING_ONLY
