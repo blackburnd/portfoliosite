@@ -17,8 +17,7 @@ steps:
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
-      sudo mkdir -p "$_REPO_DIR"
-      sudo chown -R blackburnd:blackburnd "$_REPO_DIR"
+      sudo sh -c 'mkdir -p "$0" && chown -R blackburnd:blackburnd "$0"' -- "$_REPO_DIR"
       git clone https://github.com/blackburnd/cloud_machine_repo.git "$_REPO_DIR"
     fi
     
