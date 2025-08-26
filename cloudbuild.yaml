@@ -1,4 +1,3 @@
-logsBucket: 'gs://impactful-study-470015-g5_cloudbuild/logs'
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args:
