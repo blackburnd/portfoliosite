@@ -1,49 +1,6 @@
 steps:
-- name: 'gcr.io/cloud-builders/gcloud'
-  args:
-  - 'compute'
-  - 'ssh'
-  - 'blackburnd@instance-20250825-143058'
-  - '--zone'
-  - 'us-central1-c'
-  - '--command'
-  - |
-    set -e
-    _REPO_DIR="/opt/cloud_machine_repo"
-    
-    if [ -d "$_REPO_DIR/.git" ]; then
-      echo "Repository exists. Pulling latest changes."
-      cd "$_REPO_DIR"
-      git pull origin main
-    else
-      echo "Repository does not exist. Cloning."
-      sudo mkdir -p "$_REPO_DIR"
-      sudo chown -R blackburnd:blackburnd "$_REPO_DIR"
-      git clone https://github.com/blackburnd/cloud_machine_repo.git "$_REPO_DIR"
-    fi
-    
-    cd "$_REPO_DIR"
-    
-    # Create a virtual environment and install dependencies
-    if [ ! -d "venv" ]; then
-      python3 -m venv venv
-    fi
-    source venv/bin/activate
-    pip install -r requirements.txt
-    
-    # Copy Nginx config
-    sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
-    sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
-    
-    # Make scripts executable
-    chmod +x setup_ssl.sh
-    chmod +x start.sh
-
-    # Run SSL setup
-    sudo ./setup_ssl.sh
-    
-    # Restart nginx to apply changes from certbot
-    sudo systemctl restart nginx
-
-    # Start the application
-    ./start.sh 8000
+- name: 'ubuntu'
+  args: ['echo', 'Hello, Cloud Build!']
+options:
+  logging: GCS_ONLY
+  logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
