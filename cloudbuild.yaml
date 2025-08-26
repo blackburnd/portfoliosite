@@ -17,13 +17,10 @@ steps:
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
-      sudo sh -c '
-        mkdir -p /opt && \
-        cd /opt && \
-        GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone git@github.com:blackburnd/cloud_machine_repo.git && \
-        chown -R blackburnd:blackburnd /opt/cloud_machine_repo
-      '
+      sudo mkdir -p /opt/cloud_machine_repo
+      sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
       cd /opt/cloud_machine_repo
+      GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone git@github.com:blackburnd/cloud_machine_repo.git .
     fi
     
     cd $_REPO_DIR
