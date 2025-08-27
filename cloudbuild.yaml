@@ -40,15 +40,19 @@ steps:
     # Run SSL setup to obtain certificates
     sudo ./setup_ssl.sh
 
-    # Copy Nginx config now that certs exist
+    # Copy Nginx config
     sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
     sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
     
-    # Restart nginx to apply changes
+    # Set up the systemd service
+    sudo cp portfolio.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable portfolio.service
+    
+    # Restart services
     sudo systemctl restart nginx
+    sudo systemctl restart portfolio.service
 
-    # Start the application
-    ./start.sh 8000
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
   logging: GCS_ONLY
