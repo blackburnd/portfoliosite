@@ -30,6 +30,18 @@ steps:
     source venv/bin/activate
     pip install -r requirements.txt
     
+    # Set up environment variables for PostgreSQL connection
+    export DATABASE_URL="postgresql://postgres:password@35.184.209.128:5432/daniel_portfolio"
+    
+    # Initialize database schema if needed
+    echo "Checking PostgreSQL connection and initializing schema..."
+    if command -v psql &> /dev/null; then
+      echo "PostgreSQL client found, testing connection..."
+      PGPASSWORD=password psql -h 35.184.209.128 -U postgres -d daniel_portfolio -c "SELECT 1;" || echo "Database connection failed - schema may need manual setup"
+    else
+      echo "PostgreSQL client not found, skipping database initialization check"
+    fi
+    
     # Make scripts executable
     chmod +x setup_ssl.sh
     chmod +x start.sh
@@ -47,8 +59,8 @@ steps:
     # Restart nginx to apply changes
     sudo systemctl restart nginx
 
-    # Start the application
-    ./start.sh 8000
+    # Start the application with database environment variable
+    DATABASE_URL="postgresql://postgres:password@35.184.209.128:5432/daniel_portfolio" ./start.sh 8000
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
   logging: GCS_ONLY

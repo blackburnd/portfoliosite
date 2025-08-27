@@ -5,17 +5,29 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
+from contextlib import asynccontextmanager
 import uvicorn
 import os
 
-from .resolvers import schema
-from .database import init_database, close_database
+from resolvers import schema
+from database import init_database, close_database
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_database()
+    yield
+    # Shutdown
+    await close_database()
+
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Portfolio API",
     description="Lightweight GraphQL API for Daniel's Portfolio Website",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -37,15 +49,6 @@ os.makedirs("templates", exist_ok=True)
 
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
-
-# Database initialization
-@app.on_event("startup")
-async def startup_event():
-    await init_database()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await close_database()
 
 # Routes for serving the portfolio website
 @app.get("/", response_class=HTMLResponse)
@@ -125,6 +128,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        debug=True
+        reload=True
     )
