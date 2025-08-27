@@ -32,7 +32,6 @@ steps:
     
     # Make scripts executable
     chmod +x setup_ssl.sh
-    chmod +x start.sh
 
     # Clean up any previous broken Nginx config to ensure certbot can run
     sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
