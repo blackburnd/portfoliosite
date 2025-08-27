@@ -33,16 +33,16 @@ steps:
     # Make scripts executable
     chmod +x setup_ssl.sh
 
-    # Clean up any previous broken Nginx config to ensure certbot can run
+    # Clean up any previous Nginx config
     sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
     sudo rm -f /etc/nginx/sites-enabled/default
 
-    # Run SSL setup to obtain certificates
-    sudo ./setup_ssl.sh
-
-    # Copy Nginx config
+    # Copy Nginx config FIRST
     sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
     sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
+
+    # Run SSL setup to obtain and install certificates
+    sudo ./setup_ssl.sh
     
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
