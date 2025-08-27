@@ -8,8 +8,8 @@ from strawberry.fastapi import GraphQLRouter
 import uvicorn
 import os
 
-from .resolvers import schema
-from .database import init_database, close_database
+from app.resolvers import schema
+from database import init_database, close_database
 
 # Initialize FastAPI app
 app = FastAPI(
