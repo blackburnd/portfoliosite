@@ -35,6 +35,7 @@ steps:
 
     # Clean up any previous broken Nginx config to ensure certbot can run
     sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
+    sudo rm -f /etc/nginx/sites-enabled/default
 
     # Run SSL setup to obtain certificates
     sudo ./setup_ssl.sh
