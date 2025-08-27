@@ -36,6 +36,7 @@ steps:
     # Clean up any previous Nginx config
     sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
     sudo rm -f /etc/nginx/sites-enabled/default
+    sudo rm -f /etc/nginx/conf.d/default.conf
 
     # Copy Nginx config FIRST
     sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
