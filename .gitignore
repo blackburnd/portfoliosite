@@ -2,3 +2,8 @@ venv/*
 venv/.DS_Store
 __pycache__/main.cpython-312.pyc
 .DS_Store
+*.env#
+*.env
+.\#deploy.sh
+*.sh#
+*.py~
