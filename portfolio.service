@@ -7,6 +7,7 @@ User=blackburnd
 Group=blackburnd
 WorkingDirectory=/opt/cloud_machine_repo
 Environment="PATH=/opt/cloud_machine_repo/venv/bin"
+EnvironmentFile=/etc/portfolio.env
 ExecStart=/opt/cloud_machine_repo/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 Restart=always
 

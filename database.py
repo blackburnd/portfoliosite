@@ -7,10 +7,10 @@ import os
 import uuid
 
 # Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://postgres:password@35.184.209.128:5432/daniel_portfolio"
-)
+DATABASE_URL = os.getenv("_DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("No _DATABASE_URL environment variable set")
 
 database = Database(DATABASE_URL)
 
