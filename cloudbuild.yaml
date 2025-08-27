@@ -10,10 +10,9 @@ steps:
   - |
     set -e
 
-    # Stop any running Nginx and kill processes on port 80/443
+    # Stop any running Nginx and kill all nginx processes to be safe
     sudo systemctl stop nginx || true
-    sudo fuser -k 80/tcp || true
-    sudo fuser -k 443/tcp || true
+    sudo killall -9 nginx || true
     
     if [ -d "/opt/cloud_machine_repo/.git" ]; then
       echo "Repository exists. Pulling latest changes."
