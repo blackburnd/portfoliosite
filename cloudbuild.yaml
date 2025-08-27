@@ -3,37 +3,52 @@ steps:
   args:
   - 'compute'
   - 'ssh'
+  - 'blackburnd@instance-20250825-143058'
   - '--zone'
   - 'us-central1-c'
-  - 'instance-20250825-143058'
   - '--command'
   - |
-    REPO_URL="https://github.com/blackburnd/cloud_machine_repo.git"
-    REPO_DIR="/home/blackburnd/sites/cloud_machine_repo"
+    set -e
     
-    if [ -d "$REPO_DIR/.git" ]; then
+    if [ -d "/opt/cloud_machine_repo/.git" ]; then
       echo "Repository exists. Pulling latest changes."
-      cd $REPO_DIR
+      cd /opt/cloud_machine_repo
       git pull origin main
     else
       echo "Repository does not exist. Cloning."
-      mkdir -p /home/blackburnd/sites
-      cd /home/blackburnd/sites
-      git clone $REPO_URL
-      cd $REPO_DIR
+      sudo mkdir -p /opt/cloud_machine_repo
+      sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
+      git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
     fi
+    
+    cd /opt/cloud_machine_repo
+    
+    # Create a virtual environment and install dependencies
+    if [ ! -d "venv" ]; then
+      python3 -m venv venv
+    fi
+    source venv/bin/activate
+    pip install -r requirements.txt
     
     # Make scripts executable
     chmod +x setup_ssl.sh
     chmod +x start.sh
 
-    # Run SSL setup
+    # Clean up any previous broken Nginx config to ensure certbot can run
+    sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
+
+    # Run SSL setup to obtain certificates
     sudo ./setup_ssl.sh
 
-    # Copy Nginx config
+    # Copy Nginx config now that certs exist
     sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
     sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
+    
+    # Restart nginx to apply changes
     sudo systemctl restart nginx
 
     # Start the application
     ./start.sh 8000
+logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
+options:
+  logging: GCS_ONLY

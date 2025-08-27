@@ -11,5 +11,6 @@ if [ -n "$PID" ]; then
 fi
 
 echo "Starting application on port $PORT"
+cd "$(dirname "$0")"
 source venv/bin/activate
 nohup uvicorn main:app --host 0.0.0.0 --port $PORT &
