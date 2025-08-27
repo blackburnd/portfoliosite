@@ -37,27 +37,6 @@ server {
     listen 80;
     server_name blackburnsystems.com www.blackburnsystems.com;
 
-    # Redirect HTTP to HTTPS
-    location / {
-        return 301 https://$host$request_uri;
-    }
-
-    # Certbot renewal
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name blackburnsystems.com www.blackburnsystems.com;
-
-    ssl_certificate /etc/letsencrypt/live/blackburnsystems.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/blackburnsystems.com/privkey.pem;
-
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
