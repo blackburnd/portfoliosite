@@ -14,18 +14,15 @@ steps:
     sudo systemctl stop nginx || true
     sudo killall -9 nginx || true
     
+    # Navigate to the repository directory or clone it
     if [ -d "/opt/cloud_machine_repo/.git" ]; then
-      echo "Repository exists. Pulling latest changes."
       cd /opt/cloud_machine_repo
       git pull origin main
     else
-      echo "Repository does not exist. Cloning."
-      sudo mkdir -p /opt/cloud_machine_repo
+      sudo git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
       sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
-      git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
+      cd /opt/cloud_machine_repo
     fi
-    
-    cd /opt/cloud_machine_repo
     
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
@@ -42,38 +39,47 @@ steps:
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/conf.d/default.conf
 
-    # Copy Nginx config FIRST
+    # Copy the Nginx configuration
     sudo cp nginx/blackburnsystems.com /etc/nginx/sites-available/
     sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
-
-    # Run SSL setup to obtain and install certificates
-    # sudo ./setup_ssl.sh # Commenting this out as Nginx config is now provided manually
 
     # Validate the Nginx configuration before restarting
     sudo nginx -t
 
     # Create a systemd override file to set the environment variable
-    # We'll write the environment variable directly using the substitution variables
     sudo mkdir -p /etc/systemd/system/portfolio.service.d
-    echo "[Service]" | sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null
-    echo "Environment=_DATABASE_URL=postgresql://\${_PG_USER}:\${_PG_PASS}@\${_PG_HOST}:\${_PG_PORT}/\${_PG_DB}" | sudo tee -a /etc/systemd/system/portfolio.service.d/override.conf > /dev/null
+    sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null << EOF
+    [Service]
+    Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+    EOF
 
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
-    
-    # Restart services and check status
-    sudo systemctl restart nginx
     sudo systemctl restart portfolio.service
 
+    # Start Nginx
+    sudo systemctl start nginx
+    sudo systemctl enable nginx
+
+    # Wait for the application to start and check its status
     echo "Waiting for application to start..."
     sleep 5
+    if sudo systemctl is-active --quiet portfolio.service; then
+      echo "Application started successfully"
+    else
+      echo "Application failed to start. Showing logs:"
+      sudo journalctl -u portfolio.service --no-pager -n 20
+      exit 1
+    fi
 
-    # Check if the service is active. If not, show the logs and fail the build.
-    sudo systemctl is-active --quiet portfolio.service || (echo "Application failed to start. Showing logs:" && sudo journalctl -u portfolio.service -n 100 --no-pager && exit 1)
-
-    echo "Deployment successful. Application is running."
+substitutions:
+  _PG_USER: ''
+  _PG_PASS: ''
+  _PG_HOST: ''
+  _PG_PORT: '5432'
+  _PG_DB: ''
 
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
