@@ -61,9 +61,17 @@ steps:
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
     
-    # Restart services
+    # Restart services and check status
     sudo systemctl restart nginx
     sudo systemctl restart portfolio.service
+
+    echo "Waiting for application to start..."
+    sleep 5
+
+    # Check if the service is active. If not, show the logs and fail the build.
+    sudo systemctl is-active --quiet portfolio.service || (echo "Application failed to start. Showing logs:" && sudo journalctl -u portfolio.service -n 100 --no-pager && exit 1)
+
+    echo "Deployment successful. Application is running."
 
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
