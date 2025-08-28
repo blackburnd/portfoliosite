@@ -50,7 +50,6 @@ steps:
     sudo ./setup_ssl.sh
 
     # Fetch the database URL from Secret Manager and create an environment file
-# Fetch the database URL from Secret Manager and create an environment file
     SECRET_URL=$(gcloud secrets versions access latest --secret="_PORTFOLIO_DATABASE_URL")
     echo "_DATABASE_URL=${SECRET_URL}" | sudo tee /etc/environment    
     # Set up the systemd service
