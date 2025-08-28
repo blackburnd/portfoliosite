@@ -46,38 +46,21 @@ steps:
     # Validate the Nginx configuration before restarting
     sudo nginx -t
 
-    # Install netcat for network testing
-    echo "Installing network tools..."
-    sudo apt-get update
-    sudo apt-get install -y netcat-openbsd
-
-    # Test network connectivity to the database
-    echo "Testing database connectivity..."
-    if ping -c 3 ${_PG_HOST}; then
-      echo "✓ Can ping database host"
+    # Verify local assets exist
+    echo "=== Checking local assets ==="
+    if [ -d "app/assets/files" ]; then
+        echo "✓ Assets directory exists"
+        ls -la app/assets/files/
     else
-      echo "✗ Cannot ping database host"
+        echo "✗ Assets directory not found"
     fi
-    
-    # Test if the database port is reachable
-    if nc -z ${_PG_HOST} ${_PG_PORT}; then
-      echo "✓ Database port ${_PG_PORT} is reachable"
-    else
-      echo "✗ Database port ${_PG_PORT} is not reachable"
-    fi
-    
-    # Show network interface and routing info
-    echo "=== Network Debug Info ==="
-    ip route show
-    echo "VM network interface:"
-    ip addr show ens4
-    echo "=========================="
 
     # Create a systemd override file to set the environment variable
     sudo mkdir -p /etc/systemd/system/portfolio.service.d
     sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null << EOF
     [Service]
     Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+    Environment=DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
     EOF
 
     # Debug: Show what was written to the override file
@@ -103,65 +86,26 @@ steps:
       echo "=== Service Status ==="
       sudo systemctl status portfolio.service --no-pager -l
       
-      # Test database connectivity from the application
-      echo "=== Testing Database Connectivity ==="
-      
-      # Check if the application can connect to the database
-      # Method 1: Check application logs for database connection messages
-      echo "Checking application logs for database connection info..."
-      sudo journalctl -u portfolio.service --no-pager -n 50 | grep -i -E "(database|postgres|connection|error)" || echo "No database-related log entries found"
-      
-      # Method 2: Test database connection using psql if available
-      if command -v psql &> /dev/null; then
-        echo "Testing direct database connection with psql..."
-        if PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" >/dev/null 2>&1; then
-          echo "✓ Direct database connection successful"
-        else
-          echo "✗ Direct database connection failed"
-        fi
+      # Test local file access
+      echo "=== Testing local file access ==="
+      if curl -f http://localhost:8000/assets/files/ >/dev/null 2>&1; then
+        echo "✓ Assets directory browsing works"
       else
-        echo "psql not available, installing postgresql-client..."
-        sudo apt-get install -y postgresql-client
-        if PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" >/dev/null 2>&1; then
-          echo "✓ Direct database connection successful"
-        else
-          echo "✗ Direct database connection failed"
-          echo "Database connection error details:"
-          PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" 2>&1 || true
-        fi
+        echo "✗ Assets directory browsing failed"
       fi
       
-      # Method 3: Test the application endpoint that uses the database
-      echo "Testing application endpoint that uses database..."
-      sleep 5
-      if curl -f http://localhost:8000/health >/dev/null 2>&1; then
-        echo "✓ Application health endpoint responds"
-        curl -s http://localhost:8000/health
+      if curl -f http://localhost:8000/assets/files/danielblackburn.pdf >/dev/null 2>&1; then
+        echo "✓ Resume PDF accessible"
       else
-        echo "✗ Application health endpoint not responding"
-        echo "Available endpoints:"
-        curl -s http://localhost:8000/ 2>/dev/null || echo "Application not responding"
+        echo "✗ Resume PDF not accessible"
+        echo "Available files:"
+        curl -s http://localhost:8000/assets/files/ 2>/dev/null || echo "Directory listing failed"
       fi
       
     else
       echo "Application failed to start. Showing logs:"
       sudo journalctl -u portfolio.service --no-pager -n 20
       exit 1
-    fi
-
-    # Create directories and download resume
-    mkdir -p app/assets/img app/assets/files
-    
-    # Download resume from Google Drive (update the filename to match your actual file)
-    echo "Downloading resume..."
-    wget -O app/assets/files/danielblackburn.pdf "https://drive.google.com/uc?export=download&id=1GO28ZNW3HtlP94whb1UshobhCXqFenba"
-    
-    # Verify the file was downloaded
-    if [ -f "app/assets/files/danielblackburn.pdf" ]; then
-        echo "✓ Resume downloaded successfully"
-        ls -la app/assets/files/
-    else
-        echo "✗ Resume download failed"
     fi
 
 substitutions:
