@@ -53,6 +53,36 @@ steps:
     Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
     EOF
 
+    # Debug: Show what was written to the override file
+    echo "=== Database configuration written ==="
+    sudo cat /etc/systemd/system/portfolio.service.d/override.conf
+    echo "======================================"
+    
+    # Install netcat for network testing
+    echo "Installing network tools..."
+    sudo apt-get update
+    sudo apt-get install -y netcat-openbsd
+    
+    # Test network connectivity to the database
+    echo "Testing database connectivity..."
+    if ping -c 3 ${_PG_HOST}; then
+      echo "✓ Can ping database host"
+    else
+      echo "✗ Cannot ping database host"
+    fi
+    
+    # Test if the database port is reachable
+    if nc -z ${_PG_HOST} ${_PG_PORT}; then
+      echo "✓ Database port ${_PG_PORT} is reachable"
+    else
+      echo "✗ Database port ${_PG_PORT} is not reachable"
+    fi
+    
+    # Show network interface and routing info
+    echo "=== Network Debug Info ==="
+    ip route show
+    echo "=========================="
+
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
