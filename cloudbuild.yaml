@@ -75,11 +75,11 @@ steps:
     fi
 
 substitutions:
-  _PG_USER: ''
-  _PG_PASS: ''
-  _PG_HOST: ''
+  _PG_USER: 'postgres'
+  _PG_PASS: '8JB6On1;kT}f6puF'
+  _PG_HOST: '10.24.80.3'
   _PG_PORT: '5432'
-  _PG_DB: ''
+  _PG_DB: 'daniel_portfolio'
 
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
