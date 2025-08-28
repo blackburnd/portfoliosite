@@ -2,14 +2,15 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 import uvicorn
 import os
+from pathlib import Path
 
 from app.resolvers import schema
-from database import init_database, close_database, database  # ← Add 'database' import
+from database import init_database, close_database, database
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -31,11 +32,67 @@ app.add_middleware(
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
-# Static files and templates (create directories if they don't exist)
-os.makedirs("assets", exist_ok=True)
+# Create directories if they don't exist
+os.makedirs("assets/img", exist_ok=True)
+os.makedirs("assets/files", exist_ok=True)
 os.makedirs("templates", exist_ok=True)
 
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+# Custom StaticFiles class that enables directory browsing
+class BrowsableStaticFiles(StaticFiles):
+    def __init__(self, *, directory: str):
+        super().__init__(directory=directory, html=True)
+        self.directory = Path(directory)
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # If file not found, try to serve directory listing
+            full_path = self.directory / path.lstrip('/')
+            if full_path.is_dir():
+                return self.directory_listing(full_path, path)
+            raise
+
+    def directory_listing(self, directory: Path, url_path: str):
+        """Generate HTML directory listing"""
+        items = []
+        if url_path != '/':
+            items.append('<li><a href="../">../</a></li>')
+        
+        for item in sorted(directory.iterdir()):
+            if item.is_dir():
+                items.append(f'<li><a href="{item.name}/">{item.name}/</a></li>')
+            else:
+                size = item.stat().st_size
+                size_str = f" ({size:,} bytes)"
+                items.append(f'<li><a href="{item.name}">{item.name}</a>{size_str}</li>')
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Directory listing for {url_path}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                h1 {{ color: #333; }}
+                ul {{ list-style: none; padding: 0; }}
+                li {{ margin: 8px 0; }}
+                a {{ text-decoration: none; color: #0066cc; }}
+                a:hover {{ text-decoration: underline; }}
+            </style>
+        </head>
+        <body>
+            <h1>Directory listing for {url_path}</h1>
+            <ul>
+                {"".join(items)}
+            </ul>
+        </body>
+        </html>
+        """
+        return Response(content=html, media_type="text/html")
+
+# Mount static files with directory browsing enabled
+app.mount("/assets", BrowsableStaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 
 # Database initialization
@@ -83,35 +140,10 @@ async def project_detail(request: Request, project_slug: str):
 
 @app.get("/resume/")
 async def resume():
-    """Serve resume PDF directly in browser"""
-    # HTML that embeds the PDF with correct content type
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Daniel Blackburn - Resume</title>
-        <style>
-            body { margin: 0; padding: 0; }
-            iframe { width: 100vw; height: 100vh; border: none; }
-        </style>
-    </head>
-    <body>
-        <iframe 
-            src="https://drive.google.com/file/d/1GO28ZNW3HtlP94whb1UshobhCXqFenba/preview"
-            type="application/pdf">
-            <p>Your browser doesn't support PDF viewing. 
-               <a href="https://drive.google.com/file/d/1GO28ZNW3HtlP94whb1UshobhCXqFenba/view?usp=drive_link">
-                 Click here to download the resume
-               </a>
-            </p>
-        </iframe>
-    </body>
-    </html>
-    """
-    
-    return Response(
-        content=html_content,
-        media_type="text/html"
+    """Redirect to local resume PDF file"""
+    return RedirectResponse(
+        url="/assets/files/Daniel_Blackburn_Resume.pdf",
+        status_code=302
     )
 
 # API health check
