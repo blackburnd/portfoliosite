@@ -51,8 +51,8 @@ steps:
 
     # Fetch the database URL from Secret Manager and create an environment file
    # Construct the database URL from the _PG_PASS substitution variable
-    DB_URL="postgresql://postgres:${_PG_PASS}@35.184.209.128:5432/daniel_portfolio"
-    echo "_DATABASE_URL=${DB_URL}" | sudo tee /etc/portfolio.env > /dev/null
+    _DB_URL="postgresql://postgres:${_PG_PASS}@35.184.209.128:5432/daniel_portfolio"
+    echo "_DATABASE_URL=${_DB_URL}" | sudo tee /etc/portfolio.env > /dev/null
     
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
