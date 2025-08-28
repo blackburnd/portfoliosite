@@ -50,8 +50,10 @@ steps:
     sudo ./setup_ssl.sh
 
     # Fetch the database URL from Secret Manager and create an environment file
-    _SECRET_URL=$(gcloud secrets versions access latest --secret="_PORTFOLIO_DATABASE_URL")
-    echo "_DATABASE_URL=${_SECRET_URL}" | sudo tee /etc/environment    
+   # Construct the database URL from the _PG_PASS substitution variable
+    DB_URL="postgresql://postgres:${_PG_PASS}@35.184.209.128:5432/daniel_portfolio"
+    echo "_DATABASE_URL=${DB_URL}" | sudo tee /etc/portfolio.env > /dev/null
+    
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
