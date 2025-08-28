@@ -55,7 +55,11 @@ steps:
     # Construct the database URL using substitution variables from the trigger
     # The \$$ syntax is used to escape the $ for the remote shell, allowing Cloud Build to substitute the variable.
     _DATABASE_URL="postgresql://\${_PG_USER}:\${_PG_PASS}@\${_PG_HOST}:\${_PG_PORT}/\${_PG_DB}"
-    echo "_DATABASE_URL=\${_DATABASE_URL}" | sudo tee /etc/environment
+
+    # Create a systemd override file to set the environment variable
+    sudo mkdir -p /etc/systemd/system/portfolio.service.d
+    echo "[Service]" | sudo tee /etc/systemd/system/portfolio.service.d/override.conf
+    echo "Environment=\"_DATABASE_URL=\${_DATABASE_URL}\"" | sudo tee -a /etc/systemd/system/portfolio.service.d/override.conf
 
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
