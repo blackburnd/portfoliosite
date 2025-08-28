@@ -69,7 +69,7 @@ async def work(request: Request):
     """Serve the work page"""
     return templates.TemplateResponse("work.html", {
         "request": request,
-        "title": "Work - David Simmer"
+        "title": "Work - daniel blackburn"
     })
 
 @app.get("/work/{project_slug}/", response_class=HTMLResponse)
@@ -78,7 +78,7 @@ async def project_detail(request: Request, project_slug: str):
     return templates.TemplateResponse("project.html", {
         "request": request,
         "project_slug": project_slug,
-        "title": f"Project - David Simmer"
+        "title": f"Project - daniel blackburn"
     })
 
 @app.get("/resume/", response_class=HTMLResponse)
@@ -86,13 +86,19 @@ async def resume(request: Request):
     """Serve the resume page"""
     return templates.TemplateResponse("resume.html", {
         "request": request,
-        "title": "Resume - David Simmer"
+        "title": "Resume - daniel blackburn"
     })
 
 # API health check
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "portfolio-api"}
+    try:
+        # Test database connection
+        async with database.transaction():
+            result = await database.fetch_one("SELECT 1")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
 # GraphQL Playground (development only)
 @app.get("/playground", response_class=HTMLResponse)

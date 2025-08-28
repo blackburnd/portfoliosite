@@ -102,6 +102,47 @@ steps:
       echo "Application started successfully"
       echo "=== Service Status ==="
       sudo systemctl status portfolio.service --no-pager -l
+      
+      # Test database connectivity from the application
+      echo "=== Testing Database Connectivity ==="
+      
+      # Check if the application can connect to the database
+      # Method 1: Check application logs for database connection messages
+      echo "Checking application logs for database connection info..."
+      sudo journalctl -u portfolio.service --no-pager -n 50 | grep -i -E "(database|postgres|connection|error)" || echo "No database-related log entries found"
+      
+      # Method 2: Test database connection using psql if available
+      if command -v psql &> /dev/null; then
+        echo "Testing direct database connection with psql..."
+        if PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" >/dev/null 2>&1; then
+          echo "✓ Direct database connection successful"
+        else
+          echo "✗ Direct database connection failed"
+        fi
+      else
+        echo "psql not available, installing postgresql-client..."
+        sudo apt-get install -y postgresql-client
+        if PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" >/dev/null 2>&1; then
+          echo "✓ Direct database connection successful"
+        else
+          echo "✗ Direct database connection failed"
+          echo "Database connection error details:"
+          PGPASSWORD="${_PG_PASS}" psql -h ${_PG_HOST} -U ${_PG_USER} -d ${_PG_DB} -c "SELECT version();" 2>&1 || true
+        fi
+      fi
+      
+      # Method 3: Test the application endpoint that uses the database
+      echo "Testing application endpoint that uses database..."
+      sleep 5
+      if curl -f http://localhost:8000/health >/dev/null 2>&1; then
+        echo "✓ Application health endpoint responds"
+        curl -s http://localhost:8000/health
+      else
+        echo "✗ Application health endpoint not responding"
+        echo "Available endpoints:"
+        curl -s http://localhost:8000/ 2>/dev/null || echo "Application not responding"
+      fi
+      
     else
       echo "Application failed to start. Showing logs:"
       sudo journalctl -u portfolio.service --no-pager -n 20
