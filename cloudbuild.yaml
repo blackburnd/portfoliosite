@@ -46,42 +46,51 @@ steps:
     # Validate the Nginx configuration before restarting
     sudo nginx -t
 
-    # Create a systemd override file to set the environment variable
-    sudo mkdir -p /etc/systemd/system/portfolio.service.d
-    sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null << EOF
+    # Install Cloud SQL Proxy for secure database connection
+    if ! command -v cloud_sql_proxy &> /dev/null; then
+      echo "Installing Cloud SQL Proxy..."
+      wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+      chmod +x cloud_sql_proxy
+      sudo mv cloud_sql_proxy /usr/local/bin/
+    fi
+
+    # Start Cloud SQL Proxy as a systemd service
+    sudo tee /etc/systemd/system/cloud-sql-proxy.service > /dev/null << 'EOF'
+    [Unit]
+    Description=Cloud SQL Proxy
+    After=network.target
+
     [Service]
-    Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+    Type=simple
+    User=blackburnd
+    ExecStart=/usr/local/bin/cloud_sql_proxy -instances=${_INSTANCE_CONNECTION_NAME}=tcp:5432
+    Restart=always
+    RestartSec=10
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+
+    # Enable and start Cloud SQL Proxy
+    sudo systemctl daemon-reload
+    sudo systemctl enable cloud-sql-proxy
+    sudo systemctl restart cloud-sql-proxy
+
+    # Wait for proxy to start
+    sleep 5
+
+    # Create a systemd override file to set the environment variable
+    # Use localhost since we're connecting through the proxy
+    sudo mkdir -p /etc/systemd/system/portfolio.service.d
+    sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null << 'EOF'
+    [Service]
+    Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@localhost:5432/${_PG_DB}
     EOF
 
     # Debug: Show what was written to the override file
     echo "=== Database configuration written ==="
     sudo cat /etc/systemd/system/portfolio.service.d/override.conf
     echo "======================================"
-    
-    # Install netcat for network testing
-    echo "Installing network tools..."
-    sudo apt-get update
-    sudo apt-get install -y netcat-openbsd
-    
-    # Test network connectivity to the database
-    echo "Testing database connectivity..."
-    if ping -c 3 ${_PG_HOST}; then
-      echo "✓ Can ping database host"
-    else
-      echo "✗ Cannot ping database host"
-    fi
-    
-    # Test if the database port is reachable
-    if nc -z ${_PG_HOST} ${_PG_PORT}; then
-      echo "✓ Database port ${_PG_PORT} is reachable"
-    else
-      echo "✗ Database port ${_PG_PORT} is not reachable"
-    fi
-    
-    # Show network interface and routing info
-    echo "=== Network Debug Info ==="
-    ip route show
-    echo "=========================="
 
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
@@ -95,21 +104,27 @@ steps:
 
     # Wait for the application to start and check its status
     echo "Waiting for application to start..."
-    sleep 5
+    sleep 10
     if sudo systemctl is-active --quiet portfolio.service; then
       echo "Application started successfully"
+      echo "=== Service Status ==="
+      sudo systemctl status portfolio.service --no-pager -l
+      sudo systemctl status cloud-sql-proxy --no-pager -l
     else
       echo "Application failed to start. Showing logs:"
       sudo journalctl -u portfolio.service --no-pager -n 20
+      echo "=== Cloud SQL Proxy logs ==="
+      sudo journalctl -u cloud-sql-proxy --no-pager -n 10
       exit 1
     fi
 
 substitutions:
   _PG_USER: 'postgres'
-  _PG_PASS: '8JB6On1;kT}f6puF'
-  _PG_HOST: '10.24.80.3'
+  _PG_PASS: '8JB6On1kTf6puF-'
+  _PG_HOST: 'localhost'
   _PG_PORT: '5432'
   _PG_DB: 'daniel_portfolio'
+  _INSTANCE_CONNECTION_NAME: 'impactful-study-470015-g5:us-central1:your-instance-name'
 
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
