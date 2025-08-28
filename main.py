@@ -9,7 +9,7 @@ import uvicorn
 import os
 
 from app.resolvers import schema
-from database import init_database, close_database
+from database import init_database, close_database, database  # ← Add 'database' import
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -94,9 +94,8 @@ async def resume(request: Request):
 async def health_check():
     try:
         # Test database connection
-        async with database.transaction():
-            result = await database.fetch_one("SELECT 1")
-        return {"status": "healthy", "database": "connected"}
+        result = await database.fetch_one("SELECT 1")
+        return {"status": "healthy", "database": "connected", "result": result}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 

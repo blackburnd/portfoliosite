@@ -6,18 +6,18 @@ import json
 import os
 import uuid
 
-# Database configuration
-DATABASE_URL = os.getenv("_DATABASE_URL")
+# Database configuration - check both possible environment variable names
+DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("No _DATABASE_URL environment variable set")
+    raise ValueError("No _DATABASE_URL or DATABASE_URL environment variable set")
 
 database = Database(DATABASE_URL)
 
 async def init_database():
     """Initialize database connection"""
     await database.connect()
-    print("Connected to PostgreSQL database")
+    print(f"Connected to PostgreSQL database: {DATABASE_URL}")
 
 async def close_database():
     """Close database connection"""
