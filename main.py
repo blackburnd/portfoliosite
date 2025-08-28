@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 import uvicorn
@@ -81,13 +81,16 @@ async def project_detail(request: Request, project_slug: str):
         "title": f"Project - daniel blackburn"
     })
 
-@app.get("/resume/", response_class=HTMLResponse)
-async def resume(request: Request):
-    """Serve the resume page"""
-    return templates.TemplateResponse("resume.html", {
-        "request": request,
-        "title": "Resume - daniel blackburn"
-    })
+@app.get("/resume/")
+async def resume():
+    """Redirect to resume PDF for direct browser viewing"""
+    # Use Google Drive's direct link format that forces PDF viewing in browser
+    direct_pdf_url = "https://drive.google.com/uc?export=download&id=1GO28ZNW3HtlP94whb1UshobhCXqFenba"
+    
+    return RedirectResponse(
+        url=direct_pdf_url,
+        status_code=302
+    )
 
 # API health check
 @app.get("/health")
