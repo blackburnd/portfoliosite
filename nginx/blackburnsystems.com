@@ -1,45 +1,80 @@
 
-# Redirect bare domain to www
-server {
-    listen 80;
-    server_name blackburnsystems.com;
-    return 301 https://www.blackburnsystems.com$request_uri;
+events {
+    worker_connections 1024;
 }
 
-# Main server block for www
-server {
-    listen 80;
-    server_name www.blackburnsystems.com;
-    return 301 https://www.blackburnsystems.com$request_uri;
-}
+http {
+    # Basic HTTP settings
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
 
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
 
-# Redirect bare domain to www for HTTPS
-server {
-    listen 443 ssl;
-    server_name blackburnsystems.com;
-    ssl_certificate /etc/letsencrypt/live/blackburnsystems.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/blackburnsystems.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-    return 301 https://www.blackburnsystems.com$request_uri;
-}
+    # Logging
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
 
-# Main HTTPS server block for www
-server {
-    listen 443 ssl;
-    server_name www.blackburnsystems.com;
-    ssl_certificate /etc/letsencrypt/live/blackburnsystems.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/blackburnsystems.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-   
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+
+    # Redirect bare domain to www
+    server {
+        listen 80;
+        server_name blackburnsystems.com;
+        return 301 http://www.blackburnsystems.com$request_uri;
     }
-}
 
+    # Main server block for www (HTTP) - serves the application
+    server {
+        listen 80;
+        server_name www.blackburnsystems.com;
+        
+        location / {
+            proxy_pass http://127.0.0.1:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+
+    # SSL configuration - only enable when certificates exist
+    # Uncomment the following server blocks after running setup_ssl.sh
+    
+    # Redirect bare domain to www for HTTPS
+    # server {
+    #     listen 443 ssl;
+    #     server_name blackburnsystems.com;
+    #     ssl_certificate /etc/letsencrypt/live/blackburnsystems.com/fullchain.pem;
+    #     ssl_certificate_key /etc/letsencrypt/live/blackburnsystems.com/privkey.pem;
+    #     include /etc/letsencrypt/options-ssl-nginx.conf;
+    #     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    #     return 301 https://www.blackburnsystems.com$request_uri;
+    # }
+
+    # Main HTTPS server block for www
+    # server {
+    #     listen 443 ssl;
+    #     server_name www.blackburnsystems.com;
+    #     ssl_certificate /etc/letsencrypt/live/blackburnsystems.com/fullchain.pem;
+    #     ssl_certificate_key /etc/letsencrypt/live/blackburnsystems.com/privkey.pem;
+    #     include /etc/letsencrypt/options-ssl-nginx.conf;
+    #     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    #    
+    #     location / {
+    #         proxy_pass http://127.0.0.1:8000;
+    #         proxy_set_header Host $host;
+    #         proxy_set_header X-Real-IP $remote_addr;
+    #         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    #         proxy_set_header X-Forwarded-Proto $scheme;
+    #     }
+    # }
+}
