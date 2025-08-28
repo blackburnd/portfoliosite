@@ -47,13 +47,15 @@ steps:
     sudo ln -sf /etc/nginx/sites-available/blackburnsystems.com /etc/nginx/sites-enabled/
 
     # Run SSL setup to obtain and install certificates
-    sudo ./setup_ssl.sh
+    # sudo ./setup_ssl.sh # Commenting this out as Nginx config is now provided manually
 
-    # Fetch the database URL from Secret Manager and create an environment file
-   # Construct the database URL from the _PG_PASS substitution variable
-    _DB_URL="postgresql://postgres:${_PG_PASS}@35.184.209.128:5432/daniel_portfolio"
-    echo "_DATABASE_URL=${_DB_URL}" | sudo tee /etc/portfolio.env > /dev/null
-    
+    # Validate the Nginx configuration before restarting
+    sudo nginx -t
+
+    # Construct the database URL using substitution variables from the trigger
+    _DATABASE_URL="postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}"
+    echo "_DATABASE_URL=${_DATABASE_URL}" | sudo tee /etc/environment
+
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
