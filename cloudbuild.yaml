@@ -56,13 +56,10 @@ steps:
     # The \$$ syntax is used to escape the $ for the remote shell, allowing Cloud Build to substitute the variable.
     export _DATABASE_URL="postgresql://\${_PG_USER}:\${_PG_PASS}@\${_PG_HOST}:\${_PG_PORT}/\${_PG_DB}"
     
-    # Create a systemd override file to set the environment variable.
-    # We export the variable above so the 'bash -c' subshell can access it.
-    sudo bash -c '
-      mkdir -p /etc/systemd/system/portfolio.service.d && \
-      echo "[Service]" > /etc/systemd/system/portfolio.service.d/override.conf && \
-      echo "Environment=_DATABASE_URL=$_DATABASE_URL" >> /etc/systemd/system/portfolio.service.d/override.conf
-    '
+    # Create a systemd override file to set the environment variable
+    sudo mkdir -p /etc/systemd/system/portfolio.service.d
+    echo "[Service]" | sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null
+    echo "Environment=_DATABASE_URL=$_DATABASE_URL" | sudo tee -a /etc/systemd/system/portfolio.service.d/override.conf > /dev/null
 
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
