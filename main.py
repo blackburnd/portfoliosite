@@ -33,8 +33,8 @@ graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 # Create directories if they don't exist
-os.makedirs("assets/img", exist_ok=True)
-os.makedirs("assets/files", exist_ok=True)
+os.makedirs("app/assets/img", exist_ok=True)
+os.makedirs("app/assets/files", exist_ok=True)
 os.makedirs("templates", exist_ok=True)
 
 # Custom StaticFiles class that enables directory browsing
@@ -92,7 +92,7 @@ class BrowsableStaticFiles(StaticFiles):
         return Response(content=html, media_type="text/html")
 
 # Mount static files with directory browsing enabled
-app.mount("/assets", BrowsableStaticFiles(directory="assets"), name="assets")
+app.mount("/assets", BrowsableStaticFiles(directory="app/assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 
 # Database initialization
@@ -142,7 +142,7 @@ async def project_detail(request: Request, project_slug: str):
 async def resume():
     """Redirect to local resume PDF file"""
     return RedirectResponse(
-        url="/assets/files/Daniel_Blackburn_Resume.pdf",
+        url="/assets/files/danielblackburn.pdf",  # Updated to match your actual filename
         status_code=302
     )
 

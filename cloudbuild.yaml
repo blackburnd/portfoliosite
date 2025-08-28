@@ -150,16 +150,16 @@ steps:
     fi
 
     # Create directories and download resume
-    mkdir -p assets/img assets/files
+    mkdir -p app/assets/img app/assets/files
     
-    # Download resume from Google Drive
+    # Download resume from Google Drive (update the filename to match your actual file)
     echo "Downloading resume..."
-    wget -O assets/files/Daniel_Blackburn_Resume.pdf "https://drive.google.com/uc?export=download&id=1GO28ZNW3HtlP94whb1UshobhCXqFenba"
+    wget -O app/assets/files/danielblackburn.pdf "https://drive.google.com/uc?export=download&id=1GO28ZNW3HtlP94whb1UshobhCXqFenba"
     
     # Verify the file was downloaded
-    if [ -f "assets/files/Daniel_Blackburn_Resume.pdf" ]; then
+    if [ -f "app/assets/files/danielblackburn.pdf" ]; then
         echo "✓ Resume downloaded successfully"
-        ls -la assets/files/
+        ls -la app/assets/files/
     else
         echo "✗ Resume download failed"
     fi
