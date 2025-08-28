@@ -50,8 +50,7 @@ steps:
     sudo ./setup_ssl.sh
 
     # Fetch the database URL from Secret Manager and create an environment file
-    sudo gcloud secrets versions access latest --secret="_PORTFOLIO_DATABASE_URL" --format='get(payload.data)' | sudo base64 --decode | sudo tee /etc/portfolio.env > /dev/null
-    sudo echo "_DATABASE_URL=$(cat /etc/portfolio.env)" | sudo tee /etc/portfolio.env > /dev/null
+    SECRET_URL=$(sudo gcloud secrets versions access latest --secret="_PORTFOLIO_DATABASE_URL" --format='get(payload.data)' | sudo base64 --decode) && echo "_DATABASE_URL=${SECRET_URL}" | sudo tee /etc/portfolio.env > /dev/null
     
     # Set up the systemd service
     sudo cp portfolio.service /etc/systemd/system/
