@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 import uvicorn
@@ -83,13 +83,35 @@ async def project_detail(request: Request, project_slug: str):
 
 @app.get("/resume/")
 async def resume():
-    """Redirect to resume PDF for direct browser viewing"""
-    # Use Google Drive's direct link format that forces PDF viewing in browser
-    direct_pdf_url = "https://drive.google.com/uc?export=download&id=1GO28ZNW3HtlP94whb1UshobhCXqFenba"
+    """Serve resume PDF directly in browser"""
+    # HTML that embeds the PDF with correct content type
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Daniel Blackburn - Resume</title>
+        <style>
+            body { margin: 0; padding: 0; }
+            iframe { width: 100vw; height: 100vh; border: none; }
+        </style>
+    </head>
+    <body>
+        <iframe 
+            src="https://drive.google.com/file/d/1GO28ZNW3HtlP94whb1UshobhCXqFenba/preview"
+            type="application/pdf">
+            <p>Your browser doesn't support PDF viewing. 
+               <a href="https://drive.google.com/file/d/1GO28ZNW3HtlP94whb1UshobhCXqFenba/view?usp=drive_link">
+                 Click here to download the resume
+               </a>
+            </p>
+        </iframe>
+    </body>
+    </html>
+    """
     
-    return RedirectResponse(
-        url=direct_pdf_url,
-        status_code=302
+    return Response(
+        content=html_content,
+        media_type="text/html"
     )
 
 # API health check
