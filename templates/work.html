@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html
+    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+
+    <!-- Add basic CSS since style.css is missing -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .site-header {
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: #333;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .tagline {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #0066cc;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .active a {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .work-section {
+            margin: 30px 0;
+        }
+
+        .work-section h2 {
+            color: #333;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+        }
+
+        .work-item, .project-item {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .work-item h3, .project-item h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .work-meta, .project-meta {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .current-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .tech-tags {
+            margin-top: 10px;
+        }
+
+        .tech-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px 0;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-27877508-5');
+    </script>
+    <link rel="stylesheet" href="/templates/style.css">
+</head>
+
+<body class="work">
+    <div class="wrap">
+        <div class="fg">
+            <header class="site-header" id="h">
+                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                <p class="tagline">Curious novel<br>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
+                <nav>
+                    <ul>
+                        <li class="me">
+                            <a href="/"><span>Daniel</span> Blackburn</a>
+                        </li>
+                        <li class="projects active">
+                            <a href="/work/"><span>selected</span> work</a>
+                        </li>
+                        <li class="contact">
+                            <a href="/contact/"><span>we should</span> talk</a>
+                        </li>
+                        <li class="resume">
+                            <a href="/resume" target="_blank">resume</a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+                        </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+            <div id="bw" aria-live="polite">
+                <article class="bc clearfix">
+                    <section class="work-content">
+                        <h2>My Work</h2>
+                        <p>Here's a collection of my professional experience and selected projects. I specialize in cloud technologies, automation, and modern web development.</p>
+
+                        <div id="work-container">
+                            <div class="loading">Loading work experience and projects...</div>
+                        </div>
+                    </section>
+                </article>
+            </div><!-- barba wrapper -->
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
+        </div><!-- #fg -->
+    </div><!-- .wrap -->
+
+    <script>
+        // GraphQL query to fetch portfolio data
+        const query = `
+            query GetPortfolio {
+                portfolio {
+                    workExperience {
+                        id
+                        company
+                        position
+                        location
+                        startDate
+                        endDate
+                        description
+                        isCurrent
+                        companyUrl
+                    }
+                    projects {
+                        id
+                        title
+                        description
+                        url
+                        technologies
+                    }
+                }
+            }
+        `;
+
+        async function loadWorkData() {
+            const container = document.getElementById('work-container');
+            
+            try {
+                const response = await fetch('/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const result = await response.json();
+                
+                if (result.errors) {
+                    throw new Error(result.errors[0].message);
+                }
+
+                const portfolio = result.data.portfolio;
+                if (!portfolio) {
+                    throw new Error('No portfolio data found');
+                }
+
+                let html = '';
+
+                // Work Experience Section
+                if (portfolio.workExperience && portfolio.workExperience.length > 0) {
+                    html += '<div class="work-section"><h2>Work Experience</h2>';
+                    portfolio.workExperience.forEach(work => {
+                        const currentBadge = work.isCurrent ? '<span class="current-badge">Current</span>' : '';
+                        const dateRange = work.endDate ? `${work.startDate} - ${work.endDate}` : `${work.startDate} - Present`;
+                        const companyLink = work.companyUrl ? `<a href="${work.companyUrl}" target="_blank">${work.company}</a>` : work.company;
+                        
+                        html += `
+                            <div class="work-item">
+                                <h3>${work.position}${currentBadge}</h3>
+                                <div class="work-meta">
+                                    ${companyLink} • ${work.location || 'Remote'} • ${dateRange}
+                                </div>
+                                <p>${work.description || ''}</p>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                // Projects Section
+                if (portfolio.projects && portfolio.projects.length > 0) {
+                    html += '<div class="work-section"><h2>Featured Projects</h2>';
+                    portfolio.projects.forEach(project => {
+                        const projectLink = project.url ? `<a href="${project.url}" target="_blank">${project.title}</a>` : project.title;
+                        const techTags = project.technologies && project.technologies.length > 0 
+                            ? project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')
+                            : '';
+                        
+                        html += `
+                            <div class="project-item">
+                                <h3>${projectLink}</h3>
+                                <p>${project.description}</p>
+                                ${techTags ? `<div class="tech-tags">${techTags}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                if (!html) {
+                    html = '<div class="error">No work experience or projects found.</div>';
+                }
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading work data:', error);
+                container.innerHTML = `<div class="error">Error loading work data: ${error.message}</div>`;
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadWorkData);
+    </script>
+</body>
+
+</html>
