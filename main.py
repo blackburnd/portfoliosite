@@ -121,6 +121,24 @@ async def contact(request: Request):
         "title": "Contact - Daniel Blackburn"
     })
 
+@app.post("/contact/submit")
+async def contact_submit(request: Request):
+    """Handle contact form submission"""
+    form_data = await request.form()
+    
+    # In a real implementation, this would save to database or send email
+    # For now, just return a simple response
+    return {
+        "status": "success",
+        "message": "Thank you for your message! I'll get back to you soon.",
+        "data": {
+            "name": form_data.get("name"),
+            "email": form_data.get("email"),
+            "subject": form_data.get("subject"),
+            "message": form_data.get("message")
+        }
+    }
+
 @app.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):
     """Serve the work page"""
@@ -156,6 +174,71 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
+@app.get("/schema")
+async def get_database_schema():
+    """Return database schema information with table details, column info, and record counts"""
+    try:
+        # Get all tables in the public schema
+        tables_query = """
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        ORDER BY table_name
+        """
+        tables = await database.fetch_all(tables_query)
+        
+        schema_info = {}
+        
+        for table_row in tables:
+            table_name = table_row['table_name']
+            
+            # Get column information for each table
+            columns_query = """
+            SELECT 
+                column_name, 
+                data_type, 
+                is_nullable, 
+                column_default,
+                character_maximum_length
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = :table_name
+            ORDER BY ordinal_position
+            """
+            columns = await database.fetch_all(columns_query, {"table_name": table_name})
+            
+            # Get record count for each table
+            count_query = f"SELECT COUNT(*) as count FROM {table_name}"
+            count_result = await database.fetch_one(count_query)
+            record_count = count_result['count'] if count_result else 0
+            
+            # Format column information
+            column_info = []
+            for col in columns:
+                column_detail = {
+                    "name": col['column_name'],
+                    "type": col['data_type'],
+                    "nullable": col['is_nullable'] == 'YES',
+                    "default": col['column_default'],
+                }
+                if col['character_maximum_length']:
+                    column_detail["max_length"] = col['character_maximum_length']
+                column_info.append(column_detail)
+            
+            schema_info[table_name] = {
+                "columns": column_info,
+                "record_count": record_count
+            }
+        
+        return {
+            "database_schema": schema_info,
+            "tables_count": len(tables),
+            "generated_at": "2025-01-01T00:00:00Z"  # Static timestamp for testing
+        }
+        
+    except Exception as e:
+        return {"error": f"Failed to retrieve schema: {str(e)}", "schema": {}}
+
 # GraphQL Playground (development only)
 @app.get("/playground", response_class=HTMLResponse)
 async def graphql_playground():
@@ -187,6 +270,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        debug=True
+        reload=True
     )

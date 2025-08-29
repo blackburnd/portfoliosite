@@ -48,10 +48,33 @@
         nav a {
             text-decoration: none;
             color: #0066cc;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         nav a:hover {
             text-decoration: underline;
+        }
+
+        /* Icon styling for social links */
+        .linkedin a, .github a, .pypi a {
+            font-size: 0.95rem;
+        }
+
+        .linkedin a::before {
+            content: "🔗";
+            margin-right: 4px;
+        }
+
+        .github a::before {
+            content: "🐙";
+            margin-right: 4px;
+        }
+
+        .pypi a::before {
+            content: "📦";
+            margin-right: 4px;
         }
 
         .bc {
@@ -159,6 +182,12 @@
                         <li class="linkedin">
                             <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
                         </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
                     </ul>
                 </nav>
             </header>
@@ -206,9 +235,12 @@
 
 <span class="comment">// external</span>
 <span>const history = {</span>
-<span>  'linkedin': '<a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin<span>.com/in/blackburnd</span></a>',</span>
+<span>  'linkedin': '<a href="https://linkedin.com/in/blackburnd" target="_blank">🔗 linkedin<span>.com/in/blackburnd</span></a>',</span>
 <span>  'resume-download': '<a href="/assets/files/danielblackburn.pdf" target="_blank"><span>daniel blackburn-</span>resume.pdf</a>',</span>
-<span>  'github': '<a href="https://github.com/blackburnd" target="_blank">blackburnd</a>'</span>
+<span>  'github': '<a href="https://github.com/blackburnd" target="_blank">🐙 blackburnd</a>',</span>
+<span>  'pypi-pypgsvg': '<a href="https://pypi.org/project/pypgsvg/" target="_blank">📦 pypgsvg</a>',</span>
+<span>  'pypi-z3c-securitytool': '<a href="https://pypi.org/project/z3c.securitytool/" target="_blank">📦 z3c.securitytool</a>',</span>
+<span>  'pypi-z3c-memhunt': '<a href="https://pypi.org/project/z3c.memhunt.objgraph/" target="_blank">📦 z3c.memhunt.objgraph</a>'</span>
 <span>};</span>
 </code></pre>
                         </aside>
