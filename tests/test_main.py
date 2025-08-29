@@ -39,3 +39,33 @@ async def test_image_access():
         response = await ac.get("/assets/files/daniel2.jpg")
     assert response.status_code == 200
     assert response.headers['content-type'] == 'image/jpeg'
+
+@pytest.mark.asyncio
+async def test_contact_page():
+    """Test that the /contact/ page loads successfully."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get("/contact/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers['content-type']
+    assert "Let's Talk" in response.text
+
+@pytest.mark.asyncio
+async def test_work_page():
+    """Test that the /work/ page loads successfully."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get("/work/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers['content-type']
+    assert "My Work" in response.text
+
+@pytest.mark.asyncio
+async def test_schema_endpoint():
+    """Test that the /schema endpoint returns JSON schema data."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get("/schema")
+    assert response.status_code == 200
+    assert "application/json" in response.headers['content-type']
+    
+    # The schema endpoint should return an error since no real database is connected
+    data = response.json()
+    assert "error" in data or "database_schema" in data
