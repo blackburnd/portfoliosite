@@ -4,6 +4,33 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+    
+    <!-- Add basic CSS since style.css is missing -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .wrap { max-width: 1200px; margin: 0 auto; }
+        .site-header { margin-bottom: 30px; }
+        .brand a { text-decoration: none; color: #333; font-size: 2em; font-weight: bold; }
+        .tagline { color: #666; margin: 10px 0; }
+        nav ul { list-style: none; padding: 0; display: flex; gap: 20px; flex-wrap: wrap; }
+        nav a { text-decoration: none; color: #0066cc; }
+        nav a:hover { text-decoration: underline; }
+        .bc { display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap; }
+        .about { flex: 1; min-width: 300px; }
+        figure { flex: 0 0 auto; }
+        figure img { max-width: 300px; height: auto; border-radius: 8px; }
+        .tech { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .tech pre { background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .comment { color: #666; font-style: italic; }
+        .footer { margin-top: 50px; padding: 20px 0; border-top: 1px solid #eee; text-align: center; color: #666; }
+        .clearfix::after { content: ""; display: table; clear: both; }
+        @media (max-width: 768px) {
+            .bc { flex-direction: column; }
+            figure img { max-width: 100%; }
+            nav ul { flex-direction: column; gap: 10px; }
+        }
+    </style>
     
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -44,7 +71,7 @@
                     <section class="about">
                         <p>Hello</p>
                         <p>I work with startups, established businesses, educational institutions, and non-profits around the world.</p>
-                        <p>I'm delightilding new tooling for ourience.</p>
+                        <p>I'm delighted to be building new tooling for our experience.</p>
                         <p>When you're in need of signature creative <span class="amp">&amp;</span> technical work, <a href="/contact/">let's talk.</a></p>
                         <aside class="tech st3 light">
                             <h2>README</h2>
@@ -52,32 +79,53 @@
 <span class="comment">// sup</span>
 <span>const contacts = {</span>
 <span>  'email': '<a href="mailto:blackburnd@gmail.com" target="_blank">blackburnd@gmail.com</a>',</span>
-<span>  'phone': '<a href="tel:+13057733923" target="_blank">305-773-3923</a>'</span>
-<span>  'vcard': '<a href="/assets/files/DanielBlackburn.vcf" target="_blank">Daniel Blackburn.vcf</a>'</span>
+<span>  'phone': '<a href="tel:+13057733923" target="_blank">305-773-3923</a>',</span>
+<span>  'vcard': '<a href="/assets/files/danielblackburn.vcf" target="_blank">Daniel Blackburn.vcf</a>'</span>
 <span>};</span>
-
 
 <span class="comment">// external</span>
 <span>const history = {</span>
-<span>  'resume': '<a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin<span>.com/in/blackburnd</span></a>',</span>
-<span>  'resume-download': '<a href="/assets/files/danielblackburn.pdf?v1206" target="_blank"><span>daniel blackburn-</span>resume.pdf</a>',</span>
-<span>  'github': '<a href="https://github.com/blackburnd" target="_blank">blackburnd</a>',</span>
+<span>  'linkedin': '<a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin<span>.com/in/blackburnd</span></a>',</span>
+<span>  'resume-download': '<a href="/assets/files/danielblackburn.pdf" target="_blank"><span>daniel blackburn-</span>resume.pdf</a>',</span>
+<span>  'github': '<a href="https://github.com/blackburnd" target="_blank">blackburnd</a>'</span>
 <span>};</span>
+</code></pre>
+                        </aside>
+                    </section>
+                    <figure>
+                        <img alt="Daniel Blackburn" src="/assets/files/daniel2.jpg" onerror="this.style.display='none'">
+                    </figure>
+                </article><!-- barba container -->
+            </div><!-- barba wrapper -->
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
+        </div><!-- #fg -->
+    </div><!-- .wrap -->
 
-
-</code>
-</pre>
-</aside>
-</section>
-<figure>
-<img alt="PHOTO" src="/assets/files/daniel2.jpg">
-</figure>
-</article><!-- barba container -->
-</div><!-- barba wrapper -->
-<footer class="footer" role="contentinfo">
-<p class="copyright">© 2025 Blackburn.</p>
-</footer>
-</div><!-- #fg -->
-</div><!-- .wrap -->
-
-</body></html>
+    <!-- Debug script to check if files exist -->
+    <script>
+        // Check if assets are loading properly
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, checking assets...');
+            
+            // Test asset availability
+            fetch('/assets/files/')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✓ Assets directory accessible');
+                        return response.text();
+                    } else {
+                        console.error('✗ Assets directory not accessible:', response.status);
+                    }
+                })
+                .then(html => {
+                    if (html) {
+                        console.log('Available files:', html.match(/href="[^"]+"/g) || []);
+                    }
+                })
+                .catch(error => console.error('Asset check failed:', error));
+        });
+    </script>
+</body>
+</html>
