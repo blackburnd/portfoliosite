@@ -1,0 +1,344 @@
+/* Portfolio Website Styles */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #fff;
+}
+
+/* Layout Container */
+.wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.fg {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Styles */
+.site-header {
+    padding: 2rem 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2rem;
+}
+
+.brand {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.brand a {
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.brand a:hover {
+    color: #3498db;
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.4;
+}
+
+.amp {
+    font-style: italic;
+    color: #e74c3c;
+}
+
+/* Navigation */
+nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+nav li {
+    margin: 0;
+}
+
+nav a {
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+nav a:hover {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+}
+
+nav .active a {
+    background-color: #3498db;
+    color: white;
+}
+
+nav span {
+    font-weight: 300;
+    opacity: 0.8;
+}
+
+/* Main Content */
+#bw {
+    flex: 1;
+    margin-bottom: 2rem;
+}
+
+.bc {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* About Section */
+.about {
+    padding-right: 2rem;
+}
+
+.about p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.about a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.about a:hover {
+    text-decoration: underline;
+}
+
+/* Tech/Code Section */
+.tech {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.tech.light {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+}
+
+.tech h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #3498db;
+    font-weight: 600;
+}
+
+.tech.light h2 {
+    color: #3498db;
+}
+
+.tech pre {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    overflow-x: auto;
+    background: transparent;
+}
+
+.tech code {
+    display: block;
+}
+
+.tech .comment {
+    color: #95a5a6;
+    font-style: italic;
+}
+
+.tech span {
+    display: block;
+    margin: 0.2rem 0;
+}
+
+.tech a {
+    color: #e67e22;
+    text-decoration: none;
+}
+
+.tech a:hover {
+    text-decoration: underline;
+}
+
+.tech.light a {
+    color: #f39c12;
+}
+
+/* Figure/Image */
+figure {
+    text-align: center;
+}
+
+figure img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+figure img:hover {
+    transform: scale(1.02);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid #eee;
+    margin-top: auto;
+}
+
+.copyright {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .wrap {
+        padding: 0 15px;
+    }
+    
+    .site-header {
+        text-align: center;
+        padding: 1.5rem 0;
+    }
+    
+    .brand {
+        font-size: 2rem;
+    }
+    
+    .tagline {
+        font-size: 1rem;
+    }
+    
+    nav ul {
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    nav a {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .bc {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .about {
+        padding-right: 0;
+    }
+    
+    .about p {
+        font-size: 1rem;
+    }
+    
+    figure {
+        order: -1;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand {
+        font-size: 1.8rem;
+    }
+    
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    nav a {
+        width: 200px;
+        text-align: center;
+    }
+    
+    .tech {
+        padding: 1rem;
+    }
+    
+    .tech pre {
+        font-size: 0.8rem;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles for keyboard navigation */
+a:focus,
+nav a:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .site-header,
+    .footer {
+        border: none;
+    }
+    
+    nav {
+        display: none;
+    }
+    
+    .tech {
+        background: none !important;
+        color: black !important;
+        border: 1px solid #ccc;
+    }
+    
+    figure img {
+        box-shadow: none;
+    }
+}
