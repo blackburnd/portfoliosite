@@ -1,52 +1,147 @@
 <!DOCTYPE html>
-<html class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+<html
+    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
     <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
-    
+
     <!-- Add basic CSS since style.css is missing -->
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        .site-header { margin-bottom: 30px; }
-        .brand a { text-decoration: none; color: #333; font-size: 2em; font-weight: bold; }
-        .tagline { color: #666; margin: 10px 0; }
-        nav ul { list-style: none; padding: 0; display: flex; gap: 20px; flex-wrap: wrap; }
-        nav a { text-decoration: none; color: #0066cc; }
-        nav a:hover { text-decoration: underline; }
-        .bc { display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap; }
-        .about { flex: 1; min-width: 300px; }
-        figure { flex: 0 0 auto; }
-        figure img { max-width: 300px; height: auto; border-radius: 8px; }
-        .tech { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .tech pre { background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; }
-        .comment { color: #666; font-style: italic; }
-        .footer { margin-top: 50px; padding: 20px 0; border-top: 1px solid #eee; text-align: center; color: #666; }
-        .clearfix::after { content: ""; display: table; clear: both; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .site-header {
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: #333;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .tagline {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #0066cc;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .bc {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .about {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        figure {
+            flex: 0 0 auto;
+        }
+
+        figure img {
+            max-width: 300px;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .tech {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .tech pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .comment {
+            color: #666;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
         @media (max-width: 768px) {
-            .bc { flex-direction: column; }
-            figure img { max-width: 100%; }
-            nav ul { flex-direction: column; gap: 10px; }
+            .bc {
+                flex-direction: column;
+            }
+
+            figure img {
+                max-width: 100%;
+            }
+
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
-    
+
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+        function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
         gtag('config', 'UA-27877508-5');
     </script>
-        <link rel="stylesheet" href="/templates/style.css">
+    <link rel="stylesheet" href="/templates/style.css">
 </head>
+
 <body class="me">
     <div class="wrap">
         <div class="fg">
             <header class="site-header" id="h">
                 <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
                 <p class="tagline">Curious novel<br>
-                <span class="amp">&amp;</span> solutions work.</p>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
                 <nav>
                     <ul>
                         <li class="me active">
@@ -71,14 +166,18 @@
                 <article class="bc clearfix">
                     <section class="about">
                         <p>Hello</p>
-                        <p>I have worked in small university shops, corporate banking cube farm, and lightweight agile profit shops.</p>
-                        <p>I appreciate foundational knowledge learned through trial, and experience, and avoiding the all too common overconfidence
-                        related mistakes by maintining an identity of a lifelong academic who always has something to learn.
-                        </p> 
+                        <p>I have worked in small university shops, corporate banking cube farm, and lightweight agile
+                            profit shops.</p>
+                        <p>I appreciate foundational knowledge learned through trial, and experience, and avoiding the
+                            all too common overconfidence
+                            related mistakes by maintining an practice of a lifelong academic who always has something
+                            to learn.
+                        </p>
+                        <p>Building things better is rewarding, evidence based performance enhancements are addictive.</p>
 
                         <p></p><span class="amp">&amp;</span> technical work, <a href="/contact/">let's talk.</a></p>
                         <aside class="tech st3 light">
-                            <h2>README</h2>
+                            <h2>TLDR;</h2>
                             <pre><code>
 <span class="comment">// sup</span>
 <span>const contacts = {</span>
@@ -110,9 +209,9 @@
     <!-- Debug script to check if files exist -->
     <script>
         // Check if assets are loading properly
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('Page loaded, checking assets...');
-            
+
             // Test asset availability
             fetch('/assets/files/')
                 .then(response => {
@@ -132,4 +231,5 @@
         });
     </script>
 </body>
+
 </html>
