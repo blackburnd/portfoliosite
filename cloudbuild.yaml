@@ -24,6 +24,10 @@ steps:
       cd /opt/cloud_machine_repo
     fi
     
+    # Clear Python cache files to prevent type definition conflicts
+    find . -name "*.pyc" -delete 2>/dev/null || true
+    find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
       python3 -m venv venv
@@ -33,6 +37,11 @@ steps:
     
     # Make scripts executable
     chmod +x setup_ssl.sh
+
+    # Validate GraphQL schema before deployment to catch type conflicts early
+    echo "=== Validating GraphQL schema ==="
+    source venv/bin/activate
+    python3 validate_schema.py || exit 1
 
     # Clean up any previous Nginx config
     sudo rm -f /etc/nginx/sites-enabled/blackburnsystems.com
