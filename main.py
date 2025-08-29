@@ -92,7 +92,7 @@ class BrowsableStaticFiles(StaticFiles):
         return Response(content=html, media_type="text/html")
 
 # Mount static files with directory browsing enabled
-app.mount("/assets", BrowsableStaticFiles(directory="app/assets"), name="assets")
+app.mount("/assets", BrowsableStaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 
 # Database initialization
