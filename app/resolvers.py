@@ -59,15 +59,6 @@ class Book:
     title: str
     author: str
 
-# WorkExperience type
-@strawberry.type
-class WorkExperience:
-    company: str
-    position: str
-    startDate: str
-    endDate: str
-    description: str
-
 @strawberry.type
 class Query:
     @strawberry.field
@@ -132,18 +123,24 @@ class Query:
 
     @strawberry.field
     async def workExperience(self) -> List[WorkExperience]:
+        import os
+        import databases
         DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
         db = databases.Database(DATABASE_URL)
         await db.connect()
-        rows = await db.fetch_all("SELECT company, position, start_date, end_date, description FROM work_experience ORDER BY sort_order, start_date DESC")
+        rows = await db.fetch_all("SELECT id, company, position, location, start_date, end_date, description, is_current, company_url FROM work_experience ORDER BY sort_order, start_date DESC")
         await db.disconnect()
         return [
             WorkExperience(
-                company=row[0] if isinstance(row, tuple) else row["company"],
-                position=row[1] if isinstance(row, tuple) else row["position"],
-                startDate=row[2] if isinstance(row, tuple) else row["start_date"],
-                endDate=row[3] if isinstance(row, tuple) else row["end_date"],
-                description=row[4] if isinstance(row, tuple) else row["description"]
+                id=str(row["id"]),
+                company=row["company"],
+                position=row["position"],
+                location=row["location"],
+                start_date=str(row["start_date"]) if row["start_date"] else "",
+                end_date=str(row["end_date"]) if row["end_date"] else None,
+                description=row["description"],
+                is_current=row["is_current"],
+                company_url=row["company_url"]
             ) for row in rows
         ]
 
