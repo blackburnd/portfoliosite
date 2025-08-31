@@ -203,9 +203,44 @@ async def work_admin_page(request: Request):
 # List all work items
 @app.get("/workitems", response_model=List[WorkItem])
 async def list_workitems():
-    query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
-    rows = await database.fetch_all(query)
-    return [WorkItem(**dict(row)) for row in rows]
+    try:
+        # First check if table exists
+        check_table = "SELECT to_regclass('work_experience')"
+        table_exists = await database.fetch_val(check_table)
+        
+        if not table_exists:
+            # Return empty list if table doesn't exist
+            return []
+            
+        query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
+        rows = await database.fetch_all(query)
+        
+        # Convert rows to WorkItem objects, handling any missing fields
+        work_items = []
+        for row in rows:
+            row_dict = dict(row)
+            # Ensure all required fields have default values
+            work_item_data = {
+                "id": str(row_dict.get("id", "")),
+                "portfolio_id": row_dict.get("portfolio_id", "daniel-blackburn"),
+                "company": row_dict.get("company", ""),
+                "position": row_dict.get("position", ""),
+                "location": row_dict.get("location"),
+                "start_date": row_dict.get("start_date", ""),
+                "end_date": row_dict.get("end_date"),
+                "description": row_dict.get("description"),
+                "is_current": row_dict.get("is_current", False),
+                "company_url": row_dict.get("company_url"),
+                "sort_order": row_dict.get("sort_order", 0)
+            }
+            work_items.append(WorkItem(**work_item_data))
+        
+        return work_items
+        
+    except Exception as e:
+        # Log the error and return empty list for now
+        print(f"Error in list_workitems: {e}")
+        return []
 
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
@@ -250,6 +285,54 @@ async def health_check():
         return {"status": "healthy", "database": "connected", "result": result}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
+# Debug endpoint to check work_experience table
+@app.get("/debug/tables")
+async def debug_tables():
+    try:
+        # Check if work_experience table exists
+        tables_query = """
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        ORDER BY table_name
+        """
+        tables = await database.fetch_all(tables_query)
+        
+        work_experience_exists = any(row['table_name'] == 'work_experience' for row in tables)
+        
+        result = {
+            "all_tables": [row['table_name'] for row in tables],
+            "work_experience_exists": work_experience_exists
+        }
+        
+        if work_experience_exists:
+            # Get column info for work_experience
+            columns_query = """
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' 
+            AND table_name = 'work_experience'
+            ORDER BY ordinal_position
+            """
+            columns = await database.fetch_all(columns_query)
+            result["work_experience_columns"] = [
+                {
+                    "name": row['column_name'], 
+                    "type": row['data_type'],
+                    "nullable": row['is_nullable']
+                } 
+                for row in columns
+            ]
+            
+            # Get count
+            count_result = await database.fetch_one("SELECT COUNT(*) as count FROM work_experience")
+            result["work_experience_count"] = count_result['count'] if count_result else 0
+        
+        return result
+        
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/schema")
 async def get_database_schema():
