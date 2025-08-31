@@ -1,4 +1,5 @@
 # main.py - Lightweight FastAPI application with GraphQL
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,11 +13,22 @@ from pathlib import Path
 from app.resolvers import schema
 from database import init_database, close_database, database
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_database()
+    yield
+    # Shutdown
+    await close_database()
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Portfolio API",
     description="Lightweight GraphQL API for Daniel's Portfolio Website",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -93,16 +105,8 @@ class BrowsableStaticFiles(StaticFiles):
 
 # Mount static files with directory browsing enabled
 app.mount("/assets", BrowsableStaticFiles(directory="assets"), name="assets")
+app.mount("/templates", StaticFiles(directory="templates"), name="templates")
 templates = Jinja2Templates(directory="templates")
-
-# Database initialization
-@app.on_event("startup")
-async def startup_event():
-    await init_database()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await close_database()
 
 # Routes for serving the portfolio website
 @app.get("/", response_class=HTMLResponse)
@@ -145,15 +149,6 @@ async def work(request: Request):
     return templates.TemplateResponse("work.html", {
         "request": request,
         "title": "Work - daniel blackburn"
-    })
-
-@app.get("/work/{project_slug}/", response_class=HTMLResponse)
-async def project_detail(request: Request, project_slug: str):
-    """Serve individual project pages"""
-    return templates.TemplateResponse("project.html", {
-        "request": request,
-        "project_slug": project_slug,
-        "title": f"Project - daniel blackburn"
     })
 
 @app.get("/resume/")
