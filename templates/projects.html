@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html
+    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+
+    <!-- Add basic CSS since style.css is missing -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .projects-content {
+            margin-top: 20px;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .project-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .project-card h3 a {
+            text-decoration: none;
+            color: #0066cc;
+        }
+
+        .project-card h3 a:hover {
+            text-decoration: underline;
+        }
+
+        .project-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .project-technologies {
+            margin-bottom: 15px;
+        }
+
+        .tech-tag {
+            display: inline-block;
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin: 2px;
+        }
+
+        .project-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .project-links a {
+            color: #0066cc;
+            text-decoration: none;
+            padding: 5px 10px;
+            border: 1px solid #0066cc;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .project-links a:hover {
+            background: #0066cc;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .no-projects {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .projects-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-27877508-5');
+    </script>
+    <link rel="stylesheet" href="/templates/style.css">
+</head>
+
+<body class="projects">
+    <div class="wrap">
+        <div class="fg">
+            {% include 'navigation.html' %}
+            <div id="bw" aria-live="polite">
+                <article class="bc clearfix">
+                    <section class="projects-content">
+                        <h2>Featured Projects</h2>
+                        <p>Here's a collection of my notable projects and technical work. These represent a range of technologies and problem-solving approaches.</p>
+
+                        <div id="projects-container">
+                            <div class="loading">Loading projects...</div>
+                        </div>
+                    </section>
+                </article>
+            </div><!-- barba wrapper -->
+            <footer class="footer" role="contentinfo">
+                <p>&copy; 2024 Daniel Blackburn. All rights reserved.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjects();
+        });
+
+        function loadProjects() {
+            document.getElementById('projects-container').innerHTML = '<div class="loading">Loading projects...</div>';
+            
+            fetch('/projects')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Loaded projects:", data);
+                    displayProjects(data);
+                })
+                .catch(error => {
+                    console.error("Error loading projects:", error);
+                    document.getElementById('projects-container').innerHTML = 
+                        '<div class="error">Error loading projects: ' + error.message + '</div>';
+                });
+        }
+
+        function displayProjects(projects) {
+            const container = document.getElementById('projects-container');
+            
+            if (!projects || projects.length === 0) {
+                container.innerHTML = '<div class="no-projects">No projects found.</div>';
+                return;
+            }
+
+            let html = '<div class="projects-grid">';
+            
+            projects.forEach(project => {
+                html += `
+                    <div class="project-card">
+                        <h3>
+                            ${project.url ? 
+                                `<a href="${project.url}" target="_blank">${project.title}</a>` : 
+                                project.title
+                            }
+                        </h3>
+                        <div class="project-description">
+                            ${project.description || ''}
+                        </div>
+                        ${project.technologies && project.technologies.length > 0 ? `
+                        <div class="project-technologies">
+                            ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                        <div class="project-links">
+                            ${project.url ? `<a href="${project.url}" target="_blank">View Project</a>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

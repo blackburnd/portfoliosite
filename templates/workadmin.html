@@ -6,8 +6,10 @@
     <!-- Use relative path for CSS or inline styles instead -->
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #333; margin-bottom: 30px; }
-        #grid { width: 100%; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .content-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
+        #grid { width: 100%; margin-bottom: 20px; }
         #grid table { width: 100%; border-collapse: collapse; }
         #grid th, #grid td { padding: 12px; border: 1px solid #ddd; text-align: left; }
         #grid th { background-color: #f8f9fa; font-weight: bold; }
@@ -32,11 +34,17 @@
     <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.16.3/dojo/dojo.js"></script>
 </head>
 <body>
-    <h1>Work Items Admin</h1>
-    <div id="grid">Loading work items...</div>
-    <div class="crud-buttons">
-        <button id="addBtn">Add Work Item</button>
-        <button id="deleteBtn">Delete Selected</button>
+    <div class="container">
+        {% include 'navigation.html' %}
+        
+        <div class="content-section">
+            <h1>Work Items Admin</h1>
+            <div id="grid">Loading work items...</div>
+            <div class="crud-buttons">
+                <button id="addBtn">Add Work Item</button>
+                <button id="deleteBtn">Delete Selected</button>
+            </div>
+        </div>
     </div>
     <script>
         // Use standard JavaScript instead of Dojo for better compatibility

@@ -1,0 +1,169 @@
+<!-- Shared Navigation Component -->
+<style>
+    /* Navigation Styles */
+    .site-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .brand a {
+        text-decoration: none;
+        color: #333;
+        font-size: 2em;
+        font-weight: bold;
+    }
+
+    .tagline {
+        color: #666;
+        margin: 10px 0;
+    }
+
+    nav ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 20px 0 0 0;
+    }
+
+    nav li {
+        position: relative;
+    }
+
+    nav a {
+        text-decoration: none;
+        color: #0066cc;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+        background-color: #f0f8ff;
+        text-decoration: none;
+    }
+
+    /* Active page indicator */
+    nav li.active a {
+        background-color: #0066cc;
+        color: white;
+        font-weight: bold;
+    }
+
+    nav li.active a::after {
+        content: "●";
+        margin-left: 6px;
+        font-size: 0.8em;
+    }
+
+    /* Icon styling for social links */
+    .linkedin a::before {
+        content: "🔗";
+        margin-right: 4px;
+    }
+
+    .github a::before {
+        content: "🐙";
+        margin-right: 4px;
+    }
+
+    .pypi a::before {
+        content: "📦";
+        margin-right: 4px;
+    }
+
+    /* Admin section styling */
+    .admin-section {
+        border-left: 3px solid #dc3545;
+        padding-left: 15px;
+        margin-left: 10px;
+    }
+
+    .admin-section a {
+        color: #dc3545;
+        font-size: 0.9em;
+    }
+
+    .admin-section a:hover {
+        background-color: #fff5f5;
+    }
+
+    .admin-section li.active a {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        nav ul {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .admin-section {
+            border-left: none;
+            border-top: 2px solid #dc3545;
+            padding-left: 0;
+            padding-top: 10px;
+            margin-left: 0;
+            margin-top: 10px;
+        }
+    }
+</style>
+
+<header class="site-header" id="h">
+    <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+    <p class="tagline">Curious novel<br>
+        <span class="amp">&amp;</span> solutions work.
+    </p>
+    <nav>
+        <ul>
+            <li class="me {{ 'active' if current_page == 'home' else '' }}">
+                <a href="/"><span>Daniel</span> Blackburn</a>
+            </li>
+            <li class="projects {{ 'active' if current_page == 'work' else '' }}">
+                <a href="/work/"><span>selected</span> work</a>
+            </li>
+            <li class="projects {{ 'active' if current_page == 'projects' else '' }}">
+                <a href="/projects/"><span>featured</span> projects</a>
+            </li>
+            <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
+                <a href="/contact/"><span>we should</span> talk</a>
+            </li>
+            <li class="resume">
+                <a href="/resume" target="_blank">resume</a>
+            </li>
+            <li class="linkedin">
+                <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+            </li>
+            <li class="github">
+                <a href="https://github.com/blackburnd" target="_blank">github</a>
+            </li>
+            <li class="pypi">
+                <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+            </li>
+        </ul>
+        
+        <!-- Admin Section -->
+        <div class="admin-section">
+            <ul>
+                <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
+                    <a href="/workadmin">Work Admin</a>
+                </li>
+                <li class="workadmin-bulk {{ 'active' if current_page == 'workadmin_bulk' else '' }}">
+                    <a href="/workadmin/bulk">Work Admin (Bulk)</a>
+                </li>
+                <li class="projectsadmin {{ 'active' if current_page == 'projectsadmin' else '' }}">
+                    <a href="/projectsadmin">Projects Admin</a>
+                </li>
+                <li class="projectsadmin-bulk {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">
+                    <a href="/projectsadmin/bulk">Projects Admin (Bulk)</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
