@@ -1,16 +1,32 @@
 # main.py - Lightweight FastAPI application with GraphQL
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
+from pydantic import BaseModel
+from typing import Optional, List
 import uvicorn
 import os
 from pathlib import Path
 
 from app.resolvers import schema
 from database import init_database, close_database, database
+
+# Pydantic model for work item
+class WorkItem(BaseModel):
+    id: Optional[str]
+    portfolio_id: str
+    company: str
+    position: str
+    location: Optional[str]
+    start_date: str
+    end_date: Optional[str]
+    description: Optional[str]
+    is_current: Optional[bool] = False
+    company_url: Optional[str]
+    sort_order: Optional[int] = 0
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -176,6 +192,54 @@ async def resume_download():
         filename="danielblackburn.pdf",
         headers={"Content-Disposition": "attachment; filename=danielblackburn.pdf"}
     )
+
+# --- Work Admin Page ---
+@app.get("/workadmin", response_class=HTMLResponse)
+async def work_admin_page(request: Request):
+    return templates.TemplateResponse("workadmin.html", {"request": request})
+
+# --- CRUD Endpoints for Work Items ---
+
+# List all work items
+@app.get("/workitems", response_model=List[WorkItem])
+async def list_workitems():
+    query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
+    rows = await database.fetch_all(query)
+    return [WorkItem(**dict(row)) for row in rows]
+
+# Create a new work item
+@app.post("/workitems", response_model=WorkItem)
+async def create_workitem(item: WorkItem):
+    query = """
+        INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
+        VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
+        RETURNING *
+    """
+    row = await database.fetch_one(query, item.dict(exclude_unset=True))
+    return WorkItem(**dict(row))
+
+# Update a work item
+@app.put("/workitems/{id}", response_model=WorkItem)
+async def update_workitem(id: str, item: WorkItem):
+    query = """
+        UPDATE work_experience SET
+            company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
+            description=:description, is_current=:is_current, company_url=:company_url, sort_order=:sort_order, updated_at=NOW()
+        WHERE id=:id RETURNING *
+    """
+    values = item.dict(exclude_unset=True)
+    values["id"] = id
+    row = await database.fetch_one(query, values)
+    if not row:
+        raise HTTPException(status_code=404, detail="Work item not found")
+    return WorkItem(**dict(row))
+
+# Delete a work item
+@app.delete("/workitems/{id}")
+async def delete_workitem(id: str):
+    query = "DELETE FROM work_experience WHERE id=:id"
+    result = await database.execute(query, {"id": id})
+    return {"success": True}
 
 # API health check
 @app.get("/health")
