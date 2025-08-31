@@ -74,3 +74,17 @@ async def schema_page():
         }
     await db.disconnect()
     return result
+
+# --- Resume Download Route ---
+from fastapi.responses import FileResponse
+
+@app.get("/resume/download", response_class=FileResponse)
+async def download_resume():
+    resume_path = "assets/files/danielblackburn.pdf"
+    return FileResponse(resume_path, media_type="application/pdf", filename="danielblackburn_resume.pdf")
+
+# --- Resume View Route ---
+@app.get("/resume", response_class=FileResponse)
+async def view_resume():
+    resume_path = "assets/files/danielblackburn.pdf"
+    return FileResponse(resume_path, media_type="application/pdf")
