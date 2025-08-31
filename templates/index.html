@@ -126,6 +126,128 @@
             color: #666;
         }
 
+        /* Work Experience and Projects Sections */
+        .content-section {
+            margin: 50px 0;
+        }
+
+        .content-section h2 {
+            color: #333;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .work-item, .project-item {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .work-item h3, .project-item h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .work-meta, .project-meta {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .current-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid #0066cc;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .project-card h3 a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .project-card h3 a:hover {
+            color: #0066cc;
+        }
+
+        .project-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .project-technologies {
+            margin: 15px 0;
+        }
+
+        .tech-tag {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+            display: inline-block;
+        }
+
+        .project-links a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .project-links a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
         .clearfix::after {
             content: "";
             display: table;
@@ -219,6 +341,22 @@
                         <img alt="Daniel Blackburn" src="/assets/files/daniel2.jpg" onerror="this.style.display='none'">
                     </figure>
                 </article><!-- barba container -->
+
+                <!-- Work Experience Section -->
+                <section class="content-section">
+                    <h2>Work Experience</h2>
+                    <div id="work-container">
+                        <div class="loading">Loading work experience...</div>
+                    </div>
+                </section>
+
+                <!-- Featured Projects Section -->
+                <section class="content-section">
+                    <h2>Featured Projects</h2>
+                    <div id="projects-container">
+                        <div class="loading">Loading projects...</div>
+                    </div>
+                </section>
             </div><!-- barba wrapper -->
             <footer class="footer" role="contentinfo">
                 <p class="copyright">© 2025 Blackburn.</p>
@@ -226,29 +364,150 @@
         </div><!-- #fg -->
     </div><!-- .wrap -->
 
-    <!-- Debug script to check if files exist -->
+    <!-- Load work experience and projects -->
     <script>
-        // Check if assets are loading properly
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('Page loaded, checking assets...');
-
-            // Test asset availability
-            fetch('/assets/files/')
-                .then(response => {
-                    if (response.ok) {
-                        console.log('✓ Assets directory accessible');
-                        return response.text();
-                    } else {
-                        console.error('✗ Assets directory not accessible:', response.status);
-                    }
-                })
-                .then(html => {
-                    if (html) {
-                        console.log('Available files:', html.match(/href="[^"]+"/g) || []);
-                    }
-                })
-                .catch(error => console.error('Asset check failed:', error));
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWorkExperience();
+            loadProjects();
         });
+
+        // Load work experience via GraphQL
+        function loadWorkExperience() {
+            const query = `
+                query GetWorkExperience {
+                    portfolio {
+                        workExperience {
+                            id
+                            company
+                            position
+                            location
+                            startDate
+                            endDate
+                            description
+                            isCurrent
+                            companyUrl
+                        }
+                    }
+                }
+            `;
+
+            fetch('/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query })
+            })
+            .then(response => response.json())
+            .then(result => {
+                const container = document.getElementById('work-container');
+                
+                if (result.errors) {
+                    throw new Error(result.errors[0].message);
+                }
+
+                const workExperience = result.data.portfolio?.workExperience || [];
+                
+                if (workExperience.length === 0) {
+                    container.innerHTML = '<div class="error">No work experience found.</div>';
+                    return;
+                }
+
+                let html = '';
+                workExperience.forEach(work => {
+                    const currentBadge = work.isCurrent ? '<span class="current-badge">Current</span>' : '';
+                    const dateRange = work.endDate ? `${work.startDate} - ${work.endDate}` : `${work.startDate} - Present`;
+                    const companyLink = work.companyUrl ? `<a href="${work.companyUrl}" target="_blank">${work.company}</a>` : work.company;
+                    
+                    html += `
+                        <div class="work-item">
+                            <h3>${work.position}${currentBadge}</h3>
+                            <div class="work-meta">
+                                ${companyLink} • ${work.location || 'Remote'} • ${dateRange}
+                            </div>
+                            <p>${work.description || ''}</p>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading work experience:', error);
+                document.getElementById('work-container').innerHTML = 
+                    '<div class="error">Error loading work experience: ' + error.message + '</div>';
+            });
+        }
+
+        // Load projects via REST API
+        function loadProjects() {
+            fetch('/projects')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(projects => {
+                    const container = document.getElementById('projects-container');
+                    
+                    if (!projects || projects.length === 0) {
+                        container.innerHTML = '<div class="error">No projects found.</div>';
+                        return;
+                    }
+
+                    let html = '<div class="projects-grid">';
+                    
+                    projects.forEach(project => {
+                        html += `
+                            <div class="project-card">
+                                <h3>
+                                    ${project.url ? 
+                                        `<a href="${project.url}" target="_blank">${project.title}</a>` : 
+                                        project.title
+                                    }
+                                </h3>
+                                <div class="project-description">
+                                    ${project.description || ''}
+                                </div>
+                                ${project.technologies && project.technologies.length > 0 ? `
+                                <div class="project-technologies">
+                                    ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                                </div>
+                                ` : ''}
+                                <div class="project-links">
+                                    ${project.url ? `<a href="${project.url}" target="_blank">View Project</a>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading projects:', error);
+                    document.getElementById('projects-container').innerHTML = 
+                        '<div class="error">Error loading projects: ' + error.message + '</div>';
+                });
+        }
+
+        // Check if assets are loading properly  
+        fetch('/assets/files/')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✓ Assets directory accessible');
+                    return response.text();
+                } else {
+                    console.error('✗ Assets directory not accessible:', response.status);
+                }
+            })
+            .then(html => {
+                if (html) {
+                    console.log('Available files:', html.match(/href="[^"]+"/g) || []);
+                }
+            })
+            .catch(error => console.error('Asset check failed:', error));
     </script>
 </body>
 
