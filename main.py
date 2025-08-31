@@ -164,6 +164,19 @@ async def resume():
         status_code=302
     )
 
+# Direct download route for resume
+from fastapi.responses import FileResponse
+
+@app.get("/resume/download/")
+async def resume_download():
+    """Serve resume PDF as attachment for download."""
+    return FileResponse(
+        path="assets/files/danielblackburn.pdf",
+        media_type="application/pdf",
+        filename="danielblackburn.pdf",
+        headers={"Content-Disposition": "attachment; filename=danielblackburn.pdf"}
+    )
+
 # API health check
 @app.get("/health")
 async def health_check():

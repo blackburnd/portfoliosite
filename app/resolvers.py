@@ -33,7 +33,6 @@ class Contact:
 @strawberry.type
 class SocialLinks:
     resume: Optional[str]
-    resume_download: Optional[str]
     github: Optional[str]
     twitter: Optional[str]
 
