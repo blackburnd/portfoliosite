@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Work Items Admin</title>
+    <link rel="stylesheet" href="/templates/style.css">
+    <!-- Dojo CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.16.3/dojo/dojo.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #grid { width: 100%; margin-bottom: 20px; }
+        #grid table { width: 100%; border-collapse: collapse; }
+        #grid th, #grid td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        #grid th { background-color: #f2f2f2; }
+        .crud-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .crud-buttons button { padding: 10px 20px; font-size: 14px; cursor: pointer; }
+        #addBtn { background-color: #4CAF50; color: white; border: none; }
+        #deleteBtn { background-color: #f44336; color: white; border: none; }
+        .loading { color: #666; font-style: italic; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Work Items Admin</h1>
+    <div id="grid">Loading work items...</div>
+    <div class="crud-buttons">
+        <button id="addBtn">Add Work Item</button>
+        <button id="deleteBtn">Delete Selected</button>
+    </div>
+    <script>
+        require(["dojo/request", "dojo/dom", "dojo/on", "dojo/dom-construct"], function(request, dom, on, domConstruct) {
+            function loadGrid() {
+                dom.byId('grid').innerHTML = '<div class="loading">Loading work items...</div>';
+                request.get("/workitems", {
+                    handleAs: "json"
+                }).then(function(data) {
+                    console.log("Loaded work items:", data);
+                    var gridHtml = '<table><tr>' +
+                        '<th>Select</th><th>Company</th><th>Position</th><th>Location</th><th>Start Date</th><th>End Date</th><th>Description</th></tr>';
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(function(item) {
+                            gridHtml += '<tr data-id="' + item.id + '">' +
+                                '<td><input type="checkbox" class="select-row"></td>' +
+                                '<td>' + (item.company || '') + '</td>' +
+                                '<td>' + (item.position || '') + '</td>' +
+                                '<td>' + (item.location || '') + '</td>' +
+                                '<td>' + (item.start_date || '') + '</td>' +
+                                '<td>' + (item.end_date || 'Present') + '</td>' +
+                                '<td>' + (item.description || '') + '</td>' +
+                                '</tr>';
+                        });
+                    } else {
+                        gridHtml += '<tr><td colspan="7">No work items found</td></tr>';
+                    }
+                    gridHtml += '</table>';
+                    dom.byId('grid').innerHTML = gridHtml;
+                }, function(error) {
+                    console.error("Error loading work items:", error);
+                    dom.byId('grid').innerHTML = '<div class="error">Error loading work items: ' + error + '</div>';
+                });
+            }
+            
+            loadGrid();
+            
+            on(dom.byId('addBtn'), 'click', function() {
+                // Simple prompt-based add functionality
+                var company = prompt("Company:");
+                var position = prompt("Position:");
+                var location = prompt("Location:");
+                var startDate = prompt("Start Date (YYYY-MM-DD):");
+                var endDate = prompt("End Date (YYYY-MM-DD, or leave empty for current):");
+                var description = prompt("Description:");
+                
+                if (company && position && startDate) {
+                    var newItem = {
+                        portfolio_id: "daniel-blackburn", // Default portfolio ID
+                        company: company,
+                        position: position,
+                        location: location,
+                        start_date: startDate,
+                        end_date: endDate || null,
+                        description: description,
+                        is_current: !endDate,
+                        company_url: null,
+                        sort_order: 0
+                    };
+                    
+                    request.post("/workitems", {
+                        data: JSON.stringify(newItem),
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        handleAs: "json"
+                    }).then(function(response) {
+                        console.log("Added work item:", response);
+                        loadGrid(); // Refresh the grid
+                    }, function(error) {
+                        console.error("Error adding work item:", error);
+                        alert("Error adding work item: " + error);
+                    });
+                }
+            });
+            
+            on(dom.byId('deleteBtn'), 'click', function() {
+                var selected = document.querySelectorAll('.select-row:checked');
+                if (selected.length === 0) {
+                    alert("Please select items to delete.");
+                    return;
+                }
+                
+                if (confirm("Are you sure you want to delete " + selected.length + " item(s)?")) {
+                    var deletePromises = [];
+                    selected.forEach(function(checkbox) {
+                        var row = checkbox.closest('tr');
+                        var id = row.getAttribute('data-id');
+                        deletePromises.push(
+                            request.del('/workitems/' + id).then(function() {
+                                console.log("Deleted work item:", id);
+                            }, function(error) {
+                                console.error("Error deleting work item:", id, error);
+                            })
+                        );
+                    });
+                    
+                    Promise.all(deletePromises).then(function() {
+                        loadGrid(); // Refresh the grid
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

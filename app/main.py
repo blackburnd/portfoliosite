@@ -1,15 +1,46 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 from strawberry.fastapi import GraphQLRouter
+from pydantic import BaseModel
+from typing import Optional, List
 import app.resolvers as resolvers
 import databases
 import os
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+# Database URL
+DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+db = databases.Database(DATABASE_URL)
+
+# Pydantic model for work item
+class WorkItem(BaseModel):
+    id: Optional[str]
+    portfolio_id: str
+    company: str
+    position: str
+    location: Optional[str]
+    start_date: str
+    end_date: Optional[str]
+    description: Optional[str]
+    is_current: Optional[bool] = False
+    company_url: Optional[str]
+    sort_order: Optional[int] = 0
 
 # GraphQL endpoint
 graphql_app = GraphQLRouter(resolvers.schema)
 app.include_router(graphql_app, prefix="/graphql")
+
+# Database connection events
+@app.on_event("startup")
+async def startup():
+    await db.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await db.disconnect()
 
 @app.get("/profile")
 def get_profile():
@@ -76,8 +107,6 @@ async def schema_page():
     return result
 
 # --- Resume Download Route ---
-from fastapi.responses import FileResponse
-
 @app.get("/resume/download", response_class=FileResponse)
 async def download_resume():
     resume_path = "assets/files/danielblackburn.pdf"
@@ -88,3 +117,51 @@ async def download_resume():
 async def view_resume():
     resume_path = "assets/files/danielblackburn.pdf"
     return FileResponse(resume_path, media_type="application/pdf")
+
+# --- Work Admin Page ---
+@app.get("/workadmin", response_class=HTMLResponse)
+async def work_admin_page(request: Request):
+    return templates.TemplateResponse("workadmin.html", {"request": request})
+
+# --- CRUD Endpoints for Work Items ---
+
+# List all work items
+@app.get("/workitems", response_model=List[WorkItem])
+async def list_workitems():
+    query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
+    rows = await db.fetch_all(query)
+    return [WorkItem(**dict(row)) for row in rows]
+
+# Create a new work item
+@app.post("/workitems", response_model=WorkItem)
+async def create_workitem(item: WorkItem):
+    query = """
+        INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
+        VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
+        RETURNING *
+    """
+    row = await db.fetch_one(query, item.dict(exclude_unset=True))
+    return WorkItem(**dict(row))
+
+# Update a work item
+@app.put("/workitems/{id}", response_model=WorkItem)
+async def update_workitem(id: str, item: WorkItem):
+    query = """
+        UPDATE work_experience SET
+            company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
+            description=:description, is_current=:is_current, company_url=:company_url, sort_order=:sort_order, updated_at=NOW()
+        WHERE id=:id RETURNING *
+    """
+    values = item.dict(exclude_unset=True)
+    values["id"] = id
+    row = await db.fetch_one(query, values)
+    if not row:
+        raise HTTPException(status_code=404, detail="Work item not found")
+    return WorkItem(**dict(row))
+
+# Delete a work item
+@app.delete("/workitems/{id}")
+async def delete_workitem(id: str):
+    query = "DELETE FROM work_experience WHERE id=:id"
+    result = await db.execute(query, {"id": id})
+    return {"success": True}
