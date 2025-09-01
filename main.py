@@ -22,6 +22,7 @@ import sqlite3
 import asyncio
 import secrets
 import hashlib
+from log_capture import log_capture
 
 # Configure logging
 logging.basicConfig(
@@ -567,6 +568,35 @@ async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_a
         "current_page": "workadmin_bulk",
         "user": admin
     })
+
+
+# --- Logs Admin Page ---
+@app.get("/admin/logs", response_class=HTMLResponse)
+async def logs_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+    """Admin page for viewing application logs"""
+    return templates.TemplateResponse("logs.html", {
+        "request": request,
+        "current_page": "logs",
+        "user": admin
+    })
+
+
+@app.get("/admin/logs/data")
+async def get_logs_data(admin: dict = Depends(require_admin_auth_cookie)):
+    """API endpoint to get log data as JSON"""
+    logs = log_capture.get_logs()
+    stats = log_capture.get_stats()
+    return JSONResponse({
+        "logs": logs,
+        "stats": stats
+    })
+
+
+@app.post("/admin/logs/clear")
+async def clear_logs_data(admin: dict = Depends(require_admin_auth_cookie)):
+    """API endpoint to clear all logs"""
+    log_capture.clear_logs()
+    return JSONResponse({"status": "success", "message": "Logs cleared"})
 
 
 # --- Projects Admin Page ---

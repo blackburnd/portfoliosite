@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Logs - Admin</title>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/dojo/1.17.3/dijit/themes/claro/claro.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .controls button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background: #2980b9;
+        }
+        .controls input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .log-grid {
+            height: 600px;
+            width: 100%;
+            border: none;
+        }
+        .log-level-INFO { background-color: #e8f5e8; }
+        .log-level-ERROR { background-color: #ffe8e8; }
+        .log-level-WARNING { background-color: #fff3cd; }
+        .log-level-DEBUG { background-color: #e3f2fd; }
+        .log-level-CRITICAL { background-color: #ffebee; }
+        
+        .log-message {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .stats {
+            padding: 15px 20px;
+            background: #ecf0f1;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .filter-bar {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-weight: bold;
+            font-size: 12px;
+            color: #555;
+        }
+        
+        .filter-group select, .filter-group input {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.17.3/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true"></script>
+</head>
+<body class="claro">
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Application Logs</h1>
+            <div class="controls">
+                <input type="text" id="searchBox" placeholder="Search logs..." />
+                <button onclick="refreshLogs()">🔄 Refresh</button>
+                <button onclick="clearLogs()">🗑️ Clear</button>
+                <a href="/admin/work/" style="color: white; text-decoration: none;">← Back to Admin</a>
+            </div>
+        </div>
+        
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Level:</label>
+                <select id="levelFilter">
+                    <option value="">All Levels</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Source:</label>
+                <select id="sourceFilter">
+                    <option value="">All Sources</option>
+                    <option value="auth">auth.py</option>
+                    <option value="main">main.py</option>
+                    <option value="uvicorn">uvicorn</option>
+                    <option value="oauth">OAuth</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Time Range:</label>
+                <select id="timeFilter">
+                    <option value="60">Last Hour</option>
+                    <option value="300">Last 5 Minutes</option>
+                    <option value="1440">Last 24 Hours</option>
+                    <option value="">All Time</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Auto Refresh:</label>
+                <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()" />
+                <span id="autoRefreshStatus">Off</span>
+            </div>
+        </div>
+        
+        <div id="logGrid" class="log-grid"></div>
+        
+        <div class="stats">
+            <div>
+                <span id="totalLogs">Total: 0</span> | 
+                <span id="filteredLogs">Showing: 0</span> | 
+                <span id="lastUpdate">Last Update: Never</span>
+            </div>
+            <div>
+                <span id="errorCount">Errors: 0</span> | 
+                <span id="warningCount">Warnings: 0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        require([
+            "dojo/ready",
+            "dgrid/Grid",
+            "dgrid/Keyboard",
+            "dgrid/Selection",
+            "dgrid/extensions/Pagination",
+            "dojo/store/Memory",
+            "dojo/store/Observable",
+            "dojo/dom",
+            "dojo/dom-construct",
+            "dojo/on",
+            "dojo/query"
+        ], function(ready, Grid, Keyboard, Selection, Pagination, Memory, Observable, dom, domConstruct, on, query) {
+            
+            let grid;
+            let store;
+            let autoRefreshInterval;
+            let allLogs = [];
+            
+            ready(function() {
+                initializeGrid();
+                loadLogs();
+                setupEventListeners();
+            });
+            
+            function initializeGrid() {
+                // Create store
+                store = new Observable(new Memory({
+                    data: [],
+                    idProperty: "id"
+                }));
+                
+                // Create grid with columns
+                const GridClass = Grid.extend([Keyboard, Selection, Pagination]);
+                grid = new GridClass({
+                    store: store,
+                    columns: {
+                        timestamp: {
+                            label: "Time",
+                            width: "150px",
+                            formatter: function(value) {
+                                return new Date(value).toLocaleString();
+                            }
+                        },
+                        level: {
+                            label: "Level",
+                            width: "80px",
+                            formatter: function(value, row) {
+                                return '<span class="log-level-' + value + '">' + value + '</span>';
+                            }
+                        },
+                        source: {
+                            label: "Source",
+                            width: "100px"
+                        },
+                        message: {
+                            label: "Message",
+                            width: "auto",
+                            formatter: function(value) {
+                                return '<div class="log-message">' + escapeHtml(value) + '</div>';
+                            }
+                        }
+                    },
+                    rowsPerPage: 50,
+                    pagingLinks: true,
+                    pagingTextBox: true,
+                    firstLastArrows: true
+                }, "logGrid");
+                
+                grid.startup();
+            }
+            
+            async function loadLogs() {
+                try {
+                    const response = await fetch('/admin/logs/data');
+                    const data = await response.json();
+                    
+                    allLogs = data.logs || [];
+                    updateStats(data.stats || {});
+                    applyFilters();
+                    
+                    dom.byId('lastUpdate').textContent = 'Last Update: ' + new Date().toLocaleString();
+                } catch (error) {
+                    console.error('Failed to load logs:', error);
+                }
+            }
+            
+            function applyFilters() {
+                const searchTerm = dom.byId('searchBox').value.toLowerCase();
+                const levelFilter = dom.byId('levelFilter').value;
+                const sourceFilter = dom.byId('sourceFilter').value;
+                const timeFilter = dom.byId('timeFilter').value;
+                
+                let filteredLogs = allLogs.filter(log => {
+                    // Search filter
+                    if (searchTerm && !log.message.toLowerCase().includes(searchTerm)) {
+                        return false;
+                    }
+                    
+                    // Level filter
+                    if (levelFilter && log.level !== levelFilter) {
+                        return false;
+                    }
+                    
+                    // Source filter
+                    if (sourceFilter && !log.source.includes(sourceFilter)) {
+                        return false;
+                    }
+                    
+                    // Time filter
+                    if (timeFilter) {
+                        const cutoff = new Date(Date.now() - timeFilter * 60 * 1000);
+                        if (new Date(log.timestamp) < cutoff) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                });
+                
+                // Sort by timestamp (newest first)
+                filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Update store
+                store.setData(filteredLogs.map((log, index) => ({
+                    id: index,
+                    ...log
+                })));
+                
+                dom.byId('filteredLogs').textContent = 'Showing: ' + filteredLogs.length;
+            }
+            
+            function updateStats(stats) {
+                dom.byId('totalLogs').textContent = 'Total: ' + (stats.total || 0);
+                dom.byId('errorCount').textContent = 'Errors: ' + (stats.errors || 0);
+                dom.byId('warningCount').textContent = 'Warnings: ' + (stats.warnings || 0);
+            }
+            
+            function setupEventListeners() {
+                // Search box
+                on(dom.byId('searchBox'), 'keyup', function() {
+                    applyFilters();
+                });
+                
+                // Filter dropdowns
+                on(dom.byId('levelFilter'), 'change', applyFilters);
+                on(dom.byId('sourceFilter'), 'change', applyFilters);
+                on(dom.byId('timeFilter'), 'change', applyFilters);
+            }
+            
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Global functions
+            window.refreshLogs = loadLogs;
+            
+            window.clearLogs = async function() {
+                if (confirm('Are you sure you want to clear all logs?')) {
+                    try {
+                        await fetch('/admin/logs/clear', { method: 'POST' });
+                        loadLogs();
+                    } catch (error) {
+                        alert('Failed to clear logs: ' + error.message);
+                    }
+                }
+            };
+            
+            window.toggleAutoRefresh = function() {
+                const checkbox = dom.byId('autoRefresh');
+                const status = dom.byId('autoRefreshStatus');
+                
+                if (checkbox.checked) {
+                    autoRefreshInterval = setInterval(loadLogs, 5000); // Refresh every 5 seconds
+                    status.textContent = 'On (5s)';
+                } else {
+                    clearInterval(autoRefreshInterval);
+                    status.textContent = 'Off';
+                }
+            };
+        });
+    </script>
+</body>
+</html>
