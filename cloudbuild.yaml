@@ -73,10 +73,10 @@ steps:
     Environment=DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
     Environment=ENV=production
     Environment=SECRET_KEY=${_SECRET_KEY}
-    Environment=ALLOWED_ORIGINS=https://blackburnsystems.com,http://localhost:3000
+    Environment=ALLOWED_ORIGINS=https://www.blackburnsystems.com,https://blackburnsystems.com,http://localhost:3000
     Environment=GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID}
     Environment=GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET}
-    Environment=GOOGLE_REDIRECT_URI=https://blackburnsystems.com/auth/callback
+    Environment=GOOGLE_REDIRECT_URI=https://www.blackburnsystems.com/auth/callback
     Environment=AUTHORIZED_EMAILS=${_AUTHORIZED_EMAILS}
     Environment=ADMIN_USERNAME=${_ADMIN_USERNAME}
     Environment=ADMIN_PASSWORD=${_ADMIN_PASSWORD}
