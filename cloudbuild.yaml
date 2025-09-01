@@ -128,8 +128,8 @@ steps:
 
 substitutions:
   _PG_USER: 'postgres'
-  _PG_PASS: '8JB6On1kTf6puF-'
-  _PG_HOST: '10.24.80.3'
+  _PG_PASS: 'your-db-password'
+  _PG_HOST: 'your-db-host'
   _PG_PORT: '5432'
   _PG_DB: 'daniel_portfolio'
   _SECRET_KEY: 'your-secret-key-here'

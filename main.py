@@ -1,4 +1,8 @@
 # main.py - Lightweight FastAPI application with GraphQL and Google OAuth
+import os
+import secrets
+import logging
+import time
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -11,11 +15,19 @@ from typing import Optional, List
 import uvicorn
 import json
 import os
+import logging
 from pathlib import Path
 import sqlite3
 import asyncio
 import secrets
 import hashlib
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Import our Google OAuth authentication module
 from auth import (
@@ -105,11 +117,29 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Log startup configuration
+logger.info("=== Application Startup ===")
+logger.info(f"FastAPI app initialized: {app.title}")
+
 # Security configuration
 security = HTTPBasic()
 
 # Admin credentials - In production, these should be in environment variables
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
+
+logger.info(f"Admin username: {ADMIN_USERNAME}")
+logger.info(f"Admin password: {'SET' if ADMIN_PASSWORD and ADMIN_PASSWORD != 'admin' else 'DEFAULT'}")
+logger.info(f"Environment: {os.getenv('ENV', 'development')}")
+
+# Log OAuth configuration from environment
+oauth_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+logger.info(f"OAuth configured: {oauth_configured}")
+if oauth_configured:
+    logger.info(f"OAuth redirect URI: {os.getenv('GOOGLE_REDIRECT_URI')}")
+    logger.info(f"Authorized emails: {os.getenv('AUTHORIZED_EMAILS', 'none')}")
+else:
+    logger.warning("OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "your_secure_password_here")
 
 def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)):
@@ -126,17 +156,56 @@ def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(securit
     return credentials.username
 
 # CORS middleware
+logger.info("=== Middleware Configuration ===")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+logger.info("CORS middleware configured")
+
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    method = request.method
+    url = str(request.url)
+    client_ip = request.client.host if request.client else "unknown"
+    
+    logger.info(f"=== Incoming Request ===")
+    logger.info(f"Method: {method}")
+    logger.info(f"URL: {url}")
+    logger.info(f"Client IP: {client_ip}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.info(f"Response status: {response.status_code}")
+        logger.info(f"Process time: {process_time:.4f}s")
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"Request failed: {str(e)}", exc_info=True)
+        logger.info(f"Process time: {process_time:.4f}s")
+        raise
 
 # GraphQL router
-graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
+logger.info("=== GraphQL Configuration ===")
+try:
+    from app.resolvers import schema
+    logger.info("GraphQL schema imported successfully")
+    graphql_app = GraphQLRouter(schema)
+    app.include_router(graphql_app, prefix="/graphql")
+    logger.info("GraphQL router initialized and mounted at /graphql")
+except ImportError as e:
+    logger.error(f"Failed to import GraphQL schema: {str(e)}", exc_info=True)
+    raise
+except Exception as e:
+    logger.error(f"GraphQL initialization error: {str(e)}", exc_info=True)
+    raise
 
 # Create directories if they don't exist
 os.makedirs("app/assets/img", exist_ok=True)
@@ -204,10 +273,17 @@ templates = Jinja2Templates(directory="templates")
 # Database initialization
 @app.on_event("startup")
 async def startup_event():
-    if DATABASE_AVAILABLE:
-        await init_database()
-    else:
-        print("Running without database connection")
+    logger.info("=== Database Startup ===")
+    try:
+        if DATABASE_AVAILABLE:
+            logger.info("Initializing database connection...")
+            await init_database()
+            logger.info("Database initialized successfully")
+        else:
+            logger.warning("Running without database connection")
+    except Exception as e:
+        logger.error(f"Startup error: {str(e)}", exc_info=True)
+        raise
 
 
 @app.on_event("shutdown")
@@ -221,17 +297,55 @@ async def shutdown_event():
 @app.get("/auth/login")
 async def auth_login(request: Request):
     """Redirect to Google OAuth login"""
-    google = oauth.google
-    redirect_uri = GOOGLE_REDIRECT_URI
-    return await google.authorize_redirect(request, redirect_uri)
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=== OAuth Login Requested ===")
+    logger.info(f"Request URL: {request.url}")
+    logger.info(f"Request headers: {dict(request.headers)}")
+    
+    try:
+        logger.info("Getting Google OAuth client...")
+        google = oauth.google
+        if not google:
+            logger.error("Google OAuth client not found!")
+            raise HTTPException(status_code=500, detail="OAuth not configured")
+        
+        logger.info(f"Using redirect URI: {GOOGLE_REDIRECT_URI}")
+        logger.info("Initiating OAuth redirect...")
+        
+        redirect_uri = GOOGLE_REDIRECT_URI
+        result = await google.authorize_redirect(request, redirect_uri)
+        logger.info(f"OAuth redirect successful: {type(result)}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"OAuth login error: {str(e)}")
+        logger.exception("Full traceback:")
+        raise HTTPException(status_code=500, detail=f"OAuth login failed: {str(e)}")
 
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=== OAuth Callback Received ===")
+    logger.info(f"Callback URL: {request.url}")
+    logger.info(f"Query params: {dict(request.query_params)}")
+    
     try:
+        logger.info("Getting Google OAuth client for callback...")
         google = oauth.google
+        if not google:
+            logger.error("Google OAuth client not found in callback!")
+            raise HTTPException(status_code=500, detail="OAuth not configured")
+            
+        logger.info("Exchanging code for access token...")
         token = await google.authorize_access_token(request)
+        logger.info(f"Token received: {bool(token)}")
+        
         user_info = token.get('userinfo')
         
         if not user_info:
@@ -285,11 +399,16 @@ async def auth_callback(request: Request):
 
 
 @app.get("/auth/logout")
-async def auth_logout():
-    """Logout and clear authentication"""
-    response = RedirectResponse(url="/")
-    response.delete_cookie(key="access_token")
-    return response
+async def logout(response: Response):
+    """Log out the user by clearing the authentication cookie"""
+    try:
+        logger.info("=== OAuth Logout Request ===")
+        response.delete_cookie(key="auth_token", path="/")
+        logger.info("Successfully cleared authentication cookie")
+        return RedirectResponse(url="/", status_code=303)
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}", exc_info=True)
+        return RedirectResponse(url="/", status_code=303)
 
 
 @app.get("/auth/status")

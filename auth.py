@@ -1,6 +1,7 @@
 # auth.py - Google OAuth Authentication Module
 import os
 import json
+import logging
 from typing import Optional, List
 from datetime import datetime, timedelta
 from fastapi import Request, HTTPException, status, Depends
@@ -10,6 +11,10 @@ from authlib.integrations.starlette_client import OAuthError
 from jose import jwt, JWTError
 import secrets
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Configuration
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET") 
@@ -18,14 +23,22 @@ SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
+logger.info(f"OAuth Configuration:")
+logger.info(f"  GOOGLE_CLIENT_ID: {'***' + GOOGLE_CLIENT_ID[-4:] if GOOGLE_CLIENT_ID else 'NOT SET'}")
+logger.info(f"  GOOGLE_CLIENT_SECRET: {'SET' if GOOGLE_CLIENT_SECRET else 'NOT SET'}")
+logger.info(f"  GOOGLE_REDIRECT_URI: {GOOGLE_REDIRECT_URI}")
+logger.info(f"  SECRET_KEY: {'SET' if SECRET_KEY else 'NOT SET'}")
+
 # Authorized emails - load from environment
 AUTHORIZED_EMAILS = os.getenv("AUTHORIZED_EMAILS", "").split(",")
 AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS if email.strip()]
+logger.info(f"  AUTHORIZED_EMAILS: {len(AUTHORIZED_EMAILS)} emails configured")
 
 # OAuth setup
 oauth = OAuth()
 
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    logger.info("Registering Google OAuth client...")
     oauth.register(
         name='google',
         client_id=GOOGLE_CLIENT_ID,
