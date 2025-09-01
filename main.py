@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
 from typing import Optional, List
@@ -165,6 +166,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 logger.info("CORS middleware configured")
+
+# Add session middleware for OAuth
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", "your-secret-key-change-this"),
+    max_age=3600  # 1 hour
+)
+logger.info("Session middleware configured for OAuth")
 
 # Add request logging middleware
 @app.middleware("http")
