@@ -305,25 +305,61 @@ async def shutdown_event():
 
 @app.get("/auth/login")
 async def auth_login(request: Request):
-    """Redirect to Google OAuth login"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    logger.info("=== OAuth Login Requested ===")
-    logger.info(f"Request URL: {request.url}")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    
+    """Initiate Google OAuth login"""
     try:
-        logger.info("Getting Google OAuth client...")
+        logger.info("=== OAuth Login Request Started ===")
+        logger.info(f"Request method: {request.method}")
+        logger.info(f"Request URL: {request.url}")
+        logger.info(f"Request headers: {dict(request.headers)}")
+        
+        # Check environment variables at runtime
+        logger.info("=== Runtime Environment Check ===")
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET") 
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+        secret_key = os.getenv("SECRET_KEY")
+        
+        logger.info(f"GOOGLE_CLIENT_ID present: {bool(client_id)}")
+        logger.info(f"GOOGLE_CLIENT_ID length: {len(client_id) if client_id else 0}")
+        logger.info(f"GOOGLE_CLIENT_SECRET present: {bool(client_secret)}")
+        logger.info(f"GOOGLE_CLIENT_SECRET length: {len(client_secret) if client_secret else 0}")
+        logger.info(f"GOOGLE_REDIRECT_URI: {redirect_uri}")
+        logger.info(f"SECRET_KEY present: {bool(secret_key)}")
+        logger.info(f"SECRET_KEY length: {len(secret_key) if secret_key else 0}")
+        
+        # Validate required variables
+        missing_vars = []
+        if not client_id:
+            missing_vars.append("GOOGLE_CLIENT_ID")
+        if not client_secret:
+            missing_vars.append("GOOGLE_CLIENT_SECRET")
+        if not secret_key:
+            missing_vars.append("SECRET_KEY")
+            
+        if missing_vars:
+            error_msg = f"Missing environment variables: {', '.join(missing_vars)}"
+            logger.error(f"CRITICAL: {error_msg}")
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        logger.info("✅ All required environment variables validated")
+        
+        # Check session middleware
+        try:
+            session_test = request.session
+            logger.info("✅ Session middleware is working")
+        except Exception as session_error:
+            logger.error(f"❌ Session middleware error: {session_error}")
+            raise HTTPException(status_code=500, detail="Session middleware not configured")
+            
+        logger.info("Getting OAuth client...")
         google = oauth.google
         if not google:
             logger.error("Google OAuth client not found!")
             raise HTTPException(status_code=500, detail="OAuth not configured")
         
-        logger.info(f"Using redirect URI: {GOOGLE_REDIRECT_URI}")
+        logger.info(f"Using redirect URI: {redirect_uri}")
         logger.info("Initiating OAuth redirect...")
         
-        redirect_uri = GOOGLE_REDIRECT_URI
         result = await google.authorize_redirect(request, redirect_uri)
         logger.info(f"OAuth redirect successful: {type(result)}")
         return result
