@@ -98,6 +98,30 @@
         color: white;
     }
 
+    /* User section styling */
+    .user-section {
+        border-left: 3px solid #28a745;
+        padding-left: 15px;
+        margin-left: 10px;
+        margin-top: 10px;
+    }
+
+    .user-section a {
+        color: #28a745;
+        font-size: 0.9em;
+    }
+
+    .user-section a:hover {
+        background-color: #f0fff4;
+    }
+
+    .user-info {
+        color: #666;
+        font-size: 0.8em;
+        padding: 4px 8px;
+        font-style: italic;
+    }
+
     @media (max-width: 768px) {
         nav ul {
             flex-direction: column;
@@ -107,6 +131,15 @@
         .admin-section {
             border-left: none;
             border-top: 2px solid #dc3545;
+            padding-left: 0;
+            padding-top: 10px;
+            margin-left: 0;
+            margin-top: 10px;
+        }
+        
+        .user-section {
+            border-left: none;
+            border-top: 2px solid #28a745;
             padding-left: 0;
             padding-top: 10px;
             margin-left: 0;
@@ -163,6 +196,24 @@
                 <li class="projectsadmin-bulk {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">
                     <a href="/projectsadmin/bulk">Projects Admin (Bulk)</a>
                 </li>
+            </ul>
+        </div>
+        
+        <!-- User Authentication Section -->
+        <div class="user-section">
+            <ul>
+                {% if user %}
+                <li class="user-info">
+                    Logged in as: {{ user.name or user.email }}
+                </li>
+                <li class="logout">
+                    <a href="/auth/logout">🚪 Logout</a>
+                </li>
+                {% else %}
+                <li class="login">
+                    <a href="/auth/login">🔑 Admin Login</a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </nav>

@@ -1,8 +1,9 @@
-# main.py - Lightweight FastAPI application with GraphQL
-from fastapi import FastAPI, Request, HTTPException
+# main.py - Lightweight FastAPI application with GraphQL and Google OAuth
+from fastapi import FastAPI, Request, HTTPException, Depends, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
@@ -13,6 +14,21 @@ import os
 from pathlib import Path
 import sqlite3
 import asyncio
+import secrets
+import hashlib
+
+# Import our Google OAuth authentication module
+from auth import (
+    require_admin_auth, 
+    get_current_user, 
+    oauth, 
+    create_access_token, 
+    create_user_session,
+    is_authorized_user,
+    get_auth_status,
+    GOOGLE_REDIRECT_URI
+)
+from cookie_auth import require_admin_auth_cookie
 
 from app.resolvers import schema
 try:
@@ -88,6 +104,26 @@ app = FastAPI(
     description="Lightweight GraphQL API for Daniel's Portfolio Website",
     version="1.0.0"
 )
+
+# Security configuration
+security = HTTPBasic()
+
+# Admin credentials - In production, these should be in environment variables
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "your_secure_password_here")
+
+def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verify admin credentials for protected routes"""
+    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
+    correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
+    
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 # CORS middleware
 app.add_middleware(
@@ -179,6 +215,89 @@ async def shutdown_event():
     if DATABASE_AVAILABLE:
         await close_database()
 
+
+# --- Google OAuth Authentication Routes ---
+
+@app.get("/auth/login")
+async def auth_login(request: Request):
+    """Redirect to Google OAuth login"""
+    google = oauth.google
+    redirect_uri = GOOGLE_REDIRECT_URI
+    return await google.authorize_redirect(request, redirect_uri)
+
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request):
+    """Handle Google OAuth callback"""
+    try:
+        google = oauth.google
+        token = await google.authorize_access_token(request)
+        user_info = token.get('userinfo')
+        
+        if not user_info:
+            # Fallback to get user info from Google
+            resp = await google.get('https://www.googleapis.com/oauth2/v1/userinfo', token=token)
+            user_info = resp.json()
+        
+        email = user_info.get('email')
+        if not email:
+            raise HTTPException(status_code=400, detail="No email found in Google account")
+        
+        if not is_authorized_user(email):
+            return HTMLResponse(
+                content=f"""
+                <html><body>
+                <h1>Access Denied</h1>
+                <p>Your email ({email}) is not authorized to access this admin panel.</p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=403
+            )
+        
+        # Create JWT token
+        session_data = create_user_session(user_info)
+        access_token = create_access_token(session_data)
+        
+        # Redirect to admin page with token
+        response = RedirectResponse(url="/workadmin")
+        response.set_cookie(
+            key="access_token", 
+            value=f"Bearer {access_token}",
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=28800  # 8 hours
+        )
+        return response
+        
+    except Exception as e:
+        return HTMLResponse(
+            content=f"""
+            <html><body>
+            <h1>Authentication Failed</h1>
+            <p>Error: {str(e)}</p>
+            <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
+            </body></html>
+            """, 
+            status_code=400
+        )
+
+
+@app.get("/auth/logout")
+async def auth_logout():
+    """Logout and clear authentication"""
+    response = RedirectResponse(url="/")
+    response.delete_cookie(key="access_token")
+    return response
+
+
+@app.get("/auth/status")
+async def auth_status():
+    """Get authentication configuration status"""
+    return get_auth_status()
+
+
 # Routes for serving the portfolio website
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -268,37 +387,41 @@ async def projects(request: Request):
 
 # --- Work Admin Page ---
 @app.get("/workadmin", response_class=HTMLResponse)
-async def work_admin_page(request: Request):
+async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
-        "current_page": "workadmin"
+        "current_page": "workadmin",
+        "user": admin
     })
 
 
 @app.get("/workadmin/bulk", response_class=HTMLResponse)
-async def work_admin_bulk_page(request: Request):
+async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
     """New bulk editor interface for work items"""
     return templates.TemplateResponse("workadmin_bulk.html", {
         "request": request,
-        "current_page": "workadmin_bulk"
+        "current_page": "workadmin_bulk",
+        "user": admin
     })
 
 
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
-async def projects_admin_page(request: Request):
+async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
-        "current_page": "projectsadmin"
+        "current_page": "projectsadmin",
+        "user": admin
     })
 
 
 @app.get("/projectsadmin/bulk", response_class=HTMLResponse)
-async def projects_admin_bulk_page(request: Request):
+async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
     """New bulk editor interface for projects"""
     return templates.TemplateResponse("projectsadmin_bulk.html", {
         "request": request,
-        "current_page": "projectsadmin_bulk"
+        "current_page": "projectsadmin_bulk",
+        "user": admin
     })
 
 
@@ -366,7 +489,7 @@ async def list_workitems():
 
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
-async def create_workitem(item: WorkItem):
+async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth)):
     query = """
         INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
         VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
@@ -377,7 +500,7 @@ async def create_workitem(item: WorkItem):
 
 # Update a work item
 @app.put("/workitems/{id}", response_model=WorkItem)
-async def update_workitem(id: str, item: WorkItem):
+async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require_admin_auth)):
     query = """
         UPDATE work_experience SET
             company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
@@ -393,7 +516,7 @@ async def update_workitem(id: str, item: WorkItem):
 
 # Delete a work item
 @app.delete("/workitems/{id}")
-async def delete_workitem(id: str):
+async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth)):
     query = "DELETE FROM work_experience WHERE id=:id"
     result = await database.execute(query, {"id": id})
     return {"success": True}
@@ -402,7 +525,7 @@ async def delete_workitem(id: str):
 # --- Bulk Operations for Work Items ---
 
 @app.post("/workitems/bulk", response_model=BulkWorkItemsResponse)
-async def bulk_create_update_workitems(request: BulkWorkItemsRequest):
+async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dict = Depends(require_admin_auth)):
     """
     Bulk create or update work items. 
     Items with existing IDs will be updated, items without IDs will be created.
@@ -462,7 +585,7 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest):
 
 
 @app.delete("/workitems/bulk", response_model=BulkDeleteResponse)
-async def bulk_delete_workitems(request: BulkDeleteRequest):
+async def bulk_delete_workitems(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth)):
     """
     Bulk delete work items by their IDs.
     """
@@ -556,7 +679,7 @@ async def list_projects():
 
 # Create a new project
 @app.post("/projects", response_model=Project)
-async def create_project(project: Project):
+async def create_project(project: Project, admin: dict = Depends(require_admin_auth)):
     query = """
         INSERT INTO projects (portfolio_id, title, description, url, image_url, technologies, sort_order)
         VALUES (:portfolio_id, :title, :description, :url, :image_url, :technologies, :sort_order)
@@ -579,7 +702,7 @@ async def create_project(project: Project):
 
 # Update a project
 @app.put("/projects/{id}", response_model=Project)
-async def update_project(id: str, project: Project):
+async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth)):
     query = """
         UPDATE projects SET
             title=:title, description=:description, url=:url, image_url=:image_url,
@@ -604,7 +727,7 @@ async def update_project(id: str, project: Project):
 
 # Delete a project
 @app.delete("/projects/{id}")
-async def delete_project(id: str):
+async def delete_project(id: str, admin: dict = Depends(require_admin_auth)):
     query = "DELETE FROM projects WHERE id=:id"
     result = await database.execute(query, {"id": id})
     return {"deleted": True, "id": id}
@@ -612,7 +735,7 @@ async def delete_project(id: str):
 
 # Bulk create/update projects
 @app.post("/projects/bulk", response_model=BulkProjectsResponse)
-async def bulk_create_update_projects(request: BulkProjectsRequest):
+async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict = Depends(require_admin_auth)):
     """
     Bulk create or update projects.
     """
@@ -680,7 +803,7 @@ async def bulk_create_update_projects(request: BulkProjectsRequest):
 
 # Bulk delete projects
 @app.delete("/projects/bulk", response_model=BulkDeleteResponse)
-async def bulk_delete_projects(request: BulkDeleteRequest):
+async def bulk_delete_projects(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth)):
     """
     Bulk delete projects by their IDs.
     """
