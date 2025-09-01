@@ -15,13 +15,14 @@ steps:
     sudo killall -9 nginx || true
     
     # Navigate to the repository directory or clone it
-    if [ -d "/opt/cloud_machine_repo/.git" ]; then
-      cd /opt/cloud_machine_repo
+    if [ -d "/opt/portfoliosite/.git" ]; then
+      cd /opt/portfoliosite
+      git config pull.rebase false
       git pull origin main
     else
-      sudo git clone https://github.com/blackburnd/cloud_machine_repo.git /opt/cloud_machine_repo
-      sudo chown -R blackburnd:blackburnd /opt/cloud_machine_repo
-      cd /opt/cloud_machine_repo
+      sudo git clone https://github.com/blackburnd/portfoliosite.git /opt/portfoliosite
+      sudo chown -R blackburnd:blackburnd /opt/portfoliosite
+      cd /opt/portfoliosite
     fi
     
     # Clear Python cache files to prevent type definition conflicts
