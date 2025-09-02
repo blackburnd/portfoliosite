@@ -33,14 +33,13 @@ logger = logging.getLogger(__name__)
 
 # Import our Google OAuth authentication module
 from auth import (
-    require_admin_auth, 
-    get_current_user, 
     oauth, 
-    create_access_token, 
-    create_user_session,
+    get_current_user, 
+    verify_token,
     is_authorized_user,
-    get_auth_status,
-    GOOGLE_REDIRECT_URI
+    require_admin_auth,
+    create_user_session,
+    create_access_token
 )
 from cookie_auth import require_admin_auth_cookie
 from linkedin_sync import linkedin_sync, LinkedInSyncError
@@ -318,88 +317,137 @@ async def auth_login(request: Request):
     """Initiate Google OAuth login"""
     try:
         logger.info("=== OAuth Login Request Started ===")
-        logger.info(f"Request method: {request.method}")
-        logger.info(f"Request URL: {request.url}")
-        logger.info(f"Request headers: {dict(request.headers)}")
+        
+        # Check if OAuth is properly configured
+        if not oauth or not oauth.google:
+            logger.error("OAuth not configured - missing credentials")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Not Available</h1>
+                <p>Google OAuth is not configured on this server.</p>
+                <p>Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables.</p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=503
+            )
         
         # Check environment variables at runtime
-        logger.info("=== Runtime Environment Check ===")
         client_id = os.getenv("GOOGLE_CLIENT_ID")
         client_secret = os.getenv("GOOGLE_CLIENT_SECRET") 
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
-        secret_key = os.getenv("SECRET_KEY")
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
         
-        logger.info(f"GOOGLE_CLIENT_ID present: {bool(client_id)}")
-        logger.info(f"GOOGLE_CLIENT_ID length: {len(client_id) if client_id else 0}")
-        logger.info(f"GOOGLE_CLIENT_SECRET present: {bool(client_secret)}")
-        logger.info(f"GOOGLE_CLIENT_SECRET length: {len(client_secret) if client_secret else 0}")
-        logger.info(f"GOOGLE_REDIRECT_URI: {redirect_uri}")
-        logger.info(f"SECRET_KEY present: {bool(secret_key)}")
-        logger.info(f"SECRET_KEY length: {len(secret_key) if secret_key else 0}")
-        
-        # Validate required variables
-        missing_vars = []
-        if not client_id:
-            missing_vars.append("GOOGLE_CLIENT_ID")
-        if not client_secret:
-            missing_vars.append("GOOGLE_CLIENT_SECRET")
-        if not secret_key:
-            missing_vars.append("SECRET_KEY")
-            
-        if missing_vars:
-            error_msg = f"Missing environment variables: {', '.join(missing_vars)}"
-            logger.error(f"CRITICAL: {error_msg}")
-            raise HTTPException(status_code=500, detail=error_msg)
-        
-        logger.info("✅ All required environment variables validated")
-        
-        # Check session middleware
-        try:
-            session_test = request.session
-            logger.info("✅ Session middleware is working")
-        except Exception as session_error:
-            logger.error(f"❌ Session middleware error: {session_error}")
-            raise HTTPException(status_code=500, detail="Session middleware not configured")
-            
-        logger.info("Getting OAuth client...")
-        google = oauth.google
-        if not google:
-            logger.error("Google OAuth client not found!")
-            raise HTTPException(status_code=500, detail="OAuth not configured")
+        if not client_id or not client_secret:
+            logger.error("Missing OAuth environment variables")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>OAuth Configuration Error</h1>
+                <p>Missing required environment variables for Google OAuth.</p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=503
+            )
         
         logger.info(f"Using redirect URI: {redirect_uri}")
-        logger.info("Initiating OAuth redirect...")
         
-        result = await google.authorize_redirect(request, redirect_uri)
-        logger.info(f"OAuth redirect successful: {type(result)}")
+        # Clear any existing session state to prevent CSRF issues
+        request.session.clear()
+        
+        # Generate a new state parameter for CSRF protection
+        import secrets
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        
+        logger.info("Initiating OAuth redirect with fresh state...")
+        
+        # Use the OAuth client to redirect with proper state handling
+        google = oauth.google
+        result = await google.authorize_redirect(
+            request, 
+            redirect_uri,
+            state=state
+        )
+        
+        logger.info("OAuth redirect created successfully")
         return result
         
     except Exception as e:
         logger.error(f"OAuth login error: {str(e)}")
         logger.exception("Full traceback:")
-        raise HTTPException(status_code=500, detail=f"OAuth login failed: {str(e)}")
+        return HTMLResponse(
+            content=f"""
+            <html><body>
+            <h1>OAuth Login Failed</h1>
+            <p>Error: {str(e)}</p>
+            <p><a href="/">Return to main site</a></p>
+            </body></html>
+            """, 
+            status_code=500
+        )
 
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
     logger.info("=== OAuth Callback Received ===")
     logger.info(f"Callback URL: {request.url}")
     logger.info(f"Query params: {dict(request.query_params)}")
     
     try:
-        logger.info("Getting Google OAuth client for callback...")
+        # Check if OAuth is properly configured
+        if not oauth or not oauth.google:
+            logger.error("OAuth not configured in callback")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>Google OAuth is not configured on this server.</p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=503
+            )
+        
+        # Validate state parameter to prevent CSRF attacks
+        received_state = request.query_params.get('state')
+        session_state = request.session.get('oauth_state')
+        
+        if not received_state or not session_state:
+            logger.error("Missing state parameters in OAuth callback")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>Invalid OAuth state. Please try logging in again.</p>
+                <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
+        
+        if received_state != session_state:
+            logger.error(f"State mismatch: received={received_state}, session={session_state}")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>OAuth state mismatch detected (CSRF protection). Please try logging in again.</p>
+                <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
+        
+        logger.info("State validation passed, exchanging code for token...")
         google = oauth.google
-        if not google:
-            logger.error("Google OAuth client not found in callback!")
-            raise HTTPException(status_code=500, detail="OAuth not configured")
-            
-        logger.info("Exchanging code for access token...")
         token = await google.authorize_access_token(request)
         logger.info(f"Token received: {bool(token)}")
+        
+        # Clear the OAuth state from session
+        request.session.pop('oauth_state', None)
         
         user_info = token.get('userinfo')
         
@@ -410,7 +458,16 @@ async def auth_callback(request: Request):
         
         email = user_info.get('email')
         if not email:
-            raise HTTPException(status_code=400, detail="No email found in Google account")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>No email found in Google account.</p>
+                <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
         
         if not is_authorized_user(email):
             return HTMLResponse(
@@ -429,7 +486,7 @@ async def auth_callback(request: Request):
         access_token = create_access_token(session_data)
         
         # Redirect to admin page with token
-        response = RedirectResponse(url="/workadmin")
+        response = RedirectResponse(url="/admin/work/")
         response.set_cookie(
             key="access_token", 
             value=f"Bearer {access_token}",
@@ -438,9 +495,13 @@ async def auth_callback(request: Request):
             samesite="lax",
             max_age=28800  # 8 hours
         )
+        
+        logger.info(f"Authentication successful for {email}")
         return response
         
     except Exception as e:
+        logger.error(f"OAuth callback error: {str(e)}")
+        logger.exception("Full traceback:")
         return HTMLResponse(
             content=f"""
             <html><body>
@@ -476,19 +537,57 @@ async def auth_status():
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serve the main portfolio page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Daniel Blackburn - Building innovative solutions",
-        "current_page": "home"
+        "current_page": "home",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.get("/contact/", response_class=HTMLResponse)
 async def contact(request: Request):
     """Serve the contact page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("contact.html", {
         "request": request,
         "title": "Contact - Daniel Blackburn",
-        "current_page": "contact"
+        "current_page": "contact",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.post("/contact/submit")
@@ -512,10 +611,29 @@ async def contact_submit(request: Request):
 @app.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):
     """Serve the work page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("work.html", {
         "request": request,
-        "title": "Work - daniel blackburn",
-        "current_page": "work"
+        "title": "Featured projects, and work - daniel blackburn",
+        "current_page": "work",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.get("/work/{project_slug}/", response_class=HTMLResponse)
@@ -561,7 +679,7 @@ async def projects(request: Request):
 
 # --- Work Admin Page ---
 @app.get("/workadmin", response_class=HTMLResponse)
-async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
         "current_page": "workadmin",
@@ -570,7 +688,7 @@ async def work_admin_page(request: Request, admin: dict = Depends(require_admin_
 
 
 @app.get("/workadmin/bulk", response_class=HTMLResponse)
-async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
     """New bulk editor interface for work items"""
     return templates.TemplateResponse("workadmin_bulk.html", {
         "request": request,
@@ -623,7 +741,7 @@ async def admin_logs_redirect():
 
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
-async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
         "current_page": "projectsadmin",
@@ -632,7 +750,7 @@ async def projects_admin_page(request: Request, admin: dict = Depends(require_ad
 
 
 @app.get("/projectsadmin/bulk", response_class=HTMLResponse)
-async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
     """New bulk editor interface for projects"""
     return templates.TemplateResponse("projectsadmin_bulk.html", {
         "request": request,

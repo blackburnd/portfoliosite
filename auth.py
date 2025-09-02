@@ -26,15 +26,23 @@ AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS if email.strip
 oauth = OAuth()
 
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
-    oauth.register(
-        name='google',
-        client_id=GOOGLE_CLIENT_ID,
-        client_secret=GOOGLE_CLIENT_SECRET,
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={
-            'scope': 'openid email profile'
-        }
-    )
+    try:
+        oauth.register(
+            name='google',
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET,
+            server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+            client_kwargs={
+                'scope': 'openid email profile'
+            }
+        )
+        print(f"✅ OAuth registered successfully with client ID: {GOOGLE_CLIENT_ID[:10]}...")
+    except Exception as e:
+        print(f"❌ OAuth registration failed: {e}")
+        oauth = None
+else:
+    print("❌ Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
+    oauth = None
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
