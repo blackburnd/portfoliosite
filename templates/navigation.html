@@ -3,8 +3,14 @@
     /* Navigation Styles */
     .site-header {
         margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #eee;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        position: relative;
     }
 
     .brand a {
@@ -19,17 +25,79 @@
         margin: 10px 0;
     }
 
+    /* Authentication and admin links */
+    .auth-admin-section {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+        font-size: 0.9em;
+    }
+
+    .auth-link {
+        background-color: #28a745;
+        color: white !important;
+        padding: 5px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+
+    .auth-link:hover {
+        background-color: #218838;
+        text-decoration: none;
+    }
+
+    .logout-link {
+        background-color: #dc3545;
+    }
+
+    .logout-link:hover {
+        background-color: #c82333;
+    }
+
+    .admin-links {
+        display: flex;
+        gap: 8px;
+        margin-top: 5px;
+        justify-content: flex-end;
+    }
+
+    .admin-link {
+        background-color: #6c757d;
+        color: white !important;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        text-decoration: none;
+    }
+
+    .admin-link:hover {
+        background-color: #5a6268;
+        text-decoration: none;
+    }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
     nav ul {
         list-style: none;
         padding: 0;
+        margin: 0;
         display: flex;
         gap: 20px;
         flex-wrap: wrap;
-        margin: 20px 0 0 0;
     }
 
-    nav li {
-        position: relative;
+    .primary-nav {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .social-nav {
+        font-size: 0.9em;
     }
 
     nav a {
@@ -38,14 +106,10 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
-        border-radius: 4px;
-        transition: all 0.3s ease;
     }
 
     nav a:hover {
-        background-color: #f0f8ff;
-        text-decoration: none;
+        text-decoration: underline;
     }
 
     /* Active page indicator */
@@ -53,12 +117,12 @@
         background-color: #0066cc;
         color: white;
         font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
     }
 
-    nav li.active a::after {
-        content: "●";
-        margin-left: 6px;
-        font-size: 0.8em;
+    nav li.active a:hover {
+        text-decoration: none;
     }
 
     /* Icon styling for social links */
@@ -77,92 +141,63 @@
         margin-right: 4px;
     }
 
-    /* Admin section styling */
-    .admin-section {
-        border-left: 3px solid #dc3545;
-        padding-left: 15px;
-        margin-left: 10px;
-    }
-
-    .admin-section a {
-        color: #dc3545;
-        font-size: 0.9em;
-    }
-
-    .admin-section a:hover {
-        background-color: #fff5f5;
-    }
-
-    .admin-section li.active a {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    /* User section styling */
-    .user-section {
-        border-left: 3px solid #28a745;
-        padding-left: 15px;
-        margin-left: 10px;
-        margin-top: 10px;
-    }
-
-    .user-section a {
-        color: #28a745;
-        font-size: 0.9em;
-    }
-
-    .user-section a:hover {
-        background-color: #f0fff4;
-    }
-
-    .user-info {
-        color: #666;
-        font-size: 0.8em;
-        padding: 4px 8px;
-        font-style: italic;
-    }
-
     @media (max-width: 768px) {
+        .header-top {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .auth-admin-section {
+            align-items: flex-start;
+        }
+
         nav ul {
             flex-direction: column;
             gap: 10px;
         }
-        
-        .admin-section {
-            border-left: none;
-            border-top: 2px solid #dc3545;
-            padding-left: 0;
-            padding-top: 10px;
-            margin-left: 0;
-            margin-top: 10px;
-        }
-        
-        .user-section {
-            border-left: none;
-            border-top: 2px solid #28a745;
-            padding-left: 0;
-            padding-top: 10px;
-            margin-left: 0;
-            margin-top: 10px;
+
+        .primary-nav {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
         }
     }
 </style>
 
 <header class="site-header" id="h">
-    <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
-    <p class="tagline">Curious novel<br>
-        <span class="amp">&amp;</span> solutions work.
-    </p>
+    <div class="header-top">
+        <div>
+            <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+            <p class="tagline">Curious novel<br>
+                <span class="amp">&amp;</span> solutions work.
+            </p>
+        </div>
+        
+        <!-- Authentication Section -->
+        <div class="auth-admin-section">
+            {% if user_authenticated %}
+                <div>
+                    <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
+                    <div class="admin-links">
+                        <a href="/workadmin" class="admin-link">Work Admin</a>
+                        <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
+                        <a href="/admin/logs" class="admin-link">Logs</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="/auth/login" class="auth-link">Login</a>
+            {% endif %}
+        </div>
+    </div>
+    
     <nav>
-        <ul>
+        <!-- Primary Navigation -->
+        <ul class="primary-nav">
             <li class="me {{ 'active' if current_page == 'home' else '' }}">
                 <a href="/"><span>Daniel</span> Blackburn</a>
             </li>
             <li class="projects {{ 'active' if current_page == 'work' else '' }}">
-                <a href="/work/"><span>work</span> experience</a>
-            </li>
-            <li class="projects {{ 'active' if current_page == 'projects' else '' }}">
-                <a href="/projects/"><span>featured</span> projects</a>
+                <a href="/work/"><span>Featured projects,</span> and work</a>
             </li>
             <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
                 <a href="/contact/"><span>we should</span> talk</a>
@@ -170,6 +205,10 @@
             <li class="resume">
                 <a href="/resume" target="_blank">resume</a>
             </li>
+        </ul>
+        
+        <!-- Social Navigation -->
+        <ul class="social-nav">
             <li class="linkedin">
                 <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
             </li>
@@ -180,47 +219,5 @@
                 <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
             </li>
         </ul>
-        
-        <!-- Admin Section -->
-        <div class="admin-section">
-            <ul>
-                <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
-                    <a href="/workadmin">Work Admin</a>
-                </li>
-                <li class="workadmin-bulk {{ 'active' if current_page == 'workadmin_bulk' else '' }}">
-                    <a href="/workadmin/bulk">Work Admin (Bulk)</a>
-                </li>
-                <li class="projectsadmin {{ 'active' if current_page == 'projectsadmin' else '' }}">
-                    <a href="/projectsadmin">Projects Admin</a>
-                </li>
-                <li class="projectsadmin-bulk {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">
-                    <a href="/projectsadmin/bulk">Projects Admin (Bulk)</a>
-                </li>
-                <li class="linkedin-admin {{ 'active' if current_page == 'linkedin_admin' else '' }}">
-                    <a href="/linkedin">🔗 LinkedIn Sync</a>
-                </li>
-                <li class="logs {{ 'active' if current_page == 'logs' else '' }}">
-                    <a href="/admin/logs">🔍 Logs</a>
-                </li>
-            </ul>
-        </div>
-        
-        <!-- User Authentication Section -->
-        <div class="user-section">
-            <ul>
-                {% if user_authenticated %}
-                <li class="user-info">
-                    Logged in as: {{ user_info.name or user_email }}
-                </li>
-                <li class="logout">
-                    <a href="/auth/logout">🚪 Logout</a>
-                </li>
-                {% else %}
-                <li class="login">
-                    <a href="/auth/login">🔑 Admin Login</a>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
     </nav>
 </header>
