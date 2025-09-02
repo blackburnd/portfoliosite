@@ -3,6 +3,7 @@ import os
 import secrets
 import logging
 import time
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
 from typing import Optional, List
+
+# Load environment variables from .env file
+load_dotenv()
 import uvicorn
 import json
 import os
@@ -899,9 +903,17 @@ async def list_workitems():
         ]
     
     try:
-        # First check if table exists
-        check_table = "SELECT to_regclass('work_experience')"
-        table_exists = await database.fetch_val(check_table)
+        # Check if table exists - different for SQLite vs PostgreSQL
+        database_url = os.getenv("DATABASE_URL", "")
+        if "sqlite" in database_url.lower():
+            # SQLite syntax
+            check_table = ("SELECT name FROM sqlite_master "
+                          "WHERE type='table' AND name='work_experience'")
+            table_exists = await database.fetch_val(check_table)
+        else:
+            # PostgreSQL syntax
+            check_table = "SELECT to_regclass('work_experience')"
+            table_exists = await database.fetch_val(check_table)
         
         if not table_exists:
             # Return empty list if table doesn't exist
