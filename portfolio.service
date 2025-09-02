@@ -5,9 +5,9 @@ After=network.target
 [Service]
 User=blackburnd
 Group=www-data
-WorkingDirectory=/opt/portfoliosite
+WorkingDirectory=/opt/cloud_machine_repo
 EnvironmentFile=/etc/environment
-ExecStart=/opt/portfoliosite/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+ExecStart=/opt/cloud_machine_repo/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 
 Restart=always
 RestartSec=5s
