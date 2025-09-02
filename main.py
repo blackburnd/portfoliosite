@@ -954,7 +954,7 @@ async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require
     query = """
         UPDATE work_experience SET
             company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
-            description=:description, is_current=:is_current, company_url=:company_url, sort_order=:sort_order, updated_at=NOW()
+            description=:description, is_current=:is_current, company_url=:company_url, sort_order=:sort_order
         WHERE id=:id RETURNING *
     """
     values = item.dict(exclude_unset=True)
@@ -993,8 +993,7 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
                         company=:company, position=:position, location=:location, 
                         start_date=:start_date, end_date=:end_date,
                         description=:description, is_current=:is_current, 
-                        company_url=:company_url, sort_order=:sort_order, 
-                        updated_at=NOW()
+                        company_url=:company_url, sort_order=:sort_order
                     WHERE id=:id RETURNING *
                 """
                 values = item.dict(exclude_unset=True)
@@ -1147,7 +1146,25 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
         "technologies": technologies_json,
         "sort_order": project.sort_order
     })
-    return Project(**dict(row))
+    # Handle JSON field for technologies
+    row_dict = dict(row)
+    technologies = row_dict.get("technologies", [])
+    if isinstance(technologies, str):
+        try:
+            technologies = json.loads(technologies)
+        except (json.JSONDecodeError, TypeError):
+            technologies = []
+    
+    return Project(
+        id=str(row_dict["id"]),
+        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        title=row_dict.get("title", ""),
+        description=row_dict.get("description", ""),
+        url=row_dict.get("url"),
+        image_url=row_dict.get("image_url"),
+        technologies=technologies,
+        sort_order=row_dict.get("sort_order", 0)
+    )
 
 
 # Update a project
@@ -1156,7 +1173,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
     query = """
         UPDATE projects SET
             title=:title, description=:description, url=:url, image_url=:image_url,
-            technologies=:technologies, sort_order=:sort_order, updated_at=NOW()
+            technologies=:technologies, sort_order=:sort_order
         WHERE id=:id
         RETURNING *
     """
@@ -1172,7 +1189,28 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
         "technologies": technologies_json,
         "sort_order": project.sort_order
     })
-    return Project(**dict(row))
+    if not row:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Handle JSON field for technologies
+    row_dict = dict(row)
+    technologies = row_dict.get("technologies", [])
+    if isinstance(technologies, str):
+        try:
+            technologies = json.loads(technologies)
+        except (json.JSONDecodeError, TypeError):
+            technologies = []
+    
+    return Project(
+        id=str(row_dict["id"]),
+        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        title=row_dict.get("title", ""),
+        description=row_dict.get("description", ""),
+        url=row_dict.get("url"),
+        image_url=row_dict.get("image_url"),
+        technologies=technologies,
+        sort_order=row_dict.get("sort_order", 0)
+    )
 
 
 # Delete a project
@@ -1201,7 +1239,7 @@ async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict 
                     UPDATE projects SET
                         title=:title, description=:description, url=:url,
                         image_url=:image_url, technologies=:technologies,
-                        sort_order=:sort_order, updated_at=NOW()
+                        sort_order=:sort_order
                     WHERE id=:id
                     RETURNING *
                 """
@@ -1217,7 +1255,32 @@ async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict 
                     "technologies": technologies_json,
                     "sort_order": project.sort_order
                 })
-                updated.append(Project(**dict(row)))
+                if row:
+                    # Handle JSON field for technologies
+                    row_dict = dict(row)
+                    technologies = row_dict.get("technologies", [])
+                    if isinstance(technologies, str):
+                        try:
+                            technologies = json.loads(technologies)
+                        except (json.JSONDecodeError, TypeError):
+                            technologies = []
+                    
+                    updated_project = Project(
+                        id=str(row_dict["id"]),
+                        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+                        title=row_dict.get("title", ""),
+                        description=row_dict.get("description", ""),
+                        url=row_dict.get("url"),
+                        image_url=row_dict.get("image_url"),
+                        technologies=technologies,
+                        sort_order=row_dict.get("sort_order", 0)
+                    )
+                    updated.append(updated_project)
+                else:
+                    errors.append({
+                        "project": project.dict() if hasattr(project, 'dict') else str(project),
+                        "error": f"Project with id {project.id} not found"
+                    })
             else:
                 # Create new project
                 query = """
@@ -1237,7 +1300,26 @@ async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict 
                     "technologies": technologies_json,
                     "sort_order": project.sort_order
                 })
-                created.append(Project(**dict(row)))
+                # Handle JSON field for technologies
+                row_dict = dict(row)
+                technologies = row_dict.get("technologies", [])
+                if isinstance(technologies, str):
+                    try:
+                        technologies = json.loads(technologies)
+                    except (json.JSONDecodeError, TypeError):
+                        technologies = []
+                
+                created_project = Project(
+                    id=str(row_dict["id"]),
+                    portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+                    title=row_dict.get("title", ""),
+                    description=row_dict.get("description", ""),
+                    url=row_dict.get("url"),
+                    image_url=row_dict.get("image_url"),
+                    technologies=technologies,
+                    sort_order=row_dict.get("sort_order", 0)
+                )
+                created.append(created_project)
         except Exception as e:
             errors.append({
                 "project": project.dict() if hasattr(project, 'dict') else str(project),
