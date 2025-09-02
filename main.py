@@ -683,7 +683,10 @@ async def projects(request: Request):
 
 # --- Work Admin Page ---
 @app.get("/workadmin", response_class=HTMLResponse)
-async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
+async def work_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
         "current_page": "workadmin",
