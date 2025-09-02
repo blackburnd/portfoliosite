@@ -1417,6 +1417,38 @@ async def graphql_playground():
     </html>
     """
 
+
+@app.get("/debug/oauth-status")
+async def debug_oauth_status():
+    """Debug endpoint to check OAuth configuration"""
+    import os
+
+    current_domain = ("www.blackburnsystems.com"
+                      if os.getenv("ENV") == "production"
+                      else "localhost:8000")
+
+    status_info = {
+        "oauth_configured": bool(oauth and oauth.google),
+        "google_client_id_set": bool(os.getenv("GOOGLE_CLIENT_ID")),
+        "google_client_secret_set": bool(os.getenv("GOOGLE_CLIENT_SECRET")),
+        "google_redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", "Not set"),
+        "authorized_emails_set": bool(os.getenv("AUTHORIZED_EMAILS")),
+        "secret_key_set": bool(os.getenv("SECRET_KEY")),
+        "environment": os.getenv("ENV", "development"),
+        "current_domain": current_domain
+    }
+
+    # Add partial client ID for verification (first 10 chars)
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    if client_id:
+        preview = (f"{client_id[:15]}..."
+                   if len(client_id) > 15
+                   else client_id)
+        status_info["client_id_preview"] = preview
+
+    return JSONResponse(content=status_info)
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
