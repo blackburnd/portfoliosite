@@ -158,7 +158,9 @@ def get_login_url(request: Request) -> str:
     """Get Google OAuth login URL"""
     google = get_oauth_client()
     redirect_uri = GOOGLE_REDIRECT_URI
-    return request.url_for('auth_login')
+    # Handle both direct and reverse proxy scenarios
+    base_url = str(request.base_url)
+    return f"{base_url}auth/login"
 
 
 def create_user_session(user_info: dict) -> dict:

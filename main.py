@@ -580,7 +580,8 @@ async def home(request: Request):
         "title": "Daniel Blackburn - Building innovative solutions",
         "current_page": "home",
         "user_authenticated": user_authenticated,
-        "user_email": user_email
+        "user_email": user_email,
+        "user_info": {"email": user_email} if user_authenticated else None
     })
 
 @app.get("/contact/", response_class=HTMLResponse)
@@ -608,7 +609,8 @@ async def contact(request: Request):
         "title": "Contact - Daniel Blackburn",
         "current_page": "contact",
         "user_authenticated": user_authenticated,
-        "user_email": user_email
+        "user_email": user_email,
+        "user_info": {"email": user_email} if user_authenticated else None
     })
 
 @app.post("/contact/submit")
@@ -707,7 +709,9 @@ async def work_admin_page(
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
         "current_page": "workadmin",
-        "user": admin
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -720,7 +724,9 @@ async def work_admin_bulk_page(
     return templates.TemplateResponse("workadmin_bulk.html", {
         "request": request,
         "current_page": "workadmin_bulk",
-        "user": admin
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -737,7 +743,9 @@ async def logs_admin_page(request: Request):
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "current_page": "logs",
-        "user": {"email": "debug@example.com", "name": "Debug User"}  # Mock user for template
+        "user_info": {"email": "debug@example.com", "name": "Debug User"},
+        "user_authenticated": True,
+        "user_email": "debug@example.com"
     })
 
 
@@ -775,7 +783,9 @@ async def projects_admin_page(
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
         "current_page": "projectsadmin",
-        "user": admin
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -788,7 +798,9 @@ async def projects_admin_bulk_page(
     return templates.TemplateResponse("projectsadmin_bulk.html", {
         "request": request,
         "current_page": "projectsadmin_bulk",
-        "user": admin
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -798,7 +810,9 @@ async def linkedin_admin_page(request: Request, admin: dict = Depends(require_ad
     return templates.TemplateResponse("linkedin_admin.html", {
         "request": request,
         "current_page": "linkedin_admin",
-        "user": admin
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 

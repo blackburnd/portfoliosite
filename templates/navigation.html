@@ -208,9 +208,9 @@
         <!-- User Authentication Section -->
         <div class="user-section">
             <ul>
-                {% if user %}
+                {% if user_authenticated %}
                 <li class="user-info">
-                    Logged in as: {{ user.name or user.email }}
+                    Logged in as: {{ user_info.name or user_email }}
                 </li>
                 <li class="logout">
                     <a href="/auth/logout">🚪 Logout</a>
