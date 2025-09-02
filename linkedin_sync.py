@@ -7,6 +7,7 @@ from linkedin_api import Linkedin
 from datetime import datetime
 import asyncio
 from database import database
+from linkedin_oauth import linkedin_oauth, LinkedInOAuthError
 
 logger = logging.getLogger(__name__)
 
@@ -17,35 +18,66 @@ class LinkedInSyncError(Exception):
 class LinkedInSync:
     """
     LinkedIn Profile Data Synchronization Service
-    Fetches profile data from LinkedIn and syncs to portfolio database
+    Fetches profile data from LinkedIn and syncs to portfolio database using OAuth
     """
     
-    def __init__(self):
-        self.linkedin_username = os.getenv("LINKEDIN_USERNAME")
-        self.linkedin_password = os.getenv("LINKEDIN_PASSWORD")
-        self.target_profile_id = os.getenv("LINKEDIN_PROFILE_ID", "blackburnd")
+    def __init__(self, admin_email: str = None):
+        # OAuth-based authentication
+        self.admin_email = admin_email
         self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
         
-    def _get_linkedin_client(self) -> Linkedin:
-        """Create authenticated LinkedIn API client"""
+        # Legacy environment variable support (deprecated)
+        self.linkedin_username = os.getenv("LINKEDIN_USERNAME") 
+        self.linkedin_password = os.getenv("LINKEDIN_PASSWORD")
+        self.target_profile_id = os.getenv("LINKEDIN_PROFILE_ID", "blackburnd")
+        
+    async def _get_linkedin_client(self) -> Linkedin:
+        """Create authenticated LinkedIn API client using OAuth or legacy credentials"""
+        # Try OAuth first (preferred method)
+        if self.admin_email:
+            credentials = await linkedin_oauth.get_credentials(self.admin_email)
+            if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
+                try:
+                    logger.info(f"Using OAuth authentication for LinkedIn client")
+                    # LinkedIn API library doesn't directly support OAuth tokens
+                    # We'll need to use direct API calls for OAuth-based access
+                    return None  # Will use direct API calls instead
+                except Exception as e:
+                    logger.error(f"Failed to create OAuth LinkedIn client: {str(e)}")
+                    raise LinkedInSyncError(f"LinkedIn OAuth authentication failed: {str(e)}")
+            else:
+                raise LinkedInSyncError(
+                    "LinkedIn OAuth not configured or tokens expired. Please authenticate via admin interface."
+                )
+        
+        # Fallback to legacy username/password (deprecated)
         if not self.linkedin_username or not self.linkedin_password:
             raise LinkedInSyncError(
-                "LinkedIn credentials not configured. Set LINKEDIN_USERNAME and LINKEDIN_PASSWORD environment variables."
+                "LinkedIn credentials not configured. Please set up OAuth authentication via admin interface."
             )
         
         try:
-            logger.info(f"Authenticating LinkedIn client for user: {self.linkedin_username}")
+            logger.warning("Using deprecated username/password authentication for LinkedIn client")
             client = Linkedin(self.linkedin_username, self.linkedin_password)
             return client
         except Exception as e:
             logger.error(f"Failed to authenticate LinkedIn client: {str(e)}")
             raise LinkedInSyncError(f"LinkedIn authentication failed: {str(e)}")
     
-    def fetch_profile_data(self) -> Dict[str, Any]:
-        """Fetch profile data from LinkedIn"""
+    async def fetch_profile_data(self) -> Dict[str, Any]:
+        """Fetch profile data from LinkedIn using OAuth or legacy method"""
         try:
+            # Try OAuth first (preferred method)
+            if self.admin_email:
+                credentials = await linkedin_oauth.get_credentials(self.admin_email)
+                if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
+                    return await self._fetch_profile_data_oauth(credentials)
+            
+            # Fallback to legacy method
             logger.info(f"Fetching LinkedIn profile data for: {self.target_profile_id}")
-            client = self._get_linkedin_client()
+            client = await self._get_linkedin_client()
+            if client is None:
+                raise LinkedInSyncError("No LinkedIn client available")
             
             # Get profile information
             profile = client.get_profile(self.target_profile_id)
@@ -57,11 +89,64 @@ class LinkedInSync:
             logger.error(f"Failed to fetch LinkedIn profile data: {str(e)}")
             raise LinkedInSyncError(f"Failed to fetch profile data: {str(e)}")
     
-    def fetch_experience_data(self) -> List[Dict[str, Any]]:
-        """Fetch work experience data from LinkedIn"""
+    async def _fetch_profile_data_oauth(self, credentials: Dict[str, Any]) -> Dict[str, Any]:
+        """Fetch profile data using OAuth access token"""
+        import httpx
+        
+        headers = {"Authorization": f"Bearer {credentials['access_token']}"}
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                # Get basic profile info
+                response = await client.get(
+                    "https://api.linkedin.com/v2/people/~?projection=(id,firstName,lastName,headline,summary)",
+                    headers=headers
+                )
+                response.raise_for_status()
+                profile_data = response.json()
+                
+                # Get email address
+                email_response = await client.get(
+                    "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+                    headers=headers
+                )
+                email_response.raise_for_status()
+                email_data = email_response.json()
+                
+                # Combine data in format compatible with existing code
+                combined_data = {
+                    "firstName": profile_data.get("firstName", {}).get("localized", {}).get("en_US", ""),
+                    "lastName": profile_data.get("lastName", {}).get("localized", {}).get("en_US", ""),
+                    "headline": profile_data.get("headline", {}).get("localized", {}).get("en_US", ""),
+                    "summary": profile_data.get("summary", {}).get("localized", {}).get("en_US", ""),
+                    "id": profile_data.get("id", ""),
+                    "emailAddress": email_data.get("elements", [{}])[0].get("handle~", {}).get("emailAddress", "") if email_data.get("elements") else ""
+                }
+                
+                logger.info("Successfully fetched LinkedIn profile data via OAuth")
+                return combined_data
+                
+            except httpx.RequestError as e:
+                logger.error(f"OAuth profile request failed: {e}")
+                raise LinkedInSyncError(f"Failed to fetch profile via OAuth: {e}")
+            except httpx.HTTPStatusError as e:
+                logger.error(f"OAuth profile HTTP error: {e.response.status_code} - {e.response.text}")
+                raise LinkedInSyncError(f"LinkedIn OAuth profile request failed: {e.response.status_code}")
+    
+    async def fetch_experience_data(self) -> List[Dict[str, Any]]:
+        """Fetch work experience data from LinkedIn using OAuth or legacy method"""
         try:
+            # Try OAuth first (preferred method)
+            if self.admin_email:
+                credentials = await linkedin_oauth.get_credentials(self.admin_email)
+                if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
+                    return await self._fetch_experience_data_oauth(credentials)
+            
+            # Fallback to legacy method
             logger.info(f"Fetching LinkedIn experience data for: {self.target_profile_id}")
-            client = self._get_linkedin_client()
+            client = await self._get_linkedin_client()
+            if client is None:
+                raise LinkedInSyncError("No LinkedIn client available")
             
             # Get experience information
             experiences = client.get_profile_experiences(self.target_profile_id)
@@ -72,6 +157,44 @@ class LinkedInSync:
         except Exception as e:
             logger.error(f"Failed to fetch LinkedIn experience data: {str(e)}")
             raise LinkedInSyncError(f"Failed to fetch experience data: {str(e)}")
+    
+    async def _fetch_experience_data_oauth(self, credentials: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fetch experience data using OAuth access token"""
+        import httpx
+        
+        headers = {"Authorization": f"Bearer {credentials['access_token']}"}
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                # Get positions/work experience
+                response = await client.get(
+                    "https://api.linkedin.com/v2/positions?q=members&projection=(elements*(id,title,companyName,description,locationName,timePeriod(startDate,endDate)))",
+                    headers=headers
+                )
+                response.raise_for_status()
+                positions_data = response.json()
+                
+                # Transform to format compatible with existing code
+                experiences = []
+                for position in positions_data.get("elements", []):
+                    exp = {
+                        "title": position.get("title", ""),
+                        "companyName": position.get("companyName", ""),
+                        "description": position.get("description", ""),
+                        "locationName": position.get("locationName", ""),
+                        "timePeriod": position.get("timePeriod", {})
+                    }
+                    experiences.append(exp)
+                
+                logger.info(f"Successfully fetched {len(experiences)} work experiences via OAuth")
+                return experiences
+                
+            except httpx.RequestError as e:
+                logger.error(f"OAuth experience request failed: {e}")
+                raise LinkedInSyncError(f"Failed to fetch experience via OAuth: {e}")
+            except httpx.HTTPStatusError as e:
+                logger.error(f"OAuth experience HTTP error: {e.response.status_code} - {e.response.text}")
+                raise LinkedInSyncError(f"LinkedIn OAuth experience request failed: {e.response.status_code}")
     
     def _map_profile_data(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Map LinkedIn profile data to portfolio schema"""
@@ -148,7 +271,7 @@ class LinkedInSync:
             logger.info("Starting LinkedIn profile data sync")
             
             # Fetch data from LinkedIn
-            profile_data = self.fetch_profile_data()
+            profile_data = await self.fetch_profile_data()
             mapped_profile = self._map_profile_data(profile_data)
             
             # Update portfolio table
@@ -193,7 +316,7 @@ class LinkedInSync:
             logger.info("Starting LinkedIn experience data sync")
             
             # Fetch data from LinkedIn
-            experiences = self.fetch_experience_data()
+            experiences = await self.fetch_experience_data()
             mapped_experiences = self._map_experience_data(experiences)
             
             # Clear existing work experience for this portfolio (to avoid duplicates)
@@ -260,14 +383,24 @@ class LinkedInSync:
         logger.info(f"Full LinkedIn sync completed with status: {results['status']}")
         return results
     
-    def get_sync_status(self) -> Dict[str, Any]:
+    async def get_sync_status(self, admin_email: str = None) -> Dict[str, Any]:
         """Get current sync configuration status"""
+        # Get OAuth status if admin email provided
+        oauth_status = {}
+        if admin_email:
+            oauth_status = await linkedin_oauth.get_oauth_status(admin_email)
+        
+        # Legacy environment variable status (deprecated)
+        legacy_configured = bool(self.linkedin_username and self.linkedin_password)
+        
         return {
-            "linkedin_configured": bool(self.linkedin_username and self.linkedin_password),
+            "oauth": oauth_status,
+            "legacy_configured": legacy_configured,
             "linkedin_username": self.linkedin_username if self.linkedin_username else None,
             "target_profile_id": self.target_profile_id,
-            "portfolio_id": self.portfolio_id
+            "portfolio_id": self.portfolio_id,
+            "preferred_method": "oauth" if oauth_status.get("connected") else "legacy" if legacy_configured else "none"
         }
 
-# Create global instance
+# Create global instance (will be updated in endpoints to include admin_email)
 linkedin_sync = LinkedInSync()

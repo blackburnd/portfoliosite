@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Connected Successfully</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .success-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success-icon {
+            color: #28a745;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">✅</div>
+        <h1>LinkedIn Connected Successfully!</h1>
+        <p>Your LinkedIn account has been connected to your portfolio admin.</p>
+        <p><strong>Admin:</strong> {{ admin_email }}</p>
+        {% if linkedin_profile_id %}
+        <p><strong>LinkedIn Profile ID:</strong> {{ linkedin_profile_id }}</p>
+        {% endif %}
+        <p>You can now sync your LinkedIn data from the admin interface.</p>
+        <a href="/linkedin" class="btn">Return to LinkedIn Admin</a>
+    </div>
+    
+    <script>
+        // Auto-redirect after 5 seconds
+        setTimeout(() => {
+            window.location.href = '/linkedin';
+        }, 5000);
+    </script>
+</body>
+</html>

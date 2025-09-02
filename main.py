@@ -3,6 +3,7 @@ import os
 import secrets
 import logging
 import time
+from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -45,7 +46,7 @@ from auth import (
     create_access_token
 )
 from cookie_auth import require_admin_auth_cookie
-from linkedin_sync import linkedin_sync, LinkedInSyncError
+from linkedin_sync import linkedin_sync, LinkedInSyncError, LinkedInSync
 
 from app.resolvers import schema
 try:
@@ -794,7 +795,8 @@ async def linkedin_admin_page(request: Request, admin: dict = Depends(require_ad
 async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie)):
     """Get LinkedIn sync configuration status"""
     try:
-        status = linkedin_sync.get_sync_status()
+        admin_email = admin.get('email')
+        status = await linkedin_sync.get_sync_status(admin_email)
         return JSONResponse({
             "status": "success",
             "linkedin_sync": status
@@ -807,12 +809,115 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie))
         }, status_code=500)
 
 
+# --- LinkedIn OAuth Endpoints ---
+
+@app.get("/linkedin/oauth/authorize")
+async def linkedin_oauth_authorize(admin: dict = Depends(require_admin_auth_cookie)):
+    """Initiate LinkedIn OAuth flow"""
+    try:
+        from linkedin_oauth import linkedin_oauth
+        state = f"admin_{admin.get('email')}_{datetime.utcnow().timestamp()}"
+        auth_url = linkedin_oauth.get_authorization_url(state)
+        return JSONResponse({
+            "status": "success",
+            "authorization_url": auth_url,
+            "state": state
+        })
+    except Exception as e:
+        logger.error(f"LinkedIn OAuth authorization error: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+@app.get("/linkedin/oauth/callback")
+async def linkedin_oauth_callback(
+    request: Request,
+    code: str = None,
+    state: str = None,
+    error: str = None
+):
+    """Handle LinkedIn OAuth callback"""
+    try:
+        from linkedin_oauth import linkedin_oauth
+        
+        if error:
+            logger.error(f"LinkedIn OAuth error: {error}")
+            return templates.TemplateResponse("linkedin_oauth_error.html", {
+                "request": request,
+                "error": error
+            })
+        
+        if not code or not state:
+            raise ValueError("Missing authorization code or state")
+        
+        # Extract admin email from state
+        admin_email = state.split("_")[1] if "_" in state else None
+        if not admin_email:
+            raise ValueError("Invalid state parameter")
+        
+        # Exchange code for tokens
+        token_data = await linkedin_oauth.exchange_code_for_tokens(code)
+        
+        # Get user profile to verify
+        profile = await linkedin_oauth.get_user_profile(token_data["access_token"])
+        linkedin_profile_id = profile.get("id")
+        
+        # Store credentials
+        await linkedin_oauth.store_credentials(admin_email, token_data, linkedin_profile_id)
+        
+        logger.info(f"LinkedIn OAuth successful for admin: {admin_email}")
+        return templates.TemplateResponse("linkedin_oauth_success.html", {
+            "request": request,
+            "admin_email": admin_email,
+            "linkedin_profile_id": linkedin_profile_id
+        })
+        
+    except Exception as e:
+        logger.error(f"LinkedIn OAuth callback error: {str(e)}")
+        return templates.TemplateResponse("linkedin_oauth_error.html", {
+            "request": request,
+            "error": str(e)
+        })
+
+@app.delete("/linkedin/oauth/disconnect")
+async def linkedin_oauth_disconnect(admin: dict = Depends(require_admin_auth_cookie)):
+    """Disconnect LinkedIn OAuth"""
+    try:
+        from linkedin_oauth import linkedin_oauth
+        admin_email = admin.get('email')
+        success = await linkedin_oauth.delete_credentials(admin_email)
+        
+        if success:
+            return JSONResponse({
+                "status": "success",
+                "message": "LinkedIn account disconnected successfully"
+            })
+        else:
+            return JSONResponse({
+                "status": "error",
+                "error": "Failed to disconnect LinkedIn account"
+            }, status_code=500)
+            
+    except Exception as e:
+        logger.error(f"LinkedIn OAuth disconnect error: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 @app.post("/linkedin/sync/profile")
 async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth_cookie)):
     """Sync LinkedIn profile data to portfolio"""
     try:
-        logger.info(f"LinkedIn profile sync initiated by user: {admin.get('email', 'unknown')}")
-        result = await linkedin_sync.sync_profile_data()
+        admin_email = admin.get('email', 'unknown')
+        logger.info(f"LinkedIn profile sync initiated by user: {admin_email}")
+        
+        # Create sync instance with admin email for OAuth
+        sync_instance = LinkedInSync(admin_email)
+        result = await sync_instance.sync_profile_data()
+        
         return JSONResponse({
             "status": "success",
             "result": result
@@ -835,8 +940,13 @@ async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth_cookie)
 async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth_cookie)):
     """Sync LinkedIn work experience data to database"""
     try:
-        logger.info(f"LinkedIn experience sync initiated by user: {admin.get('email', 'unknown')}")
-        result = await linkedin_sync.sync_experience_data()
+        admin_email = admin.get('email', 'unknown')
+        logger.info(f"LinkedIn experience sync initiated by user: {admin_email}")
+        
+        # Create sync instance with admin email for OAuth
+        sync_instance = LinkedInSync(admin_email)
+        result = await sync_instance.sync_experience_data()
+        
         return JSONResponse({
             "status": "success",
             "result": result
@@ -859,8 +969,13 @@ async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth_cook
 async def sync_linkedin_full(admin: dict = Depends(require_admin_auth_cookie)):
     """Perform full LinkedIn sync (profile + experience)"""
     try:
-        logger.info(f"Full LinkedIn sync initiated by user: {admin.get('email', 'unknown')}")
-        result = await linkedin_sync.full_sync()
+        admin_email = admin.get('email', 'unknown')
+        logger.info(f"Full LinkedIn sync initiated by user: {admin_email}")
+        
+        # Create sync instance with admin email for OAuth
+        sync_instance = LinkedInSync(admin_email)
+        result = await sync_instance.full_sync()
+        
         return JSONResponse({
             "status": "success",
             "result": result
