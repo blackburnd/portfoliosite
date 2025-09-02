@@ -37,7 +37,6 @@ from auth import (
     get_current_user, 
     verify_token,
     is_authorized_user,
-    require_admin_auth,
     create_user_session,
     create_access_token
 )
@@ -695,7 +694,10 @@ async def work_admin_page(
 
 
 @app.get("/workadmin/bulk", response_class=HTMLResponse)
-async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
+async def work_admin_bulk_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
     """New bulk editor interface for work items"""
     return templates.TemplateResponse("workadmin_bulk.html", {
         "request": request,
@@ -748,7 +750,10 @@ async def admin_logs_redirect():
 
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
-async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
+async def projects_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
         "current_page": "projectsadmin",
@@ -757,7 +762,10 @@ async def projects_admin_page(request: Request, admin: dict = Depends(require_ad
 
 
 @app.get("/projectsadmin/bulk", response_class=HTMLResponse)
-async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
+async def projects_admin_bulk_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
     """New bulk editor interface for projects"""
     return templates.TemplateResponse("projectsadmin_bulk.html", {
         "request": request,
@@ -779,7 +787,7 @@ async def linkedin_admin_page(request: Request, admin: dict = Depends(require_ad
 # --- LinkedIn Sync Admin Endpoints ---
 
 @app.get("/linkedin/status")
-async def linkedin_sync_status(admin: dict = Depends(require_admin_auth)):
+async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie)):
     """Get LinkedIn sync configuration status"""
     try:
         status = linkedin_sync.get_sync_status()
@@ -796,7 +804,7 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth)):
 
 
 @app.post("/linkedin/sync/profile")
-async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth)):
+async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth_cookie)):
     """Sync LinkedIn profile data to portfolio"""
     try:
         logger.info(f"LinkedIn profile sync initiated by user: {admin.get('email', 'unknown')}")
@@ -820,7 +828,7 @@ async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth)):
 
 
 @app.post("/linkedin/sync/experience")
-async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth)):
+async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth_cookie)):
     """Sync LinkedIn work experience data to database"""
     try:
         logger.info(f"LinkedIn experience sync initiated by user: {admin.get('email', 'unknown')}")
@@ -844,7 +852,7 @@ async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth)):
 
 
 @app.post("/linkedin/sync/full")
-async def sync_linkedin_full(admin: dict = Depends(require_admin_auth)):
+async def sync_linkedin_full(admin: dict = Depends(require_admin_auth_cookie)):
     """Perform full LinkedIn sync (profile + experience)"""
     try:
         logger.info(f"Full LinkedIn sync initiated by user: {admin.get('email', 'unknown')}")
@@ -931,7 +939,7 @@ async def list_workitems():
 
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
-async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth)):
+async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth_cookie)):
     query = """
         INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
         VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
@@ -942,7 +950,7 @@ async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_au
 
 # Update a work item
 @app.put("/workitems/{id}", response_model=WorkItem)
-async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require_admin_auth)):
+async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require_admin_auth_cookie)):
     query = """
         UPDATE work_experience SET
             company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
@@ -958,7 +966,7 @@ async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require
 
 # Delete a work item
 @app.delete("/workitems/{id}")
-async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth)):
+async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)):
     query = "DELETE FROM work_experience WHERE id=:id"
     result = await database.execute(query, {"id": id})
     return {"success": True}
@@ -967,7 +975,7 @@ async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth)):
 # --- Bulk Operations for Work Items ---
 
 @app.post("/workitems/bulk", response_model=BulkWorkItemsResponse)
-async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dict = Depends(require_admin_auth)):
+async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dict = Depends(require_admin_auth_cookie)):
     """
     Bulk create or update work items. 
     Items with existing IDs will be updated, items without IDs will be created.
@@ -1027,7 +1035,7 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
 
 
 @app.delete("/workitems/bulk", response_model=BulkDeleteResponse)
-async def bulk_delete_workitems(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth)):
+async def bulk_delete_workitems(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth_cookie)):
     """
     Bulk delete work items by their IDs.
     """
@@ -1121,7 +1129,7 @@ async def list_projects():
 
 # Create a new project
 @app.post("/projects", response_model=Project)
-async def create_project(project: Project, admin: dict = Depends(require_admin_auth)):
+async def create_project(project: Project, admin: dict = Depends(require_admin_auth_cookie)):
     query = """
         INSERT INTO projects (portfolio_id, title, description, url, image_url, technologies, sort_order)
         VALUES (:portfolio_id, :title, :description, :url, :image_url, :technologies, :sort_order)
@@ -1144,7 +1152,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
 
 # Update a project
 @app.put("/projects/{id}", response_model=Project)
-async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth)):
+async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth_cookie)):
     query = """
         UPDATE projects SET
             title=:title, description=:description, url=:url, image_url=:image_url,
@@ -1169,7 +1177,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
 
 # Delete a project
 @app.delete("/projects/{id}")
-async def delete_project(id: str, admin: dict = Depends(require_admin_auth)):
+async def delete_project(id: str, admin: dict = Depends(require_admin_auth_cookie)):
     query = "DELETE FROM projects WHERE id=:id"
     result = await database.execute(query, {"id": id})
     return {"deleted": True, "id": id}
@@ -1177,7 +1185,7 @@ async def delete_project(id: str, admin: dict = Depends(require_admin_auth)):
 
 # Bulk create/update projects
 @app.post("/projects/bulk", response_model=BulkProjectsResponse)
-async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict = Depends(require_admin_auth)):
+async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict = Depends(require_admin_auth_cookie)):
     """
     Bulk create or update projects.
     """
@@ -1245,7 +1253,7 @@ async def bulk_create_update_projects(request: BulkProjectsRequest, admin: dict 
 
 # Bulk delete projects
 @app.delete("/projects/bulk", response_model=BulkDeleteResponse)
-async def bulk_delete_projects(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth)):
+async def bulk_delete_projects(request: BulkDeleteRequest, admin: dict = Depends(require_admin_auth_cookie)):
     """
     Bulk delete projects by their IDs.
     """
