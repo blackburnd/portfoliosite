@@ -47,6 +47,14 @@ class AuthenticationError(Exception):
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a JWT access token"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=== Token Creation Debug ===")
+    logger.info(f"Creating token for data: {data}")
+    logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
+    logger.info(f"SECRET_KEY length: {len(SECRET_KEY) if SECRET_KEY else 0}")
+    
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -54,19 +62,34 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
+    logger.info(f"Token payload: {to_encode}")
+    
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    logger.info(f"Created JWT token (first 50 chars): {encoded_jwt[:50] if encoded_jwt else 'None'}")
     return encoded_jwt
 
 
 def verify_token(token: str) -> dict:
     """Verify and decode JWT token"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=== Token Verification Debug ===")
+    logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
+    logger.info(f"SECRET_KEY length: {len(SECRET_KEY) if SECRET_KEY else 0}")
+    logger.info(f"Token to verify (first 50 chars): {token[:50] if token else 'None'}")
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        logger.info(f"JWT decoded successfully, email: {email}")
+        
         if email is None:
+            logger.error("No email (sub) found in JWT payload")
             raise AuthenticationError("Invalid token")
         return payload
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decoding failed: {str(e)}")
         raise AuthenticationError("Invalid token")
 
 
