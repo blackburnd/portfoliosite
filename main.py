@@ -571,7 +571,13 @@ async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_a
 
 
 # --- Logs Admin Page ---
-@app.get("/admin/logs", response_class=HTMLResponse)
+@app.get("/debug/test")
+async def debug_test():
+    """Simple test route to verify deployment"""
+    return {"status": "ok", "message": "Debug route working", "timestamp": time.time()}
+
+
+@app.get("/debug/logs", response_class=HTMLResponse)
 async def logs_admin_page(request: Request):
     """Admin page for viewing application logs (no auth required for debugging)"""
     return templates.TemplateResponse("logs.html", {
@@ -581,7 +587,7 @@ async def logs_admin_page(request: Request):
     })
 
 
-@app.get("/admin/logs/data")
+@app.get("/debug/logs/data")
 async def get_logs_data():
     """API endpoint to get log data as JSON (no auth required for debugging)"""
     logs = log_capture.get_logs()
@@ -592,7 +598,7 @@ async def get_logs_data():
     })
 
 
-@app.post("/admin/logs/clear")
+@app.post("/debug/logs/clear")
 async def clear_logs_data():
     """API endpoint to clear all logs (no auth required for debugging)"""
     log_capture.clear_logs()
