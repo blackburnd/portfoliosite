@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LinkedIn Sync Admin</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 30px; 
+        }
+        .content-section { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            margin-top: 20px; 
+        }
+        
+        /* Status Card Styles */
+        .status-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+        }
+        
+        .status-card h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .status-value {
+            color: #333;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.configured {
+            background-color: #28a745;
+        }
+        
+        .status-indicator.not-configured {
+            background-color: #dc3545;
+        }
+        
+        /* Sync Controls */
+        .sync-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .sync-button {
+            padding: 15px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .sync-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .sync-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+        
+        .btn-profile {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-profile:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        
+        .btn-experience {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-experience:hover:not(:disabled) {
+            background-color: #1e7e34;
+        }
+        
+        .btn-full {
+            background-color: #6f42c1;
+            color: white;
+        }
+        
+        .btn-full:hover:not(:disabled) {
+            background-color: #5a2d91;
+        }
+        
+        /* Result Display */
+        .result-section {
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .result-card.success {
+            border-color: #28a745;
+            background-color: #f0f9f4;
+        }
+        
+        .result-card.error {
+            border-color: #dc3545;
+            background-color: #fdf2f2;
+        }
+        
+        .result-card.info {
+            border-color: #17a2b8;
+            background-color: #f0f8ff;
+        }
+        
+        .result-card pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Configuration Help */
+        .config-help {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .config-help h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .config-help code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% include 'navigation.html' %}
+        
+        <div class="content-section">
+            <h1>🔗 LinkedIn Sync Admin</h1>
+            
+            <!-- Configuration Status -->
+            <div class="status-card">
+                <h2>📊 Configuration Status</h2>
+                <div id="status-content">
+                    <div class="loading"></div> Loading configuration status...
+                </div>
+            </div>
+            
+            <!-- Sync Controls -->
+            <div class="status-card">
+                <h2>🔄 Data Synchronization</h2>
+                <p>Sync your LinkedIn profile and work experience data to your portfolio database.</p>
+                
+                <div class="sync-controls">
+                    <button id="syncProfile" class="sync-button btn-profile" disabled>
+                        👤 Sync Profile Data
+                    </button>
+                    <button id="syncExperience" class="sync-button btn-experience" disabled>
+                        💼 Sync Work Experience
+                    </button>
+                    <button id="syncFull" class="sync-button btn-full" disabled>
+                        🚀 Full Sync (Profile + Experience)
+                    </button>
+                </div>
+                
+                <div id="sync-status" style="margin-top: 15px; font-style: italic; color: #666;">
+                    Ready to sync
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="result-section">
+                <div id="result-success" class="result-card success">
+                    <h3>✅ Sync Successful</h3>
+                    <div id="success-content"></div>
+                </div>
+                
+                <div id="result-error" class="result-card error">
+                    <h3>❌ Sync Error</h3>
+                    <div id="error-content"></div>
+                </div>
+                
+                <div id="result-info" class="result-card info">
+                    <h3>ℹ️ Sync Results</h3>
+                    <div id="info-content"></div>
+                </div>
+            </div>
+            
+            <!-- Configuration Help -->
+            <div id="config-help" class="config-help" style="display: none;">
+                <h3>⚙️ Configuration Required</h3>
+                <p>To use LinkedIn sync, you need to configure the following environment variables:</p>
+                <ul>
+                    <li><code>LINKEDIN_USERNAME</code> - Your LinkedIn email/username</li>
+                    <li><code>LINKEDIN_PASSWORD</code> - Your LinkedIn password</li>
+                    <li><code>LINKEDIN_PROFILE_ID</code> - Target LinkedIn profile ID (optional, defaults to 'blackburnd')</li>
+                </ul>
+                <p><strong>Note:</strong> LinkedIn credentials should be stored securely and may require app-specific passwords or OAuth tokens depending on your LinkedIn account security settings.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let linkedinConfigured = false;
+        
+        // DOM elements
+        const statusContent = document.getElementById('status-content');
+        const syncProfile = document.getElementById('syncProfile');
+        const syncExperience = document.getElementById('syncExperience');
+        const syncFull = document.getElementById('syncFull');
+        const syncStatus = document.getElementById('sync-status');
+        const configHelp = document.getElementById('config-help');
+        
+        // Result cards
+        const resultSuccess = document.getElementById('result-success');
+        const resultError = document.getElementById('result-error');
+        const resultInfo = document.getElementById('result-info');
+        const successContent = document.getElementById('success-content');
+        const errorContent = document.getElementById('error-content');
+        const infoContent = document.getElementById('info-content');
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfigurationStatus();
+            
+            // Add event listeners
+            syncProfile.addEventListener('click', () => performSync('profile'));
+            syncExperience.addEventListener('click', () => performSync('experience'));
+            syncFull.addEventListener('click', () => performSync('full'));
+        });
+        
+        // Load configuration status
+        async function loadConfigurationStatus() {
+            try {
+                const response = await fetch('/linkedin/status', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayConfigurationStatus(data.linkedin_sync);
+                
+            } catch (error) {
+                console.error('Error loading configuration status:', error);
+                statusContent.innerHTML = `
+                    <div style="color: red;">
+                        ❌ Error loading configuration: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Display configuration status
+        function displayConfigurationStatus(config) {
+            linkedinConfigured = config.linkedin_configured;
+            
+            const configIndicator = linkedinConfigured ? 
+                '<span class="status-indicator configured"></span>Configured' :
+                '<span class="status-indicator not-configured"></span>Not Configured';
+            
+            statusContent.innerHTML = `
+                <div class="status-item">
+                    <span class="status-label">LinkedIn API:</span>
+                    <span class="status-value">${configIndicator}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Username:</span>
+                    <span class="status-value">${config.linkedin_username || 'Not set'}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Target Profile ID:</span>
+                    <span class="status-value">${config.target_profile_id}</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Portfolio ID:</span>
+                    <span class="status-value">${config.portfolio_id}</span>
+                </div>
+            `;
+            
+            // Enable/disable sync buttons based on configuration
+            if (linkedinConfigured) {
+                syncProfile.disabled = false;
+                syncExperience.disabled = false;
+                syncFull.disabled = false;
+                syncStatus.textContent = 'Ready to sync';
+                configHelp.style.display = 'none';
+            } else {
+                syncProfile.disabled = true;
+                syncExperience.disabled = true;
+                syncFull.disabled = true;
+                syncStatus.textContent = 'Configuration required before sync';
+                configHelp.style.display = 'block';
+            }
+        }
+        
+        // Perform sync operation
+        async function performSync(type) {
+            if (!linkedinConfigured) {
+                showError('LinkedIn sync is not configured. Please set up environment variables.');
+                return;
+            }
+            
+            // Clear previous results
+            hideAllResults();
+            
+            // Update UI for loading state
+            const button = type === 'profile' ? syncProfile : 
+                          type === 'experience' ? syncExperience : syncFull;
+            const originalText = button.textContent;
+            
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span>' + originalText;
+            syncStatus.textContent = `Syncing ${type} data...`;
+            
+            try {
+                const response = await fetch(`/linkedin/sync/${type}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    showSuccess(`${type} sync completed successfully!`, data.result);
+                    syncStatus.textContent = `${type} sync completed successfully`;
+                } else {
+                    showError(data.error || `${type} sync failed`);
+                    syncStatus.textContent = `${type} sync failed`;
+                }
+                
+            } catch (error) {
+                console.error('Sync error:', error);
+                showError(`Network error during ${type} sync: ${error.message}`);
+                syncStatus.textContent = `${type} sync failed`;
+            } finally {
+                // Restore button state
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+        
+        // Show success result
+        function showSuccess(message, data) {
+            hideAllResults();
+            successContent.innerHTML = `
+                <p>${message}</p>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultSuccess.style.display = 'block';
+        }
+        
+        // Show error result
+        function showError(message) {
+            hideAllResults();
+            errorContent.innerHTML = `<p>${message}</p>`;
+            resultError.style.display = 'block';
+        }
+        
+        // Show info result
+        function showInfo(message, data) {
+            hideAllResults();
+            infoContent.innerHTML = `
+                <p>${message}</p>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultInfo.style.display = 'block';
+        }
+        
+        // Hide all result cards
+        function hideAllResults() {
+            resultSuccess.style.display = 'none';
+            resultError.style.display = 'none';
+            resultInfo.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
