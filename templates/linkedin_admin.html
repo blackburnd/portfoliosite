@@ -164,6 +164,87 @@
             background-color: #dc3545;
         }
         
+        .status-indicator.deprecated {
+            background-color: #ffc107;
+        }
+        
+        /* OAuth Styles */
+        .oauth-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .oauth-btn {
+            background-color: #0077b5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 5px;
+            transition: background-color 0.2s;
+        }
+        
+        .oauth-btn:hover {
+            background-color: #005885;
+        }
+        
+        .oauth-btn.secondary {
+            background-color: #6c757d;
+        }
+        
+        .oauth-btn.secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .oauth-btn.danger {
+            background-color: #dc3545;
+        }
+        
+        .oauth-btn.danger:hover {
+            background-color: #c82333;
+        }
+        
+        .oauth-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .oauth-connected {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .oauth-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .legacy-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+        }
+        
+        .legacy-section summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #856404;
+        }
+        
         /* Sync Controls */
         .sync-controls {
             display: grid;
@@ -555,14 +636,45 @@
             
             <!-- Configuration Help -->
             <div id="config-help" class="config-help" style="display: none;">
-                <h3>⚙️ Configuration Required</h3>
-                <p>To use LinkedIn sync, you need to configure the following environment variables:</p>
-                <ul>
-                    <li><code>LINKEDIN_USERNAME</code> - Your LinkedIn email/username</li>
-                    <li><code>LINKEDIN_PASSWORD</code> - Your LinkedIn password</li>
-                    <li><code>LINKEDIN_PROFILE_ID</code> - Target LinkedIn profile ID (optional, defaults to 'blackburnd')</li>
-                </ul>
-                <p><strong>Note:</strong> LinkedIn credentials should be stored securely and may require app-specific passwords or OAuth tokens depending on your LinkedIn account security settings.</p>
+                <h3>⚙️ LinkedIn Authentication Required</h3>
+                <p>To use LinkedIn sync, you need to connect your LinkedIn account via OAuth 2.0:</p>
+                <div class="oauth-section">
+                    <h4>🔐 Secure OAuth Authentication</h4>
+                    <p>Click the button below to securely connect your LinkedIn account:</p>
+                    <button id="connectLinkedInBtn" class="oauth-btn" onclick="connectLinkedIn()">
+                        🔗 Connect LinkedIn Account
+                    </button>
+                    <p class="oauth-note">This will redirect you to LinkedIn to authorize access to your profile data.</p>
+                </div>
+                
+                <details class="legacy-section">
+                    <summary>🔧 Legacy Environment Variables (Deprecated)</summary>
+                    <p>The old method using environment variables is deprecated but still supported:</p>
+                    <ul>
+                        <li><code>LINKEDIN_USERNAME</code> - Your LinkedIn email/username</li>
+                        <li><code>LINKEDIN_PASSWORD</code> - Your LinkedIn password</li>
+                        <li><code>LINKEDIN_PROFILE_ID</code> - Target LinkedIn profile ID (optional)</li>
+                    </ul>
+                    <p><strong>⚠️ Note:</strong> Environment variable method is deprecated and less secure. Please use OAuth authentication instead.</p>
+                </details>
+            </div>
+            
+            <!-- OAuth Connected Section -->
+            <div id="oauth-connected" class="oauth-connected" style="display: none;">
+                <h3>✅ LinkedIn Account Connected</h3>
+                <div id="oauth-status">
+                    <p><strong>Status:</strong> <span id="connection-status">Connected</span></p>
+                    <p><strong>Profile ID:</strong> <span id="linkedin-profile-id">-</span></p>
+                    <p><strong>Token Expires:</strong> <span id="token-expires">-</span></p>
+                </div>
+                <div class="oauth-actions">
+                    <button id="refreshTokenBtn" class="oauth-btn secondary" onclick="refreshToken()">
+                        🔄 Refresh Connection
+                    </button>
+                    <button id="disconnectBtn" class="oauth-btn danger" onclick="disconnectLinkedIn()">
+                        ❌ Disconnect Account
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -570,6 +682,7 @@
     <script>
         // Global state
         let linkedinConfigured = false;
+        let oauthConnected = false;
         
         // DOM elements
         const statusContent = document.getElementById('status-content');
@@ -578,6 +691,7 @@
         const syncFull = document.getElementById('syncFull');
         const syncStatus = document.getElementById('sync-status');
         const configHelp = document.getElementById('config-help');
+        const oauthConnectedDiv = document.getElementById('oauth-connected');
         
         // Result cards
         const resultSuccess = document.getElementById('result-success');
@@ -625,20 +739,55 @@
         
         // Display configuration status
         function displayConfigurationStatus(config) {
-            linkedinConfigured = config.linkedin_configured;
+            // Check OAuth status
+            const oauth = config.oauth || {};
+            oauthConnected = oauth.connected && oauth.token_valid;
+            linkedinConfigured = oauthConnected || config.legacy_configured;
             
-            const configIndicator = linkedinConfigured ? 
-                '<span class="status-indicator configured"></span>Configured' :
-                '<span class="status-indicator not-configured"></span>Not Configured';
+            // Update OAuth status display
+            if (oauthConnected) {
+                // Show OAuth connected section
+                oauthConnectedDiv.style.display = 'block';
+                configHelp.style.display = 'none';
+                
+                // Update OAuth status details
+                document.getElementById('connection-status').textContent = 
+                    oauth.token_valid ? 'Connected & Valid' : 'Connected (Token Expired)';
+                document.getElementById('linkedin-profile-id').textContent = 
+                    oauth.linkedin_profile_id || 'Not available';
+                document.getElementById('token-expires').textContent = 
+                    oauth.expires_at ? new Date(oauth.expires_at).toLocaleString() : 'Unknown';
+                    
+            } else if (oauth.configured) {
+                // OAuth is configured but not connected
+                configHelp.style.display = 'block';
+                oauthConnectedDiv.style.display = 'none';
+            } else {
+                // No OAuth configuration
+                configHelp.style.display = 'block';
+                oauthConnectedDiv.style.display = 'none';
+            }
+            
+            // Configuration status for display
+            let authMethod = 'Not Configured';
+            let authIndicator = '<span class="status-indicator not-configured"></span>';
+            
+            if (oauthConnected) {
+                authMethod = 'OAuth 2.0 (Secure)';
+                authIndicator = '<span class="status-indicator configured"></span>';
+            } else if (config.legacy_configured) {
+                authMethod = 'Environment Variables (Deprecated)';
+                authIndicator = '<span class="status-indicator deprecated"></span>';
+            }
             
             statusContent.innerHTML = `
                 <div class="status-item">
-                    <span class="status-label">LinkedIn API:</span>
-                    <span class="status-value">${configIndicator}</span>
+                    <span class="status-label">Authentication:</span>
+                    <span class="status-value">${authIndicator}${authMethod}</span>
                 </div>
                 <div class="status-item">
-                    <span class="status-label">Username:</span>
-                    <span class="status-value">${config.linkedin_username || 'Not set'}</span>
+                    <span class="status-label">Preferred Method:</span>
+                    <span class="status-value">${config.preferred_method || 'none'}</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">Target Profile ID:</span>
@@ -747,6 +896,71 @@
             resultSuccess.style.display = 'none';
             resultError.style.display = 'none';
             resultInfo.style.display = 'none';
+        }
+        
+        // OAuth Functions
+        async function connectLinkedIn() {
+            try {
+                const response = await fetch('/linkedin/oauth/authorize', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // Redirect to LinkedIn authorization
+                    window.location.href = data.authorization_url;
+                } else {
+                    showError('Failed to initiate LinkedIn connection: ' + data.error);
+                }
+                
+            } catch (error) {
+                console.error('Error connecting LinkedIn:', error);
+                showError('Error connecting to LinkedIn: ' + error.message);
+            }
+        }
+        
+        async function disconnectLinkedIn() {
+            if (!confirm('Are you sure you want to disconnect your LinkedIn account?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/linkedin/oauth/disconnect', {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showSuccess('LinkedIn account disconnected successfully');
+                    // Reload status
+                    loadConfigurationStatus();
+                } else {
+                    showError('Failed to disconnect LinkedIn: ' + data.error);
+                }
+                
+            } catch (error) {
+                console.error('Error disconnecting LinkedIn:', error);
+                showError('Error disconnecting LinkedIn: ' + error.message);
+            }
+        }
+        
+        async function refreshToken() {
+            // For now, just reconnect (full OAuth flow)
+            await connectLinkedIn();
         }
     </script>
 </body>
