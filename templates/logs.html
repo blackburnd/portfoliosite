@@ -254,7 +254,7 @@
             
             async function loadLogs() {
                 try {
-                    const response = await fetch('/admin/logs/data');
+                    const response = await fetch('/debug/logs/data');
                     const data = await response.json();
                     
                     allLogs = data.logs || [];
@@ -342,7 +342,7 @@
             window.clearLogs = async function() {
                 if (confirm('Are you sure you want to clear all logs?')) {
                     try {
-                        await fetch('/admin/logs/clear', { method: 'POST' });
+                        await fetch('/debug/logs/clear', { method: 'POST' });
                         loadLogs();
                     } catch (error) {
                         alert('Failed to clear logs: ' + error.message);
