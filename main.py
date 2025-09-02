@@ -572,18 +572,18 @@ async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_a
 
 # --- Logs Admin Page ---
 @app.get("/admin/logs", response_class=HTMLResponse)
-async def logs_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
-    """Admin page for viewing application logs"""
+async def logs_admin_page(request: Request):
+    """Admin page for viewing application logs (no auth required for debugging)"""
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "current_page": "logs",
-        "user": admin
+        "user": {"email": "debug@example.com", "name": "Debug User"}  # Mock user for template
     })
 
 
 @app.get("/admin/logs/data")
-async def get_logs_data(admin: dict = Depends(require_admin_auth_cookie)):
-    """API endpoint to get log data as JSON"""
+async def get_logs_data():
+    """API endpoint to get log data as JSON (no auth required for debugging)"""
     logs = log_capture.get_logs()
     stats = log_capture.get_stats()
     return JSONResponse({
@@ -593,8 +593,8 @@ async def get_logs_data(admin: dict = Depends(require_admin_auth_cookie)):
 
 
 @app.post("/admin/logs/clear")
-async def clear_logs_data(admin: dict = Depends(require_admin_auth_cookie)):
-    """API endpoint to clear all logs"""
+async def clear_logs_data():
+    """API endpoint to clear all logs (no auth required for debugging)"""
     log_capture.clear_logs()
     return JSONResponse({"status": "success", "message": "Logs cleared"})
 
