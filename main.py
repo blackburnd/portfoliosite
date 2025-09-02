@@ -280,6 +280,14 @@ class BrowsableStaticFiles(StaticFiles):
 app.mount("/assets", BrowsableStaticFiles(directory="assets"), name="assets")
 templates = Jinja2Templates(directory="templates")
 
+
+# Add favicon route to prevent 404 errors
+@app.get("/favicon.ico")
+async def favicon():
+    """Return a 204 No Content for favicon requests to avoid 404 errors"""
+    return Response(status_code=204)
+
+
 # Database initialization
 @app.on_event("startup")
 async def startup_event():

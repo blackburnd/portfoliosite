@@ -148,21 +148,51 @@
         gtag('js', new Date());
         gtag('config', 'UA-27877508-5');
     </script>
-    <link rel="stylesheet" href="/templates/style.css">
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 
 <body class="work">
     <div class="wrap">
         <div class="fg">
-            {% include 'navigation.html' %}
+            <header class="site-header" id="h">
+                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                <p class="tagline">Curious novel<br>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
+                <nav>
+                    <ul>
+                        <li class="me">
+                            <a href="/"><span>Daniel</span> Blackburn</a>
+                        </li>
+                        <li class="projects active">
+                            <a href="/work/"><span>selected</span> work</a>
+                        </li>
+                        <li class="contact">
+                            <a href="/contact/"><span>we should</span> talk</a>
+                        </li>
+                        <li class="resume">
+                            <a href="/resume" target="_blank">resume</a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+                        </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
                     <section class="work-content">
-                        <h2>Work Experience</h2>
-                        <p>Here's a collection of my professional experience and career journey. I specialize in cloud technologies, automation, and modern web development.</p>
+                        <h2>My Work</h2>
+                        <p>Here's a collection of my professional experience and selected projects. I specialize in cloud technologies, automation, and modern web development.</p>
 
                         <div id="work-container">
-                            <div class="loading">Loading work experience...</div>
+                            <div class="loading">Loading work experience and projects...</div>
                         </div>
                     </section>
                 </article>
@@ -174,9 +204,9 @@
     </div><!-- .wrap -->
 
     <script>
-        // GraphQL query to fetch only work experience
+        // GraphQL query to fetch portfolio data
         const query = `
-            query GetWorkExperience {
+            query GetPortfolio {
                 portfolio {
                     workExperience {
                         id
@@ -188,6 +218,13 @@
                         description
                         isCurrent
                         companyUrl
+                    }
+                    projects {
+                        id
+                        title
+                        description
+                        url
+                        technologies
                     }
                 }
             }
@@ -220,7 +257,7 @@
 
                 // Work Experience Section
                 if (portfolio.workExperience && portfolio.workExperience.length > 0) {
-                    html += '<div class="work-section">';
+                    html += '<div class="work-section"><h2>Work Experience</h2>';
                     portfolio.workExperience.forEach(work => {
                         const currentBadge = work.isCurrent ? '<span class="current-badge">Current</span>' : '';
                         const dateRange = work.endDate ? `${work.startDate} - ${work.endDate}` : `${work.startDate} - Present`;
@@ -237,8 +274,30 @@
                         `;
                     });
                     html += '</div>';
-                } else {
-                    html = '<div class="error">No work experience found.</div>';
+                }
+
+                // Projects Section
+                if (portfolio.projects && portfolio.projects.length > 0) {
+                    html += '<div class="work-section"><h2>Featured Projects</h2>';
+                    portfolio.projects.forEach(project => {
+                        const projectLink = project.url ? `<a href="${project.url}" target="_blank">${project.title}</a>` : project.title;
+                        const techTags = project.technologies && project.technologies.length > 0 
+                            ? project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')
+                            : '';
+                        
+                        html += `
+                            <div class="project-item">
+                                <h3>${projectLink}</h3>
+                                <p>${project.description}</p>
+                                ${techTags ? `<div class="tech-tags">${techTags}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                if (!html) {
+                    html = '<div class="error">No work experience or projects found.</div>';
                 }
 
                 container.innerHTML = html;

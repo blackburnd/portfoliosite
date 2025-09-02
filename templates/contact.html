@@ -128,13 +128,44 @@
         gtag('js', new Date());
         gtag('config', 'UA-27877508-5');
     </script>
-    <link rel="stylesheet" href="/templates/style.css">
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 
 <body class="contact">
     <div class="wrap">
         <div class="fg">
-            {% include 'navigation.html' %}
+            <header class="site-header" id="h">
+                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                <p class="tagline">Curious novel<br>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
+                <nav>
+                    <ul>
+                        <li class="me">
+                            <a href="/"><span>Daniel</span> Blackburn</a>
+                        </li>
+                        <li class="projects">
+                            <a href="/work/"><span>selected</span> work</a>
+                        </li>
+                        <li class="contact active">
+                            <a href="/contact/"><span>we should</span> talk</a>
+                        </li>
+                        <li class="resume">
+                                <a href="/resume/" target="_blank">resume</a>
+                                <a href="/resume/download/" target="_blank" style="margin-left:10px;">download resume</a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+                        </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
                     <section class="contact-content">
