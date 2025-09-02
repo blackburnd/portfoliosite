@@ -486,7 +486,7 @@ async def auth_callback(request: Request):
         access_token = create_access_token(session_data)
         
         # Redirect to admin page with token
-        response = RedirectResponse(url="/admin/work/")
+        response = RedirectResponse(url="/workadmin")
         response.set_cookie(
             key="access_token", 
             value=f"Bearer {access_token}",
