@@ -2,6 +2,7 @@
 <style>
     /* Navigation Styles */
     .site-header {
+        position: relative;
         margin-bottom: 30px;
         padding-bottom: 20px;
         border-bottom: 1px solid #eee;
@@ -19,6 +20,34 @@
         margin: 10px 0;
     }
 
+    /* Login/Logout positioned at top-right */
+    .auth-section {
+        position: absolute;
+        top: 0;
+        right: 0;
+        font-size: 0.9em;
+    }
+
+    .auth-section a {
+        color: #28a745;
+        text-decoration: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background-color 0.3s ease;
+    }
+
+    .auth-section a:hover {
+        background-color: #f0fff4;
+    }
+
+    .user-info {
+        color: #666;
+        font-size: 0.8em;
+        margin-bottom: 5px;
+        font-style: italic;
+    }
+
+    /* Main navigation */
     nav ul {
         list-style: none;
         padding: 0;
@@ -61,6 +90,37 @@
         font-size: 0.8em;
     }
 
+    /* Social links section */
+    .social-links {
+        border-left: 3px solid #6c757d;
+        padding-left: 15px;
+        margin-left: 10px;
+        margin-top: 10px;
+    }
+
+    .social-links h4 {
+        margin: 0 0 10px 0;
+        font-size: 0.9em;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .social-links ul {
+        margin: 0;
+        padding: 0;
+        gap: 10px;
+    }
+
+    .social-links a {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    .social-links a:hover {
+        background-color: #f8f9fa;
+    }
+
     /* Icon styling for social links */
     .linkedin a::before {
         content: "🔗";
@@ -77,146 +137,110 @@
         margin-right: 4px;
     }
 
-    /* Admin section styling */
-    .admin-section {
-        border-left: 3px solid #dc3545;
-        padding-left: 15px;
-        margin-left: 10px;
+    .resume a::before {
+        content: "📄";
+        margin-right: 4px;
     }
 
-    .admin-section a {
-        color: #dc3545;
-        font-size: 0.9em;
-    }
-
-    .admin-section a:hover {
-        background-color: #fff5f5;
-    }
-
-    .admin-section li.active a {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    /* User section styling */
-    .user-section {
-        border-left: 3px solid #28a745;
+    /* Contact link styling */
+    .contact-link {
+        border-left: 3px solid #17a2b8;
         padding-left: 15px;
         margin-left: 10px;
         margin-top: 10px;
     }
 
-    .user-section a {
-        color: #28a745;
-        font-size: 0.9em;
+    .contact-link a {
+        color: #17a2b8;
+        font-weight: 500;
     }
 
-    .user-section a:hover {
-        background-color: #f0fff4;
-    }
-
-    .user-info {
-        color: #666;
-        font-size: 0.8em;
-        padding: 4px 8px;
-        font-style: italic;
+    .contact-link a:hover {
+        background-color: #e1f7fe;
     }
 
     @media (max-width: 768px) {
+        .auth-section {
+            position: static;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        
         nav ul {
             flex-direction: column;
             gap: 10px;
         }
         
-        .admin-section {
+        .social-links, .contact-link {
             border-left: none;
-            border-top: 2px solid #dc3545;
+            border-top: 2px solid #6c757d;
             padding-left: 0;
             padding-top: 10px;
             margin-left: 0;
             margin-top: 10px;
         }
-        
-        .user-section {
-            border-left: none;
-            border-top: 2px solid #28a745;
-            padding-left: 0;
-            padding-top: 10px;
-            margin-left: 0;
-            margin-top: 10px;
+
+        .contact-link {
+            border-top-color: #17a2b8;
         }
     }
 </style>
 
 <header class="site-header" id="h">
+    <!-- Login/Logout at top-right -->
+    <div class="auth-section">
+        {% if user %}
+        <div class="user-info">
+            Logged in as: {{ user.name or user.email }}
+        </div>
+        <a href="/auth/logout">🚪 Logout</a>
+        {% else %}
+        <a href="/auth/login">🔑 Admin Login</a>
+        {% endif %}
+    </div>
+
     <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
     <p class="tagline">Curious novel<br>
         <span class="amp">&amp;</span> solutions work.
     </p>
+    
     <nav>
         <ul>
             <li class="me {{ 'active' if current_page == 'home' else '' }}">
                 <a href="/"><span>Daniel</span> Blackburn</a>
             </li>
-            <li class="projects {{ 'active' if current_page == 'work' else '' }}">
-                <a href="/work/"><span>work</span> experience</a>
+            {% if current_page != 'home' %}
+            <li class="featured {{ 'active' if current_page == 'featured' else '' }}">
+                <a href="/featured/"><span>Featured</span> Work & Projects</a>
             </li>
-            <li class="projects {{ 'active' if current_page == 'projects' else '' }}">
-                <a href="/projects/"><span>featured</span> projects</a>
-            </li>
-            <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
-                <a href="/contact/"><span>we should</span> talk</a>
-            </li>
-            <li class="resume">
-                <a href="/resume" target="_blank">resume</a>
-            </li>
-            <li class="linkedin">
-                <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
-            </li>
-            <li class="github">
-                <a href="https://github.com/blackburnd" target="_blank">github</a>
-            </li>
-            <li class="pypi">
-                <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
-            </li>
+            {% endif %}
         </ul>
         
-        <!-- Admin Section -->
-        <div class="admin-section">
+        <!-- Social Links Section -->
+        <div class="social-links">
+            <h4>Connect</h4>
             <ul>
-                <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
-                    <a href="/workadmin">Work Admin</a>
+                <li class="resume">
+                    <a href="/resume" target="_blank">resume</a>
                 </li>
-                <li class="workadmin-bulk {{ 'active' if current_page == 'workadmin_bulk' else '' }}">
-                    <a href="/workadmin/bulk">Work Admin (Bulk)</a>
+                <li class="linkedin">
+                    <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
                 </li>
-                <li class="projectsadmin {{ 'active' if current_page == 'projectsadmin' else '' }}">
-                    <a href="/projectsadmin">Projects Admin</a>
+                <li class="github">
+                    <a href="https://github.com/blackburnd" target="_blank">github</a>
                 </li>
-                <li class="projectsadmin-bulk {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">
-                    <a href="/projectsadmin/bulk">Projects Admin (Bulk)</a>
-                </li>
-                <li class="logs {{ 'active' if current_page == 'logs' else '' }}">
-                    <a href="/admin/logs">🔍 Logs</a>
+                <li class="pypi">
+                    <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
                 </li>
             </ul>
         </div>
         
-        <!-- User Authentication Section -->
-        <div class="user-section">
+        <!-- Contact Section -->
+        <div class="contact-link">
             <ul>
-                {% if user %}
-                <li class="user-info">
-                    Logged in as: {{ user.name or user.email }}
+                <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
+                    <a href="/contact/">Let's talk about your project</a>
                 </li>
-                <li class="logout">
-                    <a href="/auth/logout">🚪 Logout</a>
-                </li>
-                {% else %}
-                <li class="login">
-                    <a href="/auth/login">🔑 Admin Login</a>
-                </li>
-                {% endif %}
             </ul>
         </div>
     </nav>
