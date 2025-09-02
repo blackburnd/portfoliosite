@@ -1,46 +1,337 @@
 <!DOCTYPE html>
-<html lang="en">
+<html
+    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Projects Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Projects Admin - Daniel Blackburn</title>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+
+    <!-- Add consistent CSS styling matching index.html -->
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { color: #333; margin-bottom: 30px; }
-        .content-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
-        #grid { width: 100%; margin-bottom: 20px; }
-        #grid table { width: 100%; border-collapse: collapse; }
-        #grid th, #grid td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        #grid th { background-color: #f8f9fa; font-weight: bold; }
-        #grid tr:nth-child(even) { background-color: #f9f9f9; }
-        .crud-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .crud-buttons button { padding: 12px 24px; font-size: 14px; cursor: pointer; border: none; border-radius: 4px; }
-        #addBtn { background-color: #28a745; color: white; }
-        #addBtn:hover { background-color: #218838; }
-        #deleteBtn { background-color: #dc3545; color: white; }
-        #deleteBtn:hover { background-color: #c82333; }
-        .loading { color: #666; font-style: italic; padding: 20px; }
-        .error { color: red; padding: 20px; }
-        input[type="checkbox"] { cursor: pointer; }
-        .tech-tags { font-size: 0.85em; }
-        .tech-tag { background: #e9ecef; padding: 2px 6px; border-radius: 3px; margin: 1px; display: inline-block; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .site-header {
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            text-decoration: none;
+            color: #333;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .tagline {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        nav {
+            position: relative;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #0066cc;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Authentication and admin links */
+        .auth-admin-section {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+
+        .auth-link {
+            background-color: #28a745;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .auth-link:hover {
+            background-color: #218838;
+            text-decoration: none;
+        }
+
+        .logout-link {
+            background-color: #dc3545;
+        }
+
+        .logout-link:hover {
+            background-color: #c82333;
+        }
+
+        .admin-links {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .admin-link {
+            background-color: #6c757d;
+            color: white !important;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            background-color: #5a6268;
+            text-decoration: none;
+        }
+
+        .admin-link.active {
+            background-color: #dc3545;
+        }
+
+        /* Icon styling for social links */
+        .linkedin a::before {
+            content: "🔗";
+            margin-right: 4px;
+        }
+
+        .github a::before {
+            content: "🐙";
+            margin-right: 4px;
+        }
+
+        .pypi a::before {
+            content: "📦";
+            margin-right: 4px;
+        }
+
+        /* Projects admin specific styles */
+        .projects-admin-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .projects-admin-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        #grid { 
+            width: 100%; 
+            margin-bottom: 20px; 
+        }
+        
+        #grid table { 
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        
+        #grid th, #grid td { 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            text-align: left; 
+        }
+        
+        #grid th { 
+            background-color: #f8f9fa; 
+            font-weight: bold; 
+        }
+        
+        #grid tr:nth-child(even) { 
+            background-color: #f9f9f9; 
+        }
+        
+        .crud-buttons { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .crud-buttons button { 
+            padding: 12px 24px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 4px; 
+        }
+        
+        #addBtn { 
+            background-color: #28a745; 
+            color: white; 
+        }
+        
+        #addBtn:hover { 
+            background-color: #218838; 
+        }
+        
+        #deleteBtn { 
+            background-color: #dc3545; 
+            color: white; 
+        }
+        
+        #deleteBtn:hover { 
+            background-color: #c82333; 
+        }
+        
+        .loading { 
+            color: #666; 
+            font-style: italic; 
+            padding: 20px; 
+            text-align: center;
+        }
+        
+        .error { 
+            color: red; 
+            padding: 20px; 
+            text-align: center;
+        }
+        
+        input[type="checkbox"] { 
+            cursor: pointer; 
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .admin-links {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .crud-buttons {
+                flex-direction: column;
+            }
+
+            .crud-buttons button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        {% include 'navigation.html' %}
-        
-        <div class="content-section">
-            <h1>Projects Admin</h1>
-            <div id="grid">Loading projects...</div>
-            <div class="crud-buttons">
-                <button id="addBtn">Add Project</button>
-                <button id="deleteBtn">Delete Selected</button>
+
+<body class="me">
+    <div class="wrap">
+        <div class="fg">
+            <header class="site-header" id="h">
+                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                <p class="tagline">Curious novel<br>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
+                <nav>
+                    <ul>
+                        <li class="me">
+                            <a href="/"><span>Daniel</span> Blackburn</a>
+                        </li>
+                        <li class="projects">
+                            <a href="/work/"><span>work experience</span></a>
+                        </li>
+                        <li class="projects">
+                            <a href="/work/"><span>featured projects</span></a>
+                        </li>
+                        <li class="contact">
+                            <a href="/contact/"><span>we should</span> talk</a>
+                        </li>
+                        <li class="resume">
+                            <a href="/resume" target="_blank">resume</a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+                        </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <!-- Authentication and Admin Links -->
+                <div class="auth-admin-section">
+                    <div>
+                        <span style="font-style: italic; color: #666; font-size: 0.85em;">Logged in as: {{ user.email if user else 'Daniel Blackburn' }}</span>
+                        <a href="/auth/logout" class="auth-link logout-link">🚪 Logout</a>
+                        <div class="admin-links">
+                            <a href="/workadmin" class="admin-link">Work Admin</a>
+                            <a href="/workadmin/bulk" class="admin-link">Work Admin (Bulk)</a>
+                            <a href="/projectsadmin" class="admin-link active">Projects Admin</a>
+                            <a href="/projectsadmin/bulk" class="admin-link">Projects Admin (Bulk)</a>
+                            <a href="/linkedin" class="admin-link">🔄 LinkedIn Sync</a>
+                            <a href="/admin/logs" class="admin-link">📊 Logs</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="bw" aria-live="polite">
+                <div class="projects-admin-content">
+                    <h2>Projects Admin</h2>
+                    <div id="grid">Loading projects...</div>
+                    <div class="crud-buttons">
+                        <button id="addBtn">Add Project</button>
+                        <button id="deleteBtn">Delete Selected</button>
+                    </div>
+                </div>
             </div>
+            
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
         </div>
     </div>
+
     <script>
-        // Use standard JavaScript for better compatibility
+        // Projects Admin JavaScript
         document.addEventListener('DOMContentLoaded', function() {
             function loadGrid() {
                 document.getElementById('grid').innerHTML = '<div class="loading">Loading projects...</div>';
@@ -53,115 +344,61 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log("Loaded projects:", data);
-                        let gridHtml = '<table><tr>' +
-                            '<th>Select</th><th>Title</th><th>Description</th><th>URL</th><th>Technologies</th></tr>';
+                        let html = '<table><thead><tr>';
+                        html += '<th>Select</th><th>Title</th><th>Description</th><th>URL</th><th>Technologies</th>';
+                        html += '</tr></thead><tbody>';
                         
                         if (data && data.length > 0) {
-                            data.forEach(function(item) {
-                                const techTags = (item.technologies || []).map(tech => 
-                                    `<span class="tech-tag">${tech}</span>`
-                                ).join(' ');
-                                
-                                gridHtml += '<tr data-id="' + item.id + '">' +
-                                    '<td><input type="checkbox" class="select-row"></td>' +
-                                    '<td>' + (item.title || '') + '</td>' +
-                                    '<td>' + (item.description || '').substring(0, 100) + (item.description && item.description.length > 100 ? '...' : '') + '</td>' +
-                                    '<td>' + (item.url ? `<a href="${item.url}" target="_blank">View</a>` : '-') + '</td>' +
-                                    '<td class="tech-tags">' + techTags + '</td>' +
-                                    '</tr>';
+                            data.forEach(item => {
+                                html += '<tr>';
+                                html += `<td><input type="checkbox" value="${item.id}"></td>`;
+                                html += `<td>${escapeHtml(item.title || '')}</td>`;
+                                html += `<td>${escapeHtml(item.description || '')}</td>`;
+                                html += `<td>${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank">${escapeHtml(item.url)}</a>` : ''}</td>`;
+                                html += `<td>${item.technologies ? item.technologies.join(', ') : ''}</td>`;
+                                html += '</tr>';
                             });
                         } else {
-                            gridHtml += '<tr><td colspan="5">No projects found</td></tr>';
+                            html += '<tr><td colspan="5" style="text-align: center; color: #666;">No projects found</td></tr>';
                         }
-                        gridHtml += '</table>';
-                        document.getElementById('grid').innerHTML = gridHtml;
+                        
+                        html += '</tbody></table>';
+                        document.getElementById('grid').innerHTML = html;
                     })
                     .catch(error => {
-                        console.error("Error loading projects:", error);
+                        console.error('Error loading projects:', error);
                         document.getElementById('grid').innerHTML = '<div class="error">Error loading projects: ' + error.message + '</div>';
                     });
             }
-            
-            function addProject() {
-                const title = prompt("Project Title:");
-                const description = prompt("Description:");
-                const url = prompt("Project URL (optional):");
-                const imageUrl = prompt("Image URL (optional):");
-                const techInput = prompt("Technologies (comma separated):");
-                const sortOrder = prompt("Sort Order (number):");
-                
-                if (title && description) {
-                    const technologies = techInput ? techInput.split(',').map(t => t.trim()).filter(t => t) : [];
-                    
-                    const newProject = {
-                        portfolio_id: "daniel-blackburn",
-                        title: title,
-                        description: description,
-                        url: url || null,
-                        image_url: imageUrl || null,
-                        technologies: technologies,
-                        sort_order: parseInt(sortOrder) || 0
-                    };
-                    
-                    fetch('/projects', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(newProject)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log("Project added:", data);
-                        loadGrid(); // Reload the grid
-                    })
-                    .catch(error => {
-                        console.error("Error adding project:", error);
-                        alert("Error adding project: " + error.message);
-                    });
-                }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
-            
-            function deleteSelected() {
-                const checkboxes = document.querySelectorAll('.select-row:checked');
-                if (checkboxes.length === 0) {
-                    alert("Please select projects to delete");
-                    return;
-                }
-                
-                if (!confirm(`Are you sure you want to delete ${checkboxes.length} project(s)?`)) {
-                    return;
-                }
-                
-                const idsToDelete = Array.from(checkboxes).map(cb => {
-                    return cb.closest('tr').getAttribute('data-id');
-                });
-                
-                // Delete each item individually
-                Promise.all(idsToDelete.map(id => 
-                    fetch(`/projects/${id}`, { method: 'DELETE' })
-                )).then(responses => {
-                    console.log("Delete responses:", responses);
-                    loadGrid(); // Reload the grid
-                }).catch(error => {
-                    console.error("Error deleting projects:", error);
-                    alert("Error deleting projects: " + error.message);
-                });
-            }
-            
-            // Add event listeners
-            document.getElementById('addBtn').addEventListener('click', addProject);
-            document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
-            
-            // Load initial data
+
+            // Load grid on page load
             loadGrid();
+
+            // Add button handler
+            document.getElementById('addBtn').addEventListener('click', function() {
+                alert('Add Project functionality not implemented yet');
+            });
+
+            // Delete button handler
+            document.getElementById('deleteBtn').addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('#grid input[type="checkbox"]:checked');
+                if (checkboxes.length === 0) {
+                    alert('Please select projects to delete');
+                    return;
+                }
+                
+                if (confirm(`Are you sure you want to delete ${checkboxes.length} project(s)?`)) {
+                    alert('Delete functionality not implemented yet');
+                }
+            });
         });
     </script>
 </body>
+
 </html>

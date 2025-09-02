@@ -1,53 +1,142 @@
 <!DOCTYPE html>
-<html lang="en">
+<html
+    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
 <head>
-    <meta charset="UTF-8">
-    <title>LinkedIn Sync Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LinkedIn Sync Admin - Daniel Blackburn</title>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+
+    <!-- Add consistent CSS styling matching index.html -->
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background: #f5f5f5; 
-        }
-        .container { 
-            max-width: 1000px; 
-            margin: 0 auto; 
-        }
-        h1 { 
-            color: #333; 
-            margin-bottom: 30px; 
-        }
-        .content-section { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-            margin-top: 20px; 
-        }
-        
-        /* Status Card Styles */
-        .status-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
             padding: 20px;
-            margin-bottom: 20px;
-            background: #f8f9fa;
         }
-        
-        .status-card h2 {
-            margin-top: 0;
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .site-header {
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            text-decoration: none;
             color: #333;
+            font-size: 2em;
+            font-weight: bold;
         }
-        
-        .status-item {
+
+        .tagline {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        nav {
+            position: relative;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
             display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
         }
-        
-        .status-item:last-child {
-            border-bottom: none;
+
+        nav a {
+            text-decoration: none;
+            color: #0066cc;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Authentication and admin links */
+        .auth-admin-section {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+
+        .auth-link {
+            background-color: #28a745;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .auth-link:hover {
+            background-color: #218838;
+            text-decoration: none;
+        }
+
+        .logout-link {
+            background-color: #dc3545;
+        }
+
+        .logout-link:hover {
+            background-color: #c82333;
+        }
+
+        .admin-links {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .admin-link {
+            background-color: #6c757d;
+            color: white !important;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            background-color: #5a6268;
+            text-decoration: none;
+        }
+
+        .admin-link.active {
+            background-color: #dc3545;
+        }
+
+        /* Icon styling for social links */
+        .linkedin a::before {
+            content: "🔗";
+            margin-right: 4px;
+        }
+
+        .github a::before {
+            content: "🐙";
+            margin-right: 4px;
+        }
+
+        .pypi a::before {
+            content: "📦";
+            margin-right: 4px;
+        }
         }
         
         .status-label {
@@ -199,6 +288,118 @@
             margin-top: 0;
             color: #856404;
         }
+
+        /* LinkedIn admin specific styles */
+        .linkedin-admin-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .linkedin-admin-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .sync-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .sync-section h3 {
+            margin-top: 0;
+            color: #0077b5;
+        }
+
+        .sync-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sync-buttons button {
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #0077b5;
+            color: white;
+        }
+
+        .sync-buttons button:hover {
+            background-color: #005885;
+        }
+
+        .sync-buttons button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-section {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            margin-bottom: 10px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        .status-success {
+            color: #28a745;
+        }
+
+        .status-error {
+            color: #dc3545;
+        }
+
+        .status-warning {
+            color: #ffc107;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .admin-links {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .sync-buttons {
+                flex-direction: column;
+            }
+
+            .sync-buttons button {
+                width: 100%;
+            }
+        }
         
         .config-help code {
             background: #f8f9fa;
@@ -208,12 +409,101 @@
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        {% include 'navigation.html' %}
-        
-        <div class="content-section">
-            <h1>🔗 LinkedIn Sync Admin</h1>
+
+<body class="me">
+    <div class="wrap">
+        <div class="fg">
+            <header class="site-header" id="h">
+                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                <p class="tagline">Curious novel<br>
+                    <span class="amp">&amp;</span> solutions work.
+                </p>
+                <nav>
+                    <ul>
+                        <li class="me">
+                            <a href="/"><span>Daniel</span> Blackburn</a>
+                        </li>
+                        <li class="projects">
+                            <a href="/work/"><span>work experience</span></a>
+                        </li>
+                        <li class="projects">
+                            <a href="/work/"><span>featured projects</span></a>
+                        </li>
+                        <li class="contact">
+                            <a href="/contact/"><span>we should</span> talk</a>
+                        </li>
+                        <li class="resume">
+                            <a href="/resume" target="_blank">resume</a>
+                        </li>
+                        <li class="linkedin">
+                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
+                        </li>
+                        <li class="github">
+                            <a href="https://github.com/blackburnd" target="_blank">github</a>
+                        </li>
+                        <li class="pypi">
+                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <!-- Authentication and Admin Links -->
+                <div class="auth-admin-section">
+                    <div>
+                        <span style="font-style: italic; color: #666; font-size: 0.85em;">Logged in as: {{ user.email if user else 'Daniel Blackburn' }}</span>
+                        <a href="/auth/logout" class="auth-link logout-link">🚪 Logout</a>
+                        <div class="admin-links">
+                            <a href="/workadmin" class="admin-link">Work Admin</a>
+                            <a href="/workadmin/bulk" class="admin-link">Work Admin (Bulk)</a>
+                            <a href="/projectsadmin" class="admin-link">Projects Admin</a>
+                            <a href="/projectsadmin/bulk" class="admin-link">Projects Admin (Bulk)</a>
+                            <a href="/linkedin" class="admin-link active">🔄 LinkedIn Sync</a>
+                            <a href="/admin/logs" class="admin-link">📊 Logs</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="bw" aria-live="polite">
+                <div class="linkedin-admin-content">
+                    <h2>🔗 LinkedIn Sync Administration</h2>
+                    
+                    <div class="status-section">
+                        <h3>Sync Status</h3>
+                        <div id="syncStatus">Loading status...</div>
+                    </div>
+
+                    <div class="sync-section">
+                        <h3>Profile Sync</h3>
+                        <p>Sync basic profile information from LinkedIn to your portfolio.</p>
+                        <div class="sync-buttons">
+                            <button id="syncProfileBtn" onclick="syncProfile()">Sync Profile</button>
+                        </div>
+                    </div>
+
+                    <div class="sync-section">
+                        <h3>Experience Sync</h3>
+                        <p>Sync work experience and professional history from LinkedIn.</p>
+                        <div class="sync-buttons">
+                            <button id="syncExperienceBtn" onclick="syncExperience()">Sync Experience</button>
+                        </div>
+                    </div>
+
+                    <div class="sync-section">
+                        <h3>Full Sync</h3>
+                        <p>Perform a complete sync of all available LinkedIn data.</p>
+                        <div class="sync-buttons">
+                            <button id="syncAllBtn" onclick="syncAll()">Full Sync</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
+        </div>
+    </div>
             
             <!-- Configuration Status -->
             <div class="status-card">
