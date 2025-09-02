@@ -31,8 +31,24 @@ class LinkedInSync:
         self.linkedin_password = os.getenv("LINKEDIN_PASSWORD")
         self.target_profile_id = os.getenv("LINKEDIN_PROFILE_ID", "blackburnd")
         
-    async def _get_linkedin_client(self) -> Linkedin:
-        """Create authenticated LinkedIn API client using OAuth or legacy credentials"""
+    def _get_linkedin_client(self) -> Linkedin:
+        """Create authenticated LinkedIn API client (sync version)"""
+        # Legacy username/password method (for backward compatibility)
+        if not self.linkedin_username or not self.linkedin_password:
+            raise LinkedInSyncError(
+                "LinkedIn credentials not configured. Please set up OAuth authentication via admin interface."
+            )
+        
+        try:
+            logger.warning("Using deprecated username/password authentication for LinkedIn client")
+            client = Linkedin(self.linkedin_username, self.linkedin_password)
+            return client
+        except Exception as e:
+            logger.error(f"Failed to authenticate LinkedIn client: {str(e)}")
+            raise LinkedInSyncError(f"LinkedIn authentication failed: {str(e)}")
+    
+    async def _get_linkedin_client_async(self) -> Linkedin:
+        """Create authenticated LinkedIn API client using OAuth or legacy credentials (async version)"""
         # Try OAuth first (preferred method)
         if self.admin_email:
             credentials = await linkedin_oauth.get_credentials(self.admin_email)
@@ -51,21 +67,26 @@ class LinkedInSync:
                 )
         
         # Fallback to legacy username/password (deprecated)
-        if not self.linkedin_username or not self.linkedin_password:
-            raise LinkedInSyncError(
-                "LinkedIn credentials not configured. Please set up OAuth authentication via admin interface."
-            )
-        
-        try:
-            logger.warning("Using deprecated username/password authentication for LinkedIn client")
-            client = Linkedin(self.linkedin_username, self.linkedin_password)
-            return client
-        except Exception as e:
-            logger.error(f"Failed to authenticate LinkedIn client: {str(e)}")
-            raise LinkedInSyncError(f"LinkedIn authentication failed: {str(e)}")
+        return self._get_linkedin_client()
     
-    async def fetch_profile_data(self) -> Dict[str, Any]:
-        """Fetch profile data from LinkedIn using OAuth or legacy method"""
+    def fetch_profile_data(self) -> Dict[str, Any]:
+        """Fetch profile data from LinkedIn (sync version for backward compatibility)"""
+        try:
+            logger.info(f"Fetching LinkedIn profile data for: {self.target_profile_id}")
+            client = self._get_linkedin_client()
+            
+            # Get profile information
+            profile = client.get_profile(self.target_profile_id)
+            logger.info(f"Successfully fetched profile data for: {profile.get('firstName', 'Unknown')} {profile.get('lastName', 'Unknown')}")
+            
+            return profile
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch LinkedIn profile data: {str(e)}")
+            raise LinkedInSyncError(f"Failed to fetch profile data: {str(e)}")
+    
+    async def fetch_profile_data_async(self) -> Dict[str, Any]:
+        """Fetch profile data from LinkedIn using OAuth or legacy method (async version)"""
         try:
             # Try OAuth first (preferred method)
             if self.admin_email:
@@ -75,7 +96,7 @@ class LinkedInSync:
             
             # Fallback to legacy method
             logger.info(f"Fetching LinkedIn profile data for: {self.target_profile_id}")
-            client = await self._get_linkedin_client()
+            client = await self._get_linkedin_client_async()
             if client is None:
                 raise LinkedInSyncError("No LinkedIn client available")
             
@@ -133,8 +154,24 @@ class LinkedInSync:
                 logger.error(f"OAuth profile HTTP error: {e.response.status_code} - {e.response.text}")
                 raise LinkedInSyncError(f"LinkedIn OAuth profile request failed: {e.response.status_code}")
     
-    async def fetch_experience_data(self) -> List[Dict[str, Any]]:
-        """Fetch work experience data from LinkedIn using OAuth or legacy method"""
+    def fetch_experience_data(self) -> List[Dict[str, Any]]:
+        """Fetch work experience data from LinkedIn (sync version for backward compatibility)"""
+        try:
+            logger.info(f"Fetching LinkedIn experience data for: {self.target_profile_id}")
+            client = self._get_linkedin_client()
+            
+            # Get experience information
+            experiences = client.get_profile_experiences(self.target_profile_id)
+            logger.info(f"Successfully fetched {len(experiences)} work experiences")
+            
+            return experiences
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch LinkedIn experience data: {str(e)}")
+            raise LinkedInSyncError(f"Failed to fetch experience data: {str(e)}")
+    
+    async def fetch_experience_data_async(self) -> List[Dict[str, Any]]:
+        """Fetch work experience data from LinkedIn using OAuth or legacy method (async version)"""
         try:
             # Try OAuth first (preferred method)
             if self.admin_email:
@@ -144,7 +181,7 @@ class LinkedInSync:
             
             # Fallback to legacy method
             logger.info(f"Fetching LinkedIn experience data for: {self.target_profile_id}")
-            client = await self._get_linkedin_client()
+            client = await self._get_linkedin_client_async()
             if client is None:
                 raise LinkedInSyncError("No LinkedIn client available")
             
@@ -270,8 +307,12 @@ class LinkedInSync:
         try:
             logger.info("Starting LinkedIn profile data sync")
             
-            # Fetch data from LinkedIn
-            profile_data = await self.fetch_profile_data()
+            # Use async version for OAuth support
+            if self.admin_email:
+                profile_data = await self.fetch_profile_data_async()
+            else:
+                profile_data = self.fetch_profile_data()
+                
             mapped_profile = self._map_profile_data(profile_data)
             
             # Update portfolio table
@@ -315,8 +356,12 @@ class LinkedInSync:
         try:
             logger.info("Starting LinkedIn experience data sync")
             
-            # Fetch data from LinkedIn
-            experiences = await self.fetch_experience_data()
+            # Use async version for OAuth support
+            if self.admin_email:
+                experiences = await self.fetch_experience_data_async()
+            else:
+                experiences = self.fetch_experience_data()
+                
             mapped_experiences = self._map_experience_data(experiences)
             
             # Clear existing work experience for this portfolio (to avoid duplicates)
@@ -383,8 +428,34 @@ class LinkedInSync:
         logger.info(f"Full LinkedIn sync completed with status: {results['status']}")
         return results
     
-    async def get_sync_status(self, admin_email: str = None) -> Dict[str, Any]:
-        """Get current sync configuration status"""
+    def get_sync_status(self, admin_email: str = None) -> Dict[str, Any]:
+        """Get current sync configuration status (sync version)"""
+        # Legacy environment variable status (deprecated)
+        legacy_configured = bool(self.linkedin_username and self.linkedin_password)
+        
+        # Basic status without OAuth (for backward compatibility)
+        if not admin_email:
+            return {
+                "linkedin_configured": legacy_configured,
+                "linkedin_username": self.linkedin_username if self.linkedin_username else None,
+                "target_profile_id": self.target_profile_id,
+                "portfolio_id": self.portfolio_id,
+                "preferred_method": "legacy" if legacy_configured else "none"
+            }
+        
+        # For OAuth-enabled calls, we need to return a simple status
+        # The async version will be called from endpoints
+        return {
+            "oauth": {"configured": False, "connected": False, "token_valid": False},
+            "legacy_configured": legacy_configured,
+            "linkedin_username": self.linkedin_username if self.linkedin_username else None,
+            "target_profile_id": self.target_profile_id,
+            "portfolio_id": self.portfolio_id,
+            "preferred_method": "legacy" if legacy_configured else "none"
+        }
+    
+    async def get_sync_status_async(self, admin_email: str = None) -> Dict[str, Any]:
+        """Get current sync configuration status (async version with OAuth support)"""
         # Get OAuth status if admin email provided
         oauth_status = {}
         if admin_email:

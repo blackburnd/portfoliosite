@@ -796,7 +796,9 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie))
     """Get LinkedIn sync configuration status"""
     try:
         admin_email = admin.get('email')
-        status = await linkedin_sync.get_sync_status(admin_email)
+        # Create sync instance with admin email for OAuth status
+        sync_instance = LinkedInSync(admin_email)
+        status = await sync_instance.get_sync_status_async(admin_email)
         return JSONResponse({
             "status": "success",
             "linkedin_sync": status

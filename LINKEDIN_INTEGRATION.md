@@ -1,40 +1,87 @@
-# LinkedIn API Integration Setup
+# LinkedIn OAuth 2.0 Integration Setup
 
 ## Overview
 
-Your portfolio site now includes **LinkedIn API integration** that allows authenticated administrators to automatically sync their LinkedIn profile and work experience data to the portfolio database. This feature provides:
+Your portfolio site now includes **LinkedIn OAuth 2.0 integration** that allows authenticated administrators to securely connect their LinkedIn account and automatically sync profile and work experience data to the portfolio database. This feature provides:
 
-- **Automatic profile sync**: Update portfolio bio, title, and tagline from LinkedIn
-- **Work experience sync**: Import LinkedIn work history to the portfolio database
-- **Admin-controlled**: Only authenticated administrators can trigger sync operations
-- **Secure**: Uses existing Google OAuth admin authentication system
+- **🔐 Secure OAuth 2.0 Authentication**: Replace environment variables with secure token-based authentication
+- **📊 Automatic profile sync**: Update portfolio bio, title, and tagline from LinkedIn
+- **💼 Work experience sync**: Import LinkedIn work history to the portfolio database
+- **🛡️ Admin-controlled**: Only authenticated administrators can manage LinkedIn connections
+- **🔄 Persistent Connectivity**: Tokens are stored securely for ongoing sync operations
+- **♻️ Token Refresh**: Automated token refresh for continuous access
+- **🔙 Legacy Support**: Backward compatible with environment variable method
 
 ## 🚀 Quick Setup
 
-### 1. Configure LinkedIn Credentials
+### 1. Configure LinkedIn OAuth 2.0
 
-Add the following environment variables to your system:
+Create a LinkedIn OAuth application and set environment variables:
 
 ```bash
-# LinkedIn Account Credentials
-LINKEDIN_USERNAME=your_email@example.com
-LINKEDIN_PASSWORD=your_linkedin_password
+# Required LinkedIn OAuth Configuration
+export LINKEDIN_CLIENT_ID="your_linkedin_client_id"
+export LINKEDIN_CLIENT_SECRET="your_linkedin_client_secret"
+export LINKEDIN_REDIRECT_URI="https://yourdomain.com/linkedin/oauth/callback"
 
-# Optional: Target Profile ID (defaults to 'blackburnd')
-LINKEDIN_PROFILE_ID=your_linkedin_profile_id
+# Required for secure token storage
+export LINKEDIN_ENCRYPTION_KEY="your_32_character_encryption_key"
 ```
 
-**⚠️ Security Note**: LinkedIn credentials should be stored securely. Consider using:
-- Environment variables in production
-- Secure credential management systems
-- App-specific passwords if your LinkedIn account has 2FA enabled
+### 2. Set Up Database
 
-### 2. Access LinkedIn Sync Admin
+Run the LinkedIn OAuth migration:
 
-1. **Login as Admin**: Use the existing Google OAuth admin login at `/auth/login`
-2. **Navigate to LinkedIn Sync**: Visit `/linkedin` or use the "🔗 LinkedIn Sync" link in the admin navigation
-3. **Check Configuration**: The page will show your configuration status
-4. **Sync Data**: Use the provided buttons to sync profile and/or experience data
+```sql
+-- Run against your PostgreSQL database
+\i sql/linkedin_oauth_migration.sql
+```
+
+### 3. Connect Your LinkedIn Account
+
+1. **Admin Login**: Authenticate using Google OAuth admin system
+2. **Navigate to LinkedIn Admin**: Visit `/linkedin` admin page
+3. **Connect Account**: Click "🔗 Connect LinkedIn Account" button
+4. **Authorize Access**: Complete LinkedIn OAuth authorization
+5. **Start Syncing**: Use sync buttons to import your LinkedIn data
+
+## 🔧 LinkedIn OAuth Setup
+
+### Create LinkedIn OAuth Application
+
+1. Go to [LinkedIn Developer Portal](https://developer.linkedin.com/)
+2. Click "Create App" and fill in your application details
+3. In the "Auth" tab, configure OAuth 2.0 settings:
+   - **Authorized Redirect URLs**: Add `https://yourdomain.com/linkedin/oauth/callback`
+   - **OAuth 2.0 scopes**: Request `r_liteprofile` and `r_emailaddress`
+4. Copy your `Client ID` and `Client Secret` to your environment variables
+
+### Environment Variables
+
+```bash
+# LinkedIn OAuth 2.0 Configuration (Required)
+LINKEDIN_CLIENT_ID=your_app_client_id
+LINKEDIN_CLIENT_SECRET=your_app_client_secret
+LINKEDIN_REDIRECT_URI=https://yourdomain.com/linkedin/oauth/callback
+
+# Secure Token Storage (Required)
+LINKEDIN_ENCRYPTION_KEY=your_32_character_base64_encryption_key
+
+# Legacy Support (Deprecated - use OAuth instead)
+LINKEDIN_USERNAME=your_linkedin_email  # ⚠️ Deprecated
+LINKEDIN_PASSWORD=your_linkedin_password  # ⚠️ Deprecated
+LINKEDIN_PROFILE_ID=your_profile_id  # Optional, defaults to 'blackburnd'
+```
+
+### Generate Encryption Key
+
+Generate a secure encryption key for token storage:
+
+```python
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+print(f"LINKEDIN_ENCRYPTION_KEY={key.decode()}")
+```
 
 ## 🔄 Available Sync Operations
 
