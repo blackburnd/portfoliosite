@@ -449,7 +449,7 @@ async def logout(response: Response):
     """Log out the user by clearing the authentication cookie"""
     try:
         logger.info("=== OAuth Logout Request ===")
-        response.delete_cookie(key="auth_token", path="/")
+        response.delete_cookie(key="access_token", path="/")
         logger.info("Successfully cleared authentication cookie")
         return RedirectResponse(url="/", status_code=303)
     except Exception as e:
