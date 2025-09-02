@@ -73,6 +73,63 @@ nav ul li.active a, nav ul li a:hover {
     margin-top: 18px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.04);
 }
+
+/* Authentication and Admin Section Styling */
+.site-header {
+    position: relative;
+}
+
+.auth-admin-section {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.auth-link {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.auth-link:hover {
+    background-color: #0056b3;
+}
+
+.logout-link {
+    background-color: #dc3545;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.logout-link:hover {
+    background-color: #c82333;
+}
+
+.admin-links {
+    margin-top: 8px;
+}
+
+.admin-link {
+    background-color: #28a745;
+    color: white;
+    padding: 4px 8px;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-right: 4px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.admin-link:hover {
+    background-color: #1e7e34;
+}
+
 @media (max-width: 600px) {
     .wrap {
         padding: 16px 8px;
@@ -82,5 +139,11 @@ nav ul li.active a, nav ul li a:hover {
     }
     .brand {
         font-size: 1.5rem;
+    }
+    
+    .auth-admin-section {
+        position: static;
+        margin-top: 16px;
+        text-align: right;
     }
 }

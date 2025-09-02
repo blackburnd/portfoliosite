@@ -249,23 +249,23 @@
                             <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
                         </li>
                     </ul>
-                    
-                    <!-- Authentication and Admin Links -->
-                    <div class="auth-admin-section">
-                        {% if user_authenticated %}
-                            <div>
-                                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                                <div class="admin-links">
-                                    <a href="/workadmin" class="admin-link">Work Admin</a>
-                                    <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
-                                    <a href="/debug/logs" class="admin-link">Logs</a>
-                                </div>
-                            </div>
-                        {% else %}
-                            <a href="/auth/login" class="auth-link">Login</a>
-                        {% endif %}
-                    </div>
                 </nav>
+                
+                <!-- Authentication and Admin Links -->
+                <div class="auth-admin-section">
+                    {% if user_authenticated %}
+                        <div>
+                            <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
+                            <div class="admin-links">
+                                <a href="/workadmin" class="admin-link">Work Admin</a>
+                                <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
+                                <a href="/debug/logs" class="admin-link">Logs</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="/auth/login" class="auth-link">Login</a>
+                    {% endif %}
+                </div>
             </header>
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
