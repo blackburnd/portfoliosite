@@ -56,3 +56,11 @@ async def get_current_user_from_cookie(request: Request) -> dict:
 async def require_admin_auth_cookie(user: dict = Depends(get_current_user_from_cookie)) -> dict:
     """Require admin authentication via cookie for web interface"""
     return user
+
+
+async def get_current_user_optional(request: Request) -> dict:
+    """Get current user from cookie-stored JWT token, return None if not authenticated"""
+    try:
+        return await get_current_user_from_cookie(request)
+    except HTTPException:
+        return None

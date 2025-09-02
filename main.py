@@ -558,6 +558,25 @@ async def projects(request: Request):
     })
 
 
+@app.get("/featured/", response_class=HTMLResponse)
+async def featured(request: Request):
+    """Serve the featured work experience and projects page"""
+    # Check if user is authenticated for admin tools
+    user = None
+    try:
+        from cookie_auth import get_current_user_optional
+        user = await get_current_user_optional(request)
+    except:
+        pass
+    
+    return templates.TemplateResponse("featured.html", {
+        "request": request,
+        "title": "Featured Work & Projects - Daniel Blackburn",
+        "current_page": "featured",
+        "user": user
+    })
+
+
 # --- Work Admin Page ---
 @app.get("/workadmin", response_class=HTMLResponse)
 async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):

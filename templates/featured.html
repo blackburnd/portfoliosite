@@ -134,6 +134,34 @@
             color: #666;
         }
 
+        .admin-tools {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .admin-tools h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .admin-tools a {
+            display: inline-block;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 5px 10px 5px 0;
+            font-size: 14px;
+        }
+
+        .admin-tools a:hover {
+            background: #0052a3;
+        }
+
         @media (max-width: 768px) {
             nav ul {
                 flex-direction: column;
@@ -151,19 +179,30 @@
     <link rel="stylesheet" href="/assets/style.css">
 </head>
 
-<body class="work">
+<body class="featured">
     <div class="wrap">
         <div class="fg">
             {% include 'navigation.html' %}
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
-                    <section class="work-content">
-                        <h2>My Work</h2>
-                        <p>Here's a collection of my professional experience and selected projects. I specialize in cloud technologies, automation, and modern web development.</p>
+                    <section class="featured-content">
+                        <h2>Featured Work Experience & Projects</h2>
+                        <p>Here's a collection of my professional experience and selected projects. This represents the intersection of my technical expertise and real-world problem solving.</p>
 
-                        <div id="work-container">
+                        <div id="featured-container">
                             <div class="loading">Loading work experience and projects...</div>
                         </div>
+
+                        {% if user %}
+                        <div class="admin-tools">
+                            <h3>🛠️ Admin Tools</h3>
+                            <a href="/workadmin">Work Admin</a>
+                            <a href="/workadmin/bulk">Work Admin (Bulk)</a>
+                            <a href="/projectsadmin">Projects Admin</a>
+                            <a href="/projectsadmin/bulk">Projects Admin (Bulk)</a>
+                            <a href="/admin/logs">🔍 Logs</a>
+                        </div>
+                        {% endif %}
                     </section>
                 </article>
             </div><!-- barba wrapper -->
@@ -200,8 +239,8 @@
             }
         `;
 
-        async function loadWorkData() {
-            const container = document.getElementById('work-container');
+        async function loadFeaturedData() {
+            const container = document.getElementById('featured-container');
             
             try {
                 const response = await fetch('/graphql', {
@@ -273,13 +312,13 @@
                 container.innerHTML = html;
 
             } catch (error) {
-                console.error('Error loading work data:', error);
-                container.innerHTML = `<div class="error">Error loading work data: ${error.message}</div>`;
+                console.error('Error loading featured data:', error);
+                container.innerHTML = `<div class="error">Error loading featured data: ${error.message}</div>`;
             }
         }
 
         // Load data when page loads
-        document.addEventListener('DOMContentLoaded', loadWorkData);
+        document.addEventListener('DOMContentLoaded', loadFeaturedData);
     </script>
 </body>
 
