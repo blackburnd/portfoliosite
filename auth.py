@@ -80,7 +80,12 @@ def verify_token(token: str) -> dict:
     logger.info(f"Token to verify (first 50 chars): {token[:50] if token else 'None'}")
     
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token, 
+            SECRET_KEY, 
+            algorithms=[ALGORITHM],
+            options={"verify_aud": False}  # Don't verify audience for now
+        )
         email: str = payload.get("sub")
         logger.info(f"JWT decoded successfully, email: {email}")
         
