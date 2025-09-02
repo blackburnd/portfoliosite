@@ -126,18 +126,18 @@ steps:
     fi
 
 substitutions:
-  _PG_USER: 'placeholder'
-  _PG_PASS: 'placeholder'
-  _PG_HOST: 'placeholder'
-  _PG_PORT: '5432'
-  _PG_DB: 'placeholder'
-  _GOOGLE_CLIENT_ID: 'placeholder'
-  _GOOGLE_CLIENT_SECRET: 'placeholder'
-  _GOOGLE_REDIRECT_URI: 'https://www.blackburnsystems.com/auth/callback'
-  _ADMIN_USERNAME: 'placeholder'
-  _ADMIN_PASSWORD: 'placeholder'
-  _SECRET_KEY: 'placeholder'
-  _AUTHORIZED_EMAILS: 'placeholder'
+  _PG_USER: ${_PG_USER}
+  _PG_PASS: ${_PG_PASS}
+  _PG_HOST: ${_PG_HOST}
+  _PG_PORT: ${_PG_PORT}
+  _PG_DB: ${_PG_DB}
+  _GOOGLE_CLIENT_ID: ${_GOOGLE_CLIENT_ID}
+  _GOOGLE_CLIENT_SECRET: ${_GOOGLE_CLIENT_SECRET}
+  _GOOGLE_REDIRECT_URI: ${_GOOGLE_REDIRECT_URI}
+  _ADMIN_USERNAME: ${_ADMIN_USERNAME}
+  _ADMIN_PASSWORD: ${_ADMIN_PASSWORD}
+  _SECRET_KEY: ${_SECRET_KEY}
+  _AUTHORIZED_EMAILS: ${_AUTHORIZED_EMAILS}
 
 logsBucket: 'gs://impactful-study-470015-g5_cloudbuild_logs'
 options:
