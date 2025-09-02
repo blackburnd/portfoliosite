@@ -487,11 +487,15 @@ async def auth_callback(request: Request):
         
         # Redirect to admin page with token
         response = RedirectResponse(url="/workadmin")
+        
+        # Set secure cookie based on environment
+        is_production = os.getenv("ENV") == "production"
+        
         response.set_cookie(
-            key="access_token", 
+            key="access_token",
             value=f"Bearer {access_token}",
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=is_production,  # True in production with HTTPS
             samesite="lax",
             max_age=28800  # 8 hours
         )
