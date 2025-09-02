@@ -37,7 +37,8 @@ from auth import (
     get_current_user, 
     verify_token,
     is_authorized_user,
-    require_admin_auth
+    require_admin_auth,
+    create_user_session
 )
 
 from app.resolvers import schema
