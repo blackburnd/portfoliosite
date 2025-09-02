@@ -91,6 +91,21 @@ def init_sqlite_db(db_path="test.db"):
         )
     """)
     
+    # Create linkedin_oauth_credentials table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS linkedin_oauth_credentials (
+            id TEXT PRIMARY KEY,
+            admin_email TEXT NOT NULL UNIQUE,
+            access_token TEXT NOT NULL,
+            refresh_token TEXT,
+            token_expires_at TEXT,
+            linkedin_profile_id TEXT,
+            scope TEXT DEFAULT 'r_liteprofile,r_emailaddress',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     # Create indexes
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_work_experience_portfolio_id ON work_experience(portfolio_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_work_experience_sort_order ON work_experience(sort_order)")
@@ -98,6 +113,8 @@ def init_sqlite_db(db_path="test.db"):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_projects_sort_order ON projects(sort_order)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_contact_messages_portfolio_id ON contact_messages(portfolio_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_contact_messages_is_read ON contact_messages(is_read)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_linkedin_oauth_admin_email ON linkedin_oauth_credentials(admin_email)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_linkedin_oauth_expires_at ON linkedin_oauth_credentials(token_expires_at)")
     
     # Insert initial portfolio data
     portfolio_skills = json.dumps([
