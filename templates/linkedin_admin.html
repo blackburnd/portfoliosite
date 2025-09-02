@@ -794,27 +794,16 @@
             
             <!-- Configuration Help -->
             <div id="config-help" class="config-help" style="display: none;">
-                <h3>⚙️ LinkedIn Authentication Required</h3>
-                <p>To use LinkedIn sync, you need to connect your LinkedIn account via OAuth 2.0:</p>
+                <h3>🔗 Connect Your LinkedIn Account</h3>
+                <p>To sync your LinkedIn data with your portfolio, connect your LinkedIn account securely using OAuth 2.0:</p>
                 <div class="oauth-section">
                     <h4>🔐 Secure OAuth Authentication</h4>
                     <p>Click the button below to securely connect your LinkedIn account:</p>
                     <button id="connectLinkedInBtn" class="oauth-btn" onclick="connectLinkedIn()">
                         🔗 Connect LinkedIn Account
                     </button>
-                    <p class="oauth-note">This will redirect you to LinkedIn to authorize access to your profile data.</p>
+                    <p class="oauth-note">You'll be redirected to LinkedIn to authorize read-only access to your profile data.</p>
                 </div>
-                
-                <details class="legacy-section">
-                    <summary>🔧 Legacy Environment Variables (Deprecated)</summary>
-                    <p>The old method using environment variables is deprecated but still supported:</p>
-                    <ul>
-                        <li><code>LINKEDIN_USERNAME</code> - Your LinkedIn email/username</li>
-                        <li><code>LINKEDIN_PASSWORD</code> - Your LinkedIn password</li>
-                        <li><code>LINKEDIN_PROFILE_ID</code> - Target LinkedIn profile ID (optional)</li>
-                    </ul>
-                    <p><strong>⚠️ Note:</strong> Environment variable method is deprecated and less secure. Please use OAuth authentication instead.</p>
-                </details>
             </div>
             
             <!-- OAuth Connected Section -->
@@ -902,9 +891,9 @@
             oauthConnected = oauth.connected && oauth.token_valid;
             linkedinConfigured = oauthConnected || config.legacy_configured;
             
-            // Update OAuth status display
+            // Update OAuth status display - Only show what's relevant
             if (oauthConnected) {
-                // Show OAuth connected section
+                // Show OAuth connected section ONLY - hide connection UI
                 oauthConnectedDiv.style.display = 'block';
                 configHelp.style.display = 'none';
                 
@@ -916,67 +905,78 @@
                 document.getElementById('token-expires').textContent = 
                     oauth.expires_at ? new Date(oauth.expires_at).toLocaleString() : 'Unknown';
                     
-            } else if (oauth.configured) {
-                // OAuth is configured but not connected
-                configHelp.style.display = 'block';
-                oauthConnectedDiv.style.display = 'none';
             } else {
-                // No OAuth configuration
+                // No LinkedIn account connected - show connection interface ONLY
                 configHelp.style.display = 'block';
                 oauthConnectedDiv.style.display = 'none';
             }
             
-            // Configuration status for display
-            let authMethod = 'Not Configured';
-            let authIndicator = '<span class="status-indicator not-configured"></span>';
-            
+            // Configuration status for display - Show clean status
             if (oauthConnected) {
-                authMethod = 'OAuth 2.0 (Secure)';
-                authIndicator = '<span class="status-indicator configured"></span>';
-            } else if (config.legacy_configured) {
-                authMethod = 'Environment Variables (Deprecated)';
-                authIndicator = '<span class="status-indicator deprecated"></span>';
+                // When connected, show clean status focused on current connection
+                statusContent.innerHTML = `
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value">
+                            <span class="status-indicator configured"></span>
+                            LinkedIn Account Connected via OAuth 2.0
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Portfolio ID:</span>
+                        <span class="status-value">${config.portfolio_id}</span>
+                    </div>
+                `;
+            } else {
+                // When not connected, show connection required status
+                const authMethod = config.legacy_configured ? 'Environment Variables (Deprecated)' : 'Not Configured';
+                const authIndicator = config.legacy_configured ? 
+                    '<span class="status-indicator deprecated"></span>' : 
+                    '<span class="status-indicator not-configured"></span>';
+                
+                statusContent.innerHTML = `
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value">
+                            <span class="status-indicator not-configured"></span>
+                            LinkedIn Account Not Connected
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Authentication:</span>
+                        <span class="status-value">${authIndicator}${authMethod}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Portfolio ID:</span>
+                        <span class="status-value">${config.portfolio_id}</span>
+                    </div>
+                `;
             }
             
-            statusContent.innerHTML = `
-                <div class="status-item">
-                    <span class="status-label">Authentication:</span>
-                    <span class="status-value">${authIndicator}${authMethod}</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Preferred Method:</span>
-                    <span class="status-value">${config.preferred_method || 'none'}</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Target Profile ID:</span>
-                    <span class="status-value">${config.target_profile_id}</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Portfolio ID:</span>
-                    <span class="status-value">${config.portfolio_id}</span>
-                </div>
-            `;
-            
-            // Enable/disable sync buttons based on configuration
-            if (linkedinConfigured) {
+            // Enable/disable sync buttons - prioritize OAuth connection
+            if (oauthConnected) {
                 syncProfile.disabled = false;
                 syncExperience.disabled = false;
                 syncFull.disabled = false;
-                syncStatus.textContent = 'Ready to sync';
-                configHelp.style.display = 'none';
+                syncStatus.textContent = 'Ready to sync with LinkedIn';
+            } else if (config.legacy_configured) {
+                // Allow legacy sync but show deprecation notice
+                syncProfile.disabled = false;
+                syncExperience.disabled = false;
+                syncFull.disabled = false;
+                syncStatus.textContent = 'Ready to sync (using deprecated method)';
             } else {
                 syncProfile.disabled = true;
                 syncExperience.disabled = true;
                 syncFull.disabled = true;
-                syncStatus.textContent = 'Configuration required before sync';
-                configHelp.style.display = 'block';
+                syncStatus.textContent = 'Connect your LinkedIn account to enable sync';
             }
         }
         
         // Perform sync operation
         async function performSync(type) {
             if (!linkedinConfigured) {
-                showError('LinkedIn sync is not configured. Please set up environment variables.');
+                showError('LinkedIn account not connected. Please connect your LinkedIn account first.');
                 return;
             }
             
