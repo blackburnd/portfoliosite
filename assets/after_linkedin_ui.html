@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFTER: Improved LinkedIn Admin UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .status-card { border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin: 15px 0; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-indicator.configured { background-color: #28a745; }
+        .status-indicator.not-configured { background-color: #dc3545; }
+        .config-help { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0; }
+        .oauth-section { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0; }
+        .oauth-btn { background-color: #0077b5; color: white; border: none; padding: 12px 20px; border-radius: 5px; margin: 5px; }
+        .oauth-btn.secondary { background-color: #6c757d; }
+        .oauth-btn.danger { background-color: #dc3545; }
+        .oauth-connected { background-color: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin: 15px 0; }
+        .sync-button { padding: 12px 20px; margin: 5px; border: none; border-radius: 4px; }
+        .sync-button:not(:disabled) { background: #28a745; color: white; cursor: pointer; }
+        .sync-button:disabled { background: #ccc; color: #666; }
+        h2 { color: #0077b5; margin-bottom: 15px; }
+        h3 { margin-top: 0; }
+        .header { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        .tab-buttons { text-align: center; margin-bottom: 20px; }
+        .tab-button { background: #6c757d; color: white; border: none; padding: 10px 20px; margin: 0 5px; border-radius: 5px; cursor: pointer; }
+        .tab-button.active { background: #0077b5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AFTER: Improved LinkedIn Admin UI</h1>
+            <p>Clean, conditional display based on connection state</p>
+        </div>
+
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showTab('not-connected')">Not Connected State</button>
+            <button class="tab-button" onclick="showTab('connected')">Connected State</button>
+        </div>
+
+        <!-- NOT CONNECTED STATE -->
+        <div id="not-connected" class="tab active">
+            <h3 style="color: #dc3545;">🔗 No LinkedIn Account Connected</h3>
+            
+            <!-- Clean Status Display -->
+            <div class="status-card">
+                <h2>📊 Configuration Status</h2>
+                <div class="status-item">
+                    <span class="status-label">Status:</span>
+                    <span class="status-value">
+                        <span class="status-indicator not-configured"></span>
+                        LinkedIn Account Not Connected
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Portfolio ID:</span>
+                    <span class="status-value">daniel-blackburn</span>
+                </div>
+            </div>
+
+            <!-- Sync Controls -->
+            <div class="status-card">
+                <h2>🔄 Data Synchronization</h2>
+                <p>Sync your LinkedIn profile and work experience data to your portfolio database.</p>
+                
+                <button class="sync-button" disabled>👤 Sync Profile Data</button>
+                <button class="sync-button" disabled>💼 Sync Work Experience</button>
+                <button class="sync-button" disabled>🚀 Full Sync (Profile + Experience)</button>
+                
+                <div style="margin-top: 15px; font-style: italic; color: #666;">
+                    Connect your LinkedIn account to enable sync
+                </div>
+            </div>
+
+            <!-- Simple Connection Interface -->
+            <div class="config-help">
+                <h3>🔗 Connect Your LinkedIn Account</h3>
+                <p>To sync your LinkedIn data with your portfolio, connect your LinkedIn account securely using OAuth 2.0:</p>
+                <div class="oauth-section">
+                    <h4>🔐 Secure OAuth Authentication</h4>
+                    <p>Click the button below to securely connect your LinkedIn account:</p>
+                    <button class="oauth-btn">🔗 Connect LinkedIn Account</button>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">You'll be redirected to LinkedIn to authorize read-only access to your profile data.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTED STATE -->
+        <div id="connected" class="tab">
+            <h3 style="color: #28a745;">✅ LinkedIn Account Connected</h3>
+            
+            <!-- Clean Status Display -->
+            <div class="status-card">
+                <h2>📊 Configuration Status</h2>
+                <div class="status-item">
+                    <span class="status-label">Status:</span>
+                    <span class="status-value">
+                        <span class="status-indicator configured"></span>
+                        LinkedIn Account Connected via OAuth 2.0
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Portfolio ID:</span>
+                    <span class="status-value">daniel-blackburn</span>
+                </div>
+            </div>
+
+            <!-- Sync Controls -->
+            <div class="status-card">
+                <h2>🔄 Data Synchronization</h2>
+                <p>Sync your LinkedIn profile and work experience data to your portfolio database.</p>
+                
+                <button class="sync-button">👤 Sync Profile Data</button>
+                <button class="sync-button">💼 Sync Work Experience</button>
+                <button class="sync-button">🚀 Full Sync (Profile + Experience)</button>
+                
+                <div style="margin-top: 15px; font-style: italic; color: #28a745;">
+                    Ready to sync with LinkedIn
+                </div>
+            </div>
+
+            <!-- Connected Info -->
+            <div class="oauth-connected">
+                <h3>✅ LinkedIn Account Connected</h3>
+                <div>
+                    <p><strong>Status:</strong> Connected & Valid</p>
+                    <p><strong>Profile ID:</strong> daniel-blackburn-linkedin</p>
+                    <p><strong>Token Expires:</strong> Sep 3, 2025, 6:00:00 PM</p>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="oauth-btn secondary">🔄 Refresh Connection</button>
+                    <button class="oauth-btn danger">❌ Disconnect Account</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h4 style="color: #0c5460; margin-top: 0;">✅ Improvements Made:</h4>
+            <ul style="color: #0c5460;">
+                <li><strong>Conditional Display:</strong> Only shows relevant sections based on connection state</li>
+                <li><strong>Clean Status:</strong> Simple "Connected" or "Not Connected" messaging</li>
+                <li><strong>Hidden Legacy Options:</strong> No more confusing environment variable instructions</li>
+                <li><strong>Clear Guidance:</strong> Users know exactly what action to take</li>
+                <li><strong>Focused Interface:</strong> Connection info only shown when actually connected</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
