@@ -112,7 +112,22 @@
             font-size: 12px;
         }
     </style>
-    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.17.3/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true"></script>
+    <script>
+        // Configure Dojo before loading
+        var dojoConfig = {
+            async: true,
+            parseOnLoad: false,
+            baseUrl: "https://ajax.googleapis.com/ajax/libs/dojo/1.17.3/",
+            packages: [
+                {
+                    name: "dgrid",
+                    location: "https://cdn.jsdelivr.net/npm/dgrid@1.3.3/",
+                    main: "Grid"
+                }
+            ]
+        };
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.17.3/dojo/dojo.js"></script>
 </head>
 <body class="claro">
     <div class="container">
@@ -180,19 +195,30 @@
     </div>
 
     <script>
-        require([
-            "dojo/ready",
-            "dgrid/Grid",
-            "dgrid/Keyboard",
-            "dgrid/Selection",
-            "dgrid/extensions/Pagination",
-            "dojo/store/Memory",
-            "dojo/store/Observable",
-            "dojo/dom",
-            "dojo/dom-construct",
-            "dojo/on",
-            "dojo/query"
-        ], function(ready, Grid, Keyboard, Selection, Pagination, Memory, Observable, dom, domConstruct, on, query) {
+        // Improved error handling and module loading
+        function initializeLogs() {
+            if (typeof require === 'undefined') {
+                console.error('Dojo require function is not available.');
+                document.getElementById('logGrid').innerHTML = '<div style="color: red; padding: 20px; text-align: center;"><h3>Error: Dojo Framework Failed to Load</h3><p>Please refresh the page or check your internet connection.</p></div>';
+                return;
+            }
+
+            console.log('Dojo loaded successfully, initializing logs interface...');
+
+            require([
+                "dojo/ready",
+                "dgrid/Grid",
+                "dgrid/Keyboard", 
+                "dgrid/Selection",
+                "dgrid/extensions/Pagination",
+                "dojo/store/Memory",
+                "dojo/store/Observable",
+                "dojo/dom",
+                "dojo/dom-construct",
+                "dojo/on",
+                "dojo/query",
+                "dojo/_base/declare"
+            ], function(ready, Grid, Keyboard, Selection, Pagination, Memory, Observable, dom, domConstruct, on, query, declare) {
             
             let grid;
             let store;
@@ -213,7 +239,7 @@
                 }));
                 
                 // Create grid with columns
-                const GridClass = Grid.extend([Keyboard, Selection, Pagination]);
+                const GridClass = declare([Grid, Keyboard, Selection, Pagination]);
                 grid = new GridClass({
                     store: store,
                     columns: {
@@ -362,7 +388,26 @@
                     status.textContent = 'Off';
                 }
             };
+        }, function(error) {
+            console.error('Failed to load Dojo modules:', error);
+            document.getElementById('logGrid').innerHTML = '<div style="color: red; padding: 20px; text-align: center;"><h3>Error: Failed to Load Required Modules</h3><p>Could not load dgrid or other required components. Please refresh the page.</p><p>Error: ' + error.message + '</p></div>';
         });
+        }
+
+        // Initialize when DOM is ready
+        function waitForDojo() {
+            if (typeof require !== 'undefined' && typeof dojo !== 'undefined') {
+                initializeLogs();
+            } else {
+                setTimeout(waitForDojo, 100); // Check again in 100ms
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForDojo);
+        } else {
+            waitForDojo();
+        }
     </script>
 </body>
 </html>

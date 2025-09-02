@@ -33,16 +33,12 @@ logger = logging.getLogger(__name__)
 
 # Import our Google OAuth authentication module
 from auth import (
-    require_admin_auth, 
-    get_current_user, 
     oauth, 
-    create_access_token, 
-    create_user_session,
+    get_current_user, 
+    verify_token,
     is_authorized_user,
-    get_auth_status,
-    GOOGLE_REDIRECT_URI
+    require_admin_auth
 )
-from cookie_auth import require_admin_auth_cookie
 
 from app.resolvers import schema
 try:
@@ -475,19 +471,57 @@ async def auth_status():
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serve the main portfolio page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Daniel Blackburn - Building innovative solutions",
-        "current_page": "home"
+        "current_page": "home",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.get("/contact/", response_class=HTMLResponse)
 async def contact(request: Request):
     """Serve the contact page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("contact.html", {
         "request": request,
         "title": "Contact - Daniel Blackburn",
-        "current_page": "contact"
+        "current_page": "contact",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.post("/contact/submit")
@@ -511,10 +545,29 @@ async def contact_submit(request: Request):
 @app.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):
     """Serve the work page"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
     return templates.TemplateResponse("work.html", {
         "request": request,
-        "title": "Work - daniel blackburn",
-        "current_page": "work"
+        "title": "Featured projects, and work - daniel blackburn",
+        "current_page": "work",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
     })
 
 @app.get("/work/{project_slug}/", response_class=HTMLResponse)
@@ -560,7 +613,7 @@ async def projects(request: Request):
 
 # --- Work Admin Page ---
 @app.get("/workadmin", response_class=HTMLResponse)
-async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def work_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
         "current_page": "workadmin",
@@ -569,7 +622,7 @@ async def work_admin_page(request: Request, admin: dict = Depends(require_admin_
 
 
 @app.get("/workadmin/bulk", response_class=HTMLResponse)
-async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def work_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
     """New bulk editor interface for work items"""
     return templates.TemplateResponse("workadmin_bulk.html", {
         "request": request,
@@ -622,7 +675,7 @@ async def admin_logs_redirect():
 
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
-async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth)):
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
         "current_page": "projectsadmin",
@@ -631,7 +684,7 @@ async def projects_admin_page(request: Request, admin: dict = Depends(require_ad
 
 
 @app.get("/projectsadmin/bulk", response_class=HTMLResponse)
-async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def projects_admin_bulk_page(request: Request, admin: dict = Depends(require_admin_auth)):
     """New bulk editor interface for projects"""
     return templates.TemplateResponse("projectsadmin_bulk.html", {
         "request": request,

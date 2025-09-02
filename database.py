@@ -103,8 +103,8 @@ class PortfolioDatabase:
                 } for project in projects
             ],
             "skills": portfolio["skills"],
-            "created_at": portfolio["created_at"].isoformat(),
-            "updated_at": portfolio["updated_at"].isoformat()
+            "created_at": portfolio["created_at"] if isinstance(portfolio["created_at"], str) else portfolio["created_at"].isoformat(),
+            "updated_at": portfolio["updated_at"] if isinstance(portfolio["updated_at"], str) else portfolio["updated_at"].isoformat()
         }
     
     @staticmethod
@@ -234,7 +234,7 @@ class PortfolioDatabase:
             "email": result["email"],
             "subject": result["subject"],
             "message": result["message"],
-            "created_at": result["created_at"].isoformat(),
+            "created_at": result["created_at"] if isinstance(result["created_at"], str) else result["created_at"].isoformat(),
             "is_read": result["is_read"]
         }
     
@@ -259,7 +259,7 @@ class PortfolioDatabase:
                 "email": row["email"],
                 "subject": row["subject"],
                 "message": row["message"],
-                "created_at": row["created_at"].isoformat(),
+                "created_at": row["created_at"] if isinstance(row["created_at"], str) else row["created_at"].isoformat(),
                 "is_read": row["is_read"]
             } for row in results
         ]

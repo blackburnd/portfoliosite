@@ -37,12 +37,17 @@
             margin: 10px 0;
         }
 
+        nav {
+            position: relative;
+        }
+
         nav ul {
             list-style: none;
             padding: 0;
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
+            position: relative;
         }
 
         nav a {
@@ -55,6 +60,61 @@
 
         nav a:hover {
             text-decoration: underline;
+        }
+
+        /* Authentication and admin links */
+        .auth-admin-section {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+
+        .auth-link {
+            background-color: #28a745;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .auth-link:hover {
+            background-color: #218838;
+            text-decoration: none;
+        }
+
+        .logout-link {
+            background-color: #dc3545;
+        }
+
+        .logout-link:hover {
+            background-color: #c82333;
+        }
+
+        .admin-links {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            justify-content: flex-end;
+        }
+
+        .admin-link {
+            background-color: #6c757d;
+            color: white !important;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            background-color: #5a6268;
+            text-decoration: none;
         }
 
         /* Icon styling for social links */
@@ -171,7 +231,7 @@
                             <a href="/"><span>Daniel</span> Blackburn</a>
                         </li>
                         <li class="projects">
-                            <a href="/work/"><span>selected</span> work</a>
+                            <a href="/work/"><span>Featured projects,</span> and work</a>
                         </li>
                         <li class="contact">
                             <a href="/contact/"><span>we should</span> talk</a>
@@ -189,6 +249,22 @@
                             <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
                         </li>
                     </ul>
+                    
+                    <!-- Authentication and Admin Links -->
+                    <div class="auth-admin-section">
+                        {% if user_authenticated %}
+                            <div>
+                                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
+                                <div class="admin-links">
+                                    <a href="/admin/work/" class="admin-link">Work Admin</a>
+                                    <a href="/admin/work/bulk" class="admin-link">Bulk Edit</a>
+                                    <a href="/debug/logs" class="admin-link">Logs</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="/auth/login" class="auth-link">Login</a>
+                        {% endif %}
+                    </div>
                 </nav>
             </header>
             <div id="bw" aria-live="polite">
