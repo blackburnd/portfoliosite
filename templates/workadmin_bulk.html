@@ -22,120 +22,174 @@
         }
 
         .site-header {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 30px;
         }
-
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
         .brand a {
-            text-decoration: none;
-            color: #333;
             font-size: 2em;
             font-weight: bold;
-        }
-
-        .tagline {
-            color: #666;
-            margin: 10px 0;
-        }
-
-        nav {
-            position: relative;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            position: relative;
-        }
-
-        nav a {
+            color: white;
             text-decoration: none;
-            color: #0066cc;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
-        nav a:hover {
-            text-decoration: underline;
+        
+        .tagline {
+            font-size: 1.1em;
+            color: #ecf0f1;
+            font-style: italic;
+            flex-shrink: 0;
         }
-
-        /* Authentication and admin links */
+        
         .auth-admin-section {
-            position: absolute;
-            top: 0;
-            right: 0;
             display: flex;
             flex-direction: column;
+            gap: 10px;
             align-items: flex-end;
-            gap: 5px;
-            font-size: 0.9em;
-            z-index: 1000;
         }
-
-        .auth-link {
-            background-color: #28a745;
-            color: white !important;
-            padding: 5px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-        }
-
-        .auth-link:hover {
-            background-color: #218838;
-            text-decoration: none;
-        }
-
-        .logout-link {
-            background-color: #dc3545;
-        }
-
-        .logout-link:hover {
-            background-color: #c82333;
-        }
-
+        
         .admin-links {
             display: flex;
-            gap: 8px;
-            margin-top: 5px;
-            justify-content: flex-end;
+            gap: 10px;
             flex-wrap: wrap;
         }
-
+        
         .admin-link {
-            background-color: #6c757d;
-            color: white !important;
-            padding: 3px 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
             border-radius: 3px;
-            font-size: 0.8em;
-            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
         }
-
+        
         .admin-link:hover {
-            background-color: #5a6268;
-            text-decoration: none;
+            background: rgba(255,255,255,0.2);
         }
-
+        
         .admin-link.active {
-            background-color: #dc3545;
+            background: #e74c3c;
         }
-
-        /* Icon styling for social links */
-        .linkedin a::before {
-            content: "🔗";
-            margin-right: 4px;
+        
+        .auth-link {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 5px 10px;
+            border: 2px solid #e74c3c;
+            border-radius: 3px;
+            transition: all 0.3s ease;
         }
-
-        .github a::before {
-            content: "🐙";
-            margin-right: 4px;
+        
+        .auth-link:hover {
+            background: #e74c3c;
+            color: white;
         }
-
-        .pypi a::before {
-            content: "📦";
-            margin-right: 4px;
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .primary-nav {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .primary-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .primary-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .social-nav {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .social-nav a {
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 5px 8px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .social-nav .linkedin a:hover {
+            background: #0077b5;
+        }
+        
+        .social-nav .github a:hover {
+            background: #333;
+        }
+        
+        .social-nav .pypi a:hover {
+            background: #306998;
+        }
+        
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .auth-admin-section {
+                width: 100%;
+                align-items: center;
+            }
+            
+            .admin-links {
+                justify-content: center;
+            }
+            
+            nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .primary-nav, .social-nav {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .brand a {
+                font-size: 1.5em;
+            }
         }
 
         /* Bulk Editor specific styles */
@@ -356,21 +410,13 @@
 <body>
     <div class="wrap">
         <header class="site-header">
-            <div class="brand">
-                <a href="/">Daniel Blackburn</a>
-            </div>
-            <div class="tagline">Software Engineer / Developer</div>
-            <nav>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/contact">Contact</a></li>
-                    <li><a href="/work">Work Experience</a></li>
-                    <li class="linkedin"><a href="https://www.linkedin.com/in/danielblackburn/">LinkedIn</a></li>
-                    <li class="github"><a href="https://github.com/blackburnd">GitHub</a></li>
-                    <li class="pypi"><a href="https://pypi.org/user/blackburnd/">PyPI</a></li>
-                </ul>
+            <div class="header-top">
+                <div class="brand">
+                    <a href="/">Daniel Blackburn</a>
+                </div>
+                <div class="tagline">Software Engineer / Developer</div>
                 
-                <!-- Authentication and Admin Section -->
+                <!-- Authentication Section -->
                 <div class="auth-admin-section">
                     <a href="/auth/logout" class="auth-link logout-link">Logout</a>
                     <div class="admin-links">
@@ -382,6 +428,23 @@
                         <a href="/admin/logs" class="admin-link">Admin Logs</a>
                     </div>
                 </div>
+            </div>
+            
+            <nav>
+                <!-- Primary Navigation -->
+                <ul class="primary-nav">
+                    <li><a href="/">Index</a></li>
+                    <li><a href="/work">Work</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/resume" target="_blank">Resume</a></li>
+                </ul>
+                
+                <!-- Social Navigation -->
+                <ul class="social-nav">
+                    <li class="linkedin"><a href="https://www.linkedin.com/in/danielblackburn/">LinkedIn</a></li>
+                    <li class="github"><a href="https://github.com/blackburnd">GitHub</a></li>
+                    <li class="pypi"><a href="https://pypi.org/user/blackburnd/">PyPI</a></li>
+                </ul>
             </nav>
         </header>
 

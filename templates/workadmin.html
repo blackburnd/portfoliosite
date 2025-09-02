@@ -25,6 +25,14 @@
             margin-bottom: 30px;
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
         .brand a {
             text-decoration: none;
             color: #333;
@@ -38,16 +46,27 @@
         }
 
         nav {
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         nav ul {
             list-style: none;
             padding: 0;
+            margin: 0;
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            position: relative;
+        }
+
+        .primary-nav {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .social-nav {
+            font-size: 0.9em;
         }
 
         nav a {
@@ -64,15 +83,11 @@
 
         /* Authentication and admin links */
         .auth-admin-section {
-            position: absolute;
-            top: 0;
-            right: 0;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             gap: 5px;
             font-size: 0.9em;
-            z-index: 1000;
         }
 
         .auth-link {
@@ -238,9 +253,24 @@
         }
 
         @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .auth-admin-section {
+                align-items: flex-start;
+            }
+
             nav ul {
                 flex-direction: column;
                 gap: 10px;
+            }
+
+            .primary-nav {
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
             }
 
             .admin-links {
@@ -263,20 +293,37 @@
     <div class="wrap">
         <div class="fg">
             <header class="site-header" id="h">
-                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
-                <p class="tagline">Curious novel<br>
-                    <span class="amp">&amp;</span> solutions work.
-                </p>
+                <div class="header-top">
+                    <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                    <p class="tagline">Curious novel<br>
+                        <span class="amp">&amp;</span> solutions work.
+                    </p>
+                    
+                    <!-- Authentication Section -->
+                    <div class="auth-admin-section">
+                        <div>
+                            <span style="font-style: italic; color: #666; font-size: 0.85em;">Logged in as: {{ user.email if user else 'Daniel Blackburn' }}</span>
+                            <a href="/auth/logout" class="auth-link logout-link">🚪 Logout</a>
+                            <div class="admin-links">
+                                <a href="/workadmin" class="admin-link active">Work Admin</a>
+                                <a href="/workadmin/bulk" class="admin-link">Work Admin (Bulk)</a>
+                                <a href="/projectsadmin" class="admin-link">Projects Admin</a>
+                                <a href="/projectsadmin/bulk" class="admin-link">Projects Admin (Bulk)</a>
+                                <a href="/linkedin" class="admin-link">🔄 LinkedIn Sync</a>
+                                <a href="/admin/logs" class="admin-link">📊 Logs</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <nav>
-                    <ul>
+                    <!-- Primary Navigation -->
+                    <ul class="primary-nav">
                         <li class="me">
                             <a href="/"><span>Daniel</span> Blackburn</a>
                         </li>
                         <li class="projects">
-                            <a href="/work/"><span>work experience</span></a>
-                        </li>
-                        <li class="projects">
-                            <a href="/work/"><span>featured projects</span></a>
+                            <a href="/work/"><span>Featured projects,</span> and work</a>
                         </li>
                         <li class="contact">
                             <a href="/contact/"><span>we should</span> talk</a>
@@ -284,6 +331,10 @@
                         <li class="resume">
                             <a href="/resume" target="_blank">resume</a>
                         </li>
+                    </ul>
+                    
+                    <!-- Social Navigation -->
+                    <ul class="social-nav">
                         <li class="linkedin">
                             <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
                         </li>
@@ -295,22 +346,6 @@
                         </li>
                     </ul>
                 </nav>
-                
-                <!-- Authentication and Admin Links -->
-                <div class="auth-admin-section">
-                    <div>
-                        <span style="font-style: italic; color: #666; font-size: 0.85em;">Logged in as: {{ user.email if user else 'Daniel Blackburn' }}</span>
-                        <a href="/auth/logout" class="auth-link logout-link">🚪 Logout</a>
-                        <div class="admin-links">
-                            <a href="/workadmin" class="admin-link active">Work Admin</a>
-                            <a href="/workadmin/bulk" class="admin-link">Work Admin (Bulk)</a>
-                            <a href="/projectsadmin" class="admin-link">Projects Admin</a>
-                            <a href="/projectsadmin/bulk" class="admin-link">Projects Admin (Bulk)</a>
-                            <a href="/linkedin" class="admin-link">🔄 LinkedIn Sync</a>
-                            <a href="/admin/logs" class="admin-link">📊 Logs</a>
-                        </div>
-                    </div>
-                </div>
             </header>
             
             <div id="bw" aria-live="polite">

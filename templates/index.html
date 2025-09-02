@@ -25,6 +25,14 @@
             margin-bottom: 30px;
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
         .brand a {
             text-decoration: none;
             color: #333;
@@ -38,16 +46,27 @@
         }
 
         nav {
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         nav ul {
             list-style: none;
             padding: 0;
+            margin: 0;
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            position: relative;
+        }
+
+        .primary-nav {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .social-nav {
+            font-size: 0.9em;
         }
 
         nav a {
@@ -64,15 +83,11 @@
 
         /* Authentication and admin links */
         .auth-admin-section {
-            position: absolute;
-            top: 0;
-            right: 0;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             gap: 5px;
             font-size: 0.9em;
-            z-index: 1000;
         }
 
         .auth-link {
@@ -201,9 +216,24 @@
                 max-width: 100%;
             }
 
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .auth-admin-section {
+                align-items: flex-start;
+            }
+
             nav ul {
                 flex-direction: column;
                 gap: 10px;
+            }
+
+            .primary-nav {
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
             }
         }
     </style>
@@ -221,12 +251,32 @@
     <div class="wrap">
         <div class="fg">
             <header class="site-header" id="h">
-                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
-                <p class="tagline">Curious novel<br>
-                    <span class="amp">&amp;</span> solutions work.
-                </p>
+                <div class="header-top">
+                    <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
+                    <p class="tagline">Curious novel<br>
+                        <span class="amp">&amp;</span> solutions work.
+                    </p>
+                    
+                    <!-- Authentication Section -->
+                    <div class="auth-admin-section">
+                        {% if user_authenticated %}
+                            <div>
+                                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
+                                <div class="admin-links">
+                                    <a href="/workadmin" class="admin-link">Work Admin</a>
+                                    <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
+                                    <a href="/debug/logs" class="admin-link">Logs</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="/auth/login" class="auth-link">Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
                 <nav>
-                    <ul>
+                    <!-- Primary Navigation -->
+                    <ul class="primary-nav">
                         <li class="me active">
                             <a href="/"><span>Daniel</span> Blackburn</a>
                         </li>
@@ -239,6 +289,10 @@
                         <li class="resume">
                             <a href="/resume" target="_blank">resume</a>
                         </li>
+                    </ul>
+                    
+                    <!-- Social Navigation -->
+                    <ul class="social-nav">
                         <li class="linkedin">
                             <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
                         </li>
@@ -250,22 +304,6 @@
                         </li>
                     </ul>
                 </nav>
-                
-                <!-- Authentication and Admin Links -->
-                <div class="auth-admin-section">
-                    {% if user_authenticated %}
-                        <div>
-                            <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                            <div class="admin-links">
-                                <a href="/workadmin" class="admin-link">Work Admin</a>
-                                <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
-                                <a href="/debug/logs" class="admin-link">Logs</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="/auth/login" class="auth-link">Login</a>
-                    {% endif %}
-                </div>
             </header>
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
