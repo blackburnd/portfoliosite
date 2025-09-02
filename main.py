@@ -43,6 +43,7 @@ from auth import (
     GOOGLE_REDIRECT_URI
 )
 from cookie_auth import require_admin_auth_cookie
+from linkedin_sync import linkedin_sync, LinkedInSyncError
 
 from app.resolvers import schema
 try:
@@ -638,6 +639,107 @@ async def projects_admin_bulk_page(request: Request, admin: dict = Depends(requi
         "current_page": "projectsadmin_bulk",
         "user": admin
     })
+
+
+@app.get("/linkedin", response_class=HTMLResponse)
+async def linkedin_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+    """LinkedIn sync admin interface"""
+    return templates.TemplateResponse("linkedin_admin.html", {
+        "request": request,
+        "current_page": "linkedin_admin",
+        "user": admin
+    })
+
+
+# --- LinkedIn Sync Admin Endpoints ---
+
+@app.get("/linkedin/status")
+async def linkedin_sync_status(admin: dict = Depends(require_admin_auth)):
+    """Get LinkedIn sync configuration status"""
+    try:
+        status = linkedin_sync.get_sync_status()
+        return JSONResponse({
+            "status": "success",
+            "linkedin_sync": status
+        })
+    except Exception as e:
+        logger.error(f"Error getting LinkedIn sync status: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.post("/linkedin/sync/profile")
+async def sync_linkedin_profile(admin: dict = Depends(require_admin_auth)):
+    """Sync LinkedIn profile data to portfolio"""
+    try:
+        logger.info(f"LinkedIn profile sync initiated by user: {admin.get('email', 'unknown')}")
+        result = await linkedin_sync.sync_profile_data()
+        return JSONResponse({
+            "status": "success",
+            "result": result
+        })
+    except LinkedInSyncError as e:
+        logger.error(f"LinkedIn profile sync error: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=400)
+    except Exception as e:
+        logger.error(f"Unexpected error during LinkedIn profile sync: {str(e)}")
+        return JSONResponse({
+            "status": "error", 
+            "error": "Internal server error during sync"
+        }, status_code=500)
+
+
+@app.post("/linkedin/sync/experience")
+async def sync_linkedin_experience(admin: dict = Depends(require_admin_auth)):
+    """Sync LinkedIn work experience data to database"""
+    try:
+        logger.info(f"LinkedIn experience sync initiated by user: {admin.get('email', 'unknown')}")
+        result = await linkedin_sync.sync_experience_data()
+        return JSONResponse({
+            "status": "success",
+            "result": result
+        })
+    except LinkedInSyncError as e:
+        logger.error(f"LinkedIn experience sync error: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=400)
+    except Exception as e:
+        logger.error(f"Unexpected error during LinkedIn experience sync: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": "Internal server error during sync"
+        }, status_code=500)
+
+
+@app.post("/linkedin/sync/full")
+async def sync_linkedin_full(admin: dict = Depends(require_admin_auth)):
+    """Perform full LinkedIn sync (profile + experience)"""
+    try:
+        logger.info(f"Full LinkedIn sync initiated by user: {admin.get('email', 'unknown')}")
+        result = await linkedin_sync.full_sync()
+        return JSONResponse({
+            "status": "success",
+            "result": result
+        })
+    except LinkedInSyncError as e:
+        logger.error(f"LinkedIn full sync error: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=400)
+    except Exception as e:
+        logger.error(f"Unexpected error during LinkedIn full sync: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": "Internal server error during sync"
+        }, status_code=500)
 
 
 # --- CRUD Endpoints for Work Items ---
