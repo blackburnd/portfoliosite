@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
     <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+    <link rel="stylesheet" href="/assets/style.css">
 
-    <!-- Add basic CSS since style.css is missing -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -214,39 +214,10 @@
 <body class="work">
     <div class="wrap">
         <div class="fg">
-            <header class="site-header" id="h">
-                <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
-                <p class="tagline">Curious novel<br>
-                    <span class="amp">&amp;</span> solutions work.
-                </p>
-                <nav>
-                    <ul>
-                        <li class="me">
-                            <a href="/"><span>Daniel</span> Blackburn</a>
-                        </li>
-                        <li class="projects active">
-                            <a href="/work/"><span>Featured projects,</span> and work</a>
-                        </li>
-                        <li class="contact">
-                            <a href="/contact/"><span>we should</span> talk</a>
-                        </li>
-                        <li class="resume">
-                            <a href="/resume" target="_blank">resume</a>
-                        </li>
-                        <li class="linkedin">
-                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
-                        </li>
-                        <li class="github">
-                            <a href="https://github.com/blackburnd" target="_blank">github</a>
-                        </li>
-                        <li class="pypi">
-                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
-                        </li>
-                    </ul>
-                    
-                    <!-- Authentication and Admin Links -->
-                    <div class="auth-admin-section">
-                        {% if user_authenticated %}
+            <!-- Include the navigation component with current page set to 'work' -->
+            {% with current_page='work', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
                             <div>
                                 <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
                                 <div class="admin-links">

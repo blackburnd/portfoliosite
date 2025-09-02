@@ -123,6 +123,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Add SessionMiddleware - required for OAuth authentication
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", secrets.token_urlsafe(32)),
+    max_age=3600,  # 1 hour
+    https_only=os.getenv("ENV") == "production",
+)
+
 # Log startup configuration
 logger.info("=== Application Startup ===")
 logger.info(f"FastAPI app initialized: {app.title}")
@@ -369,11 +377,16 @@ async def auth_login(request: Request):
         
         # Use the OAuth client to redirect with proper state handling
         google = oauth.google
-        result = await google.authorize_redirect(
-            request, 
-            redirect_uri,
-            state=state
-        )
+        try:
+            result = await google.authorize_redirect(
+                request, 
+                redirect_uri,
+                state=state
+            )
+            logger.info("OAuth redirect created successfully")
+        except Exception as redirect_error:
+            logger.error(f"OAuth redirect error: {str(redirect_error)}")
+            raise
         
         logger.info("OAuth redirect created successfully")
         return result

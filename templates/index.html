@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
     <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+    <link rel="stylesheet" href="/assets/style.css">
 
-    <!-- Add basic CSS since style.css is missing -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -250,61 +250,10 @@
 <body class="me">
     <div class="wrap">
         <div class="fg">
-            <header class="site-header" id="h">
-                <div class="header-top">
-                    <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
-                    <p class="tagline">Curious novel<br>
-                        <span class="amp">&amp;</span> solutions work.
-                    </p>
-                    
-                    <!-- Authentication Section -->
-                    <div class="auth-admin-section">
-                        {% if user_authenticated %}
-                            <div>
-                                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                                <div class="admin-links">
-                                    <a href="/workadmin" class="admin-link">Work Admin</a>
-                                    <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
-                                    <a href="/debug/logs" class="admin-link">Logs</a>
-                                </div>
-                            </div>
-                        {% else %}
-                            <a href="/auth/login" class="auth-link">Login</a>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <nav>
-                    <!-- Primary Navigation -->
-                    <ul class="primary-nav">
-                        <li class="me active">
-                            <a href="/"><span>Daniel</span> Blackburn</a>
-                        </li>
-                        <li class="projects">
-                            <a href="/work/"><span>Featured projects,</span> and work</a>
-                        </li>
-                        <li class="contact">
-                            <a href="/contact/"><span>we should</span> talk</a>
-                        </li>
-                        <li class="resume">
-                            <a href="/resume" target="_blank">resume</a>
-                        </li>
-                    </ul>
-                    
-                    <!-- Social Navigation -->
-                    <ul class="social-nav">
-                        <li class="linkedin">
-                            <a href="https://linkedin.com/in/Blackburnd" target="_blank">linkedin</a>
-                        </li>
-                        <li class="github">
-                            <a href="https://github.com/blackburnd" target="_blank">github</a>
-                        </li>
-                        <li class="pypi">
-                            <a href="https://pypi.org/user/blackburnd/" target="_blank">pypi</a>
-                        </li>
-                    </ul>
-                </nav>
-            </header>
+            <!-- Include the navigation component with current page set to 'home' -->
+            {% with current_page='home', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
                     <section class="about">
