@@ -1,6 +1,7 @@
 venv/*
 venv/.DS_Store
-__pycache__/main.cpython-312.pyc
+__pycache__/
+*.pyc
 .DS_Store
 *.env#
 *.env
