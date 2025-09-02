@@ -605,6 +605,13 @@ async def clear_logs_data():
     return JSONResponse({"status": "success", "message": "Logs cleared"})
 
 
+# --- Redirect admin/logs to debug/logs for convenience ---
+@app.get("/admin/logs")
+async def admin_logs_redirect():
+    """Redirect admin logs to debug logs for debugging without auth"""
+    return RedirectResponse(url="/debug/logs", status_code=302)
+
+
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
 async def projects_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
