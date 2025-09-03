@@ -8,8 +8,92 @@
     <title>LinkedIn Sync Admin - Daniel Blackburn</title>
     <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
     <link rel="stylesheet" href="/assets/style.css">
-
-    <!-- Add consistent CSS styling matching index.html -->
+    <style>
+        .linkedin-admin-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .connection-section, .sync-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .connection-status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .connection-status.connected {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .connection-status.disconnected {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .sync-buttons {
+            margin: 15px 0;
+        }
+        
+        .sync-buttons button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .sync-buttons button:hover {
+            background: #0056b3;
+        }
+        
+        .sync-buttons button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .result-message {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .result-message.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result-message.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .sync-history {
+            margin-top: 20px;
+        }
+        
+        .sync-history-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 
 <body class="me">
@@ -58,34 +142,50 @@
                 <div class="linkedin-admin-content">
                     <h2>🔗 LinkedIn Sync Administration</h2>
                     
-                    <div class="status-section">
-                        <h3>Sync Status</h3>
-                        <div id="syncStatus">Loading status...</div>
-                    </div>
-
-                    <div class="sync-section">
-                        <h3>Profile Sync</h3>
-                        <p>Sync basic profile information from LinkedIn to your portfolio.</p>
-                        <div class="sync-buttons">
-                            <button id="syncProfileBtn" onclick="syncProfile()">Sync Profile</button>
+                    <!-- LinkedIn Connection Status -->
+                    <div class="connection-section">
+                        <h3>LinkedIn Connection</h3>
+                        <div id="connectionStatus">Loading connection status...</div>
+                        <div id="connectionActions" style="display: none;">
+                            <button id="connectLinkedInBtn" onclick="connectLinkedIn()" style="display: none;">Connect LinkedIn</button>
+                            <button id="disconnectLinkedInBtn" onclick="disconnectLinkedIn()" style="display: none;">Disconnect LinkedIn</button>
                         </div>
                     </div>
 
-                    <div class="sync-section">
-                        <h3>Experience Sync</h3>
-                        <p>Sync work experience and professional history from LinkedIn.</p>
-                        <div class="sync-buttons">
-                            <button id="syncExperienceBtn" onclick="syncExperience()">Sync Experience</button>
+                    <!-- Sync Controls (only shown when LinkedIn is connected) -->
+                    <div id="syncControls" style="display: none;">
+                        <div class="sync-section">
+                            <h3>Profile Sync</h3>
+                            <p>Sync basic profile information from LinkedIn to your portfolio.</p>
+                            <div class="sync-buttons">
+                                <button id="syncProfileBtn" onclick="syncProfile()">Sync Profile</button>
+                            </div>
+                        </div>
+
+                        <div class="sync-section">
+                            <h3>Experience Sync</h3>
+                            <p>Sync work experience and professional history from LinkedIn.</p>
+                            <div class="sync-buttons">
+                                <button id="syncExperienceBtn" onclick="syncExperience()">Sync Experience</button>
+                            </div>
+                        </div>
+
+                        <div class="sync-section">
+                            <h3>Full Sync</h3>
+                            <p>Perform a complete sync of all available LinkedIn data.</p>
+                            <div class="sync-buttons">
+                                <button id="syncAllBtn" onclick="syncAll()">Full Sync</button>
+                            </div>
+                        </div>
+
+                        <div class="sync-section">
+                            <h3>Sync History</h3>
+                            <div id="syncHistory">Loading sync history...</div>
                         </div>
                     </div>
 
-                    <div class="sync-section">
-                        <h3>Full Sync</h3>
-                        <p>Perform a complete sync of all available LinkedIn data.</p>
-                        <div class="sync-buttons">
-                            <button id="syncAllBtn" onclick="syncAll()">Full Sync</button>
-                        </div>
-                    </div>
+                    <!-- Results Display -->
+                    <div id="resultMessages"></div>
                 </div>
             </div>
             
@@ -94,320 +194,132 @@
             </footer>
         </div>
     </div>
-            
-            <!-- Configuration Status -->
-            <div class="status-card">
-                <h2>📊 Configuration Status</h2>
-                <div id="status-content">
-                    <div class="loading"></div> Loading configuration status...
-                </div>
-            </div>
-            
-            <!-- Sync Controls -->
-            <div class="status-card">
-                <h2>🔄 Data Synchronization</h2>
-                <p>Sync your LinkedIn profile and work experience data to your portfolio database.</p>
-                
-                <div class="sync-controls">
-                    <button id="syncProfile" class="sync-button btn-profile" disabled>
-                        👤 Sync Profile Data
-                    </button>
-                    <button id="syncExperience" class="sync-button btn-experience" disabled>
-                        💼 Sync Work Experience
-                    </button>
-                    <button id="syncFull" class="sync-button btn-full" disabled>
-                        🚀 Full Sync (Profile + Experience)
-                    </button>
-                </div>
-                
-                <div id="sync-status" style="margin-top: 15px; font-style: italic; color: #666;">
-                    Ready to sync
-                </div>
-            </div>
-            
-            <!-- Results Section -->
-            <div class="result-section">
-                <div id="result-success" class="result-card success">
-                    <h3>✅ Sync Successful</h3>
-                    <div id="success-content"></div>
-                </div>
-                
-                <div id="result-error" class="result-card error">
-                    <h3>❌ Sync Error</h3>
-                    <div id="error-content"></div>
-                </div>
-                
-                <div id="result-info" class="result-card info">
-                    <h3>ℹ️ Sync Results</h3>
-                    <div id="info-content"></div>
-                </div>
-            </div>
-            
-            <!-- Configuration Help -->
-            <div id="config-help" class="config-help" style="display: none;">
-                <h3>🔗 Connect Your LinkedIn Account</h3>
-                <p>To sync your LinkedIn data with your portfolio, connect your LinkedIn account securely using OAuth 2.0:</p>
-                <div class="oauth-section">
-                    <h4>🔐 Secure OAuth Authentication</h4>
-                    <p>Click the button below to securely connect your LinkedIn account:</p>
-                    <button id="connectLinkedInBtn" class="oauth-btn" onclick="connectLinkedIn()">
-                        🔗 Connect LinkedIn Account
-                    </button>
-                    <p class="oauth-note">You'll be redirected to LinkedIn to authorize read-only access to your profile data.</p>
-                </div>
-            </div>
-            
-            <!-- OAuth Connected Section -->
-            <div id="oauth-connected" class="oauth-connected" style="display: none;">
-                <h3>✅ LinkedIn Account Connected</h3>
-                <div id="oauth-status">
-                    <p><strong>Status:</strong> <span id="connection-status">Connected</span></p>
-                    <p><strong>Profile ID:</strong> <span id="linkedin-profile-id">-</span></p>
-                    <p><strong>Token Expires:</strong> <span id="token-expires">-</span></p>
-                </div>
-                <div class="oauth-actions">
-                    <button id="refreshTokenBtn" class="oauth-btn secondary" onclick="refreshToken()">
-                        🔄 Refresh Connection
-                    </button>
-                    <button id="disconnectBtn" class="oauth-btn danger" onclick="disconnectLinkedIn()">
-                        ❌ Disconnect Account
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
         // Global state
-        let linkedinConfigured = false;
-        let oauthConnected = false;
-        
-        // DOM elements
-        const statusContent = document.getElementById('status-content');
-        const syncProfile = document.getElementById('syncProfile');
-        const syncExperience = document.getElementById('syncExperience');
-        const syncFull = document.getElementById('syncFull');
-        const syncStatus = document.getElementById('sync-status');
-        const configHelp = document.getElementById('config-help');
-        const oauthConnectedDiv = document.getElementById('oauth-connected');
-        
-        // Result cards
-        const resultSuccess = document.getElementById('result-success');
-        const resultError = document.getElementById('result-error');
-        const resultInfo = document.getElementById('result-info');
-        const successContent = document.getElementById('success-content');
-        const errorContent = document.getElementById('error-content');
-        const infoContent = document.getElementById('info-content');
-        
+        let linkedinConnected = false;
+        let syncInProgress = false;
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            loadConfigurationStatus();
-            
-            // Add event listeners
-            syncProfile.addEventListener('click', () => performSync('profile'));
-            syncExperience.addEventListener('click', () => performSync('experience'));
-            syncFull.addEventListener('click', () => performSync('full'));
+            loadConnectionStatus();
+            loadSyncHistory();
         });
-        
-        // Load configuration status
-        async function loadConfigurationStatus() {
+
+        // Load LinkedIn connection status
+        async function loadConnectionStatus() {
             try {
                 const response = await fetch('/linkedin/status', {
+                    method: 'GET',
                     headers: {
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                displayConfigurationStatus(data.linkedin_sync);
                 
+                if (data.status === 'success') {
+                    updateConnectionUI(data.linkedin_sync);
+                } else {
+                    showError('Failed to load LinkedIn status: ' + data.error);
+                }
+
             } catch (error) {
-                console.error('Error loading configuration status:', error);
-                statusContent.innerHTML = `
-                    <div style="color: red;">
-                        ❌ Error loading configuration: ${error.message}
-                    </div>
-                `;
+                console.error('Error loading LinkedIn status:', error);
+                showError('Error loading LinkedIn status: ' + error.message);
             }
         }
-        
-        // Display configuration status
-        function displayConfigurationStatus(config) {
-            // Check OAuth status
-            const oauth = config.oauth || {};
-            oauthConnected = oauth.connected && oauth.token_valid;
-            linkedinConfigured = oauthConnected || config.legacy_configured;
-            
-            // Update OAuth status display - Only show what's relevant
-            if (oauthConnected) {
-                // Show OAuth connected section ONLY - hide connection UI
-                oauthConnectedDiv.style.display = 'block';
-                configHelp.style.display = 'none';
-                
-                // Update OAuth status details
-                document.getElementById('connection-status').textContent = 
-                    oauth.token_valid ? 'Connected & Valid' : 'Connected (Token Expired)';
-                document.getElementById('linkedin-profile-id').textContent = 
-                    oauth.linkedin_profile_id || 'Not available';
-                document.getElementById('token-expires').textContent = 
-                    oauth.expires_at ? new Date(oauth.expires_at).toLocaleString() : 'Unknown';
-                    
-            } else {
-                // No LinkedIn account connected - show connection interface ONLY
-                configHelp.style.display = 'block';
-                oauthConnectedDiv.style.display = 'none';
-            }
-            
-            // Configuration status for display - Show clean status
-            if (oauthConnected) {
-                // When connected, show clean status focused on current connection
-                statusContent.innerHTML = `
-                    <div class="status-item">
-                        <span class="status-label">Status:</span>
-                        <span class="status-value">
-                            <span class="status-indicator configured"></span>
-                            LinkedIn Account Connected via OAuth 2.0
-                        </span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Portfolio ID:</span>
-                        <span class="status-value">${config.portfolio_id}</span>
+
+        // Update connection UI based on status
+        function updateConnectionUI(status) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            const connectionActions = document.getElementById('connectionActions');
+            const connectBtn = document.getElementById('connectLinkedInBtn');
+            const disconnectBtn = document.getElementById('disconnectLinkedInBtn');
+            const syncControls = document.getElementById('syncControls');
+
+            linkedinConnected = status.connected;
+
+            if (status.connected) {
+                connectionStatus.innerHTML = `
+                    <div class="connection-status connected">
+                        <strong>✅ LinkedIn Connected</strong><br>
+                        Profile: ${status.profile_name || 'N/A'}<br>
+                        LinkedIn ID: ${status.linkedin_profile_id || 'N/A'}<br>
+                        Token expires: ${status.expires_at ? new Date(status.expires_at).toLocaleString() : 'N/A'}<br>
+                        Last sync: ${status.last_sync ? new Date(status.last_sync).toLocaleString() : 'Never'}
                     </div>
                 `;
-            } else {
-                // When not connected, show connection required status
-                const authMethod = config.legacy_configured ? 'Environment Variables (Deprecated)' : 'Not Configured';
-                const authIndicator = config.legacy_configured ? 
-                    '<span class="status-indicator deprecated"></span>' : 
-                    '<span class="status-indicator not-configured"></span>';
                 
-                statusContent.innerHTML = `
-                    <div class="status-item">
-                        <span class="status-label">Status:</span>
-                        <span class="status-value">
-                            <span class="status-indicator not-configured"></span>
-                            LinkedIn Account Not Connected
-                        </span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Authentication:</span>
-                        <span class="status-value">${authIndicator}${authMethod}</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Portfolio ID:</span>
-                        <span class="status-value">${config.portfolio_id}</span>
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                syncControls.style.display = 'block';
+
+            } else {
+                connectionStatus.innerHTML = `
+                    <div class="connection-status disconnected">
+                        <strong>❌ LinkedIn Not Connected</strong><br>
+                        ${status.message || 'Connect your LinkedIn account to enable data sync.'}
                     </div>
                 `;
+                
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                syncControls.style.display = 'none';
             }
-            
-            // Enable/disable sync buttons - prioritize OAuth connection
-            if (oauthConnected) {
-                syncProfile.disabled = false;
-                syncExperience.disabled = false;
-                syncFull.disabled = false;
-                syncStatus.textContent = 'Ready to sync with LinkedIn';
-            } else if (config.legacy_configured) {
-                // Allow legacy sync but show deprecation notice
-                syncProfile.disabled = false;
-                syncExperience.disabled = false;
-                syncFull.disabled = false;
-                syncStatus.textContent = 'Ready to sync (using deprecated method)';
-            } else {
-                syncProfile.disabled = true;
-                syncExperience.disabled = true;
-                syncFull.disabled = true;
-                syncStatus.textContent = 'Connect your LinkedIn account to enable sync';
-            }
+
+            connectionActions.style.display = 'block';
         }
-        
-        // Perform sync operation
-        async function performSync(type) {
-            if (!linkedinConfigured) {
-                showError('LinkedIn account not connected. Please connect your LinkedIn account first.');
+
+        // Load sync history
+        async function loadSyncHistory() {
+            if (!linkedinConnected) {
                 return;
             }
-            
-            // Clear previous results
-            hideAllResults();
-            
-            // Update UI for loading state
-            const button = type === 'profile' ? syncProfile : 
-                          type === 'experience' ? syncExperience : syncFull;
-            const originalText = button.textContent;
-            
-            button.disabled = true;
-            button.innerHTML = '<span class="loading"></span>' + originalText;
-            syncStatus.textContent = `Syncing ${type} data...`;
-            
+
             try {
-                const response = await fetch(`/linkedin/sync/${type}`, {
-                    method: 'POST',
+                const response = await fetch('/linkedin/sync/history', {
+                    method: 'GET',
                     headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Accept': 'application/json'
                     }
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok && data.status === 'success') {
-                    showSuccess(`${type} sync completed successfully!`, data.result);
-                    syncStatus.textContent = `${type} sync completed successfully`;
-                } else {
-                    showError(data.error || `${type} sync failed`);
-                    syncStatus.textContent = `${type} sync failed`;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        updateSyncHistoryUI(data.history);
+                    }
                 }
-                
             } catch (error) {
-                console.error('Sync error:', error);
-                showError(`Network error during ${type} sync: ${error.message}`);
-                syncStatus.textContent = `${type} sync failed`;
-            } finally {
-                // Restore button state
-                button.disabled = false;
-                button.textContent = originalText;
+                console.error('Error loading sync history:', error);
             }
         }
-        
-        // Show success result
-        function showSuccess(message, data) {
-            hideAllResults();
-            successContent.innerHTML = `
-                <p>${message}</p>
-                <pre>${JSON.stringify(data, null, 2)}</pre>
-            `;
-            resultSuccess.style.display = 'block';
+
+        // Update sync history UI
+        function updateSyncHistoryUI(history) {
+            const syncHistory = document.getElementById('syncHistory');
+            
+            if (!history || history.length === 0) {
+                syncHistory.innerHTML = '<p>No sync history available.</p>';
+                return;
+            }
+
+            const historyHTML = history.map(item => `
+                <div class="sync-history-item">
+                    <strong>${item.type}</strong> - ${item.status}<br>
+                    <small>${new Date(item.timestamp).toLocaleString()}</small>
+                </div>
+            `).join('');
+
+            syncHistory.innerHTML = historyHTML;
         }
-        
-        // Show error result
-        function showError(message) {
-            hideAllResults();
-            errorContent.innerHTML = `<p>${message}</p>`;
-            resultError.style.display = 'block';
-        }
-        
-        // Show info result
-        function showInfo(message, data) {
-            hideAllResults();
-            infoContent.innerHTML = `
-                <p>${message}</p>
-                <pre>${JSON.stringify(data, null, 2)}</pre>
-            `;
-            resultInfo.style.display = 'block';
-        }
-        
-        // Hide all result cards
-        function hideAllResults() {
-            resultSuccess.style.display = 'none';
-            resultError.style.display = 'none';
-            resultInfo.style.display = 'none';
-        }
-        
-        // OAuth Functions
+
+        // Connect LinkedIn
         async function connectLinkedIn() {
             try {
                 const response = await fetch('/linkedin/oauth/authorize', {
@@ -416,11 +328,11 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 if (data.status === 'success') {
                     // Redirect to LinkedIn authorization
@@ -428,18 +340,19 @@
                 } else {
                     showError('Failed to initiate LinkedIn connection: ' + data.error);
                 }
-                
+
             } catch (error) {
                 console.error('Error connecting LinkedIn:', error);
                 showError('Error connecting to LinkedIn: ' + error.message);
             }
         }
-        
+
+        // Disconnect LinkedIn
         async function disconnectLinkedIn() {
             if (!confirm('Are you sure you want to disconnect your LinkedIn account?')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch('/linkedin/oauth/disconnect', {
                     method: 'DELETE',
@@ -447,29 +360,128 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 if (data.status === 'success') {
                     showSuccess('LinkedIn account disconnected successfully');
                     // Reload status
-                    loadConfigurationStatus();
+                    loadConnectionStatus();
                 } else {
                     showError('Failed to disconnect LinkedIn: ' + data.error);
                 }
-                
+
             } catch (error) {
                 console.error('Error disconnecting LinkedIn:', error);
                 showError('Error disconnecting LinkedIn: ' + error.message);
             }
         }
-        
-        async function refreshToken() {
-            // For now, just reconnect (full OAuth flow)
-            await connectLinkedIn();
+
+        // Sync functions
+        async function syncProfile() {
+            await performSync('profile', 'syncProfileBtn');
+        }
+
+        async function syncExperience() {
+            await performSync('experience', 'syncExperienceBtn');
+        }
+
+        async function syncAll() {
+            await performSync('full', 'syncAllBtn');
+        }
+
+        // Perform sync operation
+        async function performSync(type, buttonId) {
+            if (!linkedinConnected) {
+                showError('LinkedIn account not connected. Please connect your LinkedIn account first.');
+                return;
+            }
+
+            if (syncInProgress) {
+                showError('Sync already in progress. Please wait.');
+                return;
+            }
+
+            syncInProgress = true;
+            const button = document.getElementById(buttonId);
+            const originalText = button.textContent;
+
+            try {
+                // Update UI for loading state
+                button.disabled = true;
+                button.textContent = 'Syncing...';
+
+                const response = await fetch(`/linkedin/sync/${type}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    showSuccess(`${type} sync completed successfully!`, data.result);
+                    // Reload sync history
+                    loadSyncHistory();
+                } else {
+                    showError(data.error || `${type} sync failed`);
+                }
+
+            } catch (error) {
+                console.error('Sync error:', error);
+                showError(`Network error during ${type} sync: ${error.message}`);
+            } finally {
+                // Restore button state
+                button.disabled = false;
+                button.textContent = originalText;
+                syncInProgress = false;
+            }
+        }
+
+        // Show success message
+        function showSuccess(message, data) {
+            clearMessages();
+            const resultMessages = document.getElementById('resultMessages');
+            
+            let dataHTML = '';
+            if (data) {
+                dataHTML = `
+                    <details style="margin-top: 10px;">
+                        <summary>Sync Details</summary>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            }
+            
+            resultMessages.innerHTML = `
+                <div class="result-message success">
+                    ${message}
+                    ${dataHTML}
+                </div>
+            `;
+        }
+
+        // Show error message
+        function showError(message) {
+            clearMessages();
+            const resultMessages = document.getElementById('resultMessages');
+            
+            resultMessages.innerHTML = `
+                <div class="result-message error">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Clear messages
+        function clearMessages() {
+            const resultMessages = document.getElementById('resultMessages');
+            resultMessages.innerHTML = '';
         }
     </script>
 </body>
