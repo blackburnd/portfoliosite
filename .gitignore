@@ -9,3 +9,4 @@ __pycache__/
 *.sh#
 *.py~
 test.db
+.vscode/settings.json
