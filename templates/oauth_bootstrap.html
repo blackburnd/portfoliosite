@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth Configuration - Bootstrap Setup</title>
+    <title>OAuth Configuration - Daniel Blackburn</title>
     <link href="/assets/style.css" rel="stylesheet">
     <style>
         .bootstrap-warning {
@@ -63,8 +63,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>OAuth Configuration Setup</h1>
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component with current page set to 'oauth_config' -->
+            {% with current_page='oauth_config', user=user, user_authenticated=user is not none, user_email=user.email if user else '' %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div id="bw" aria-live="polite">
+                <div class="container">
+                    <h1>OAuth Configuration Setup</h1>
         
         <div id="bootstrap-warning" class="bootstrap-warning">
             <h3>⚠️ Initial System Setup</h3>
@@ -113,7 +121,8 @@
             
             <div id="current-config" style="margin-top: 30px;">
                 <h3>Current Configuration</h3>
-                <div id="config-status">Loading...</div>
+                <div id="config-status">Loading...                    </div>
+                </div>
             </div>
         </div>
     </div>

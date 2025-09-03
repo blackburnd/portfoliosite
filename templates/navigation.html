@@ -19,11 +19,14 @@
                         <a href="/projectsadmin" class="admin-link {{ 'active' if current_page == 'projectsadmin' else '' }}">Projects Admin</a>
                         <a href="/projectsadmin/bulk" class="admin-link {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">Projects Bulk</a>
                         <a href="/linkedin" class="admin-link {{ 'active' if current_page == 'linkedin_admin' else '' }}">LinkedIn Sync</a>
+                        <a href="/oauth/bootstrap" class="admin-link {{ 'active' if current_page == 'oauth_config' else '' }}">OAuth Config</a>
+                        <a href="/oauth/status" class="admin-link {{ 'active' if current_page == 'oauth_status' else '' }}">OAuth Status</a>
                         <a href="/admin/logs" class="admin-link {{ 'active' if current_page == 'logs' else '' }}">Logs</a>
                     </div>
                 </div>
             {% else %}
                 <a href="/auth/login" class="auth-link">Login</a>
+                <a href="/oauth/bootstrap" class="auth-link">OAuth Setup</a>
             {% endif %}
         </div>
     </div>

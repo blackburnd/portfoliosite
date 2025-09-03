@@ -969,6 +969,59 @@ async def setup_oauth_tables():
             "error": str(e)
         }, status_code=500)
 
+@app.get("/oauth/status")
+async def oauth_status_page(request: Request):
+    """Simple page to view current OAuth configuration status"""
+    try:
+        # Get current OAuth config
+        query = """
+            SELECT app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
+            FROM linkedin_oauth_config 
+            WHERE is_active = true
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
+        
+        config_html = "<h2>Current LinkedIn OAuth Configuration</h2>"
+        
+        if result:
+            config_html += f"""
+            <p><strong>Status:</strong> ✅ Configured</p>
+            <p><strong>App Name:</strong> {result['app_name']}</p>
+            <p><strong>Client ID:</strong> {result['client_id']}</p>
+            <p><strong>Redirect URI:</strong> {result['redirect_uri']}</p>
+            <p><strong>Configured By:</strong> {result['configured_by_email']}</p>
+            <p><strong>Created:</strong> {result['created_at']}</p>
+            <p><a href="/oauth/bootstrap">Edit Configuration</a></p>
+            """
+        else:
+            config_html += """
+            <p><strong>Status:</strong> ❌ Not configured</p>
+            <p><a href="/oauth/bootstrap">Configure OAuth</a></p>
+            """
+        
+        return HTMLResponse(f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>OAuth Status - Daniel Blackburn</title>
+            <link href="/assets/style.css" rel="stylesheet">
+        </head>
+        <body>
+            <div class="container">
+                <h1>OAuth Configuration Status</h1>
+                {config_html}
+                <p><a href="/">← Back to Home</a></p>
+            </div>
+        </body>
+        </html>
+        """)
+        
+    except Exception as e:
+        logger.error(f"Error loading OAuth status page: {str(e)}")
+        return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth status: {e}</p>", status_code=500)
+
 # --- LinkedIn OAuth App Configuration Endpoints ---
 
 @app.get("/oauth/bootstrap")
@@ -980,6 +1033,7 @@ async def oauth_bootstrap_page(request: Request):
         
         return templates.TemplateResponse("oauth_bootstrap.html", {
             "request": request,
+            "current_page": "oauth_config",
             "bootstrap": bootstrap_context["bootstrap"],
             "user": bootstrap_context["user"],
             "auth_status": bootstrap_context["auth_status"]
