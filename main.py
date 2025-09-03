@@ -48,6 +48,7 @@ from auth import (
 )
 from cookie_auth import require_admin_auth_cookie
 from linkedin_sync import linkedin_sync, LinkedInSyncError, LinkedInSync
+from bootstrap_security import require_bootstrap_or_admin_auth, get_bootstrap_ui_context, mark_system_configured
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
@@ -846,19 +847,43 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie))
 
 # --- LinkedIn OAuth App Configuration Endpoints ---
 
-@app.get("/linkedin/oauth/config")
-async def get_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_cookie)):
-    """Get LinkedIn OAuth app configuration status"""
+@app.get("/oauth/bootstrap")
+async def oauth_bootstrap_page(request: Request):
+    """Bootstrap OAuth configuration page - accessible without authentication"""
     try:
-        admin_email = admin.get('email')
+        # Get bootstrap context
+        bootstrap_context = await get_bootstrap_ui_context(request)
+        
+        return templates.TemplateResponse("oauth_bootstrap.html", {
+            "request": request,
+            "bootstrap": bootstrap_context["bootstrap"],
+            "user": bootstrap_context["user"],
+            "auth_status": bootstrap_context["auth_status"]
+        })
+    except Exception as e:
+        logger.error(f"Error loading OAuth bootstrap page: {str(e)}")
+        return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth configuration page: {e}</p>", status_code=500)
+
+@app.get("/linkedin/oauth/config")
+async def get_linkedin_oauth_config(request: Request, user: dict = Depends(require_bootstrap_or_admin_auth)):
+    """Get LinkedIn OAuth app configuration status - supports bootstrap mode"""
+    try:
+        # Get user email (None during bootstrap mode)
+        admin_email = user.get('email') if user else 'bootstrap_user@system.local'
+        
         sync_service = TTWLinkedInSync(admin_email)
         app_status = await sync_service.get_oauth_app_status()
         available_scopes = await ttw_oauth_manager.get_available_scopes()
         
+        # Add bootstrap context
+        bootstrap_context = await get_bootstrap_ui_context(request)
+        
         return JSONResponse({
             "status": "success",
             "oauth_app": app_status,
-            "available_scopes": available_scopes
+            "available_scopes": available_scopes,
+            "bootstrap": bootstrap_context["bootstrap"],
+            "auth_status": bootstrap_context["auth_status"]
         })
     except Exception as e:
         logger.error(f"Error getting LinkedIn OAuth config: {str(e)}")
@@ -870,11 +895,12 @@ async def get_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_coo
 @app.post("/linkedin/oauth/config")
 async def configure_linkedin_oauth_app(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    user: dict = Depends(require_bootstrap_or_admin_auth)
 ):
-    """Configure LinkedIn OAuth app through admin interface"""
+    """Configure LinkedIn OAuth app - supports bootstrap mode for initial setup"""
     try:
-        admin_email = admin.get('email')
+        # Get user email (None during bootstrap mode)
+        admin_email = user.get('email') if user else 'bootstrap_user@system.local'
         config_data = await request.json()
         
         # Validate required fields
@@ -889,10 +915,17 @@ async def configure_linkedin_oauth_app(
         # Configure OAuth app
         success = await ttw_oauth_manager.configure_oauth_app(admin_email, config_data)
         
+        # If this is the first OAuth configuration and we have a real admin email,
+        # mark the system as configured to exit bootstrap mode
+        if success and user and user.get('email') and '@' in user.get('email'):
+            await mark_system_configured(user.get('email'))
+            logger.info(f"System configured with admin: {user.get('email')}")
+        
         if success:
             return JSONResponse({
                 "status": "success",
-                "message": "LinkedIn OAuth app configured successfully"
+                "message": "LinkedIn OAuth app configured successfully",
+                "bootstrap_exit": bool(user and user.get('email'))
             })
         else:
             return JSONResponse({
