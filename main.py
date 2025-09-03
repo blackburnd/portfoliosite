@@ -1792,6 +1792,28 @@ async def debug_oauth_status():
     return JSONResponse(content=status_info)
 
 
+@app.post("/admin/migrate/start-date-nullable")
+async def migrate_start_date_nullable():
+    """Migration route to make start_date nullable in work_experience table"""
+    try:
+        # Read and execute the migration SQL
+        with open("sql/make_start_date_nullable.sql", "r") as f:
+            migration_sql = f.read()
+        
+        await database.execute(migration_sql)
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "Successfully migrated start_date to nullable"
+        })
+    except Exception as e:
+        logger.error(f"Migration failed: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
