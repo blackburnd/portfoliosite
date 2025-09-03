@@ -511,15 +511,64 @@ async def auth_callback(request: Request):
 
 
 @app.get("/auth/logout")
-async def logout(response: Response):
-    """Log out the user by clearing the authentication cookie"""
+async def logout(request: Request, response: Response):
+    """Log out the user by clearing all authentication data and session state"""
     try:
         logger.info("=== OAuth Logout Request ===")
+        
+        # Clear the authentication cookie
         response.delete_cookie(key="access_token", path="/")
-        logger.info("Successfully cleared authentication cookie")
+        
+        # Clear all session data to ensure clean state for re-authentication
+        request.session.clear()
+        
+        # Also clear any potential session cookie variations
+        response.delete_cookie(key="session", path="/")
+        response.delete_cookie(key="oauth_state", path="/")
+        
+        logger.info("Successfully cleared authentication cookie and session data")
         return RedirectResponse(url="/", status_code=303)
     except Exception as e:
         logger.error(f"Logout error: {str(e)}", exc_info=True)
+        return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/auth/disconnect")
+async def disconnect(request: Request, response: Response):
+    """Complete disconnect - logout and revoke Google OAuth tokens"""
+    try:
+        logger.info("=== OAuth Complete Disconnect Request ===")
+        
+        # First try to revoke the Google token if we have one
+        try:
+            access_token = request.cookies.get("access_token")
+            if access_token and oauth and oauth.google:
+                # Try to revoke the token at Google
+                import httpx
+                revoke_url = f"https://oauth2.googleapis.com/revoke?token={access_token}"
+                async with httpx.AsyncClient() as client:
+                    response_revoke = await client.post(revoke_url)
+                    if response_revoke.status_code == 200:
+                        logger.info("Successfully revoked Google OAuth token")
+                    else:
+                        logger.warning(f"Token revocation returned status: {response_revoke.status_code}")
+        except Exception as revoke_error:
+            logger.warning(f"Could not revoke Google token: {revoke_error}")
+        
+        # Clear the authentication cookie
+        response.delete_cookie(key="access_token", path="/")
+        
+        # Clear all session data to ensure clean state for re-authentication
+        request.session.clear()
+        
+        # Also clear any potential session cookie variations
+        response.delete_cookie(key="session", path="/")
+        response.delete_cookie(key="oauth_state", path="/")
+        
+        logger.info("Successfully disconnected and cleared all authentication data")
+        return RedirectResponse(url="/", status_code=303)
+    except Exception as e:
+        logger.error(f"Disconnect error: {str(e)}", exc_info=True)
         return RedirectResponse(url="/", status_code=303)
 
 
