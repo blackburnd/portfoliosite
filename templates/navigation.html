@@ -14,9 +14,12 @@
                 <div>
                     <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
                     <div class="admin-links">
-                        <a href="/workadmin" class="admin-link">Work Admin</a>
-                        <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
-                        <a href="/admin/logs" class="admin-link">Logs</a>
+                        <a href="/workadmin" class="admin-link {{ 'active' if current_page == 'workadmin' else '' }}">Work Admin</a>
+                        <a href="/workadmin/bulk" class="admin-link {{ 'active' if current_page == 'workadmin_bulk' else '' }}">Work Bulk</a>
+                        <a href="/projectsadmin" class="admin-link {{ 'active' if current_page == 'projectsadmin' else '' }}">Projects Admin</a>
+                        <a href="/projectsadmin/bulk" class="admin-link {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">Projects Bulk</a>
+                        <a href="/linkedin" class="admin-link {{ 'active' if current_page == 'linkedin_admin' else '' }}">LinkedIn Sync</a>
+                        <a href="/admin/logs" class="admin-link {{ 'active' if current_page == 'logs' else '' }}">Logs</a>
                     </div>
                 </div>
             {% else %}

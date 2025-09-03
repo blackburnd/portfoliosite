@@ -12,42 +12,13 @@
     <!-- Add consistent CSS styling matching index.html -->
 </head>
 
-<body class="me">
+<body class="projectsadmin-bulk">
     <div class="wrap">
         <div class="fg">
-            <header class="site-header" id="h">
-                <div class="header-top">
-                    <div class="brand">
-                        <a href="/">Daniel Blackburn</a>
-                    </div>
-                    <div class="tagline">Software Engineer / Developer</div>
-                    
-                    <!-- Authentication Section -->
-                    <div class="auth-admin-section">
-                        <a href="/auth/logout" class="auth-link logout-link">Logout</a>
-                        <div class="admin-links">
-                            <a href="/workadmin" class="admin-link">Work Admin</a>
-                            <a href="/workadmin/bulk" class="admin-link">Work Bulk</a>
-                            <a href="/projectsadmin" class="admin-link">Projects Admin</a>
-                            <a href="/projectsadmin/bulk" class="admin-link active">Projects Bulk</a>
-                            <a href="/linkedin" class="admin-link">LinkedIn Sync</a>
-                            <a href="/admin/logs" class="admin-link">Admin Logs</a>
-                        </div>
-                    </div>
-                </div>
-                
-                <nav>
-                    <!-- Primary Navigation -->
-                    <ul class="primary-nav">
-                        <li><a href="/">Index</a></li>
-                        <li><a href="/work">Work</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                        <li><a href="/resume" target="_blank">Resume</a></li>
-                    </ul>
-                    
-                    <!-- Social Navigation -->
-                    <ul class="social-nav">
-                        <li class="linkedin"><a href="https://www.linkedin.com/in/danielblackburn/">LinkedIn</a></li>
+            <!-- Include the navigation component with current page set to 'projectsadmin_bulk' -->
+            {% with current_page='projectsadmin_bulk', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
                         <li class="github"><a href="https://github.com/blackburnd">GitHub</a></li>
                         <li class="pypi"><a href="https://pypi.org/user/blackburnd/">PyPI</a></li>
                     </ul>
