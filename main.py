@@ -1792,7 +1792,7 @@ async def debug_oauth_status():
     return JSONResponse(content=status_info)
 
 
-@app.post("/admin/migrate/start-date-nullable")
+@app.get("/admin/migrate/start-date-nullable")
 async def migrate_start_date_nullable():
     """Migration route to make start_date nullable in work_experience table"""
     try:
