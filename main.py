@@ -1410,6 +1410,15 @@ async def list_workitems():
         print(f"Error in list_workitems: {e}")
         return []
 
+# Get a single work item
+@app.get("/workitems/{id}", response_model=WorkItem)
+async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+    query = "SELECT * FROM work_experience WHERE id=:id"
+    row = await database.fetch_one(query, {"id": id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Work item not found")
+    return WorkItem(**dict(row))
+
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
 async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth_cookie)):

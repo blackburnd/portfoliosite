@@ -6,7 +6,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Work Items Admin - Daniel Blackburn</title>
-    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
     <link rel="stylesheet" href="/assets/style.css">
 </head>
 
@@ -21,10 +20,81 @@
             <div id="bw" aria-live="polite">
                 <div class="work-admin-content">
                     <h2>Work Items Admin</h2>
+                    
+                    <!-- Work Items Grid -->
                     <div id="grid">Loading work items...</div>
+                    
+                    <!-- Action Buttons -->
                     <div class="crud-buttons">
-                        <button id="addBtn">Add Work Item</button>
-                        <button id="deleteBtn">Delete Selected</button>
+                        <button id="addBtn" class="btn">Add Work Item</button>
+                        <button id="deleteBtn" class="btn btn-secondary">Delete Selected</button>
+                    </div>
+                    
+                    <!-- Work Item Form (Initially Hidden) -->
+                    <div id="workItemFormContainer" class="form-container" style="display: none;">
+                        <div class="form-wrapper">
+                            <h3 id="formTitle">Add Work Item</h3>
+                            <form id="workItemForm" class="work-item-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="company">Company *</label>
+                                        <input type="text" id="company" name="company" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="position">Position *</label>
+                                        <input type="text" id="position" name="position" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="location">Location</label>
+                                        <input type="text" id="location" name="location" placeholder="e.g., San Francisco, CA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="company_url">Company URL</label>
+                                        <input type="url" id="company_url" name="company_url" placeholder="https://company.com">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="start_date">Start Date *</label>
+                                        <input type="date" id="start_date" name="start_date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="end_date">End Date</label>
+                                        <input type="date" id="end_date" name="end_date">
+                                        <small class="form-note">Leave empty if current position</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="description">Description</label>
+                                    <textarea id="description" name="description" rows="4" 
+                                              placeholder="Describe your role, responsibilities, and achievements..."></textarea>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="is_current" name="is_current">
+                                            Current Position
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sort_order">Sort Order</label>
+                                        <input type="number" id="sort_order" name="sort_order" value="0" min="0">
+                                        <small class="form-note">Lower numbers appear first</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="submit" id="submitBtn" class="btn">Add Work Item</button>
+                                    <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -34,143 +104,7 @@
             </footer>
         </div>
     </div>
-    <script>
-        // Use standard JavaScript instead of Dojo for better compatibility
-        document.addEventListener('DOMContentLoaded', function() {
-            function loadGrid() {
-                document.getElementById('grid').innerHTML = '<div class="loading">Loading work items...</div>';
-                
-                fetch('/workitems')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log("Loaded work items:", data);
-                        let gridHtml = '<table><tr>' +
-                            '<th>Select</th><th>Company</th><th>Position</th><th>Location</th><th>Start Date</th><th>End Date</th><th>Description</th></tr>';
-                        
-                        if (data && data.length > 0) {
-                            data.forEach(function(item) {
-                                gridHtml += '<tr data-id="' + item.id + '">' +
-                                    '<td><input type="checkbox" class="select-row"></td>' +
-                                    '<td>' + (item.company || '') + '</td>' +
-                                    '<td>' + (item.position || '') + '</td>' +
-                                    '<td>' + (item.location || '') + '</td>' +
-                                    '<td>' + (item.start_date || '') + '</td>' +
-                                    '<td>' + (item.end_date || 'Present') + '</td>' +
-                                    '<td>' + (item.description || '') + '</td>' +
-                                    '</tr>';
-                            });
-                        } else {
-                            gridHtml += '<tr><td colspan="7">No work items found</td></tr>';
-                        }
-                        gridHtml += '</table>';
-                        document.getElementById('grid').innerHTML = gridHtml;
-                    })
-                    .catch(error => {
-                        console.error("Error loading work items:", error);
-                        document.getElementById('grid').innerHTML = '<div class="error">Error loading work items: ' + error.message + '</div>';
-                    });
-            }
-            
-            function addWorkItem() {
-                const company = prompt("Company:");
-                const position = prompt("Position:");
-                const location = prompt("Location:");
-                const startDate = prompt("Start Date (YYYY-MM-DD):");
-                const endDate = prompt("End Date (YYYY-MM-DD, or leave empty for current):");
-                const description = prompt("Description:");
-                
-                if (company && position && startDate) {
-                    const newItem = {
-                        portfolio_id: "daniel-blackburn",
-                        company: company,
-                        position: position,
-                        location: location,
-                        start_date: startDate,
-                        end_date: endDate || null,
-                        description: description,
-                        is_current: !endDate,
-                        company_url: null,
-                        sort_order: 0
-                    };
-                    
-                    fetch('/workitems', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(newItem)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(response => {
-                        console.log("Added work item:", response);
-                        loadGrid(); // Refresh the grid
-                        alert("Work item added successfully!");
-                    })
-                    .catch(error => {
-                        console.error("Error adding work item:", error);
-                        alert("Error adding work item: " + error.message);
-                    });
-                }
-            }
-            
-            function deleteSelected() {
-                const selected = document.querySelectorAll('.select-row:checked');
-                if (selected.length === 0) {
-                    alert("Please select items to delete.");
-                    return;
-                }
-                
-                if (confirm("Are you sure you want to delete " + selected.length + " item(s)?")) {
-                    const deletePromises = [];
-                    selected.forEach(function(checkbox) {
-                        const row = checkbox.closest('tr');
-                        const id = row.getAttribute('data-id');
-                        deletePromises.push(
-                            fetch('/workitems/' + id, {
-                                method: 'DELETE'
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                console.log("Deleted work item:", id);
-                            })
-                            .catch(error => {
-                                console.error("Error deleting work item:", id, error);
-                                throw error;
-                            })
-                        );
-                    });
-                    
-                    Promise.all(deletePromises)
-                        .then(() => {
-                            loadGrid(); // Refresh the grid
-                            alert("Items deleted successfully!");
-                        })
-                        .catch(error => {
-                            alert("Error deleting some items: " + error.message);
-                            loadGrid(); // Refresh anyway to show current state
-                        });
-                }
-            }
-            
-            // Load grid on page load
-            loadGrid();
-            
-            // Bind event handlers
-            document.getElementById('addBtn').addEventListener('click', addWorkItem);
-            document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
-        });
-    </script>
+    
+    <script src="/assets/js/work-admin.js"></script>
 </body>
 </html>
