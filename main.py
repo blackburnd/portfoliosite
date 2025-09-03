@@ -1158,8 +1158,18 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
                         company_url=:company_url, sort_order=:sort_order
                     WHERE id=:id RETURNING *
                 """
-                values = item.dict(exclude_unset=True)
-                values["id"] = item.id
+                values = {
+                    "company": item.company,
+                    "position": item.position,
+                    "location": item.location,
+                    "start_date": item.start_date,
+                    "end_date": item.end_date,
+                    "description": item.description,
+                    "is_current": item.is_current,
+                    "company_url": item.company_url,
+                    "sort_order": item.sort_order,
+                    "id": item.id
+                }
                 row = await database.fetch_one(query, values)
                 if row:
                     updated.append(WorkItem(**dict(row)))
