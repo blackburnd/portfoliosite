@@ -1796,21 +1796,57 @@ async def debug_oauth_status():
 async def migrate_start_date_nullable():
     """Migration route to make start_date nullable in work_experience table"""
     try:
-        # Read and execute the migration SQL
-        with open("sql/make_start_date_nullable.sql", "r") as f:
-            migration_sql = f.read()
+        logger.info("Starting start_date nullable migration...")
+        
+        # Check if the table exists first
+        check_table_query = """
+        SELECT column_name, is_nullable, data_type
+        FROM information_schema.columns
+        WHERE table_name = 'work_experience'
+        AND column_name = 'start_date'
+        """
+        
+        column_info = await database.fetch_one(check_table_query)
+        if not column_info:
+            return JSONResponse({
+                "status": "error",
+                "error": "work_experience table or start_date column not found"
+            }, status_code=404)
+        
+        logger.info(f"Current start_date column info: {dict(column_info)}")
+        
+        # Check if already nullable
+        if column_info['is_nullable'] == 'YES':
+            return JSONResponse({
+                "status": "success",
+                "message": "start_date column is already nullable",
+                "already_nullable": True
+            })
+        
+        # Execute the migration
+        migration_sql = ("ALTER TABLE work_experience "
+                         "ALTER COLUMN start_date DROP NOT NULL;")
+        logger.info(f"Executing migration SQL: {migration_sql}")
         
         await database.execute(migration_sql)
         
+        # Verify the change
+        column_info_after = await database.fetch_one(check_table_query)
+        logger.info(f"After migration column info: {dict(column_info_after)}")
+        
         return JSONResponse({
             "status": "success",
-            "message": "Successfully migrated start_date to nullable"
+            "message": "Successfully migrated start_date to nullable",
+            "before": dict(column_info),
+            "after": dict(column_info_after)
         })
+        
     except Exception as e:
-        logger.error(f"Migration failed: {str(e)}")
+        logger.error(f"Migration failed: {str(e)}", exc_info=True)
         return JSONResponse({
             "status": "error",
-            "error": str(e)
+            "error": str(e),
+            "error_type": type(e).__name__
         }, status_code=500)
 
 
