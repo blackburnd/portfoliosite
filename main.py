@@ -78,12 +78,12 @@ class WorkItem(BaseModel):
 
 # Pydantic model for project
 class Project(BaseModel):
-    id: Optional[str]
-    portfolio_id: str
+    id: Optional[str] = None
+    portfolio_id: str = "daniel-blackburn"
     title: str
     description: str
-    url: Optional[str]
-    image_url: Optional[str]
+    url: Optional[str] = None
+    image_url: Optional[str] = None
     technologies: Optional[List[str]] = []
     sort_order: Optional[int] = 0
 
@@ -1528,6 +1528,36 @@ async def list_projects():
         return []
 
 
+# Get a single project by ID
+@app.get("/projects/{id}", response_model=Project)
+async def get_project(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+    query = "SELECT * FROM projects WHERE id = :id"
+    row = await database.fetch_one(query, {"id": id})
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    row_dict = dict(row)
+    # Handle JSON field for technologies
+    technologies = row_dict.get("technologies", [])
+    if isinstance(technologies, str):
+        try:
+            technologies = json.loads(technologies)
+        except (json.JSONDecodeError, TypeError):
+            technologies = []
+    
+    return Project(
+        id=str(row_dict["id"]),
+        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        title=row_dict.get("title", ""),
+        description=row_dict.get("description", ""),
+        url=row_dict.get("url"),
+        image_url=row_dict.get("image_url"),
+        technologies=technologies,
+        sort_order=row_dict.get("sort_order", 0)
+    )
+
+
 # Create a new project
 @app.post("/projects", response_model=Project)
 async def create_project(project: Project, admin: dict = Depends(require_admin_auth_cookie)):
@@ -1619,7 +1649,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
 @app.delete("/projects/{id}")
 async def delete_project(id: str, admin: dict = Depends(require_admin_auth_cookie)):
     query = "DELETE FROM projects WHERE id=:id"
-    result = await database.execute(query, {"id": id})
+    await database.execute(query, {"id": id})
     return {"deleted": True, "id": id}
 
 
