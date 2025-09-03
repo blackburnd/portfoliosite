@@ -558,24 +558,21 @@ input[type="checkbox"] {
 /* Index page layout and image styling */
 .bc {
     position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
 }
 
 .bc section.about {
-    flex: 1;
-    margin-right: 20px;
+    position: relative;
 }
 
-.bc figure {
+.bc .profile-image {
     width: 40%;
     float: right;
     margin: 0 0 20px 20px;
     position: relative;
+    clear: right;
 }
 
-.bc figure img {
+.bc .profile-image img {
     width: 100%;
     height: auto;
     filter: grayscale(100%);
@@ -588,20 +585,19 @@ input[type="checkbox"] {
 .bc section.about p {
     text-align: justify;
     line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+/* Ensure text flows properly around the floated image */
+.bc section.about {
+    overflow: hidden; /* This creates a new block formatting context */
 }
 
 @media (max-width: 768px) {
-    .bc {
-        flex-direction: column;
-    }
-    
-    .bc figure {
+    .bc .profile-image {
         width: 100%;
         float: none;
         margin: 20px 0;
-    }
-    
-    .bc section.about {
-        margin-right: 0;
+        text-align: center;
     }
 }
