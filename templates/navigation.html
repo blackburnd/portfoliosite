@@ -11,19 +11,7 @@
         <!-- Authentication Section -->
         <div class="auth-admin-section">
             {% if user_authenticated %}
-                <div>
-                    <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                    <div class="admin-links">
-                        <a href="/workadmin" class="admin-link {{ 'active' if current_page == 'workadmin' else '' }}">Work Admin</a>
-                        <a href="/workadmin/bulk" class="admin-link {{ 'active' if current_page == 'workadmin_bulk' else '' }}">Work Bulk</a>
-                        <a href="/projectsadmin" class="admin-link {{ 'active' if current_page == 'projectsadmin' else '' }}">Projects Admin</a>
-                        <a href="/projectsadmin/bulk" class="admin-link {{ 'active' if current_page == 'projectsadmin_bulk' else '' }}">Projects Bulk</a>
-                        <a href="/linkedin" class="admin-link {{ 'active' if current_page == 'linkedin_admin' else '' }}">LinkedIn Sync</a>
-                        <a href="/oauth/bootstrap" class="admin-link {{ 'active' if current_page == 'oauth_config' else '' }}">OAuth Config</a>
-                        <a href="/oauth/status" class="admin-link {{ 'active' if current_page == 'oauth_status' else '' }}">OAuth Status</a>
-                        <a href="/admin/logs" class="admin-link {{ 'active' if current_page == 'logs' else '' }}">Logs</a>
-                    </div>
-                </div>
+                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
             {% else %}
                 <a href="/auth/login" class="auth-link">Login</a>
                 <a href="/oauth/bootstrap" class="auth-link">OAuth Setup</a>
@@ -46,6 +34,27 @@
             <li class="resume">
                 <a href="/resume" target="_blank">resume</a>
             </li>
+            {% if user_authenticated %}
+            <!-- Admin Navigation -->
+            <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
+                <a href="/workadmin">Work Admin</a>
+            </li>
+            <li class="projectsadmin {{ 'active' if current_page == 'projectsadmin' else '' }}">
+                <a href="/projectsadmin">Projects Admin</a>
+            </li>
+            <li class="linkedin-admin {{ 'active' if current_page == 'linkedin_admin' else '' }}">
+                <a href="/linkedin">LinkedIn Sync</a>
+            </li>
+            <li class="oauth-config {{ 'active' if current_page == 'oauth_config' else '' }}">
+                <a href="/oauth/bootstrap">OAuth Config</a>
+            </li>
+            <li class="oauth-status {{ 'active' if current_page == 'oauth_status' else '' }}">
+                <a href="/oauth/status">OAuth Status</a>
+            </li>
+            <li class="logs {{ 'active' if current_page == 'logs' else '' }}">
+                <a href="/admin/logs">Logs</a>
+            </li>
+            {% endif %}
         </ul>
         
         <!-- Social Navigation -->
