@@ -125,14 +125,23 @@ require([
             content: dialogContent,
             style: "width: 600px;"
         });
+        
+        // Parse the Dojo widgets in the dialog after it's created
+        require(["dojo/parser"], function(parser) {
+            parser.parse(workItemDialog.domNode);
+        });
     }
     
     function showAddDialog() {
         currentEditId = null;
         createWorkItemDialog();
         workItemDialog.set("title", "Add Work Item");
-        dijit.byId("submitBtn").set("label", "Add Work Item");
-        workItemDialog.show();
+        
+        // Wait for widgets to be parsed before setting properties
+        setTimeout(() => {
+            dijit.byId("submitBtn").set("label", "Add Work Item");
+            workItemDialog.show();
+        }, 100);
     }
     
     function editItem(id) {
@@ -147,13 +156,13 @@ require([
                 currentEditId = id;
                 createWorkItemDialog();
                 workItemDialog.set("title", "Edit Work Item");
-                dijit.byId("submitBtn").set("label", "Update Work Item");
                 
+                // Wait for widgets to be parsed before setting properties and populating
                 setTimeout(() => {
+                    dijit.byId("submitBtn").set("label", "Update Work Item");
                     populateForm(item);
+                    workItemDialog.show();
                 }, 100);
-                
-                workItemDialog.show();
             })
             .catch(error => {
                 console.error("Error loading work item:", error);
