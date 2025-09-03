@@ -1,164 +1,231 @@
 /**
- * Work Admin JavaScript
- * Handles work items administration functionality
+ * Work Admin JavaScript - Dojo Implementation
+ * Handles work items administration functionality using Dojo dialogs and widgets
  */
 
-class WorkAdmin {
-    constructor() {
-        this.currentEditId = null;
-        this.init();
-    }
-
-    init() {
-        this.loadGrid();
-        this.bindEventHandlers();
-    }
-
-    bindEventHandlers() {
-        document.getElementById('addBtn').addEventListener('click', () => this.showAddForm());
-        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteSelected());
-        document.getElementById('cancelBtn').addEventListener('click', () => this.hideForm());
-        document.getElementById('workItemForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
-    }
-
-    loadGrid() {
-        document.getElementById('grid').innerHTML = '<div class="loading">Loading work items...</div>';
-        
-        fetch('/workitems')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Loaded work items:", data);
-                this.renderGrid(data);
-            })
-            .catch(error => {
-                console.error("Error loading work items:", error);
-                document.getElementById('grid').innerHTML = '<div class="error">Error loading work items: ' + error.message + '</div>';
-            });
-    }
-
-    renderGrid(data) {
-        let gridHtml = '<table class="work-items-table">' +
-            '<thead><tr>' +
-            '<th>Select</th><th>Company</th><th>Position</th><th>Location</th>' +
-            '<th>Start Date</th><th>End Date</th><th>Current</th><th>Actions</th></tr></thead><tbody>';
-        
-        if (data && data.length > 0) {
-            data.forEach(item => {
-                gridHtml += `<tr data-id="${item.id}">
-                    <td><input type="checkbox" class="select-row"></td>
-                    <td>${item.company || ''}</td>
-                    <td>${item.position || ''}</td>
-                    <td>${item.location || ''}</td>
-                    <td>${item.start_date || ''}</td>
-                    <td>${item.end_date || 'Present'}</td>
-                    <td>${item.is_current ? '✓' : ''}</td>
-                    <td>
-                        <button class="btn btn-small" onclick="workAdmin.editItem('${item.id}')">Edit</button>
-                    </td>
-                </tr>`;
-            });
-        } else {
-            gridHtml += '<tr><td colspan="8">No work items found</td></tr>';
+require([
+    "dijit/Dialog",
+    "dijit/form/Form",
+    "dijit/form/TextBox",
+    "dijit/form/Textarea",
+    "dijit/form/DateTextBox",
+    "dijit/form/CheckBox",
+    "dijit/form/NumberTextBox",
+    "dijit/form/Button",
+    "dijit/form/ValidationTextBox",
+    "dojo/domReady!"
+], function(Dialog, Form, TextBox, Textarea, DateTextBox, CheckBox, NumberTextBox, Button, ValidationTextBox) {
+    
+    let workItemDialog;
+    let currentEditId = null;
+    
+    // Create the work item dialog
+    function createWorkItemDialog() {
+        if (workItemDialog) {
+            workItemDialog.destroyRecursive();
         }
-        gridHtml += '</tbody></table>';
-        document.getElementById('grid').innerHTML = gridHtml;
+        
+        const dialogContent = `
+            <div data-dojo-type="dijit/form/Form" id="workItemForm" encType="multipart/form-data" action="" method="">
+                <div class="dijitDialogPaneContentArea">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="company">Company *</label>
+                            <input data-dojo-type="dijit/form/ValidationTextBox" 
+                                   required="true" 
+                                   name="company" 
+                                   id="company" 
+                                   placeholder="Company name">
+                        </div>
+                        <div class="form-group">
+                            <label for="position">Position *</label>
+                            <input data-dojo-type="dijit/form/ValidationTextBox" 
+                                   required="true" 
+                                   name="position" 
+                                   id="position" 
+                                   placeholder="Job title">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input data-dojo-type="dijit/form/TextBox" 
+                                   name="location" 
+                                   id="location" 
+                                   placeholder="e.g., San Francisco, CA">
+                        </div>
+                        <div class="form-group">
+                            <label for="company_url">Company URL</label>
+                            <input data-dojo-type="dijit/form/TextBox" 
+                                   name="company_url" 
+                                   id="company_url" 
+                                   placeholder="https://company.com">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="start_date">Start Date</label>
+                            <input data-dojo-type="dijit/form/DateTextBox" 
+                                   name="start_date" 
+                                   id="start_date">
+                        </div>
+                        <div class="form-group">
+                            <label for="end_date">End Date</label>
+                            <input data-dojo-type="dijit/form/DateTextBox" 
+                                   name="end_date" 
+                                   id="end_date">
+                            <small class="form-note">Leave empty if current position</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea data-dojo-type="dijit/form/Textarea" 
+                                 name="description" 
+                                 id="description" 
+                                 rows="4" 
+                                 placeholder="Describe your role, responsibilities, and achievements..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <input data-dojo-type="dijit/form/CheckBox" 
+                                       name="is_current" 
+                                       id="is_current"> Current Position
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="sort_order">Sort Order</label>
+                            <input data-dojo-type="dijit/form/NumberTextBox" 
+                                   name="sort_order" 
+                                   id="sort_order" 
+                                   value="0" 
+                                   constraints="{min:0}">
+                            <small class="form-note">Lower numbers appear first</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dijitDialogPaneActionBar">
+                    <button data-dojo-type="dijit/form/Button" type="button" id="submitBtn" onclick="window.workAdmin.handleFormSubmit()">
+                        Add Work Item
+                    </button>
+                    <button data-dojo-type="dijit/form/Button" type="button" onclick="window.workAdmin.hideDialog()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        workItemDialog = new Dialog({
+            title: "Add Work Item",
+            content: dialogContent,
+            style: "width: 600px;"
+        });
     }
-
-    showAddForm() {
-        this.currentEditId = null;
-        this.resetForm();
-        document.getElementById('formTitle').textContent = 'Add Work Item';
-        document.getElementById('submitBtn').textContent = 'Add Work Item';
-        document.getElementById('workItemFormContainer').style.display = 'block';
-        document.getElementById('company').focus();
+    
+    function showAddDialog() {
+        currentEditId = null;
+        createWorkItemDialog();
+        workItemDialog.set("title", "Add Work Item");
+        dijit.byId("submitBtn").set("label", "Add Work Item");
+        workItemDialog.show();
     }
-
-    editItem(id) {
-        // Find the item data from the current grid
-        const row = document.querySelector(`tr[data-id="${id}"]`);
-        if (!row) return;
-
-        // Fetch the complete item data from the server
-        fetch(`/workitems/${id}`)
+    
+    function editItem(id) {
+        fetch('/workitems/' + id)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error('HTTP error! status: ' + response.status);
                 }
                 return response.json();
             })
             .then(item => {
-                this.currentEditId = id;
-                this.populateForm(item);
-                document.getElementById('formTitle').textContent = 'Edit Work Item';
-                document.getElementById('submitBtn').textContent = 'Update Work Item';
-                document.getElementById('workItemFormContainer').style.display = 'block';
-                document.getElementById('company').focus();
+                currentEditId = id;
+                createWorkItemDialog();
+                workItemDialog.set("title", "Edit Work Item");
+                dijit.byId("submitBtn").set("label", "Update Work Item");
+                
+                setTimeout(() => {
+                    populateForm(item);
+                }, 100);
+                
+                workItemDialog.show();
             })
             .catch(error => {
                 console.error("Error loading work item:", error);
                 alert("Error loading work item: " + error.message);
             });
     }
-
-    populateForm(item) {
-        document.getElementById('company').value = item.company || '';
-        document.getElementById('position').value = item.position || '';
-        document.getElementById('location').value = item.location || '';
-        document.getElementById('company_url').value = item.company_url || '';
-        document.getElementById('start_date').value = item.start_date || '';
-        document.getElementById('end_date').value = item.end_date || '';
-        document.getElementById('description').value = item.description || '';
-        document.getElementById('is_current').checked = item.is_current || false;
-        document.getElementById('sort_order').value = item.sort_order || 0;
-    }
-
-    resetForm() {
-        document.getElementById('workItemForm').reset();
-        document.getElementById('is_current').checked = false;
-        document.getElementById('sort_order').value = 0;
-    }
-
-    hideForm() {
-        document.getElementById('workItemFormContainer').style.display = 'none';
-        this.currentEditId = null;
-        this.resetForm();
-    }
-
-    handleFormSubmit(event) {
-        event.preventDefault();
+    
+    function populateForm(item) {
+        dijit.byId("company").set("value", item.company || "");
+        dijit.byId("position").set("value", item.position || "");
+        dijit.byId("location").set("value", item.location || "");
+        dijit.byId("company_url").set("value", item.company_url || "");
+        dijit.byId("description").set("value", item.description || "");
+        dijit.byId("is_current").set("checked", item.is_current || false);
+        dijit.byId("sort_order").set("value", item.sort_order || 0);
         
-        const formData = new FormData(event.target);
-        const workItem = {
-            portfolio_id: "daniel-blackburn",
-            company: formData.get('company'),
-            position: formData.get('position'),
-            location: formData.get('location'),
-            company_url: formData.get('company_url') || null,
-            start_date: formData.get('start_date'),
-            end_date: formData.get('end_date') || null,
-            description: formData.get('description'),
-            is_current: formData.get('is_current') === 'on',
-            sort_order: parseInt(formData.get('sort_order')) || 0
-        };
-
-        // Validate required fields
-        if (!workItem.company || !workItem.position || !workItem.start_date) {
-            alert('Please fill in all required fields (Company, Position, Start Date)');
+        if (item.start_date) {
+            dijit.byId("start_date").set("value", new Date(item.start_date));
+        }
+        if (item.end_date) {
+            dijit.byId("end_date").set("value", new Date(item.end_date));
+        }
+    }
+    
+    function hideDialog() {
+        if (workItemDialog) {
+            workItemDialog.hide();
+        }
+    }
+    
+    function handleFormSubmit() {
+        // Simple validation - only require company and position
+        const company = dijit.byId("company").get("value");
+        const position = dijit.byId("position").get("value");
+        
+        if (!company || !position) {
+            alert("Please enter both Company and Position.");
             return;
         }
-
-        const isEdit = this.currentEditId !== null;
-        const url = isEdit ? `/workitems/${this.currentEditId}` : '/workitems';
+        
+        // Get form values
+        const workItem = {
+            portfolio_id: "daniel-blackburn",
+            company: company,
+            position: position,
+            location: dijit.byId("location").get("value"),
+            company_url: dijit.byId("company_url").get("value") || null,
+            description: dijit.byId("description").get("value"),
+            is_current: dijit.byId("is_current").get("checked"),
+            sort_order: dijit.byId("sort_order").get("value") || 0
+        };
+        
+        // Handle dates
+        const startDate = dijit.byId("start_date").get("value");
+        const endDate = dijit.byId("end_date").get("value");
+        
+        if (startDate) {
+            workItem.start_date = startDate.toISOString().split('T')[0];
+        }
+        if (endDate) {
+            workItem.end_date = endDate.toISOString().split('T')[0];
+        } else {
+            workItem.end_date = null;
+        }
+        
+        const isEdit = currentEditId !== null;
+        const url = isEdit ? '/workitems/' + currentEditId : '/workitems';
         const method = isEdit ? 'PUT' : 'POST';
-
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').textContent = isEdit ? 'Updating...' : 'Adding...';
-
+        
+        dijit.byId("submitBtn").set("disabled", true);
+        dijit.byId("submitBtn").set("label", isEdit ? "Updating..." : "Adding...");
+        
         fetch(url, {
             method: method,
             headers: {
@@ -168,45 +235,89 @@ class WorkAdmin {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('HTTP error! status: ' + response.status);
             }
             return response.json();
         })
         .then(response => {
-            console.log(`${isEdit ? 'Updated' : 'Added'} work item:`, response);
-            this.loadGrid(); // Refresh the grid
-            this.hideForm();
-            this.showMessage(`Work item ${isEdit ? 'updated' : 'added'} successfully!`, 'success');
+            console.log((isEdit ? 'Updated' : 'Added') + ' work item:', response);
+            loadGrid();
+            workItemDialog.hide();
+            alert('Work item ' + (isEdit ? 'updated' : 'added') + ' successfully!');
         })
         .catch(error => {
-            console.error(`Error ${isEdit ? 'updating' : 'adding'} work item:`, error);
-            this.showMessage(`Error ${isEdit ? 'updating' : 'adding'} work item: ` + error.message, 'error');
+            console.error('Error ' + (isEdit ? 'updating' : 'adding') + ' work item:', error);
+            alert('Error ' + (isEdit ? 'updating' : 'adding') + ' work item: ' + error.message);
         })
         .finally(() => {
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').textContent = isEdit ? 'Update Work Item' : 'Add Work Item';
+            dijit.byId("submitBtn").set("disabled", false);
+            dijit.byId("submitBtn").set("label", isEdit ? "Update Work Item" : "Add Work Item");
         });
     }
-
-    deleteSelected() {
+    
+    function loadGrid() {
+        document.getElementById('grid').innerHTML = '<div class="loading">Loading work items...</div>';
+        
+        fetch('/workitems')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Loaded work items:", data);
+                let gridHtml = '<table class="work-items-table">' +
+                    '<thead><tr>' +
+                    '<th>Select</th><th>Company</th><th>Position</th><th>Location</th>' +
+                    '<th>Start Date</th><th>End Date</th><th>Current</th><th>Actions</th></tr></thead><tbody>';
+                
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        gridHtml += `<tr data-id="${item.id}">
+                            <td><input type="checkbox" class="select-row"></td>
+                            <td>${item.company || ''}</td>
+                            <td>${item.position || ''}</td>
+                            <td>${item.location || ''}</td>
+                            <td>${item.start_date || ''}</td>
+                            <td>${item.end_date || 'Present'}</td>
+                            <td>${item.is_current ? '✓' : ''}</td>
+                            <td>
+                                <button class="btn btn-small" onclick="window.workAdmin.editItem('${item.id}')">Edit</button>
+                            </td>
+                        </tr>`;
+                    });
+                } else {
+                    gridHtml += '<tr><td colspan="8">No work items found</td></tr>';
+                }
+                gridHtml += '</tbody></table>';
+                document.getElementById('grid').innerHTML = gridHtml;
+            })
+            .catch(error => {
+                console.error("Error loading work items:", error);
+                document.getElementById('grid').innerHTML = '<div class="error">Error loading work items: ' + error.message + '</div>';
+            });
+    }
+    
+    function deleteSelected() {
         const selected = document.querySelectorAll('.select-row:checked');
         if (selected.length === 0) {
             alert("Please select items to delete.");
             return;
         }
         
-        if (confirm(`Are you sure you want to delete ${selected.length} item(s)?`)) {
+        if (confirm('Are you sure you want to delete ' + selected.length + ' item(s)?')) {
             const deletePromises = [];
             selected.forEach(checkbox => {
                 const row = checkbox.closest('tr');
                 const id = row.getAttribute('data-id');
                 deletePromises.push(
-                    fetch(`/workitems/${id}`, {
+                    fetch('/workitems/' + id, {
                         method: 'DELETE'
                     })
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
+                            throw new Error('HTTP error! status: ' + response.status);
                         }
                         console.log("Deleted work item:", id);
                     })
@@ -219,38 +330,27 @@ class WorkAdmin {
             
             Promise.all(deletePromises)
                 .then(() => {
-                    this.loadGrid(); // Refresh the grid
-                    this.showMessage("Items deleted successfully!", 'success');
+                    loadGrid();
+                    alert("Items deleted successfully!");
                 })
                 .catch(error => {
-                    this.showMessage("Error deleting some items: " + error.message, 'error');
-                    this.loadGrid(); // Refresh anyway to show current state
+                    alert("Error deleting some items: " + error.message);
+                    loadGrid();
                 });
         }
     }
-
-    showMessage(message, type = 'info') {
-        // Create or update message element
-        let messageEl = document.getElementById('message');
-        if (!messageEl) {
-            messageEl = document.createElement('div');
-            messageEl.id = 'message';
-            document.querySelector('.work-admin-content').insertBefore(messageEl, document.getElementById('grid'));
-        }
-        
-        messageEl.className = `message ${type}`;
-        messageEl.textContent = message;
-        messageEl.style.display = 'block';
-        
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-            messageEl.style.display = 'none';
-        }, 3000);
-    }
-}
-
-// Initialize when DOM is ready
-let workAdmin;
-document.addEventListener('DOMContentLoaded', function() {
-    workAdmin = new WorkAdmin();
+    
+    // Initialize when DOM is ready
+    loadGrid();
+    
+    // Bind event handlers
+    document.getElementById('addBtn').addEventListener('click', showAddDialog);
+    document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
+    
+    // Expose functions globally for onclick handlers
+    window.workAdmin = {
+        editItem: editItem,
+        handleFormSubmit: handleFormSubmit,
+        hideDialog: hideDialog
+    };
 });
