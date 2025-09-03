@@ -24,20 +24,6 @@
             {% with current_page='work', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
                 {% include 'navigation.html' %}
             {% endwith %}
-                            <div>
-                                <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                                <div class="admin-links">
-                                    <a href="/workadmin" class="admin-link">Work Admin</a>
-                                    <a href="/workadmin/bulk" class="admin-link">Bulk Edit</a>
-                                    <a href="/debug/logs" class="admin-link">Logs</a>
-                                </div>
-                            </div>
-                        {% else %}
-                            <a href="/auth/login" class="auth-link">Login</a>
-                        {% endif %}
-                    </div>
-                </nav>
-            </header>
             <div id="bw" aria-live="polite">
                 <article class="bc clearfix">
                     <section class="work-content">
