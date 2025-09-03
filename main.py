@@ -1171,7 +1171,10 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
                             :company_url, :sort_order)
                     RETURNING *
                 """
-                row = await database.fetch_one(query, item.dict(exclude_unset=True))
+                values = item.dict(exclude_unset=True)
+                # Set default portfolio_id for new items
+                values["portfolio_id"] = "daniel-blackburn"
+                row = await database.fetch_one(query, values)
                 created.append(WorkItem(**dict(row)))
                 
         except Exception as e:
