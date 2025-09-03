@@ -1140,6 +1140,14 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
     
     for item in request.items:
         try:
+            # Validate required fields
+            if not item.company or not item.company.strip():
+                raise ValueError("Company name is required")
+            if not item.position or not item.position.strip():
+                raise ValueError("Position is required")
+            if not item.start_date or not item.start_date.strip():
+                raise ValueError("Start date is required")
+                
             if item.id:
                 # Update existing item
                 query = """
@@ -1178,10 +1186,17 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
                 created.append(WorkItem(**dict(row)))
                 
         except Exception as e:
-            logging.error(f"Bulk operation error for item {item.dict()}: {e}")
+            # Detailed error logging for debugging
+            error_msg = str(e)
+            if hasattr(item, 'id') and item.id:
+                log_msg = f"Failed to update item ID {item.id}: {error_msg}"
+            else:
+                log_msg = f"Failed to create new item: {error_msg}"
+            
+            logging.error(f"Bulk operation error: {log_msg}")
             errors.append({
-                "item": item.dict(),
-                "error": str(e)
+                "item": item.dict() if hasattr(item, 'dict') else str(item),
+                "error": error_msg
             })
     
     return BulkWorkItemsResponse(
