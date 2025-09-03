@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}LinkedIn Sync Admin - Daniel Blackburn{% endblock %}
+
+{% block body_class %}linkedin-admin{% endblock %}
+
+{% block content %}
+<div class="linkedin-admin-content">
+    <h2>🔗 LinkedIn Sync Administration</h2>
+    
+    <!-- LinkedIn App Configuration Section -->
+    <div class="config-section">
+        <h3>📱 LinkedIn App Configuration</h3>
+        <p>Configure your LinkedIn OAuth application settings for data synchronization.</p>
+        
+        <form id="linkedin-config-form" class="config-form">
+            <div class="form-group">
+                <label for="app_name">Application Name:</label>
+                <input type="text" id="app_name" name="app_name" 
+                       value="blackburnsystems profile site" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="client_id">Client ID:</label>
+                <input type="text" id="client_id" name="client_id" 
+                       placeholder="Your LinkedIn app client ID" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="client_secret">Client Secret:</label>
+                <input type="password" id="client_secret" name="client_secret" 
+                       placeholder="Your LinkedIn app client secret" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="redirect_uri">Redirect URI:</label>
+                <input type="url" id="redirect_uri" name="redirect_uri" 
+                       value="https://www.blackburnsystems.com/admin/linkedin/callback" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="scopes">Scopes (comma-separated):</label>
+                <input type="text" id="scopes" name="scopes" 
+                       value="r_liteprofile,r_emailaddress" required>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn">Save Configuration</button>
+                <button type="button" id="test-config-btn" class="btn btn-secondary">Test Connection</button>
+            </div>
+        </form>
+        
+        <div id="config-status" class="config-status">
+            <h4>Current Configuration Status</h4>
+            <div id="config-details">Loading...</div>
+        </div>
+    </div>
+    
+    <!-- OAuth Connection Section -->
+    <div class="oauth-section">
+        <h3>🔐 LinkedIn Account Connection</h3>
+        <div id="oauth-status-display">
+            <div id="not-connected" class="connection-status">
+                <p>❌ No LinkedIn account connected</p>
+                <button id="connect-linkedin-btn" class="btn" disabled>Connect LinkedIn Account</button>
+                <p class="note">Configure your LinkedIn app settings above first</p>
+            </div>
+            
+            <div id="connected" class="connection-status" style="display: none;">
+                <p>✅ LinkedIn account connected</p>
+                <div id="connection-details"></div>
+                <button id="disconnect-linkedin-btn" class="btn btn-secondary">Disconnect Account</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-section">
+        <h3>Sync Status</h3>
+        <div id="syncStatus">Loading status...</div>
+    </div>
+    
+    <div class="sync-section">
+        <h3>🔄 Data Synchronization</h3>
+        <div class="sync-controls">
+            <button id="syncProfile" class="sync-button btn-profile" disabled>
+                👤 Sync Profile Information
+            </button>
+            <button id="syncExperience" class="sync-button btn-experience" disabled>
+                💼 Sync Work Experience
+            </button>
+            <button id="syncFull" class="sync-button btn-full" disabled>
+                🚀 Full Sync (Profile + Experience)
+            </button>
+        </div>
+        
+        <div id="sync-status" style="margin-top: 15px; font-style: italic; color: #666;">
+            Ready to sync
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="result-section">
+        <div id="result-success" class="result-card success" style="display: none;">
+            <h3>✅ Sync Successful</h3>
+            <div id="success-content"></div>
+        </div>
+        
+        <div id="result-error" class="result-card error" style="display: none;">
+            <h3>❌ Sync Error</h3>
+            <div id="error-content"></div>
+        </div>
+        
+        <div id="result-info" class="result-card info" style="display: none;">
+            <h3>ℹ️ Sync Results</h3>
+            <div id="info-content"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/assets/js/linkedin-admin.js"></script>
+{% endblock %}

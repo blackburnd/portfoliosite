@@ -63,16 +63,16 @@ except Exception as e:
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     portfolio_id: str
     company: str
     position: str
-    location: Optional[str]
-    start_date: str
-    end_date: Optional[str]
-    description: Optional[str]
+    location: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None
     is_current: Optional[bool] = False
-    company_url: Optional[str]
+    company_url: Optional[str] = None
     sort_order: Optional[int] = 0
 
 
