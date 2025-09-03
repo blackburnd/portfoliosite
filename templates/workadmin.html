@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Work Items Admin - Daniel Blackburn{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dijit/themes/claro/claro.css">
+{% endblock %}
+
+{% block body_class %}workadmin claro{% endblock %}
+
+{% block content %}
+<div class="work-admin-content">
+    <h2>Work Items Admin</h2>
+    
+    <!-- Work Items Grid -->
+    <div id="grid">Loading work items...</div>
+    
+    <!-- Action Buttons -->
+    <div class="crud-buttons">
+        <button id="addBtn" class="btn">Add Work Item</button>
+        <button id="deleteBtn" class="btn btn-secondary">Delete Selected</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/assets/js/work-admin.js"></script>
+{% endblock %}
