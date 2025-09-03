@@ -1850,6 +1850,77 @@ async def migrate_start_date_nullable():
         }, status_code=500)
 
 
+@app.get("/admin/test/workitem-creation")
+async def test_workitem_creation():
+    """Test endpoint to validate work item creation without authentication"""
+    try:
+        # Test data that matches what the frontend sends
+        test_data = {
+            "portfolio_id": "daniel-blackburn",
+            "company": "Test Company",
+            "position": "Test Position",
+            "is_current": False
+        }
+        
+        # Validate against the WorkItem model
+        try:
+            work_item = WorkItem(**test_data)
+            logger.info(f"WorkItem model validation passed: {work_item}")
+        except Exception as validation_error:
+            return JSONResponse({
+                "status": "error",
+                "error": f"WorkItem validation failed: {str(validation_error)}",
+                "test_data": test_data
+            }, status_code=400)
+        
+        # Test the actual database insertion
+        query = """
+            INSERT INTO work_experience (
+                portfolio_id, company, position, location, start_date,
+                end_date, description, is_current, company_url, sort_order
+            )
+            VALUES (
+                :portfolio_id, :company, :position, :location, :start_date,
+                :end_date, :description, :is_current, :company_url, :sort_order
+            )
+            RETURNING *
+        """
+        
+        try:
+            row = await database.fetch_one(
+                query, work_item.dict(exclude_unset=True)
+            )
+            created_item = WorkItem(**dict(row))
+            
+            # Clean up the test record
+            cleanup_query = "DELETE FROM work_experience WHERE id = :id"
+            await database.execute(cleanup_query, {"id": created_item.id})
+            
+            return JSONResponse({
+                "status": "success",
+                "message": "Work item creation test passed",
+                "test_data": test_data,
+                "created_item": created_item.dict(),
+                "cleanup": "Test record deleted"
+            })
+            
+        except Exception as db_error:
+            return JSONResponse({
+                "status": "error",
+                "error": f"Database insertion failed: {str(db_error)}",
+                "test_data": test_data,
+                "error_type": type(db_error).__name__
+            }, status_code=500)
+        
+    except Exception as e:
+        logger.error(f"Test failed: {str(e)}", exc_info=True)
+        return JSONResponse({
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }, status_code=500)
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
