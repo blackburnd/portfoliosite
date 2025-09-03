@@ -51,7 +51,7 @@ server {
     
     # Handle static assets directly (more efficient than proxying)
     location /assets/ {
-        alias /opt/cloud_machine_repo/app/assets/;
+        alias /opt/portfoliosite/assets/;
         expires 1y;
         add_header Cache-Control "public, immutable";
         
