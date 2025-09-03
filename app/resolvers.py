@@ -9,7 +9,7 @@ class WorkExperience:
     company: str
     position: str
     location: Optional[str]
-    start_date: str
+    start_date: Optional[str]
     end_date: Optional[str]
     description: Optional[str]
     is_current: bool
