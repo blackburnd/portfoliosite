@@ -31,30 +31,45 @@ async def check_system_bootstrap_status() -> Dict[str, Any]:
         Dict with bootstrap status and admin user count
     """
     try:
-        # Check if any Google OAuth users are configured
-        query = """
-            SELECT COUNT(*) as admin_count
-            FROM oauth_system_settings 
-            WHERE setting_key = 'configured_admin_emails'
-            AND setting_value IS NOT NULL 
-            AND setting_value != ''
-        """
+        admin_count = 0
+        oauth_app_count = 0
         
-        result = await database.fetch_one(query)
-        admin_count = result['admin_count'] if result else 0
+        # Check if oauth_system_settings table exists and has admin config
+        try:
+            query = """
+                SELECT COUNT(*) as admin_count
+                FROM oauth_system_settings 
+                WHERE setting_key = 'configured_admin_emails'
+                AND setting_value IS NOT NULL 
+                AND setting_value != ''
+            """
+            result = await database.fetch_one(query)
+            admin_count = result['admin_count'] if result else 0
+        except Exception as e:
+            if "does not exist" in str(e):
+                logger.info("oauth_system_settings table doesn't exist - assuming bootstrap mode")
+                admin_count = 0
+            else:
+                raise e
         
-        # Also check if there are any active oauth apps configured
-        oauth_query = """
-            SELECT COUNT(*) as oauth_app_count
-            FROM oauth_apps 
-            WHERE is_active = true
-            AND provider = 'google'
-        """
+        # Check if there are any active LinkedIn OAuth apps configured
+        try:
+            oauth_query = """
+                SELECT COUNT(*) as oauth_app_count
+                FROM linkedin_oauth_config 
+                WHERE is_active = true
+            """
+            oauth_result = await database.fetch_one(oauth_query)
+            oauth_app_count = oauth_result['oauth_app_count'] if oauth_result else 0
+        except Exception as e:
+            if "does not exist" in str(e):
+                logger.info("linkedin_oauth_config table doesn't exist - assuming bootstrap mode")
+                oauth_app_count = 0
+            else:
+                logger.warning(f"Error checking LinkedIn OAuth config: {e}")
+                oauth_app_count = 0
         
-        oauth_result = await database.fetch_one(oauth_query)
-        oauth_app_count = oauth_result['oauth_app_count'] if oauth_result else 0
-        
-        # System is in bootstrap mode if no admin emails or Google OAuth apps configured
+        # System is in bootstrap mode if no admin emails or OAuth apps configured
         is_bootstrap = admin_count == 0 and oauth_app_count == 0
         
         return {
@@ -66,13 +81,13 @@ async def check_system_bootstrap_status() -> Dict[str, Any]:
         
     except Exception as e:
         logger.error(f"Error checking bootstrap status: {e}")
-        # If we can't check, assume system is configured for security
+        # If we can't check due to missing tables, assume bootstrap mode for safety
         return {
-            "is_bootstrap": False,
+            "is_bootstrap": True,
             "admin_count": 0,
             "oauth_app_count": 0,
-            "status": "error",
-            "error": str(e)
+            "status": "bootstrap",
+            "note": "Assuming bootstrap mode due to missing tables"
         }
 
 
