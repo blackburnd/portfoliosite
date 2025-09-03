@@ -1417,7 +1417,11 @@ async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)
     row = await database.fetch_one(query, {"id": id})
     if not row:
         raise HTTPException(status_code=404, detail="Work item not found")
-    return WorkItem(**dict(row))
+    # Convert UUID to string for Pydantic model
+    row_dict = dict(row)
+    if row_dict.get('id'):
+        row_dict['id'] = str(row_dict['id'])
+    return WorkItem(**row_dict)
 
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
@@ -1428,7 +1432,11 @@ async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_au
         RETURNING *
     """
     row = await database.fetch_one(query, item.dict(exclude_unset=True))
-    return WorkItem(**dict(row))
+    # Convert UUID to string for Pydantic model
+    row_dict = dict(row)
+    if row_dict.get('id'):
+        row_dict['id'] = str(row_dict['id'])
+    return WorkItem(**row_dict)
 
 # Update a work item
 @app.put("/workitems/{id}", response_model=WorkItem)
@@ -1444,7 +1452,11 @@ async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require
     row = await database.fetch_one(query, values)
     if not row:
         raise HTTPException(status_code=404, detail="Work item not found")
-    return WorkItem(**dict(row))
+    # Convert UUID to string for Pydantic model
+    row_dict = dict(row)
+    if row_dict.get('id'):
+        row_dict['id'] = str(row_dict['id'])
+    return WorkItem(**row_dict)
 
 # Delete a work item
 @app.delete("/workitems/{id}")
@@ -1890,11 +1902,16 @@ async def test_workitem_creation():
             row = await database.fetch_one(
                 query, work_item.dict(exclude_unset=True)
             )
-            created_item = WorkItem(**dict(row))
+            # Convert UUID to string for Pydantic model
+            row_dict = dict(row)
+            if row_dict.get('id'):
+                row_dict['id'] = str(row_dict['id'])
+            
+            created_item = WorkItem(**row_dict)
             
             # Clean up the test record
             cleanup_query = "DELETE FROM work_experience WHERE id = :id"
-            await database.execute(cleanup_query, {"id": created_item.id})
+            await database.execute(cleanup_query, {"id": row_dict['id']})
             
             return JSONResponse({
                 "status": "success",
