@@ -207,30 +207,33 @@ require([
         const workItem = {
             portfolio_id: "daniel-blackburn",
             company: company,
-            position: position,
-            location: dijit.byId("location").get("value") || "",
-            company_url: dijit.byId("company_url").get("value") || null,
-            description: dijit.byId("description").get("value") || "",
-            is_current: dijit.byId("is_current").get("checked") || false,
-            sort_order: parseInt(dijit.byId("sort_order").get("value")) || 0
+            position: position
         };
+
+        // Add optional fields only if they have values
+        const location = dijit.byId("location").get("value");
+        if (location) workItem.location = location;
+
+        const companyUrl = dijit.byId("company_url").get("value");
+        if (companyUrl) workItem.company_url = companyUrl;
+
+        const description = dijit.byId("description").get("value");
+        if (description) workItem.description = description;
+
+        workItem.is_current = dijit.byId("is_current").get("checked");
+
+        const sortOrder = dijit.byId("sort_order").get("value");
+        if (sortOrder) workItem.sort_order = parseInt(sortOrder);
         
         // Handle dates
         const startDate = dijit.byId("start_date").get("value");
         const endDate = dijit.byId("end_date").get("value");
         
-        // start_date is required by the backend, so provide a default if empty
         if (startDate) {
             workItem.start_date = startDate.toISOString().split('T')[0];
-        } else {
-            // Default to current date if no start date is provided
-            workItem.start_date = new Date().toISOString().split('T')[0];
         }
-        
         if (endDate) {
             workItem.end_date = endDate.toISOString().split('T')[0];
-        } else {
-            workItem.end_date = null;
         }
         
         const isEdit = currentEditId !== null;
