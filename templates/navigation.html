@@ -34,8 +34,11 @@
             <li class="resume">
                 <a href="/resume" target="_blank">resume</a>
             </li>
-            {% if user_authenticated %}
-            <!-- Admin Navigation -->
+        </ul>
+        
+        <!-- Admin Navigation (same level when authenticated) -->
+        {% if user_authenticated %}
+        <ul class="admin-nav">
             <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
                 <a href="/workadmin">Work Admin</a>
             </li>
@@ -54,8 +57,8 @@
             <li class="logs {{ 'active' if current_page == 'logs' else '' }}">
                 <a href="/admin/logs">Logs</a>
             </li>
-            {% endif %}
         </ul>
+        {% endif %}
         
         <!-- Social Navigation -->
         <ul class="social-nav">

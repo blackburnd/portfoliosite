@@ -1,7 +1,7 @@
 /* Simple, modern, and consistent styling for the portfolio site */
 body {
     font-family: 'Segoe UI', 'Arial', sans-serif;
-    background: #f5f5f5;
+    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
     color: #222;
     margin: 0;
     padding: 20px;
@@ -47,7 +47,7 @@ body {
 }
 
 .auth-link {
-    background-color: #555;
+    background: linear-gradient(135deg, #555 0%, #333 100%);
     color: white !important;
     padding: 5px 12px;
     border-radius: 4px;
@@ -55,16 +55,16 @@ body {
 }
 
 .auth-link:hover {
-    background-color: #333;
+    background: linear-gradient(135deg, #333 0%, #111 100%);
     text-decoration: none;
 }
 
 .logout-link {
-    background-color: #888;
+    background: linear-gradient(135deg, #888 0%, #666 100%);
 }
 
 .logout-link:hover {
-    background-color: #666;
+    background: linear-gradient(135deg, #666 0%, #444 100%);
 }
 
 .admin-links {
@@ -75,7 +75,7 @@ body {
 }
 
 .admin-link {
-    background-color: #999;
+    background: linear-gradient(135deg, #999 0%, #777 100%);
     color: white !important;
     padding: 3px 8px;
     border-radius: 3px;
@@ -84,15 +84,17 @@ body {
 }
 
 .admin-link:hover {
-    background-color: #777;
+    background: linear-gradient(135deg, #777 0%, #555 100%);
     text-decoration: none;
 }
 
 /* Navigation Styles */
 nav {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    flex-direction: row;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 nav ul {
@@ -105,8 +107,8 @@ nav ul {
 }
 
 .primary-nav {
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 10px;
+    border-right: 1px solid #ccc;
+    padding-right: 20px;
 }
 
 .social-nav {
@@ -127,7 +129,7 @@ nav a:hover {
 
 /* Active page indicator */
 nav li.active a {
-    background-color: #444;
+    background: linear-gradient(135deg, #444 0%, #222 100%);
     color: white;
     font-weight: bold;
     padding: 4px 8px;
@@ -196,11 +198,11 @@ figure img {
 }
 
 .tech {
-    background: #efefef;
+    background: linear-gradient(135deg, #efefef 0%, #ddd 100%);
     border-radius: 8px;
     padding: 18px 22px;
     margin-top: 18px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
 }
 
 .clearfix::after {
@@ -231,6 +233,7 @@ figure img {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
+    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
 }
 
 #grid th, #grid td {
@@ -240,12 +243,12 @@ figure img {
 }
 
 #grid th {
-    background-color: #e5e5e5;
+    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%);
     font-weight: bold;
 }
 
 #grid tr:nth-child(even) {
-    background-color: #f8f8f8;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
 }
 
 .crud-buttons {
@@ -264,21 +267,21 @@ figure img {
 }
 
 #addBtn {
-    background-color: #555;
+    background: linear-gradient(135deg, #555 0%, #333 100%);
     color: white;
 }
 
 #addBtn:hover {
-    background-color: #333;
+    background: linear-gradient(135deg, #333 0%, #111 100%);
 }
 
 #deleteBtn {
-    background-color: #888;
+    background: linear-gradient(135deg, #888 0%, #666 100%);
     color: white;
 }
 
 #deleteBtn:hover {
-    background-color: #666;
+    background: linear-gradient(135deg, #666 0%, #444 100%);
 }
 
 .loading {
@@ -286,16 +289,217 @@ figure img {
     font-style: italic;
     padding: 20px;
     text-align: center;
+    background: linear-gradient(135deg, #f8f8f8 0%, #eee 100%);
+    border-radius: 4px;
 }
 
 .error {
     color: #333;
     padding: 20px;
     text-align: center;
+    background: linear-gradient(135deg, #eee 0%, #ddd 100%);
+    border-radius: 4px;
 }
 
 input[type="checkbox"] {
     cursor: pointer;
+}
+
+/* Logs page styles */
+.logs .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.logs .header {
+    background: linear-gradient(135deg, #333 0%, #111 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.logs .header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.logs .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.logs .controls input, .logs .controls button, .logs .controls a {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #555 0%, #333 100%);
+}
+
+.logs .controls input {
+    color: #333;
+    background: white;
+}
+
+.logs .controls button:hover, .logs .controls a:hover {
+    background: linear-gradient(135deg, #777 0%, #555 100%);
+}
+
+.logs .filter-bar {
+    background: linear-gradient(135deg, #f8f8f8 0%, #eee 100%);
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.logs .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.logs .filter-group label {
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
+
+.logs .filter-group select, .logs .filter-group input {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+}
+
+.logs .log-grid {
+    min-height: 400px;
+    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.logs .log-grid table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs .log-grid th {
+    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%);
+    padding: 12px;
+    border-bottom: 2px solid #ccc;
+    text-align: left;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.logs .log-grid th:hover {
+    background: linear-gradient(135deg, #d0d0d0 0%, #bbb 100%);
+}
+
+.logs .log-grid td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.logs .log-grid tr:nth-child(even) {
+    background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%);
+}
+
+.logs .log-grid tr:hover {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+}
+
+.logs .log-level-ERROR {
+    background: linear-gradient(135deg, #333 0%, #111 100%);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.logs .log-level-WARNING {
+    background: linear-gradient(135deg, #666 0%, #444 100%);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.logs .log-level-INFO {
+    background: linear-gradient(135deg, #999 0%, #777 100%);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.logs .log-level-DEBUG {
+    background: linear-gradient(135deg, #ccc 0%, #aaa 100%);
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.logs .log-message {
+    word-break: break-word;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.logs .stats {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.logs .dgrid {
+    border: none !important;
+}
+
+.logs .dgrid-header {
+    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%) !important;
+}
+
+.logs .dgrid-header th {
+    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%) !important;
+    border-bottom: 2px solid #ccc !important;
+}
+
+.logs .dgrid-row:hover {
+    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%) !important;
+}
+
+.logs .dgrid-row-even {
+    background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%) !important;
 }
 
 /* Responsive Design */
@@ -335,8 +539,11 @@ input[type="checkbox"] {
     }
 
     .primary-nav {
+        border-right: none;
         border-bottom: 1px solid #ccc;
+        padding-right: 0;
         padding-bottom: 10px;
+        margin-bottom: 10px;
     }
 
     .crud-buttons {
@@ -345,5 +552,56 @@ input[type="checkbox"] {
 
     .crud-buttons button {
         width: 100%;
+    }
+}
+
+/* Index page layout and image styling */
+.bc {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.bc section.about {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.bc figure {
+    width: 40%;
+    float: right;
+    margin: 0 0 20px 20px;
+    position: relative;
+}
+
+.bc figure img {
+    width: 100%;
+    height: auto;
+    filter: grayscale(100%);
+    border-radius: 8px;
+    border: 2px solid #333;
+    display: block;
+}
+
+/* Text flow around image */
+.bc section.about p {
+    text-align: justify;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .bc {
+        flex-direction: column;
+    }
+    
+    .bc figure {
+        width: 100%;
+        float: none;
+        margin: 20px 0;
+    }
+    
+    .bc section.about {
+        margin-right: 0;
     }
 }
