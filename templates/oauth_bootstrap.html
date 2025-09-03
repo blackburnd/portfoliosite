@@ -220,9 +220,13 @@
                         loadCurrentConfig();
                     }, 1000);
                 } else {
-                    showMessage(`Configuration failed: ${data.error}`, 'error');
+                    // Handle error response
+                    const errorMessage = data.error || 'Unknown error occurred';
+                    console.error('Configuration error:', data);
+                    showMessage(`Configuration failed: ${errorMessage}`, 'error');
                 }
             } catch (error) {
+                console.error('Network/parsing error:', error);
                 showMessage(`Failed to configure OAuth: ${error.message}`, 'error');
             }
         }
