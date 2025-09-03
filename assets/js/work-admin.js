@@ -208,20 +208,25 @@ require([
             portfolio_id: "daniel-blackburn",
             company: company,
             position: position,
-            location: dijit.byId("location").get("value"),
+            location: dijit.byId("location").get("value") || "",
             company_url: dijit.byId("company_url").get("value") || null,
-            description: dijit.byId("description").get("value"),
-            is_current: dijit.byId("is_current").get("checked"),
-            sort_order: dijit.byId("sort_order").get("value") || 0
+            description: dijit.byId("description").get("value") || "",
+            is_current: dijit.byId("is_current").get("checked") || false,
+            sort_order: parseInt(dijit.byId("sort_order").get("value")) || 0
         };
         
         // Handle dates
         const startDate = dijit.byId("start_date").get("value");
         const endDate = dijit.byId("end_date").get("value");
         
+        // start_date is required by the backend, so provide a default if empty
         if (startDate) {
             workItem.start_date = startDate.toISOString().split('T')[0];
+        } else {
+            // Default to current date if no start date is provided
+            workItem.start_date = new Date().toISOString().split('T')[0];
         }
+        
         if (endDate) {
             workItem.end_date = endDate.toISOString().split('T')[0];
         } else {
