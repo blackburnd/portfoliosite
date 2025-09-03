@@ -243,19 +243,35 @@ require([
         dijit.byId("submitBtn").set("disabled", true);
         dijit.byId("submitBtn").set("label", isEdit ? "Updating..." : "Adding...");
         
-        fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(workItem)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP error! status: ' + response.status);
-            }
-            return response.json();
-        })
+        // Retry logic for network issues
+        const maxRetries = 3;
+        let retryCount = 0;
+        
+        const makeRequest = () => {
+            return fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(workItem)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .catch(error => {
+                if (retryCount < maxRetries && (error.message.includes('Failed to fetch') || error.message.includes('CONNECTION_REFUSED'))) {
+                    retryCount++;
+                    console.log(`Retry attempt ${retryCount}/${maxRetries} for ${isEdit ? 'updating' : 'adding'} work item...`);
+                    return new Promise(resolve => setTimeout(resolve, 1000 * retryCount)).then(makeRequest);
+                }
+                throw error;
+            });
+        };
+        
+        makeRequest()
         .then(response => {
             console.log((isEdit ? 'Updated' : 'Added') + ' work item:', response);
             loadGrid();
@@ -264,7 +280,11 @@ require([
         })
         .catch(error => {
             console.error('Error ' + (isEdit ? 'updating' : 'adding') + ' work item:', error);
-            alert('Error ' + (isEdit ? 'updating' : 'adding') + ' work item: ' + error.message);
+            if (error.message.includes('Failed to fetch') || error.message.includes('CONNECTION_REFUSED')) {
+                alert('Network error: Unable to connect to server. Please check your connection and try again.');
+            } else {
+                alert('Error ' + (isEdit ? 'updating' : 'adding') + ' work item: ' + error.message);
+            }
         })
         .finally(() => {
             dijit.byId("submitBtn").set("disabled", false);
