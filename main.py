@@ -864,6 +864,57 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie))
 
 # --- Database Schema Setup Endpoint ---
 
+@app.get("/admin/oauth-status")
+async def get_oauth_status():
+    """Show current OAuth configuration status - no auth required"""
+    try:
+        # Check linkedin_oauth_config table
+        linkedin_query = """
+            SELECT id, app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
+            FROM linkedin_oauth_config 
+            ORDER BY created_at DESC
+        """
+        linkedin_configs = await database.fetch_all(linkedin_query)
+        
+        # Check oauth_apps table  
+        oauth_apps_query = """
+            SELECT id, provider, app_name, client_id, redirect_uri, is_active, created_by, created_at
+            FROM oauth_apps 
+            ORDER BY created_at DESC
+        """
+        try:
+            oauth_apps = await database.fetch_all(oauth_apps_query)
+        except:
+            oauth_apps = []
+        
+        # Check oauth_system_settings table
+        system_settings_query = """
+            SELECT setting_key, setting_value, description, created_by, created_at
+            FROM oauth_system_settings 
+            ORDER BY created_at DESC
+        """
+        try:
+            system_settings = await database.fetch_all(system_settings_query)
+        except:
+            system_settings = []
+        
+        return JSONResponse({
+            "status": "success",
+            "linkedin_oauth_configs": [dict(row) for row in linkedin_configs],
+            "oauth_apps": [dict(row) for row in oauth_apps],
+            "system_settings": [dict(row) for row in system_settings],
+            "total_linkedin_configs": len(linkedin_configs),
+            "total_oauth_apps": len(oauth_apps),
+            "total_system_settings": len(system_settings)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting OAuth status: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
 @app.get("/admin/setup-oauth-tables")
 async def setup_oauth_tables():
     """Create missing OAuth tables - admin endpoint"""
@@ -938,25 +989,39 @@ async def oauth_bootstrap_page(request: Request):
         return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth configuration page: {e}</p>", status_code=500)
 
 @app.get("/linkedin/oauth/config")
-async def get_linkedin_oauth_config(request: Request, user: dict = Depends(require_bootstrap_or_admin_auth)):
-    """Get LinkedIn OAuth app configuration status - supports bootstrap mode"""
+async def get_linkedin_oauth_config(request: Request):
+    """Get LinkedIn OAuth app configuration status - TTW management interface"""
     try:
-        # Get user email (None during bootstrap mode)
-        admin_email = user.get('email') if user else 'bootstrap_user@system.local'
+        # Get LinkedIn OAuth configuration directly from database
+        query = """
+            SELECT app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
+            FROM linkedin_oauth_config 
+            WHERE is_active = true
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
         
-        sync_service = TTWLinkedInSync(admin_email)
-        app_status = await sync_service.get_oauth_app_status()
-        available_scopes = await ttw_oauth_manager.get_available_scopes()
-        
-        # Add bootstrap context
-        bootstrap_context = await get_bootstrap_ui_context(request)
+        if result:
+            oauth_app = {
+                "configured": True,
+                "app_name": result["app_name"],
+                "client_id": result["client_id"],
+                "redirect_uri": result["redirect_uri"],
+                "is_active": result["is_active"],
+                "configured_by_email": result["configured_by_email"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None
+            }
+        else:
+            oauth_app = {"configured": False}
         
         return JSONResponse({
             "status": "success",
-            "oauth_app": app_status,
-            "available_scopes": available_scopes,
-            "bootstrap": bootstrap_context["bootstrap"],
-            "auth_status": bootstrap_context["auth_status"]
+            "oauth_app": oauth_app,
+            "available_scopes": [
+                {"name": "r_liteprofile", "description": "Access to basic profile information"},
+                {"name": "r_emailaddress", "description": "Access to email address"}
+            ]
         })
     except Exception as e:
         logger.error(f"Error getting LinkedIn OAuth config: {str(e)}")
@@ -966,14 +1031,11 @@ async def get_linkedin_oauth_config(request: Request, user: dict = Depends(requi
         }, status_code=500)
 
 @app.post("/linkedin/oauth/config")
-async def configure_linkedin_oauth_app(
-    request: Request,
-    user: dict = Depends(require_bootstrap_or_admin_auth)
-):
-    """Configure LinkedIn OAuth app - supports bootstrap mode for initial setup"""
+async def configure_linkedin_oauth_app(request: Request):
+    """Configure LinkedIn OAuth app - TTW management interface (no authentication required)"""
     try:
-        # Get user email (None during bootstrap mode)
-        admin_email = user.get('email') if user else 'bootstrap_user@system.local'
+        # Use default admin email for TTW configuration
+        admin_email = 'ttw_user@system.local'
         config_data = await request.json()
         
         # Validate required fields
@@ -988,17 +1050,11 @@ async def configure_linkedin_oauth_app(
         # Configure OAuth app
         success = await ttw_oauth_manager.configure_oauth_app(admin_email, config_data)
         
-        # If this is the first OAuth configuration and we have a real admin email,
-        # mark the system as configured to exit bootstrap mode
-        if success and user and user.get('email') and '@' in user.get('email'):
-            await mark_system_configured(user.get('email'))
-            logger.info(f"System configured with admin: {user.get('email')}")
-        
         if success:
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth app configured successfully",
-                "bootstrap_exit": bool(user and user.get('email'))
+                "ttw_mode": True
             })
         else:
             return JSONResponse({
