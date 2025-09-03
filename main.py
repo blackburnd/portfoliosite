@@ -88,38 +88,6 @@ class Project(BaseModel):
     sort_order: Optional[int] = 0
 
 
-# Pydantic models for bulk operations
-class BulkWorkItemsRequest(BaseModel):
-    items: List[WorkItem]
-
-
-class BulkWorkItemsResponse(BaseModel):
-    created: List[WorkItem]
-    updated: List[WorkItem]
-    errors: List[dict]
-
-
-class BulkDeleteRequest(BaseModel):
-    ids: List[str]
-
-
-class BulkDeleteResponse(BaseModel):
-    deleted_count: int
-    errors: List[dict]
-
-
-# Pydantic models for bulk project operations
-class BulkProjectsRequest(BaseModel):
-    items: List[Project]
-
-
-class BulkProjectsResponse(BaseModel):
-    created: List[Project]
-    updated: List[Project]
-    errors: List[dict]
-
-
-
 # Initialize FastAPI app
 app = FastAPI(
     title="Portfolio API",
@@ -722,21 +690,6 @@ async def work_admin_page(
     })
 
 
-@app.get("/workadmin/bulk", response_class=HTMLResponse)
-async def work_admin_bulk_page(
-    request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
-):
-    """New bulk editor interface for work items"""
-    return templates.TemplateResponse("workadmin_bulk.html", {
-        "request": request,
-        "current_page": "workadmin_bulk",
-        "user_info": admin,
-        "user_authenticated": True,
-        "user_email": admin.get("email", "")
-    })
-
-
 # --- Logs Admin Page ---
 @app.get("/debug/test")
 async def debug_test():
@@ -790,21 +743,6 @@ async def projects_admin_page(
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
         "current_page": "projectsadmin",
-        "user_info": admin,
-        "user_authenticated": True,
-        "user_email": admin.get("email", "")
-    })
-
-
-@app.get("/projectsadmin/bulk", response_class=HTMLResponse)
-async def projects_admin_bulk_page(
-    request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
-):
-    """New bulk editor interface for projects"""
-    return templates.TemplateResponse("projectsadmin_bulk.html", {
-        "request": request,
-        "current_page": "projectsadmin_bulk",
         "user_info": admin,
         "user_authenticated": True,
         "user_email": admin.get("email", "")
