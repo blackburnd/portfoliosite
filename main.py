@@ -692,16 +692,17 @@ async def project_detail(request: Request, project_slug: str):
         "title": f"Project - daniel blackburn"
     })
 
+@app.get("/resume")
 @app.get("/resume/")
 async def resume():
-    """Redirect to local resume PDF file"""
-    return RedirectResponse(
-        url="/assets/files/danielblackburn.pdf",  # Updated to match your actual filename
-        status_code=302
+    """Serve resume PDF directly for browser viewing"""
+    return FileResponse(
+        path="assets/files/danielblackburn.pdf",
+        media_type="application/pdf",
+        filename="danielblackburn.pdf",
+        headers={"Content-Disposition": "inline; filename=danielblackburn.pdf"}
     )
 
-# Direct download route for resume
-from fastapi.responses import FileResponse
 
 @app.get("/resume/download/")
 async def resume_download():
