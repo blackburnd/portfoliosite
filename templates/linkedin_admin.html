@@ -8,46 +8,18 @@
     <title>LinkedIn Sync Admin - Daniel Blackburn</title>
     <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
     <link rel="stylesheet" href="/assets/style.css">
-    <style>
-        .linkedin-admin-content {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .connection-section, .sync-section {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        
-        .connection-status {
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-        }
-        
-        .connection-status.connected {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        
-        .connection-status.disconnected {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        
-        .sync-buttons {
-            margin: 15px 0;
-        }
-        
-        .sync-buttons button {
-            background: #007bff;
-            color: white;
+</head>
+
+<body class="linkedin-admin">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component with current page set to 'linkedin' -->
+            {% with current_page='linkedin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div class="linkedin-admin-content">
+                <h1>LinkedIn Sync Administration</h1>
             border: none;
             padding: 10px 20px;
             border-radius: 6px;
@@ -146,14 +118,14 @@
                     <div class="connection-section">
                         <h3>LinkedIn Connection</h3>
                         <div id="connectionStatus">Loading connection status...</div>
-                        <div id="connectionActions" style="display: none;">
-                            <button id="connectLinkedInBtn" onclick="connectLinkedIn()" style="display: none;">Connect LinkedIn</button>
-                            <button id="disconnectLinkedInBtn" onclick="disconnectLinkedIn()" style="display: none;">Disconnect LinkedIn</button>
+                        <div id="connectionActions" class="hidden">
+                            <button id="connectLinkedInBtn" onclick="connectLinkedIn()" class="hidden">Connect LinkedIn</button>
+                            <button id="disconnectLinkedInBtn" onclick="disconnectLinkedIn()" class="hidden">Disconnect LinkedIn</button>
                         </div>
                     </div>
 
                     <!-- Sync Controls (only shown when LinkedIn is connected) -->
-                    <div id="syncControls" style="display: none;">
+                    <div id="syncControls" class="hidden">
                         <div class="sync-section">
                             <h3>Profile Sync</h3>
                             <p>Sync basic profile information from LinkedIn to your portfolio.</p>
@@ -255,9 +227,9 @@
                     </div>
                 `;
                 
-                connectBtn.style.display = 'none';
-                disconnectBtn.style.display = 'inline-block';
-                syncControls.style.display = 'block';
+                connectBtn.classList.add('hidden');
+                disconnectBtn.classList.remove('hidden');
+                syncControls.classList.remove('hidden');
 
             } else {
                 connectionStatus.innerHTML = `
@@ -267,12 +239,12 @@
                     </div>
                 `;
                 
-                connectBtn.style.display = 'inline-block';
-                disconnectBtn.style.display = 'none';
-                syncControls.style.display = 'none';
+                connectBtn.classList.remove('hidden');
+                disconnectBtn.classList.add('hidden');
+                syncControls.classList.add('hidden');
             }
 
-            connectionActions.style.display = 'block';
+            connectionActions.classList.remove('hidden');
         }
 
         // Load sync history
@@ -451,9 +423,9 @@
             let dataHTML = '';
             if (data) {
                 dataHTML = `
-                    <details style="margin-top: 10px;">
+                    <details class="debug-details">
                         <summary>Sync Details</summary>
-                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>
+                        <pre class="debug-json">${JSON.stringify(data, null, 2)}</pre>
                     </details>
                 `;
             }
@@ -484,5 +456,8 @@
             resultMessages.innerHTML = '';
         }
     </script>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

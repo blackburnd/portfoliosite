@@ -5,49 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth Configuration - Daniel Blackburn</title>
     <link href="/assets/style.css" rel="stylesheet">
-    <style>
-        .bootstrap-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-            color: #856404;
-        }
-        .config-form {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-        .status-message {
-            padding: 10px;
-            margin: 10px 0;
+</head>
+<body class="oauth-page">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component with current page set to 'oauth' -->
+            {% with current_page='oauth', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div class="oauth-container">
+                <h1>OAuth Configuration</h1>
             border-radius: 4px;
         }
         .success {
@@ -83,7 +51,7 @@
         <div class="config-form">
             <h2>LinkedIn OAuth Application</h2>
             
-            <div id="status-message" class="status-message" style="display: none;"></div>
+            <div id="status-message" class="status-message hidden"></div>
             
             <form id="oauth-config-form">
                 <div class="form-group">
@@ -119,7 +87,7 @@
                 <button type="submit" class="btn">Configure LinkedIn OAuth</button>
             </form>
             
-            <div id="current-config" style="margin-top: 30px;">
+            <div id="current-config" class="current-config-section">
                 <h3>Current Configuration</h3>
                 <div id="config-status">Loading...                    </div>
                 </div>
@@ -184,11 +152,11 @@
                     }
                 } else {
                     document.getElementById('config-status').innerHTML = 
-                        `<p style="color: red;">Error loading config: ${data.error}</p>`;
+                        `<p class="error-text">Error loading config: ${data.error}</p>`;
                 }
             } catch (error) {
                 document.getElementById('config-status').innerHTML = 
-                    `<p style="color: red;">Failed to load configuration: ${error.message}</p>`;
+                    `<p class="error-text">Failed to load configuration: ${error.message}</p>`;
             }
         }
 
@@ -240,5 +208,8 @@
             }
         }
     </script>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

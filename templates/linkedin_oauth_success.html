@@ -6,17 +6,26 @@
     <title>LinkedIn Connected Successfully</title>
     <link rel="stylesheet" href="/assets/style.css">
 </head>
-<body>
-    <div class="success-container">
-        <div class="success-icon">✅</div>
-        <h1>LinkedIn Connected Successfully!</h1>
-        <p>Your LinkedIn account has been connected to your portfolio admin.</p>
-        <p><strong>Admin:</strong> {{ admin_email }}</p>
-        {% if linkedin_profile_id %}
-        <p><strong>LinkedIn Profile ID:</strong> {{ linkedin_profile_id }}</p>
-        {% endif %}
-        <p>You can now sync your LinkedIn data from the admin interface.</p>
-        <a href="/linkedin" class="btn">Return to LinkedIn Admin</a>
+<body class="oauth-success">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component -->
+            {% with current_page='linkedin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div class="success-container">
+                <div class="success-icon">✅</div>
+                <h1>LinkedIn Connected Successfully!</h1>
+                <p>Your LinkedIn account has been connected to your portfolio admin.</p>
+                <p><strong>Admin:</strong> {{ admin_email }}</p>
+                {% if linkedin_profile_id %}
+                <p><strong>LinkedIn Profile ID:</strong> {{ linkedin_profile_id }}</p>
+                {% endif %}
+                <p>You can now sync your LinkedIn data from the admin interface.</p>
+                <a href="/linkedin" class="btn">Return to LinkedIn Admin</a>
+            </div>
+        </div>
     </div>
     
     <script>
