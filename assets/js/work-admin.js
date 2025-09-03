@@ -240,6 +240,9 @@ require([
         const url = isEdit ? '/workitems/' + currentEditId : '/workitems';
         const method = isEdit ? 'PUT' : 'POST';
         
+        // Debug: Log the data being sent
+        console.log('Sending work item data:', JSON.stringify(workItem, null, 2));
+        
         dijit.byId("submitBtn").set("disabled", true);
         dijit.byId("submitBtn").set("label", isEdit ? "Updating..." : "Adding...");
         

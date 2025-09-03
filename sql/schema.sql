@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS work_experience (
     company VARCHAR(200) NOT NULL,
     position VARCHAR(200) NOT NULL,
     location VARCHAR(200),
-    start_date VARCHAR(20) NOT NULL,
+    start_date VARCHAR(20),
     end_date VARCHAR(20),
     description TEXT,
     is_current BOOLEAN DEFAULT FALSE,
