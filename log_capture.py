@@ -76,3 +76,28 @@ def clear_logs():
 # Add some initial test logs for debugging
 add_log("INFO", "system", "Log capture module initialized")
 add_log("DEBUG", "startup", "Application starting up")
+
+
+# Create a log_capture object that main.py can import
+class LogCapture:
+    """Log capture object providing the interface expected by main.py"""
+    
+    @staticmethod
+    def get_logs():
+        return get_logs()
+    
+    @staticmethod
+    def get_stats():
+        return get_stats()
+    
+    @staticmethod
+    def clear_logs():
+        return clear_logs()
+    
+    @staticmethod
+    def add_log(level: str, source: str, message: str, **kwargs):
+        return add_log(level, source, message, **kwargs)
+
+
+# Create the instance that main.py expects to import
+log_capture = LogCapture()
