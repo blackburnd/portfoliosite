@@ -1178,6 +1178,7 @@ async def bulk_create_update_workitems(request: BulkWorkItemsRequest, admin: dic
                 created.append(WorkItem(**dict(row)))
                 
         except Exception as e:
+            logging.error(f"Bulk operation error for item {item.dict()}: {e}")
             errors.append({
                 "item": item.dict(),
                 "error": str(e)
