@@ -1,0 +1,314 @@
+/* Simple, modern, and consistent styling for the portfolio site */
+body {
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: #f8f9fa;
+    color: #222;
+    margin: 0;
+    padding: 20px;
+}
+
+.wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Site Header Styles */
+.site-header {
+    margin-bottom: 30px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.brand a {
+    text-decoration: none;
+    color: #333;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.tagline {
+    color: #666;
+    margin: 10px 0;
+}
+
+/* Authentication and admin links */
+.auth-admin-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    font-size: 0.9em;
+}
+
+.auth-link {
+    background-color: #28a745;
+    color: white !important;
+    padding: 5px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.auth-link:hover {
+    background-color: #218838;
+    text-decoration: none;
+}
+
+.logout-link {
+    background-color: #dc3545;
+}
+
+.logout-link:hover {
+    background-color: #c82333;
+}
+
+.admin-links {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+    justify-content: flex-end;
+}
+
+.admin-link {
+    background-color: #6c757d;
+    color: white !important;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    text-decoration: none;
+}
+
+.admin-link:hover {
+    background-color: #5a6268;
+    text-decoration: none;
+}
+
+/* Navigation Styles */
+nav {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.primary-nav {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.social-nav {
+    font-size: 0.9em;
+}
+
+nav a {
+    text-decoration: none;
+    color: #0066cc;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* Active page indicator */
+nav li.active a {
+    background-color: #0066cc;
+    color: white;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+nav li.active a:hover {
+    text-decoration: none;
+}
+
+/* Icon styling for social links */
+.linkedin a::before {
+    content: "🔗";
+    margin-right: 4px;
+}
+
+.github a::before {
+    content: "🐙";
+    margin-right: 4px;
+}
+
+.pypi a::before {
+    content: "📦";
+    margin-right: 4px;
+}
+
+/* Content Styles */
+.bc {
+    margin-top: 24px;
+}
+
+.about {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.amp {
+    font-family: serif;
+    font-size: 1.2em;
+    color: #888;
+}
+
+.tech {
+    background: #f1f3f6;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-top: 18px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.footer {
+    margin-top: 50px;
+    padding: 20px 0;
+    border-top: 1px solid #eee;
+    text-align: center;
+    color: #666;
+}
+
+/* Admin Page Styles */
+.work-admin-content, .projects-admin-content {
+    margin-top: 20px;
+}
+
+#grid {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+#grid table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#grid th, #grid td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+#grid th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+#grid tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.crud-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.crud-buttons button {
+    padding: 12px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+}
+
+#addBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+#addBtn:hover {
+    background-color: #218838;
+}
+
+#deleteBtn {
+    background-color: #dc3545;
+    color: white;
+}
+
+#deleteBtn:hover {
+    background-color: #c82333;
+}
+
+.loading {
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+}
+
+.error {
+    color: red;
+    padding: 20px;
+    text-align: center;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .bc {
+        flex-direction: column;
+    }
+
+    figure img {
+        max-width: 100%;
+    }
+
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .auth-admin-section {
+        align-items: flex-start;
+    }
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .primary-nav {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .crud-buttons {
+        flex-direction: column;
+    }
+
+    .crud-buttons button {
+        width: 100%;
+    }
+}
