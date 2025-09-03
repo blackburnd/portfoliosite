@@ -67,15 +67,23 @@
                         <div class="form-group">
                             <label for="scopes">Scopes (comma-separated):</label>
                             <input type="text" id="scopes" name="scopes" 
-                                   value="r_liteprofile,r_emailaddress" required>
+                                   value="r_liteprofile,r_emailaddress,r_fullprofile" required>
                         </div>
                 
-                        <button type="submit" class="btn">Configure LinkedIn OAuth</button>
+                        <button type="submit" class="btn">Save Configuration</button>
                     </form>
             
                     <div id="current-config" class="current-config-section">
                         <h3>Current Configuration</h3>
                         <div id="config-status">Loading...</div>
+                    </div>
+
+                    <!-- Test OAuth Connection Section -->
+                    <div id="test-section" class="test-section hidden">
+                        <h3>🧪 Test OAuth Connection</h3>
+                        <p>Test your LinkedIn OAuth configuration by connecting your account:</p>
+                        <button id="test-oauth-btn" class="btn btn-secondary">Connect LinkedIn Account</button>
+                        <div id="test-results" class="test-results"></div>
                     </div>
                 </div>
             </div>
