@@ -15,8 +15,7 @@
             packages: [
                 {
                     name: "dgrid",
-                    location: "https://cdn.jsdelivr.net/npm/dgrid@1.3.3/",
-                    main: "Grid"
+                    location: "https://cdn.jsdelivr.net/npm/dgrid@1.3.3"
                 }
             ]
         };
@@ -136,6 +135,8 @@
                 "dojo/query",
                 "dojo/_base/declare"
             ], function(ready, Grid, Keyboard, Selection, Pagination, Memory, Observable, dom, domConstruct, on, query, declare) {
+            
+            console.log('All Dojo modules loaded successfully, including dgrid');
             
             let grid;
             let store;
@@ -326,7 +327,8 @@
             };
         }, function(error) {
             console.error('Failed to load Dojo modules:', error);
-            document.getElementById('logGrid').innerHTML = '<div style="color: red; padding: 20px; text-align: center;"><h3>Error: Failed to Load Required Modules</h3><p>Could not load dgrid or other required components. Please refresh the page.</p><p>Error: ' + error.message + '</p></div>';
+            console.error('This is likely a dgrid module loading issue from CDN');
+            document.getElementById('logGrid').innerHTML = '<div style="color: red; padding: 20px; text-align: center;"><h3>Error: Failed to Load dgrid Components</h3><p>Could not load dgrid from CDN. This may be a network issue or dgrid compatibility problem.</p><p>Error: ' + error.message + '</p><p>Check browser console for more details.</p></div>';
         });
         }
 
