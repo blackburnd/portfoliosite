@@ -54,17 +54,17 @@ class TTWOAuthManager:
     
     async def is_oauth_app_configured(self) -> bool:
         """Check if LinkedIn OAuth app is configured"""
-        query = "SELECT COUNT(*) FROM linkedin_oauth_config WHERE is_active = true"
+        query = "SELECT COUNT(*) FROM oauth_apps WHERE provider = 'linkedin' AND is_active = true"
         result = await database.fetch_val(query)
         return result > 0
     
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get active LinkedIn OAuth app configuration"""
         query = """
-            SELECT app_name, client_id, client_secret, redirect_uri, configured_by_email, created_at
-            FROM linkedin_oauth_config 
-            WHERE is_active = true
-            ORDER BY created_at DESC
+            SELECT app_name, client_id, client_secret, redirect_uri, created_by, created_at, updated_at
+            FROM oauth_apps 
+            WHERE provider = 'linkedin' AND is_active = true
+            ORDER BY updated_at DESC
             LIMIT 1
         """
         result = await database.fetch_one(query)
@@ -77,8 +77,9 @@ class TTWOAuthManager:
                 "client_id": result["client_id"],
                 "client_secret": self._decrypt_token(result["client_secret"]),
                 "redirect_uri": result["redirect_uri"],
-                "configured_by_email": result["configured_by_email"],
-                "created_at": result["created_at"]
+                "configured_by_email": result["created_by"],
+                "created_at": result["created_at"],
+                "updated_at": result["updated_at"]
             }
         except Exception as e:
             logger.error(f"Failed to decrypt OAuth app config: {e}")
@@ -87,27 +88,32 @@ class TTWOAuthManager:
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth app through admin interface"""
         try:
-            # Deactivate existing configs
-            await database.execute(
-                "UPDATE linkedin_oauth_config SET is_active = false WHERE is_active = true"
-            )
-            
             # Encrypt client secret
             encrypted_secret = self._encrypt_token(app_config["client_secret"])
             
-            # Insert new config
+            # Insert or update LinkedIn OAuth configuration in oauth_apps table
             query = """
-                INSERT INTO linkedin_oauth_config 
-                (app_name, client_id, client_secret, redirect_uri, configured_by_email)
-                VALUES (:app_name, :client_id, :client_secret, :redirect_uri, :admin_email)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                ON CONFLICT (provider, app_name) 
+                DO UPDATE SET 
+                    client_id = EXCLUDED.client_id,
+                    client_secret = EXCLUDED.client_secret,
+                    redirect_uri = EXCLUDED.redirect_uri,
+                    scopes = EXCLUDED.scopes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    is_active = true
             """
             
             await database.execute(query, {
-                "app_name": app_config.get("app_name", "Portfolio LinkedIn Integration"),
+                "provider": "linkedin",
+                "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
                 "client_secret": encrypted_secret,
                 "redirect_uri": app_config["redirect_uri"],
-                "admin_email": admin_email
+                "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
+                "encryption_key": "oauth_key",  # Using same key pattern as Google
+                "created_by": admin_email
             })
             
             logger.info(f"LinkedIn OAuth app configured by admin: {admin_email}")

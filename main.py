@@ -1321,18 +1321,13 @@ async def linkedin_sync_status(admin: dict = Depends(require_admin_auth_cookie))
 async def get_oauth_status():
     """Show current OAuth configuration status - no auth required"""
     try:
-        # Check linkedin_oauth_config table
-        linkedin_query = """
-            SELECT id, app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
-            FROM linkedin_oauth_config 
-            ORDER BY created_at DESC
-        """
-        linkedin_configs = await database.fetch_all(linkedin_query)
-        
-        # Check oauth_apps table  
+        # Check oauth_apps table for all providers
         oauth_apps_query = """
             SELECT id, provider, app_name, client_id, redirect_uri, is_active, created_by, created_at
             FROM oauth_apps 
+            ORDER BY provider, created_at DESC
+        """
+        oauth_apps = await database.fetch_all(oauth_apps_query) 
             ORDER BY created_at DESC
         """
         try:
@@ -1353,10 +1348,8 @@ async def get_oauth_status():
         
         return JSONResponse({
             "status": "success",
-            "linkedin_oauth_configs": [dict(row) for row in linkedin_configs],
             "oauth_apps": [dict(row) for row in oauth_apps],
             "system_settings": [dict(row) for row in system_settings],
-            "total_linkedin_configs": len(linkedin_configs),
             "total_oauth_apps": len(oauth_apps),
             "total_system_settings": len(system_settings)
         })
@@ -1426,11 +1419,11 @@ async def setup_oauth_tables():
 async def oauth_status_page(request: Request):
     """Simple page to view current OAuth configuration status"""
     try:
-        # Get current OAuth config
+        # Get current LinkedIn OAuth config from oauth_apps table
         query = """
-            SELECT app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
-            FROM linkedin_oauth_config 
-            WHERE is_active = true
+            SELECT app_name, client_id, redirect_uri, is_active, created_by, created_at
+            FROM oauth_apps 
+            WHERE provider = 'linkedin' AND is_active = true
             ORDER BY created_at DESC
             LIMIT 1
         """
@@ -1444,7 +1437,7 @@ async def oauth_status_page(request: Request):
             <p><strong>App Name:</strong> {result['app_name']}</p>
             <p><strong>Client ID:</strong> {result['client_id']}</p>
             <p><strong>Redirect URI:</strong> {result['redirect_uri']}</p>
-            <p><strong>Configured By:</strong> {result['configured_by_email']}</p>
+            <p><strong>Configured By:</strong> {result['created_by']}</p>
             <p><strong>Created:</strong> {result['created_at']}</p>
             <p><em>OAuth app is configured and active</em></p>
             """
@@ -1481,11 +1474,11 @@ async def oauth_status_page(request: Request):
 async def get_linkedin_oauth_config(request: Request):
     """Get LinkedIn OAuth app configuration status - TTW management interface"""
     try:
-        # Get LinkedIn OAuth configuration directly from database
+        # Get LinkedIn OAuth configuration from oauth_apps table
         query = """
-            SELECT app_name, client_id, redirect_uri, is_active, configured_by_email, created_at
-            FROM linkedin_oauth_config 
-            WHERE is_active = true
+            SELECT app_name, client_id, redirect_uri, is_active, created_by, created_at
+            FROM oauth_apps 
+            WHERE provider = 'linkedin' AND is_active = true
             ORDER BY created_at DESC
             LIMIT 1
         """
@@ -1498,7 +1491,7 @@ async def get_linkedin_oauth_config(request: Request):
                 "client_id": result["client_id"],
                 "redirect_uri": result["redirect_uri"],
                 "is_active": result["is_active"],
-                "configured_by_email": result["configured_by_email"],
+                "configured_by_email": result["created_by"],
                 "created_at": result["created_at"].isoformat() if result["created_at"] else None
             }
         else:
