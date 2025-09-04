@@ -1,113 +1,145 @@
 """
 Log capture utility for the application.
-Provides in-memory logging functionality for debugging and admin monitoring.
+Provides database-backed logging functionality for debugging and admin monitoring.
 """
 
 import time
 import os
 import re
+import asyncio
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import defaultdict
 import threading
+import uuid
 
-# Thread-safe storage for logs
-_logs = []
-_log_lock = threading.Lock()
+# Import database connection (with lazy loading to avoid circular imports)
+_database = None
+_database_available = False
 
-
-def add_log(level: str, source: str, message: str, **kwargs):
-    """Add a log entry to the in-memory store."""
-    with _log_lock:
-        log_entry = {
-            "id": len(_logs) + 1,
-            "timestamp": time.time() * 1000,  # JavaScript timestamp format
-            "level": level.upper(),
-            "source": source,
-            "message": message,
-            **kwargs
-        }
-        _logs.append(log_entry)
-        
-        # Keep only the last 1000 log entries to prevent memory issues
-        if len(_logs) > 1000:
-            _logs.pop(0)
+def _get_database():
+    """Get database instance with lazy loading"""
+    global _database, _database_available
+    if _database is None and not _database_available:
+        try:
+            from database import database
+            _database = database
+            _database_available = True
+        except Exception:
+            _database_available = False
+    return _database
 
 
-def get_logs() -> List[Dict[str, Any]]:
-    """Get all current log entries."""
-    with _log_lock:
-        # If we don't have many logs, supplement with syslog
-        if len(_logs) < 10:
-            _populate_from_syslog()
-        return _logs.copy()
-
-
-def _populate_from_syslog():
-    """Populate logs from syslog if available and we don't have enough entries."""
-    try:
-        syslog_paths = ['/var/log/syslog', '/var/log/messages', '/var/log/system.log']
-        syslog_path = None
-        
-        for path in syslog_paths:
-            if os.path.exists(path):
-                syslog_path = path
-                break
-        
-        if not syslog_path:
-            # Add some demo logs if no syslog is available
-            _add_demo_logs()
-            return
-        
-        # Read last 50 lines from syslog
-        with open(syslog_path, 'r') as f:
-            lines = f.readlines()
-            recent_lines = lines[-50:] if len(lines) > 50 else lines
-        
-        for line in recent_lines:
-            line = line.strip()
-            if not line:
-                continue
-                
-            # Parse syslog format: timestamp hostname process[pid]: message
-            syslog_match = re.match(r'^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\w+)\s+([^:]+):\s*(.*)$', line)
-            
-            if syslog_match:
-                timestamp_str, hostname, process, message = syslog_match.groups()
-                
-                # Convert timestamp to JavaScript format
-                current_year = datetime.now().year
-                try:
-                    timestamp = datetime.strptime(f"{current_year} {timestamp_str}", "%Y %b %d %H:%M:%S")
-                    js_timestamp = timestamp.timestamp() * 1000
-                except:
-                    js_timestamp = time.time() * 1000
-                
-                # Determine log level from message content
-                level = "INFO"
-                if any(word in message.lower() for word in ['error', 'failed', 'fail']):
-                    level = "ERROR"
-                elif any(word in message.lower() for word in ['warn', 'warning']):
-                    level = "WARNING"
-                elif any(word in message.lower() for word in ['debug']):
-                    level = "DEBUG"
-                
-                log_entry = {
-                    "id": len(_logs) + 1,
-                    "timestamp": js_timestamp,
-                    "level": level,
-                    "source": process.split('[')[0],  # Remove PID part
-                    "message": message
-                }
-                _logs.append(log_entry)
+async def add_log(level: str, source: str, message: str, **kwargs):
+    """Add a log entry to the database."""
+    database = _get_database()
     
+    if database and _database_available:
+        try:
+            # Prepare the log entry data
+            log_data = {
+                "level": level.upper(),
+                "source": source,
+                "message": message,
+                "timestamp": datetime.now(),
+                "request_id": kwargs.get("request_id"),
+                "user_id": kwargs.get("user_id"),
+                "session_id": kwargs.get("session_id"),
+                "ip_address": kwargs.get("ip_address"),
+                "user_agent": kwargs.get("user_agent"),
+                "extra_data": kwargs.get("extra_data", {})
+            }
+            
+            # Insert into database
+            query = """
+            INSERT INTO application_logs 
+            (level, source, message, timestamp, request_id, user_id, session_id, ip_address, user_agent, extra_data)
+            VALUES (:level, :source, :message, :timestamp, :request_id, :user_id, :session_id, :ip_address, :user_agent, :extra_data)
+            """
+            
+            await database.execute(query, log_data)
+            
+        except Exception as e:
+            # If database logging fails, fall back to console logging
+            print(f"[LOG FALLBACK] {level}: {source}: {message}")
+            print(f"[LOG ERROR] Failed to write to database: {e}")
+    else:
+        # Fallback to console logging if database not available
+        print(f"[LOG] {level}: {source}: {message}")
+
+
+def add_log_sync(level: str, source: str, message: str, **kwargs):
+    """Synchronous wrapper for add_log - creates new event loop if needed"""
+    try:
+        # Check if we're in an async context
+        try:
+            loop = asyncio.get_running_loop()
+            # We're in an async context, so we can't run coroutines synchronously
+            # Just schedule the task and return immediately
+            task = asyncio.create_task(add_log(level, source, message, **kwargs))
+            return task
+        except RuntimeError:
+            # No event loop running, create one
+            asyncio.run(add_log(level, source, message, **kwargs))
+    except Exception:
+        # If all else fails, fall back to console logging
+        print(f"[LOG FALLBACK] {level}: {source}: {message}")
+
+
+async def get_logs(limit: int = 1000, level_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Get log entries from the database."""
+    database = _get_database()
+    
+    if not database or not _database_available:
+        # Fallback to demo logs if database not available
+        return _get_demo_logs()
+    
+    try:
+        # Build query with optional level filter
+        query = """
+        SELECT id, timestamp, level, source, message, request_id, user_id, session_id, 
+               ip_address, user_agent, extra_data, created_at
+        FROM application_logs
+        """
+        params = {}
+        
+        if level_filter:
+            query += " WHERE level = :level"
+            params["level"] = level_filter.upper()
+        
+        query += " ORDER BY timestamp DESC LIMIT :limit"
+        params["limit"] = limit
+        
+        results = await database.fetch_all(query, params)
+        
+        # Convert to the format expected by the frontend
+        logs = []
+        for row in results:
+            log_entry = {
+                "id": str(row["id"]),
+                "timestamp": row["timestamp"].timestamp() * 1000,  # JavaScript timestamp format
+                "level": row["level"],
+                "source": row["source"],
+                "message": row["message"],
+                "request_id": row["request_id"],
+                "user_id": row["user_id"],
+                "session_id": row["session_id"],
+                "ip_address": str(row["ip_address"]) if row["ip_address"] else None,
+                "user_agent": row["user_agent"],
+                "extra_data": row["extra_data"] or {}
+            }
+            logs.append(log_entry)
+        
+        return logs
+        
     except Exception as e:
-        # Add demo logs if syslog reading fails
-        _add_demo_logs()
+        print(f"Error fetching logs from database: {e}")
+        # Fallback to demo logs if database query fails
+        return _get_demo_logs()
 
 
-def _add_demo_logs():
-    """Add some demo log entries for testing."""
+def _get_demo_logs() -> List[Dict[str, Any]]:
+    """Get demo log entries for testing when database is not available."""
     demo_logs = [
         ("INFO", "system", "Portfolio application started successfully"),
         ("INFO", "auth", "User authentication system initialized"),
@@ -122,56 +154,117 @@ def _add_demo_logs():
     ]
     
     base_time = time.time() * 1000
+    logs = []
     for i, (level, source, message) in enumerate(demo_logs):
         log_entry = {
-            "id": len(_logs) + 1,
+            "id": str(i + 1),
             "timestamp": base_time - (len(demo_logs) - i) * 60000,  # Spread over last hour
             "level": level,
             "source": source,
-            "message": message
+            "message": message,
+            "request_id": None,
+            "user_id": None,
+            "session_id": None,
+            "ip_address": None,
+            "user_agent": None,
+            "extra_data": {}
         }
-        _logs.append(log_entry)
+        logs.append(log_entry)
+    
+    return logs
 
 
-def get_stats() -> Dict[str, Any]:
+async def get_stats() -> Dict[str, Any]:
     """Get statistics about the current logs."""
-    with _log_lock:
-        if not _logs:
-            return {
-                "total": 0,
-                "by_level": {},
-                "by_source": {},
-                "newest": None,
-                "oldest": None
-            }
+    database = _get_database()
+    
+    if not database or not _database_available:
+        return _get_demo_stats()
+    
+    try:
+        # Get total count
+        total_query = "SELECT COUNT(*) as total FROM application_logs"
+        total_result = await database.fetch_one(total_query)
+        total = total_result["total"] if total_result else 0
         
-        level_counts = defaultdict(int)
-        source_counts = defaultdict(int)
+        # Get counts by level
+        level_query = """
+        SELECT level, COUNT(*) as count 
+        FROM application_logs 
+        GROUP BY level
+        """
+        level_results = await database.fetch_all(level_query)
+        by_level = {row["level"]: row["count"] for row in level_results}
         
-        for log in _logs:
-            level_counts[log["level"]] += 1
-            source_counts[log["source"]] += 1
+        # Get counts by source
+        source_query = """
+        SELECT source, COUNT(*) as count 
+        FROM application_logs 
+        GROUP BY source 
+        ORDER BY count DESC 
+        LIMIT 10
+        """
+        source_results = await database.fetch_all(source_query)
+        by_source = {row["source"]: row["count"] for row in source_results}
         
-        timestamps = [log["timestamp"] for log in _logs]
+        # Get newest and oldest timestamps
+        timestamp_query = """
+        SELECT MIN(timestamp) as oldest, MAX(timestamp) as newest 
+        FROM application_logs
+        """
+        timestamp_result = await database.fetch_one(timestamp_query)
+        
+        newest = None
+        oldest = None
+        if timestamp_result:
+            newest = timestamp_result["newest"].timestamp() * 1000 if timestamp_result["newest"] else None
+            oldest = timestamp_result["oldest"].timestamp() * 1000 if timestamp_result["oldest"] else None
         
         return {
-            "total": len(_logs),
-            "by_level": dict(level_counts),
-            "by_source": dict(source_counts),
-            "newest": max(timestamps) if timestamps else None,
-            "oldest": min(timestamps) if timestamps else None
+            "total": total,
+            "by_level": by_level,
+            "by_source": by_source,
+            "newest": newest,
+            "oldest": oldest,
+            "errors": by_level.get("ERROR", 0),
+            "warnings": by_level.get("WARNING", 0)
         }
+        
+    except Exception as e:
+        print(f"Error fetching log stats from database: {e}")
+        return _get_demo_stats()
 
 
-def clear_logs():
-    """Clear all log entries."""
-    with _log_lock:
-        _logs.clear()
+def _get_demo_stats() -> Dict[str, Any]:
+    """Get demo statistics for testing."""
+    return {
+        "total": 10,
+        "by_level": {"INFO": 6, "DEBUG": 2, "WARNING": 1, "ERROR": 1},
+        "by_source": {"system": 2, "auth": 1, "database": 1, "uvicorn": 1},
+        "newest": time.time() * 1000,
+        "oldest": (time.time() - 3600) * 1000,
+        "errors": 1,
+        "warnings": 1
+    }
 
 
-# Add some initial test logs for debugging
-add_log("INFO", "system", "Log capture module initialized")
-add_log("DEBUG", "startup", "Application starting up")
+async def clear_logs():
+    """Clear all log entries from the database."""
+    database = _get_database()
+    
+    if database and _database_available:
+        try:
+            query = "DELETE FROM application_logs"
+            await database.execute(query)
+        except Exception as e:
+            print(f"Error clearing logs from database: {e}")
+    else:
+        print("Database not available - cannot clear logs")
+
+
+# Add some initial test logs for debugging (will go to database once it's available)
+add_log_sync("INFO", "system", "Log capture module initialized")
+add_log_sync("DEBUG", "startup", "Application starting up")
 
 
 # Create a log_capture object that main.py can import
@@ -179,20 +272,24 @@ class LogCapture:
     """Log capture object providing the interface expected by main.py"""
     
     @staticmethod
-    def get_logs():
-        return get_logs()
+    async def get_logs(limit: int = 1000, level_filter: Optional[str] = None):
+        return await get_logs(limit, level_filter)
     
     @staticmethod
-    def get_stats():
-        return get_stats()
+    async def get_stats():
+        return await get_stats()
     
     @staticmethod
-    def clear_logs():
-        return clear_logs()
+    async def clear_logs():
+        return await clear_logs()
     
     @staticmethod
-    def add_log(level: str, source: str, message: str, **kwargs):
-        return add_log(level, source, message, **kwargs)
+    async def add_log(level: str, source: str, message: str, **kwargs):
+        return await add_log(level, source, message, **kwargs)
+    
+    @staticmethod
+    def add_log_sync(level: str, source: str, message: str, **kwargs):
+        return add_log_sync(level, source, message, **kwargs)
 
 
 # Create the instance that main.py expects to import

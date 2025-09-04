@@ -36,6 +36,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Setup database logging to capture all logger calls
+try:
+    from database_logging import setup_database_logging
+    setup_database_logging()
+    logger.info("Database logging handler initialized")
+except Exception as e:
+    logger.warning(f"Could not setup database logging: {e}")
+
 # Import our Google OAuth authentication module
 from auth import (
     oauth, 
@@ -762,8 +770,8 @@ async def logs_admin_page(request: Request):
 @app.get("/debug/logs/data")
 async def get_logs_data():
     """API endpoint to get log data as JSON (no auth required for debugging)"""
-    logs = log_capture.get_logs()
-    stats = log_capture.get_stats()
+    logs = await log_capture.get_logs()
+    stats = await log_capture.get_stats()
     return JSONResponse({
         "logs": logs,
         "stats": stats
@@ -773,7 +781,7 @@ async def get_logs_data():
 @app.post("/debug/logs/clear")
 async def clear_logs_data():
     """API endpoint to clear all logs (no auth required for debugging)"""
-    log_capture.clear_logs()
+    await log_capture.clear_logs()
     return JSONResponse({"status": "success", "message": "Logs cleared"})
 
 
