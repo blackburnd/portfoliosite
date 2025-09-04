@@ -133,6 +133,14 @@
             });
             
             function initializeGrid() {
+                console.log('Initializing grid...');
+                const gridElement = dom.byId('logGrid');
+                if (!gridElement) {
+                    console.error('Grid element not found!');
+                    return;
+                }
+                console.log('Grid element found:', gridElement);
+                
                 // Create store
                 store = new Observable(new Memory({
                     data: [],
@@ -181,8 +189,12 @@
             
             async function loadLogs() {
                 try {
+                    console.log('Loading logs...');
                     const response = await fetch('/debug/logs/data');
                     const data = await response.json();
+                    
+                    console.log('Received data:', data);
+                    console.log('Logs count:', data.logs ? data.logs.length : 0);
                     
                     allLogs = data.logs || [];
                     updateStats(data.stats || {});
@@ -199,6 +211,9 @@
                 const levelFilter = dom.byId('levelFilter').value;
                 const sourceFilter = dom.byId('sourceFilter').value;
                 const timeFilter = dom.byId('timeFilter').value;
+                
+                console.log('Applying filters. Total logs:', allLogs.length);
+                console.log('Filters:', { searchTerm, levelFilter, sourceFilter, timeFilter });
                 
                 let filteredLogs = allLogs.filter(log => {
                     // Search filter
@@ -230,9 +245,12 @@
                 // Sort by timestamp (newest first)
                 filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 
-                // Update store
-                store.setData(filteredLogs.map((log, index) => ({
-                    id: index,
+                console.log('Filtered logs count:', filteredLogs.length);
+                console.log('Setting data in store...');
+                
+                // Update store - use original database ID
+                store.setData(filteredLogs.map(log => ({
+                    id: log.id,  // Use original database ID
                     ...log
                 })));
                 
