@@ -16,8 +16,11 @@ _logs = []
 _log_lock = threading.Lock()
 
 
+import asyncio
+from databases import Database
+
 def add_log(level: str, source: str, message: str, **kwargs):
-    """Add a log entry to the in-memory store."""
+    """Add a log entry to the in-memory store and database."""
     with _log_lock:
         log_entry = {
             "id": len(_logs) + 1,
@@ -28,10 +31,43 @@ def add_log(level: str, source: str, message: str, **kwargs):
             **kwargs
         }
         _logs.append(log_entry)
-        
         # Keep only the last 1000 log entries to prevent memory issues
         if len(_logs) > 1000:
             _logs.pop(0)
+    # Also write to database asynchronously
+    asyncio.create_task(write_log_to_db(level, source, message, **kwargs))
+
+async def write_log_to_db(level, source, message, **kwargs):
+    # Use DATABASE_URL from environment
+    DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    db = Database(DATABASE_URL)
+    await db.connect()
+    # Compose extra fields
+    extra = kwargs.get("extra") or ""
+    user = kwargs.get("user") or None
+    function = kwargs.get("function") or None
+    line = kwargs.get("line") or None
+    module = kwargs.get("module") or source
+    timestamp = datetime.utcnow()
+    query = """
+        INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
+        VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
+    """
+    values = {
+        "timestamp": timestamp,
+        "level": level.upper(),
+        "message": message,
+        "module": module,
+        "function": function,
+        "line": line,
+        "user": user,
+        "extra": extra
+    }
+    try:
+        await db.execute(query=query, values=values)
+    except Exception as e:
+        pass
+    await db.disconnect()
 
 
 def get_logs() -> List[Dict[str, Any]]:

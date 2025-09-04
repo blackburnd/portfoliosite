@@ -36,6 +36,8 @@
                 <input type="text" id="searchBox" placeholder="Search logs..." />
                 <button onclick="refreshLogs()">🔄 Refresh</button>
                 <button onclick="clearLogs()">🗑️ Clear</button>
+                <button onclick="migrateTables()">⚙️ Setup Log Table</button>
+                <a href="/admin/sql" style="color: white; text-decoration: none;">🗄️ SQL Admin</a>
                 <a href="/workadmin" style="color: white; text-decoration: none;">← Back to Admin</a>
             </div>
         </div>
@@ -271,6 +273,22 @@
                         loadLogs();
                     } catch (error) {
                         alert('Failed to clear logs: ' + error.message);
+                    }
+                }
+            };
+            
+            window.migrateTables = async function() {
+                if (confirm('This will create the app_log table in the database. Continue?')) {
+                    try {
+                        const response = await fetch('/debug/migrate/app-log-table');
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            alert('✅ ' + result.message);
+                        } else {
+                            alert('❌ ' + result.message);
+                        }
+                    } catch (error) {
+                        alert('Failed to migrate tables: ' + error.message);
                     }
                 }
             };
