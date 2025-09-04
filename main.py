@@ -2873,11 +2873,30 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
     try:
         add_log("INFO", "admin_google_oauth_initiate", f"Admin {admin_email} initiating Google OAuth authorization")
         
-        # Use existing OAuth flow
-        auth_url = oauth.google.authorize_redirect(request, redirect_uri)
+        # Get redirect URI from environment
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+        
+        # Generate a new state parameter for CSRF protection
+        import secrets
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        
+        # Use existing OAuth flow with proper async/await
+        auth_result = await oauth.google.authorize_redirect(
+            request, 
+            redirect_uri,
+            state=state
+        )
+        
+        # Extract the redirect URL from the response
+        if hasattr(auth_result, 'headers') and 'location' in auth_result.headers:
+            auth_url = auth_result.headers['location']
+        else:
+            # Fallback - construct URL manually
+            auth_url = str(auth_result)
         
         return JSONResponse({
-            "auth_url": str(auth_url)
+            "auth_url": auth_url
         })
         
     except Exception as e:
@@ -2885,7 +2904,7 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         add_log("ERROR", "admin_google_oauth_initiate_error", f"Error initiating Google OAuth for {admin_email}: {str(e)}")
         return JSONResponse({
             "status": "error",
-            "error": str(e)
+            "detail": str(e)
         }, status_code=500)
 
 
