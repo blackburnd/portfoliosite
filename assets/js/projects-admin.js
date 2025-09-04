@@ -100,6 +100,35 @@ require([
         require(["dojo/parser"], function(parser) {
             parser.parse(projectDialog.domNode);
         });
+        
+        // Force white background styling after dialog creation
+        setTimeout(() => {
+            const dialogNode = projectDialog.domNode;
+            if (dialogNode) {
+                // Force white background on the main dialog
+                dialogNode.style.backgroundColor = 'white';
+                dialogNode.style.backgroundImage = 'none';
+                
+                // Force white background on content area
+                const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+                if (contentArea) {
+                    contentArea.style.backgroundColor = 'white';
+                    contentArea.style.backgroundImage = 'none';
+                    contentArea.style.color = '#333';
+                }
+                
+                // Force white background on all child elements
+                const allElements = dialogNode.querySelectorAll('*');
+                allElements.forEach(el => {
+                    if (el.style.backgroundColor && el.style.backgroundColor.includes('171, 214, 255')) {
+                        el.style.backgroundColor = 'white';
+                    }
+                    if (el.style.background && el.style.background.includes('#abd6ff')) {
+                        el.style.background = 'white';
+                    }
+                });
+            }
+        }, 50);
     }
     
     function showAddDialog() {
@@ -111,6 +140,8 @@ require([
         setTimeout(() => {
             dijit.byId("submitBtn").set("label", "Add Project");
             projectDialog.show();
+            // Force styling after showing
+            forceDialogStyling();
         }, 100);
     }
     
@@ -132,6 +163,8 @@ require([
                     dijit.byId("submitBtn").set("label", "Update Project");
                     populateForm(item);
                     projectDialog.show();
+                    // Force styling after showing
+                    forceDialogStyling();
                 }, 100);
             })
             .catch(error => {
@@ -330,6 +363,60 @@ require([
             deleteBtn.addEventListener('click', deleteSelected);
         }
     });
+    
+    // Function to force proper dialog styling
+    function forceDialogStyling() {
+        if (!projectDialog || !projectDialog.domNode) return;
+        
+        const dialogNode = projectDialog.domNode;
+        
+        // Force white background on the main dialog
+        dialogNode.style.setProperty('background-color', 'white', 'important');
+        dialogNode.style.setProperty('background-image', 'none', 'important');
+        dialogNode.style.setProperty('background', 'white', 'important');
+        
+        // Force white background on content area
+        const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+        if (contentArea) {
+            contentArea.style.setProperty('background-color', 'white', 'important');
+            contentArea.style.setProperty('background-image', 'none', 'important');
+            contentArea.style.setProperty('background', 'white', 'important');
+            contentArea.style.setProperty('color', '#333', 'important');
+        }
+        
+        // Force styling on title bar
+        const titleBar = dialogNode.querySelector('.dijitDialogTitleBar');
+        if (titleBar) {
+            titleBar.style.setProperty('background-color', '#f8f9fa', 'important');
+            titleBar.style.setProperty('background-image', 'none', 'important');
+            titleBar.style.setProperty('background', '#f8f9fa', 'important');
+            titleBar.style.setProperty('color', '#333', 'important');
+        }
+        
+        // Force white background on all elements that might have blue
+        const allElements = dialogNode.querySelectorAll('*');
+        allElements.forEach(el => {
+            const computedStyle = window.getComputedStyle(el);
+            const bgColor = computedStyle.backgroundColor;
+            
+            // Check for the specific blue color and override it
+            if (bgColor === 'rgb(171, 214, 255)' || bgColor === '#abd6ff') {
+                el.style.setProperty('background-color', 'white', 'important');
+                el.style.setProperty('background-image', 'none', 'important');
+                el.style.setProperty('background', 'white', 'important');
+            }
+        });
+        
+        // Also check for inline styles
+        allElements.forEach(el => {
+            if (el.style.backgroundColor && el.style.backgroundColor.includes('171, 214, 255')) {
+                el.style.setProperty('background-color', 'white', 'important');
+            }
+            if (el.style.background && el.style.background.includes('#abd6ff')) {
+                el.style.setProperty('background', 'white', 'important');
+            }
+        });
+    }
     
     // Export functions to global scope
     window.projectsAdmin = {
