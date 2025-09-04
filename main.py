@@ -3,6 +3,8 @@ import os
 import secrets
 import logging
 import time
+import traceback
+import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -12,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
 from typing import Optional, List
@@ -104,6 +107,128 @@ app.add_middleware(
     max_age=3600,  # 1 hour
     https_only=os.getenv("ENV") == "production",
 )
+
+# Global Exception Handlers for Error Logging and Clean Error Pages
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler to log all unhandled errors with tracebacks"""
+    
+    # Generate detailed error information
+    error_id = secrets.token_urlsafe(8)
+    error_time = datetime.now().isoformat()
+    error_type = type(exc).__name__
+    error_message = str(exc)
+    error_traceback = traceback.format_exc()
+    
+    # Log the complete error details
+    logger.error(f"UNHANDLED EXCEPTION [{error_id}] at {error_time}")
+    logger.error(f"Error Type: {error_type}")
+    logger.error(f"Error Message: {error_message}")
+    logger.error(f"Request URL: {request.url}")
+    logger.error(f"Request Method: {request.method}")
+    logger.error(f"Request Headers: {dict(request.headers)}")
+    logger.error(f"Full Traceback:\n{error_traceback}")
+    
+    # Add to database log if possible
+    try:
+        add_log(
+            "unhandled_exception",
+            f"[{error_id}] {error_type}: {error_message} | URL: {request.url} | Method: {request.method}",
+            extra_data={
+                "error_id": error_id,
+                "error_type": error_type,
+                "error_message": error_message,
+                "traceback": error_traceback,
+                "request_url": str(request.url),
+                "request_method": request.method,
+                "request_headers": dict(request.headers),
+                "timestamp": error_time
+            }
+        )
+    except Exception as log_error:
+        logger.error(f"Failed to log exception to database: {log_error}")
+    
+    # Return clean error page for HTML requests, JSON for API requests
+    if "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error_id": error_id,
+                "error_type": error_type,
+                "error_message": "An unexpected error occurred. The technical team has been notified.",
+                "is_production": os.getenv("ENV") == "production"
+            },
+            status_code=500
+        )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal Server Error",
+                "error_id": error_id,
+                "message": "An unexpected error occurred. Please try again later.",
+                "timestamp": error_time
+            }
+        )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions with logging"""
+    
+    error_id = secrets.token_urlsafe(8)
+    
+    # Log HTTP exceptions
+    logger.warning(f"HTTP EXCEPTION [{error_id}]: {exc.status_code} - {exc.detail} | URL: {request.url}")
+    
+    # Add to database log
+    try:
+        add_log(
+            "http_exception",
+            f"[{error_id}] {exc.status_code}: {exc.detail} | URL: {request.url}",
+            extra_data={
+                "error_id": error_id,
+                "status_code": exc.status_code,
+                "detail": exc.detail,
+                "request_url": str(request.url),
+                "request_method": request.method
+            }
+        )
+    except Exception as log_error:
+        logger.error(f"Failed to log HTTP exception to database: {log_error}")
+    
+    # Return clean error page for HTML requests
+    if "text/html" in request.headers.get("accept", ""):
+        # Special handling for 404s
+        if exc.status_code == 404:
+            return templates.TemplateResponse(
+                "404.html",
+                {"request": request, "error_id": error_id},
+                status_code=404
+            )
+        
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error_id": error_id,
+                "error_type": f"HTTP {exc.status_code}",
+                "error_message": exc.detail,
+                "is_production": os.getenv("ENV") == "production"
+            },
+            status_code=exc.status_code
+        )
+    else:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": exc.detail,
+                "error_id": error_id,
+                "status_code": exc.status_code
+            }
+        )
 
 # Log startup configuration
 logger.info("=== Application Startup ===")

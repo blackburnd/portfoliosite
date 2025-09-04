@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Daniel Blackburn{% endblock %}
+
+{% block content %}
+<div class="error-content">
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        
+        <h2>Oops! Something went wrong</h2>
+        
+        <div class="error-message">
+            <p>{{ error_message or "An unexpected error occurred while processing your request." }}</p>
+        </div>
+        
+        <div class="error-details">
+            <p><strong>Error ID:</strong> <code>{{ error_id }}</code></p>
+            <p><small>Please include this error ID if you need to contact support.</small></p>
+        </div>
+        
+        {% if not is_production %}
+        <div class="error-debug">
+            <details>
+                <summary>Debug Information (Development Mode)</summary>
+                <p><strong>Error Type:</strong> {{ error_type }}</p>
+                {% if error_message != "An unexpected error occurred. The technical team has been notified." %}
+                <p><strong>Technical Details:</strong> {{ error_message }}</p>
+                {% endif %}
+            </details>
+        </div>
+        {% endif %}
+        
+        <div class="error-actions">
+            <a href="/" class="btn-primary">Go Home</a>
+            <button onclick="history.back()" class="btn-secondary">Go Back</button>
+            <button onclick="location.reload()" class="btn-secondary">Try Again</button>
+        </div>
+        
+        <div class="error-help">
+            <h3>What you can do:</h3>
+            <ul>
+                <li>Check that the URL is correct</li>
+                <li>Try refreshing the page</li>
+                <li>Go back and try a different action</li>
+                <li>If the problem persists, please contact support with the error ID above</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-content {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.error-container {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.error-icon {
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+}
+
+.error-details {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.error-details code {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.error-debug {
+    margin: 20px 0;
+    text-align: left;
+}
+
+.error-debug details {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.error-debug summary {
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.error-actions {
+    margin: 30px 0;
+}
+
+.btn-primary, .btn-secondary {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #007cba;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #005a87;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.error-help {
+    text-align: left;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.error-help ul {
+    margin-left: 20px;
+}
+</style>
+{% endblock %}
