@@ -27,7 +27,7 @@ import sqlite3
 import asyncio
 import secrets
 import hashlib
-from log_capture import log_capture
+from log_capture import log_capture, add_log
 
 # Configure logging
 logging.basicConfig(
@@ -306,7 +306,6 @@ async def auth_login(request: Request):
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
-        from log_capture import add_log
         add_log(
             level="INFO",
             source="auth",
@@ -1018,7 +1017,6 @@ async def execute_sql(
         is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
         
         # Add specific log entry for query history tracking
-        from log_capture import add_log
         add_log(
             level="INFO", 
             source="sql_admin", 
