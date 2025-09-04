@@ -2737,7 +2737,10 @@ async def google_oauth_admin_page(request: Request, admin: dict = Depends(requir
     return templates.TemplateResponse("google_oauth_admin.html", {
         "request": request,
         "current_page": "google_oauth_admin",
-        "admin": admin
+        "admin": admin,
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -2908,7 +2911,10 @@ async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(requ
     return templates.TemplateResponse("linkedin_oauth_admin.html", {
         "request": request,
         "current_page": "linkedin_oauth_admin",
-        "admin": admin
+        "admin": admin,
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
     })
 
 
@@ -2921,17 +2927,23 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_cookie)
         add_log("INFO", "admin_linkedin_oauth_status_check", f"Admin {admin_email} checking LinkedIn OAuth status")
         
         sync_service = TTWLinkedInSync(admin_email)
-        status = await sync_service.get_status()
+        
+        # Get OAuth app configuration status
+        oauth_status = await sync_service.get_oauth_app_status()
+        
+        # Get connection status
+        connection_status = await sync_service.get_connection_status()
         
         return JSONResponse({
-            "configured": status.get("is_configured", False),
-            "connected": status.get("has_active_token", False),
-            "app_name": status.get("app_name", ""),
-            "client_id": status.get("client_id", "")[:8] + "..." if status.get("client_id") else "",
-            "redirect_uri": status.get("redirect_uri", ""),
-            "account_email": status.get("admin_email"),
-            "last_sync": status.get("last_sync"),
-            "token_expiry": status.get("token_expiry")
+            "configured": oauth_status.get("configured", False),
+            "connected": connection_status.get("has_active_connection", False),
+            "app_name": oauth_status.get("app_name", ""),
+            "client_id": oauth_status.get("client_id", "")[:8] + "..." if oauth_status.get("client_id") else "",
+            "redirect_uri": oauth_status.get("redirect_uri", ""),
+            "account_email": admin_email,
+            "last_sync": connection_status.get("last_sync"),
+            "token_expiry": connection_status.get("token_expires_at"),
+            "connection_details": connection_status
         })
         
     except Exception as e:
@@ -2953,14 +2965,24 @@ async def save_linkedin_oauth_config(
     try:
         add_log("INFO", "admin_linkedin_oauth_config_update", f"Admin {admin_email} updating LinkedIn OAuth configuration")
         
+        # Validate required fields
+        required_fields = ["app_name", "client_id", "client_secret", "redirect_uri"]
+        for field in required_fields:
+            if not config.get(field):
+                return JSONResponse({
+                    "status": "error",
+                    "detail": f"Missing required field: {field}"
+                }, status_code=400)
+        
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.save_linkedin_config(
-            admin_email=admin_email,
-            app_name=config.get("app_name"),
-            client_id=config.get("client_id"),
-            client_secret=config.get("client_secret"),
-            redirect_uri=config.get("redirect_uri")
-        )
+        
+        # Use the configure_oauth_app method that exists in TTWOAuthManager
+        result = await ttw_manager.configure_oauth_app(admin_email, {
+            "app_name": config["app_name"],
+            "client_id": config["client_id"],
+            "client_secret": config["client_secret"],
+            "redirect_uri": config["redirect_uri"]
+        })
         
         if result:
             add_log("INFO", "admin_linkedin_oauth_config_saved", f"LinkedIn OAuth config saved successfully by {admin_email}")
@@ -2992,7 +3014,7 @@ async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_c
         add_log("INFO", "admin_linkedin_oauth_config_clear", f"Admin {admin_email} clearing LinkedIn OAuth configuration")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.clear_linkedin_config(admin_email)
+        result = await ttw_manager.remove_linkedin_connection(admin_email)
         
         if result:
             add_log("INFO", "admin_linkedin_oauth_config_cleared", f"LinkedIn OAuth config cleared by {admin_email}")
@@ -3024,7 +3046,7 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_cooki
         add_log("INFO", "admin_linkedin_oauth_initiate", f"Admin {admin_email} initiating LinkedIn OAuth authorization")
         
         ttw_manager = TTWOAuthManager()
-        auth_url = await ttw_manager.get_authorization_url(admin_email)
+        auth_url, state = await ttw_manager.get_linkedin_authorization_url(admin_email)
         
         if auth_url:
             add_log("INFO", "admin_linkedin_oauth_url_generated", f"LinkedIn OAuth URL generated for {admin_email}")
@@ -3055,7 +3077,7 @@ async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_cookie)
         add_log("INFO", "admin_linkedin_oauth_revoke", f"Admin {admin_email} revoking LinkedIn OAuth access")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.revoke_linkedin_access(admin_email)
+        result = await ttw_manager.remove_linkedin_connection(admin_email)
         
         if result:
             add_log("INFO", "admin_linkedin_oauth_revoked", f"LinkedIn OAuth access revoked for {admin_email}")
@@ -3087,19 +3109,22 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_co
         add_log("INFO", "admin_linkedin_oauth_config_test", f"Admin {admin_email} testing LinkedIn OAuth configuration")
         
         ttw_manager = TTWOAuthManager()
-        test_result = await ttw_manager.test_linkedin_config(admin_email)
         
-        if test_result.get("success"):
+        # Check if OAuth app is configured
+        is_configured = await ttw_manager.is_oauth_app_configured()
+        
+        if is_configured:
+            config = await ttw_manager.get_oauth_app_config()
             add_log("INFO", "admin_linkedin_oauth_config_test_success", f"LinkedIn OAuth config test successful for {admin_email}")
             return JSONResponse({
                 "status": "success",
-                "message": test_result.get("message", "LinkedIn OAuth configuration is valid")
+                "message": f"LinkedIn OAuth configuration is valid. App: {config.get('app_name', 'Unknown')}"
             })
         else:
-            add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: {test_result.get('error')}")
+            add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Not configured")
             return JSONResponse({
                 "status": "error",
-                "detail": test_result.get("error", "LinkedIn OAuth configuration test failed")
+                "detail": "LinkedIn OAuth application is not configured"
             }, status_code=400)
         
     except Exception as e:
@@ -3221,21 +3246,26 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
         
         add_log("INFO", "linkedin_oauth_callback_processing", f"Processing LinkedIn OAuth callback for admin {admin_email}")
         
-        # Use TTW OAuth Manager to exchange code for token
+        # Use TTW OAuth Manager to handle the callback
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.handle_linkedin_callback(admin_email, code)
-        
-        if result.get("success"):
+        try:
+            # Verify the state parameter
+            state_data = ttw_manager.verify_linkedin_state(state)
+            
+            # Exchange code for tokens
+            token_result = await ttw_manager.exchange_linkedin_code_for_tokens(code, state_data)
+            
             add_log("INFO", "linkedin_oauth_callback_success", f"LinkedIn OAuth callback successful for admin {admin_email}")
             return templates.TemplateResponse("linkedin_oauth_success.html", {
                 "request": request,
                 "message": "LinkedIn OAuth authorization successful!"
             })
-        else:
-            add_log("ERROR", "linkedin_oauth_callback_failure", f"LinkedIn OAuth callback failed for admin {admin_email}: {result.get('error')}")
+        except Exception as oauth_error:
+            logger.error(f"OAuth exchange failed: {str(oauth_error)}")
+            add_log("ERROR", "linkedin_oauth_callback_failure", f"LinkedIn OAuth callback failed for admin {admin_email}: {str(oauth_error)}")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
                 "request": request,
-                "error": result.get("error", "Failed to process LinkedIn authorization")
+                "error": f"OAuth exchange failed: {str(oauth_error)}"
             })
         
     except Exception as e:
