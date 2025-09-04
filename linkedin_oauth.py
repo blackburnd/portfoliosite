@@ -68,6 +68,17 @@ class LinkedInOAuthService:
         if not self.is_configured():
             raise LinkedInOAuthError("LinkedIn OAuth not configured")
         
+        # Add logging for token exchange
+        from log_capture import add_log
+        add_log(
+            level="INFO",
+            source="linkedin_oauth",
+            message="LinkedIn OAuth token exchange initiated",
+            module="linkedin_oauth",
+            function="exchange_code_for_tokens",
+            extra='{"action": "token_exchange_start"}'
+        )
+        
         token_data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -84,12 +95,40 @@ class LinkedInOAuthService:
                     headers={"Content-Type": "application/x-www-form-urlencoded"}
                 )
                 response.raise_for_status()
-                return response.json()
+                result = response.json()
+                
+                # Log successful token exchange
+                add_log(
+                    level="INFO",
+                    source="linkedin_oauth",
+                    message="LinkedIn OAuth token exchange successful",
+                    module="linkedin_oauth",
+                    function="exchange_code_for_tokens",
+                    extra='{"action": "token_exchange_success"}'
+                )
+                
+                return result
             except httpx.RequestError as e:
                 logger.error(f"Token exchange request failed: {e}")
+                add_log(
+                    level="ERROR",
+                    source="linkedin_oauth",
+                    message=f"LinkedIn OAuth token exchange failed: {str(e)}",
+                    module="linkedin_oauth",
+                    function="exchange_code_for_tokens",
+                    extra=f'{{"action": "token_exchange_failed", "error": "{str(e)}"}}'
+                )
                 raise LinkedInOAuthError(f"Failed to exchange code for tokens: {e}")
             except httpx.HTTPStatusError as e:
                 logger.error(f"Token exchange HTTP error: {e.response.status_code} - {e.response.text}")
+                add_log(
+                    level="ERROR",
+                    source="linkedin_oauth",
+                    message=f"LinkedIn OAuth HTTP error: {e.response.status_code}",
+                    module="linkedin_oauth",
+                    function="exchange_code_for_tokens",
+                    extra=f'{{"action": "token_exchange_http_error", "status_code": {e.response.status_code}}}'
+                )
                 raise LinkedInOAuthError(f"LinkedIn token exchange failed: {e.response.status_code}")
     
     async def get_user_profile(self, access_token: str) -> Dict[str, Any]:

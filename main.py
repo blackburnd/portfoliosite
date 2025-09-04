@@ -27,7 +27,7 @@ import sqlite3
 import asyncio
 import secrets
 import hashlib
-from log_capture import log_capture
+from log_capture import log_capture, add_log
 
 # Configure logging
 logging.basicConfig(
@@ -305,9 +305,30 @@ async def auth_login(request: Request):
     try:
         logger.info("=== OAuth Login Request Started ===")
         
+        # Add log entry for login attempt
+        add_log(
+            level="INFO",
+            source="auth",
+            message="User initiated Google OAuth login process",
+            module="auth",
+            function="auth_login",
+            extra=json.dumps({
+                "ip_address": request.client.host if request.client else "unknown",
+                "user_agent": request.headers.get("user-agent", "unknown")
+            })
+        )
+        
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured - missing credentials")
+            add_log(
+                level="ERROR",
+                source="auth",
+                message="OAuth login failed - missing Google OAuth configuration",
+                module="auth",
+                function="auth_login",
+                extra=json.dumps({"reason": "missing_oauth_config"})
+            )
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -462,6 +483,19 @@ async def auth_callback(request: Request):
             )
         
         if not is_authorized_user(email):
+            add_log(
+                level="WARNING",
+                source="auth",
+                message=f"Unauthorized login attempt by {email}",
+                user=email,
+                module="auth",
+                function="auth_callback",
+                extra=json.dumps({
+                    "email": email,
+                    "reason": "not_authorized",
+                    "ip_address": request.client.host if request.client else "unknown"
+                })
+            )
             return HTMLResponse(
                 content=f"""
                 <html><body>
@@ -476,6 +510,21 @@ async def auth_callback(request: Request):
         # Create JWT token
         session_data = create_user_session(user_info)
         access_token = create_access_token(session_data)
+        
+        # Log successful login
+        add_log(
+            level="INFO",
+            source="auth",
+            message=f"Successful login by {email}",
+            user=email,
+            module="auth",
+            function="auth_callback",
+            extra=json.dumps({
+                "email": email,
+                "name": user_info.get('name', 'Unknown'),
+                "ip_address": request.client.host if request.client else "unknown"
+            })
+        )
         
         # Redirect to admin page with token
         response = RedirectResponse(url="/workadmin")
@@ -516,6 +565,31 @@ async def logout(request: Request, response: Response):
     try:
         logger.info("=== OAuth Logout Request ===")
         
+        # Try to get user info before clearing session
+        user_email = "unknown"
+        try:
+            access_token = request.cookies.get("access_token")
+            if access_token:
+                # Extract email from token if possible
+                token = access_token.replace("Bearer ", "")
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                user_email = payload.get("email", "unknown")
+        except:
+            pass
+        
+        # Add log entry for logout
+        add_log(
+            level="INFO",
+            source="auth",
+            message=f"User logged out: {user_email}",
+            user=user_email,
+            module="auth",
+            function="logout",
+            extra=json.dumps({
+                "ip_address": request.client.host if request.client else "unknown"
+            })
+        )
+        
         # Clear the authentication cookie
         response.delete_cookie(key="access_token", path="/")
         
@@ -538,6 +612,31 @@ async def disconnect(request: Request, response: Response):
     """Complete disconnect - logout and revoke Google OAuth tokens"""
     try:
         logger.info("=== OAuth Complete Disconnect Request ===")
+        
+        # Try to get user info before clearing session
+        user_email = "unknown"
+        try:
+            access_token = request.cookies.get("access_token")
+            if access_token:
+                token = access_token.replace("Bearer ", "")
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                user_email = payload.get("email", "unknown")
+        except:
+            pass
+        
+        # Add log entry for disconnect
+        add_log(
+            level="INFO",
+            source="auth",
+            message=f"User disconnected (revoked tokens): {user_email}",
+            user=user_email,
+            module="auth",
+            function="disconnect",
+            extra=json.dumps({
+                "ip_address": request.client.host if request.client else "unknown",
+                "action": "revoke_tokens"
+            })
+        )
         
         # First try to revoke the Google token if we have one
         try:
@@ -918,7 +1017,6 @@ async def execute_sql(
         is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
         
         # Add specific log entry for query history tracking
-        from log_capture import add_log
         add_log(
             level="INFO", 
             source="sql_admin", 
@@ -1276,6 +1374,18 @@ async def get_linkedin_oauth_config(request: Request):
 async def configure_linkedin_oauth_app(request: Request):
     """Configure LinkedIn OAuth app - TTW management interface (no authentication required)"""
     try:
+        # Add log entry for LinkedIn OAuth configuration
+        add_log(
+            level="INFO",
+            source="linkedin_oauth",
+            message="LinkedIn OAuth app configuration initiated",
+            module="linkedin_oauth",
+            function="configure_linkedin_oauth_app",
+            extra=json.dumps({
+                "ip_address": request.client.host if request.client else "unknown"
+            })
+        )
+        
         # Use default admin email for TTW configuration
         admin_email = 'ttw_user@system.local'
         config_data = await request.json()
@@ -1284,6 +1394,14 @@ async def configure_linkedin_oauth_app(request: Request):
         required_fields = ["client_id", "client_secret", "redirect_uri"]
         for field in required_fields:
             if not config_data.get(field):
+                add_log(
+                    level="ERROR",
+                    source="linkedin_oauth",
+                    message=f"LinkedIn OAuth configuration failed: missing {field}",
+                    module="linkedin_oauth",
+                    function="configure_linkedin_oauth_app",
+                    extra=json.dumps({"missing_field": field})
+                )
                 return JSONResponse({
                     "status": "error",
                     "error": f"Missing required field: {field}"
@@ -1293,12 +1411,31 @@ async def configure_linkedin_oauth_app(request: Request):
         success = await ttw_oauth_manager.configure_oauth_app(admin_email, config_data)
         
         if success:
+            add_log(
+                level="INFO",
+                source="linkedin_oauth",
+                message="LinkedIn OAuth app configuration successful",
+                module="linkedin_oauth",
+                function="configure_linkedin_oauth_app",
+                extra=json.dumps({
+                    "configured_by": admin_email,
+                    "client_id": config_data.get("client_id", "unknown")[:10] + "..."
+                })
+            )
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth app configured successfully",
                 "ttw_mode": True
             })
         else:
+            add_log(
+                level="ERROR",
+                source="linkedin_oauth",
+                message="LinkedIn OAuth app configuration failed",
+                module="linkedin_oauth",
+                function="configure_linkedin_oauth_app",
+                extra=json.dumps({"reason": "configuration_failed"})
+            )
             return JSONResponse({
                 "status": "error",
                 "error": "Failed to configure LinkedIn OAuth app"
