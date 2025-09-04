@@ -167,10 +167,13 @@
             <label for="sqlQuery"><strong>SQL Query:</strong></label>
             <textarea id="sqlQuery" class="sql-textarea" placeholder="Enter your SQL query here...
 
-Examples:
+Examples (PostgreSQL syntax):
 SELECT * FROM portfolios LIMIT 10;
 SELECT COUNT(*) FROM app_log;
 SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 20;
+
+For table creation use:
+CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
 "></textarea>
         </div>
         
@@ -190,7 +193,7 @@ SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 20;
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM work_experience ORDER BY sort_order;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM projects ORDER BY sort_order;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 10;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT name FROM sqlite_master WHERE type='table';</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_work_items FROM work_experience;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_projects FROM projects;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM oauth_apps;</div>
