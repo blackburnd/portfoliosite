@@ -3174,11 +3174,18 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_co
         
         if is_configured:
             config = await ttw_manager.get_oauth_app_config()
-            add_log("INFO", "admin_linkedin_oauth_config_test_success", f"LinkedIn OAuth config test successful for {admin_email}")
-            return JSONResponse({
-                "status": "success",
-                "message": f"LinkedIn OAuth configuration is valid. App: {config.get('app_name', 'Unknown')}"
-            })
+            if config:
+                add_log("INFO", "admin_linkedin_oauth_config_test_success", f"LinkedIn OAuth config test successful for {admin_email}")
+                return JSONResponse({
+                    "status": "success",
+                    "message": f"LinkedIn OAuth configuration is valid. App: {config.get('app_name', 'Unknown')}"
+                })
+            else:
+                add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Config not found")
+                return JSONResponse({
+                    "status": "error",
+                    "detail": "LinkedIn OAuth configuration not found in database"
+                }, status_code=400)
         else:
             add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Not configured")
             return JSONResponse({
