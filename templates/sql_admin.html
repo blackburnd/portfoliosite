@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Admin - Database Query Tool</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <style>
+        .sql-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .sql-editor {
+            margin: 20px 0;
+        }
+        
+        .sql-textarea {
+            width: 100%;
+            height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            resize: vertical;
+        }
+        
+        .sql-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .results-container {
+            margin: 20px 0;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        
+        .results-table th,
+        .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .results-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .results-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .query-examples {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .example-query {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .example-query:hover {
+            background-color: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    {% include "navigation.html" %}
+    
+    <div class="sql-container">
+        <div class="header">
+            <h1>🗄️ SQL Admin - Database Query Tool</h1>
+            <p>Execute SQL queries against the connected database. Use with caution!</p>
+        </div>
+        
+        <div class="warning-box">
+            <strong>⚠️ Warning:</strong> This tool allows direct database access. Use carefully as queries can modify or delete data permanently.
+            Always test SELECT queries before running UPDATE/DELETE operations.
+        </div>
+        
+        <div class="sql-editor">
+            <label for="sqlQuery"><strong>SQL Query:</strong></label>
+            <textarea id="sqlQuery" class="sql-textarea" placeholder="Enter your SQL query here...
+
+Examples:
+SELECT * FROM portfolios LIMIT 10;
+SELECT COUNT(*) FROM app_log;
+SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 20;
+"></textarea>
+        </div>
+        
+        <div class="sql-controls">
+            <button id="runBtn" class="btn btn-primary" onclick="executeSQL()">▶️ Run Query</button>
+            <button id="clearBtn" class="btn btn-secondary" onclick="clearQuery()">🗑️ Clear</button>
+            <button id="cancelBtn" class="btn btn-danger" onclick="cancelQuery()" style="display: none;">❌ Cancel</button>
+            <span id="loadingIndicator" style="display: none;">⏳ Executing...</span>
+        </div>
+        
+        <div class="query-examples">
+            <h3>Quick Examples (click to use):</h3>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 10;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT level, COUNT(*) as count FROM app_log GROUP BY level;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM portfolios;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">PRAGMA table_info(app_log);</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT name FROM sqlite_master WHERE type='table';</div>
+        </div>
+        
+        <div id="resultsContainer" class="results-container">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        let currentRequest = null;
+
+        function setQuery(query) {
+            document.getElementById('sqlQuery').value = query.trim();
+        }
+
+        function clearQuery() {
+            document.getElementById('sqlQuery').value = '';
+            document.getElementById('resultsContainer').innerHTML = '';
+        }
+
+        function cancelQuery() {
+            if (currentRequest) {
+                currentRequest.abort();
+                currentRequest = null;
+                hideLoading();
+                showMessage('Query cancelled by user.', 'warning');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'inline';
+            document.getElementById('runBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'inline';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('runBtn').style.display = 'inline';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function showMessage(message, type = 'info') {
+            const className = type === 'error' ? 'error-message' : 
+                             type === 'success' ? 'success-message' : 
+                             'warning-box';
+            
+            document.getElementById('resultsContainer').innerHTML = 
+                `<div class="${className}">${message}</div>`;
+        }
+
+        async function executeSQL() {
+            const query = document.getElementById('sqlQuery').value.trim();
+            
+            if (!query) {
+                showMessage('Please enter a SQL query.', 'error');
+                return;
+            }
+
+            // Basic safety checks
+            const dangerousPatterns = [
+                /DROP\s+TABLE/i,
+                /DROP\s+DATABASE/i,
+                /TRUNCATE/i
+            ];
+
+            let hasDangerous = false;
+            for (const pattern of dangerousPatterns) {
+                if (pattern.test(query)) {
+                    hasDangerous = true;
+                    break;
+                }
+            }
+
+            if (hasDangerous) {
+                if (!confirm('⚠️ This query contains potentially dangerous operations (DROP/TRUNCATE). Are you absolutely sure you want to continue?')) {
+                    return;
+                }
+            }
+
+            showLoading();
+
+            try {
+                currentRequest = new AbortController();
+                
+                const response = await fetch('/admin/sql/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                    signal: currentRequest.signal
+                });
+
+                const result = await response.json();
+                currentRequest = null;
+
+                if (result.status === 'success') {
+                    displayResults(result);
+                } else {
+                    showMessage(`Error: ${result.message}`, 'error');
+                }
+
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    // Request was cancelled, message already shown
+                    return;
+                }
+                showMessage(`Request failed: ${error.message}`, 'error');
+                currentRequest = null;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayResults(result) {
+            let html = '';
+
+            if (result.message) {
+                html += `<div class="success-message">${result.message}</div>`;
+            }
+
+            if (result.rows && result.rows.length > 0) {
+                // Display results table
+                const columns = result.columns || Object.keys(result.rows[0]);
+                
+                html += `
+                    <h3>Query Results (${result.rows.length} rows)</h3>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                ${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                result.rows.forEach(row => {
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        const value = row[col];
+                        html += `<td>${escapeHtml(String(value || ''))}</td>`;
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+            } else if (result.rows && result.rows.length === 0) {
+                html += '<div class="success-message">Query executed successfully. No rows returned.</div>';
+            }
+
+            if (result.execution_time) {
+                html += `<p><small>Execution time: ${result.execution_time}ms</small></p>`;
+            }
+
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Ctrl+Enter to execute query
+        document.getElementById('sqlQuery').addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                executeSQL();
+            }
+        });
+    </script>
+</body>
+</html>

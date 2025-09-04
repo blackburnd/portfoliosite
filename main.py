@@ -759,11 +759,33 @@ async def logs_admin_page(request: Request):
     })
 
 
+
+import databases
+DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+db = databases.Database(DATABASE_URL)
+
 @app.get("/debug/logs/data")
 async def get_logs_data():
-    """API endpoint to get log data as JSON (no auth required for debugging)"""
-    logs = log_capture.get_logs()
-    stats = log_capture.get_stats()
+    """API endpoint to get log data from app_log table as JSON (no auth required for debugging)"""
+    await db.connect()
+    query = "SELECT id, timestamp, level, message, module, function, line, user, extra FROM app_log ORDER BY timestamp DESC LIMIT 100"
+    logs = await db.fetch_all(query)
+    await db.disconnect()
+    # Convert logs to dicts
+    logs = [dict(log) for log in logs]
+    # Basic stats
+    stats = {
+        "total": len(logs),
+        "by_level": {},
+        "by_module": {},
+        "newest": logs[0]["timestamp"] if logs else None,
+        "oldest": logs[-1]["timestamp"] if logs else None
+    }
+    for log in logs:
+        stats["by_level"].setdefault(log["level"], 0)
+        stats["by_level"][log["level"]] += 1
+        stats["by_module"].setdefault(log["module"], 0)
+        stats["by_module"][log["module"]] += 1
     return JSONResponse({
         "logs": logs,
         "stats": stats
@@ -777,11 +799,133 @@ async def clear_logs_data():
     return JSONResponse({"status": "success", "message": "Logs cleared"})
 
 
+@app.get("/debug/migrate/app-log-table")
+async def migrate_app_log_table():
+    """Execute the app_log table creation SQL migration"""
+    try:
+        await db.connect()
+        
+        # Read the SQL file
+        sql_file_path = "sql/app_log_table.sql"
+        with open(sql_file_path, 'r') as f:
+            sql_content = f.read()
+        
+        # Execute the SQL
+        await db.execute(sql_content)
+        await db.disconnect()
+        
+        logger.info("Successfully created app_log table")
+        return JSONResponse({
+            "status": "success", 
+            "message": "app_log table created successfully",
+            "sql_executed": sql_content
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to create app_log table: {str(e)}")
+        try:
+            await db.disconnect()
+        except:
+            pass
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to create app_log table: {str(e)}"
+        }, status_code=500)
+
+
 # --- Redirect admin/logs to debug/logs for convenience ---
 @app.get("/admin/logs")
 async def admin_logs_redirect():
     """Redirect admin logs to debug logs for debugging without auth"""
     return RedirectResponse(url="/debug/logs", status_code=302)
+
+
+# --- SQL Admin Tool ---
+@app.get("/admin/sql", response_class=HTMLResponse)
+async def sql_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """SQL Admin interface for executing database queries"""
+    return templates.TemplateResponse("sql_admin.html", {
+        "request": request,
+        "current_page": "sql_admin",
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
+    })
+
+
+@app.post("/admin/sql/execute")
+async def execute_sql(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Execute SQL query against the database"""
+    import time
+    start_time = time.time()
+    
+    try:
+        body = await request.json()
+        query = body.get("query", "").strip()
+        
+        if not query:
+            return JSONResponse({
+                "status": "error",
+                "message": "No query provided"
+            }, status_code=400)
+        
+        # Log the SQL execution attempt
+        logger.info(f"SQL Admin: User {admin.get('email')} executing query: {query[:100]}{'...' if len(query) > 100 else ''}")
+        
+        await db.connect()
+        
+        # Determine if this is a SELECT query or a modification query
+        is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
+        
+        if is_select:
+            # For SELECT queries, fetch results
+            rows = await db.fetch_all(query)
+            rows_data = [dict(row) for row in rows]
+            
+            execution_time = round((time.time() - start_time) * 1000, 2)
+            
+            return JSONResponse({
+                "status": "success",
+                "rows": rows_data,
+                "columns": list(rows_data[0].keys()) if rows_data else [],
+                "execution_time": execution_time,
+                "message": f"Query executed successfully. {len(rows_data)} rows returned."
+            })
+        else:
+            # For INSERT/UPDATE/DELETE queries, execute and return row count
+            result = await db.execute(query)
+            execution_time = round((time.time() - start_time) * 1000, 2)
+            
+            return JSONResponse({
+                "status": "success",
+                "rows": [],
+                "execution_time": execution_time,
+                "message": f"Query executed successfully. {result} rows affected." if result else "Query executed successfully."
+            })
+            
+    except Exception as e:
+        execution_time = round((time.time() - start_time) * 1000, 2)
+        error_msg = str(e)
+        
+        # Log the error
+        logger.error(f"SQL Admin: Error executing query for user {admin.get('email')}: {error_msg}")
+        
+        return JSONResponse({
+            "status": "error",
+            "message": error_msg,
+            "execution_time": execution_time
+        }, status_code=500)
+    finally:
+        try:
+            await db.disconnect()
+        except:
+            pass
 
 
 # --- Projects Admin Page ---
