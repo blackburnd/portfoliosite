@@ -61,7 +61,7 @@ class TTWOAuthManager:
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get active LinkedIn OAuth app configuration"""
         query = """
-            SELECT app_name, client_id, client_secret, redirect_uri, created_by, created_at, updated_at
+            SELECT app_name, client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
             FROM oauth_apps 
             WHERE provider = 'linkedin' AND is_active = true
             ORDER BY updated_at DESC
@@ -77,6 +77,7 @@ class TTWOAuthManager:
                 "client_id": result["client_id"],
                 "client_secret": self._decrypt_token(result["client_secret"]),
                 "redirect_uri": result["redirect_uri"],
+                "scopes": result["scopes"],  # Include scopes field
                 "configured_by_email": result["created_by"],
                 "created_at": result["created_at"],
                 "updated_at": result["updated_at"]
@@ -548,6 +549,23 @@ class TTWOAuthManager:
                 logger.error(f"Failed to decrypt Google OAuth client secret: {e}")
                 return None
         return None
+
+    async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
+        """Remove LinkedIn OAuth app configuration"""
+        try:
+            query = """
+                UPDATE oauth_apps 
+                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                WHERE provider = 'linkedin'
+            """
+            await database.execute(query)
+            
+            logger.info(f"LinkedIn OAuth app removed by {admin_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to remove LinkedIn OAuth app: {e}")
+            return False
 
     async def remove_google_oauth_app(self, admin_email: str) -> bool:
         """Remove Google OAuth app configuration"""

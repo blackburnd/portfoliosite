@@ -3137,7 +3137,7 @@ async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_c
         add_log("INFO", "admin_linkedin_oauth_config_clear", f"Admin {admin_email} clearing LinkedIn OAuth configuration")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.remove_linkedin_connection(admin_email)
+        result = await ttw_manager.remove_linkedin_oauth_app(admin_email)
         
         if result:
             add_log("INFO", "admin_linkedin_oauth_config_cleared", f"LinkedIn OAuth config cleared by {admin_email}")
