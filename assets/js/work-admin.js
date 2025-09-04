@@ -166,7 +166,7 @@ require([
             })
             .catch(error => {
                 console.error("Error loading work item:", error);
-                alert("Error loading work item: " + error.message);
+                showErrorMessage("Error loading work item: " + error.message);
             });
     }
     
@@ -199,7 +199,7 @@ require([
         const position = dijit.byId("position").get("value");
         
         if (!company || !position) {
-            alert("Please enter both Company and Position.");
+            showErrorMessage("Please enter both Company and Position.");
             return;
         }
         
@@ -279,14 +279,14 @@ require([
             console.log((isEdit ? 'Updated' : 'Added') + ' work item:', response);
             loadGrid();
             workItemDialog.hide();
-            alert('Work item ' + (isEdit ? 'updated' : 'added') + ' successfully!');
+            showSuccessMessage('Work item ' + (isEdit ? 'updated' : 'added') + ' successfully!');
         })
         .catch(error => {
             console.error('Error ' + (isEdit ? 'updating' : 'adding') + ' work item:', error);
             if (error.message.includes('Failed to fetch') || error.message.includes('CONNECTION_REFUSED')) {
-                alert('Network error: Unable to connect to server. Please check your connection and try again.');
+                showErrorMessage('Network error: Unable to connect to server. Please check your connection and try again.');
             } else {
-                alert('Error ' + (isEdit ? 'updating' : 'adding') + ' work item: ' + error.message);
+                showErrorMessage('Error ' + (isEdit ? 'updating' : 'adding') + ' work item: ' + error.message);
             }
         })
         .finally(() => {
@@ -342,7 +342,7 @@ require([
     function deleteSelected() {
         const selected = document.querySelectorAll('.select-row:checked');
         if (selected.length === 0) {
-            alert("Please select items to delete.");
+            showErrorMessage("Please select items to delete.");
             return;
         }
         
@@ -371,13 +371,54 @@ require([
             Promise.all(deletePromises)
                 .then(() => {
                     loadGrid();
-                    alert("Items deleted successfully!");
+                    showSuccessMessage("Items deleted successfully!");
                 })
                 .catch(error => {
-                    alert("Error deleting some items: " + error.message);
+                    showErrorMessage("Error deleting some items: " + error.message);
                     loadGrid();
                 });
         }
+    }
+    
+    // Status message utility functions
+    function showStatusMessage(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('statusMessages');
+        if (!container) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `status-message ${type}`;
+        messageDiv.innerHTML = `
+            ${message}
+            <button class="close-btn" onclick="this.parentElement.remove()" aria-label="Close message">&times;</button>
+        `;
+        
+        container.appendChild(messageDiv);
+        
+        // Auto-remove after specified duration
+        if (duration > 0) {
+            setTimeout(() => {
+                if (messageDiv.parentElement) {
+                    messageDiv.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (messageDiv.parentElement) {
+                            messageDiv.remove();
+                        }
+                    }, 300);
+                }
+            }, duration);
+        }
+    }
+    
+    function showSuccessMessage(message, duration = 4000) {
+        showStatusMessage(message, 'success', duration);
+    }
+    
+    function showErrorMessage(message, duration = 0) {
+        showStatusMessage(message, 'error', duration);
+    }
+    
+    function showInfoMessage(message, duration = 5000) {
+        showStatusMessage(message, 'info', duration);
     }
     
     // Initialize when DOM is ready
