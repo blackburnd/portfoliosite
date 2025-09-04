@@ -205,11 +205,6 @@ def clear_logs():
         _logs.clear()
 
 
-# Add some initial test logs for debugging
-add_log("INFO", "system", "Log capture module initialized")
-add_log("DEBUG", "startup", "Application starting up")
-
-
 # Create a log_capture object that main.py can import
 class LogCapture:
     """Log capture object providing the interface expected by main.py"""

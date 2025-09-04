@@ -54,17 +54,17 @@ class TTWOAuthManager:
     
     async def is_oauth_app_configured(self) -> bool:
         """Check if LinkedIn OAuth app is configured"""
-        query = "SELECT COUNT(*) FROM linkedin_oauth_config WHERE is_active = true"
+        query = "SELECT COUNT(*) FROM oauth_apps WHERE provider = 'linkedin' AND is_active = true"
         result = await database.fetch_val(query)
         return result > 0
     
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get active LinkedIn OAuth app configuration"""
         query = """
-            SELECT app_name, client_id, client_secret, redirect_uri, configured_by_email, created_at
-            FROM linkedin_oauth_config 
-            WHERE is_active = true
-            ORDER BY created_at DESC
+            SELECT app_name, client_id, client_secret, redirect_uri, created_by, created_at, updated_at
+            FROM oauth_apps 
+            WHERE provider = 'linkedin' AND is_active = true
+            ORDER BY updated_at DESC
             LIMIT 1
         """
         result = await database.fetch_one(query)
@@ -77,8 +77,9 @@ class TTWOAuthManager:
                 "client_id": result["client_id"],
                 "client_secret": self._decrypt_token(result["client_secret"]),
                 "redirect_uri": result["redirect_uri"],
-                "configured_by_email": result["configured_by_email"],
-                "created_at": result["created_at"]
+                "configured_by_email": result["created_by"],
+                "created_at": result["created_at"],
+                "updated_at": result["updated_at"]
             }
         except Exception as e:
             logger.error(f"Failed to decrypt OAuth app config: {e}")
@@ -87,27 +88,32 @@ class TTWOAuthManager:
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth app through admin interface"""
         try:
-            # Deactivate existing configs
-            await database.execute(
-                "UPDATE linkedin_oauth_config SET is_active = false WHERE is_active = true"
-            )
-            
             # Encrypt client secret
             encrypted_secret = self._encrypt_token(app_config["client_secret"])
             
-            # Insert new config
+            # Insert or update LinkedIn OAuth configuration in oauth_apps table
             query = """
-                INSERT INTO linkedin_oauth_config 
-                (app_name, client_id, client_secret, redirect_uri, configured_by_email)
-                VALUES (:app_name, :client_id, :client_secret, :redirect_uri, :admin_email)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                ON CONFLICT (provider, app_name) 
+                DO UPDATE SET 
+                    client_id = EXCLUDED.client_id,
+                    client_secret = EXCLUDED.client_secret,
+                    redirect_uri = EXCLUDED.redirect_uri,
+                    scopes = EXCLUDED.scopes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    is_active = true
             """
             
             await database.execute(query, {
-                "app_name": app_config.get("app_name", "Portfolio LinkedIn Integration"),
+                "provider": "linkedin",
+                "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
                 "client_secret": encrypted_secret,
                 "redirect_uri": app_config["redirect_uri"],
-                "admin_email": admin_email
+                "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
+                "encryption_key": "oauth_key",  # Using same key pattern as Google
+                "created_by": admin_email
             })
             
             logger.info(f"LinkedIn OAuth app configured by admin: {admin_email}")
@@ -447,6 +453,118 @@ class TTWOAuthManager:
             WHERE admin_email = :admin_email
         """
         await database.execute(query, {"admin_email": admin_email})
+
+    # Google OAuth Methods
+    async def configure_google_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
+        """Configure Google OAuth application settings"""
+        try:
+            # Encrypt the client secret
+            encrypted_secret = self._encrypt_token(app_config["client_secret"])
+            
+            # Insert or update Google OAuth configuration
+            query = """
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                ON CONFLICT (provider, app_name) 
+                DO UPDATE SET 
+                    client_id = EXCLUDED.client_id,
+                    client_secret = EXCLUDED.client_secret,
+                    redirect_uri = EXCLUDED.redirect_uri,
+                    scopes = EXCLUDED.scopes,
+                    updated_at = CURRENT_TIMESTAMP,
+                    is_active = true
+            """
+            
+            await database.execute(query, {
+                "provider": "google",
+                "app_name": app_config.get("app_name", "Google OAuth App"),
+                "client_id": app_config["client_id"],
+                "client_secret": encrypted_secret,
+                "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
+                "scopes": ["email", "profile"],  # Default Google scopes
+                "encryption_key": "oauth_key",  # Using same key pattern as LinkedIn
+                "created_by": admin_email
+            })
+            
+            logger.info(f"Google OAuth app configured by {admin_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to configure Google OAuth app: {e}")
+            return False
+
+    async def is_google_oauth_app_configured(self) -> bool:
+        """Check if Google OAuth app is configured"""
+        query = """
+            SELECT COUNT(*) as count
+            FROM oauth_apps 
+            WHERE provider = 'google' AND is_active = true
+        """
+        result = await database.fetch_one(query)
+        return result["count"] > 0
+
+    async def get_google_oauth_app_config(self) -> Optional[Dict[str, Any]]:
+        """Get Google OAuth app configuration (without secrets)"""
+        query = """
+            SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
+            FROM oauth_apps 
+            WHERE provider = 'google' AND is_active = true
+            ORDER BY updated_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
+        
+        if result:
+            return {
+                "app_name": result["app_name"],
+                "client_id": result["client_id"],
+                "redirect_uri": result["redirect_uri"],
+                "scopes": result["scopes"],
+                "configured_at": result["created_at"],
+                "updated_at": result["updated_at"]
+            }
+        return None
+
+    async def get_google_oauth_credentials(self) -> Optional[Dict[str, str]]:
+        """Get Google OAuth credentials including decrypted client secret"""
+        query = """
+            SELECT client_id, client_secret, redirect_uri
+            FROM oauth_apps 
+            WHERE provider = 'google' AND is_active = true
+            ORDER BY updated_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
+        
+        if result:
+            try:
+                decrypted_secret = self._decrypt_token(result["client_secret"])
+                return {
+                    "client_id": result["client_id"],
+                    "client_secret": decrypted_secret,
+                    "redirect_uri": result["redirect_uri"]
+                }
+            except Exception as e:
+                logger.error(f"Failed to decrypt Google OAuth client secret: {e}")
+                return None
+        return None
+
+    async def remove_google_oauth_app(self, admin_email: str) -> bool:
+        """Remove Google OAuth app configuration"""
+        try:
+            query = """
+                UPDATE oauth_apps 
+                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                WHERE provider = 'google'
+            """
+            await database.execute(query)
+            
+            logger.info(f"Google OAuth app removed by {admin_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to remove Google OAuth app: {e}")
+            return False
 
 # Global instance
 ttw_oauth_manager = TTWOAuthManager()
