@@ -96,6 +96,42 @@
     </div>
 
     <script>
+        // Global functions - defined immediately so buttons work
+        window.refreshLogs = function() {
+            console.log('Refresh button clicked');
+            // This will be overridden once Dojo loads
+            location.reload();
+        };
+        
+        window.clearLogs = async function() {
+            console.log('Clear button clicked');
+            if (confirm('Are you sure you want to clear all logs?')) {
+                try {
+                    await fetch('/debug/logs/clear', { method: 'POST' });
+                    location.reload();
+                } catch (error) {
+                    alert('Failed to clear logs: ' + error.message);
+                }
+            }
+        };
+        
+        window.migrateTables = async function() {
+            console.log('Migrate button clicked');
+            if (confirm('Setup/migrate log tables? This is safe to run multiple times.')) {
+                try {
+                    const response = await fetch('/debug/migrate-tables', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('✅ ' + result.message);
+                    } else {
+                        alert('❌ ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Failed to migrate tables: ' + error.message);
+                }
+            }
+        };
+        
         // Improved error handling and module loading
         function initializeLogs() {
             if (typeof require === 'undefined') {
@@ -281,32 +317,17 @@
                 return div.innerHTML;
             }
             
-            // Global functions
+            // Override global functions with Dojo-enabled versions
             window.refreshLogs = loadLogs;
             
+            // Update clearLogs to use proper loadLogs function
             window.clearLogs = async function() {
                 if (confirm('Are you sure you want to clear all logs?')) {
                     try {
                         await fetch('/debug/logs/clear', { method: 'POST' });
-                        loadLogs();
+                        loadLogs();  // Use the Dojo version
                     } catch (error) {
                         alert('Failed to clear logs: ' + error.message);
-                    }
-                }
-            };
-            
-            window.migrateTables = async function() {
-                if (confirm('This will create the app_log table in the database. Continue?')) {
-                    try {
-                        const response = await fetch('/debug/migrate/app-log-table');
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            alert('✅ ' + result.message);
-                        } else {
-                            alert('❌ ' + result.message);
-                        }
-                    } catch (error) {
-                        alert('Failed to migrate tables: ' + error.message);
                     }
                 }
             };
