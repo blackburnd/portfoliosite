@@ -132,19 +132,21 @@ async def global_exception_handler(request: Request, exc: Exception):
     
     # Add to database log if possible
     try:
+        # Format the traceback and error details for the database log
+        detailed_message = f"""[{error_id}] {error_type}: {error_message}
+URL: {request.url} | Method: {request.method}
+Headers: {dict(request.headers)}
+Full Traceback:
+{error_traceback}"""
+        
         add_log(
-            "unhandled_exception",
-            f"[{error_id}] {error_type}: {error_message} | URL: {request.url} | Method: {request.method}",
-            extra_data={
-                "error_id": error_id,
-                "error_type": error_type,
-                "error_message": error_message,
-                "traceback": error_traceback,
-                "request_url": str(request.url),
-                "request_method": request.method,
-                "request_headers": dict(request.headers),
-                "timestamp": error_time
-            }
+            "ERROR",
+            "unhandled_exception", 
+            detailed_message,
+            error_id=error_id,
+            error_type=error_type,
+            request_url=str(request.url),
+            request_method=request.method
         )
     except Exception as log_error:
         logger.error(f"Failed to log exception to database: {log_error}")
@@ -186,15 +188,13 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     # Add to database log
     try:
         add_log(
+            "WARNING",
             "http_exception",
             f"[{error_id}] {exc.status_code}: {exc.detail} | URL: {request.url}",
-            extra_data={
-                "error_id": error_id,
-                "status_code": exc.status_code,
-                "detail": exc.detail,
-                "request_url": str(request.url),
-                "request_method": request.method
-            }
+            error_id=error_id,
+            status_code=exc.status_code,
+            request_url=str(request.url),
+            request_method=request.method
         )
     except Exception as log_error:
         logger.error(f"Failed to log HTTP exception to database: {log_error}")
