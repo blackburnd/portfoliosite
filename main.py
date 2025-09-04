@@ -245,14 +245,29 @@ logger.info(f"Admin username: {ADMIN_USERNAME}")
 logger.info(f"Admin password: {'SET' if ADMIN_PASSWORD and ADMIN_PASSWORD != 'admin' else 'DEFAULT'}")
 logger.info(f"Environment: {os.getenv('ENV', 'development')}")
 
-# Log OAuth configuration from environment
-oauth_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
-logger.info(f"OAuth configured: {oauth_configured}")
-if oauth_configured:
-    logger.info(f"OAuth redirect URI: {os.getenv('GOOGLE_REDIRECT_URI')}")
-    logger.info(f"Authorized emails: {os.getenv('AUTHORIZED_EMAILS', 'none')}")
-else:
-    logger.warning("OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
+# Log OAuth configuration from database
+@app.on_event("startup")
+async def check_oauth_configuration():
+    """Check OAuth configuration from database on startup"""
+    try:
+        ttw_manager = TTWOAuthManager()
+        google_configured = await ttw_manager.is_google_oauth_app_configured()
+        linkedin_configured = await ttw_manager.is_oauth_app_configured()
+        
+        logger.info(f"Google OAuth configured: {google_configured}")
+        logger.info(f"LinkedIn OAuth configured: {linkedin_configured}")
+        
+        if google_configured:
+            config = await ttw_manager.get_google_oauth_app_config()
+            if config:
+                logger.info(f"Google OAuth redirect URI: {config.get('redirect_uri')}")
+        
+        if not google_configured and not linkedin_configured:
+            logger.warning("No OAuth providers configured - check admin interface")
+            
+    except Exception as e:
+        logger.error(f"Failed to check OAuth configuration: {e}")
+
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "your_secure_password_here")
 
 def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)):
@@ -2752,8 +2767,13 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
     try:
         add_log("INFO", "admin_google_oauth_status_check", f"Admin {admin_email} checking Google OAuth status")
         
-        # Check if Google OAuth is configured via environment variables
-        google_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+        # Check if Google OAuth is configured in database
+        ttw_manager = TTWOAuthManager()
+        google_configured = await ttw_manager.is_google_oauth_app_configured()
+        
+        config = None
+        if google_configured:
+            config = await ttw_manager.get_google_oauth_app_config()
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
@@ -2761,8 +2781,9 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         return JSONResponse({
             "configured": google_configured,
             "connected": google_connected,
-            "client_id": os.getenv("GOOGLE_CLIENT_ID", "")[:8] + "..." if google_configured else "",
-            "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI", ""),
+            "app_name": config.get("app_name", "") if config else "",
+            "client_id": config.get("client_id", "")[:8] + "..." if config and config.get("client_id") else "",
+            "redirect_uri": config.get("redirect_uri", "") if config else "",
             "account_email": request.session.get("user", {}).get("email") if google_connected else None,
             "last_sync": request.session.get("user", {}).get("login_time") if google_connected else None,
             "token_expiry": request.session.get("user", {}).get("expires_at") if google_connected else None
@@ -2782,14 +2803,13 @@ async def save_google_oauth_config(
     config: dict,
     admin: dict = Depends(require_admin_auth_cookie)
 ):
-    """Save Google OAuth configuration (note: this updates environment variables)"""
+    """Save Google OAuth configuration to database"""
     admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_google_oauth_config_update", f"Admin {admin_email} updating Google OAuth configuration")
         
-        # In production, you might want to store these in a secure configuration system
-        # For now, we'll validate the configuration
+        # Validate required fields
         required_fields = ["client_id", "client_secret", "redirect_uri"]
         for field in required_fields:
             if not config.get(field):
@@ -2798,18 +2818,57 @@ async def save_google_oauth_config(
                     "detail": f"Missing required field: {field}"
                 }, status_code=400)
         
-        # Note: This is for validation only - actual environment variable updates
-        # would require server restart or secure configuration management
-        add_log("INFO", "admin_google_oauth_config_validated", f"Google OAuth config validated by {admin_email}")
+        # Save configuration to database
+        ttw_manager = TTWOAuthManager()
+        result = await ttw_manager.configure_google_oauth_app(admin_email, config)
         
-        return JSONResponse({
-            "status": "success",
-            "message": "Google OAuth configuration validated. Update environment variables and restart server to activate."
-        })
+        if result:
+            add_log("INFO", "admin_google_oauth_config_saved", f"Google OAuth config saved by {admin_email}")
+            return JSONResponse({
+                "status": "success",
+                "message": "Google OAuth configuration saved successfully"
+            })
+        else:
+            return JSONResponse({
+                "status": "error",
+                "detail": "Failed to save Google OAuth configuration"
+            }, status_code=500)
         
     except Exception as e:
         logger.error(f"Error saving Google OAuth config: {str(e)}")
         add_log("ERROR", "admin_google_oauth_config_error", f"Error saving Google OAuth config by {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.delete("/admin/google/oauth/config")
+async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_cookie)):
+    """Clear Google OAuth configuration"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_google_oauth_config_clear", f"Admin {admin_email} clearing Google OAuth configuration")
+        
+        ttw_manager = TTWOAuthManager()
+        result = await ttw_manager.remove_google_oauth_app(admin_email)
+        
+        if result:
+            add_log("INFO", "admin_google_oauth_config_cleared", f"Google OAuth config cleared by {admin_email}")
+            return JSONResponse({
+                "status": "success",
+                "message": "Google OAuth configuration cleared successfully"
+            })
+        else:
+            return JSONResponse({
+                "status": "error",
+                "detail": "Failed to clear Google OAuth configuration"
+            }, status_code=500)
+        
+    except Exception as e:
+        logger.error(f"Error clearing Google OAuth config: {str(e)}")
+        add_log("ERROR", "admin_google_oauth_config_clear_error", f"Error clearing Google OAuth config by {admin_email}: {str(e)}")
         return JSONResponse({
             "status": "error",
             "error": str(e)
