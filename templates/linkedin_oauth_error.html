@@ -1,35 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Connection Error</title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body class="oauth-error">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component -->
-            {% with current_page='linkedin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            
-            <div class="error-container">
-                <div class="error-icon">❌</div>
-                <h1>LinkedIn Connection Failed</h1>
-                <p>There was an error connecting your LinkedIn account.</p>
-                
-                {% if error %}
-                <div class="error-details">
-                    <strong>Error Details:</strong><br>
-                    {{ error }}
-                </div>
-                {% endif %}
-                
-                <p>Please try again or contact support if the problem persists.</p>
-                <a href="/linkedin" class="btn">Return to LinkedIn Admin</a>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}LinkedIn OAuth Error{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
+    <div class="status-error">
+        <div class="error-icon">❌</div>
+        <h2>LinkedIn OAuth Authorization Failed</h2>
+        <p>There was an error connecting your LinkedIn account.</p>
+        
+        {% if error %}
+        <div class="error-details">
+            <strong>Error Details:</strong><br>
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <p>Please try again or check your LinkedIn OAuth configuration.</p>
+        
+        <div class="config-actions">
+            <a href="/admin/linkedin/oauth" class="btn-primary">Return to LinkedIn OAuth Admin</a>
+            <a href="/linkedin" class="btn-secondary">Go to LinkedIn Sync</a>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

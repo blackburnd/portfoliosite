@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}LinkedIn OAuth Admin{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
+    <h2>LinkedIn OAuth Configuration</h2>
+    
+    <!-- LinkedIn OAuth Configuration Section -->
+    <div class="config-section">
+        <h3>LinkedIn OAuth Application</h3>
+        
+        <div id="linkedin-status-display" class="status-not-configured">
+            <strong>Status:</strong> <span id="linkedin-status-text">Checking configuration...</span>
+        </div>
+        
+        <div class="config-form">
+            <form id="linkedin-config-form">
+                <div class="form-group">
+                    <label for="linkedin-app-name">Application Name:</label>
+                    <input type="text" id="linkedin-app-name" name="app_name" placeholder="My LinkedIn App" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedin-client-id">Client ID:</label>
+                    <input type="text" id="linkedin-client-id" name="client_id" placeholder="LinkedIn App Client ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedin-client-secret">Client Secret:</label>
+                    <input type="password" id="linkedin-client-secret" name="client_secret" placeholder="LinkedIn App Client Secret" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedin-redirect-uri">Redirect URI:</label>
+                    <input type="url" id="linkedin-redirect-uri" name="redirect_uri" 
+                           placeholder="https://yourdomain.com/admin/linkedin/oauth/callback" required>
+                    <small>Must match exactly with your LinkedIn app configuration</small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="save-linkedin-config">Save LinkedIn Configuration</button>
+                    <button type="button" class="btn-test" id="test-linkedin-connection">Test Connection</button>
+                    <button type="button" class="btn-secondary" id="clear-linkedin-config">Clear Configuration</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="test-results" id="linkedin-test-results" style="display: none;"></div>
+    </div>
+    
+    <!-- LinkedIn API Scopes Information -->
+    <div class="config-section">
+        <h3>Required LinkedIn API Scopes</h3>
+        <div class="scopes-list">
+            <div class="scope-item required">
+                <div class="scope-header">
+                    <strong>Profile Access</strong>
+                    <span class="scope-name">r_liteprofile</span>
+                    <span class="required-badge">Required</span>
+                </div>
+                <div class="scope-description">Access to basic profile information</div>
+                <div class="scope-data-access">Provides: Name, profile picture, headline</div>
+            </div>
+            
+            <div class="scope-item required">
+                <div class="scope-header">
+                    <strong>Email Access</strong>
+                    <span class="scope-name">r_emailaddress</span>
+                    <span class="required-badge">Required</span>
+                </div>
+                <div class="scope-description">Access to primary email address</div>
+                <div class="scope-data-access">Provides: Primary email address</div>
+            </div>
+            
+            <div class="scope-item">
+                <div class="scope-header">
+                    <strong>Position Data</strong>
+                    <span class="scope-name">r_fullprofile</span>
+                </div>
+                <div class="scope-description">Access to detailed profile and position information</div>
+                <div class="scope-data-access">Provides: Work experience, education, skills</div>
+            </div>
+        </div>
+        
+        <div class="config-actions">
+            <button type="button" class="btn-primary" id="initiate-linkedin-oauth">Authorize LinkedIn Access</button>
+            <button type="button" class="btn-secondary" id="revoke-linkedin-oauth">Revoke Access</button>
+        </div>
+    </div>
+    
+    <!-- LinkedIn OAuth Connection Status -->
+    <div class="config-section">
+        <h3>Current LinkedIn Connection</h3>
+        <div id="linkedin-connection-status" class="status-not-configured">
+            <strong>Connection Status:</strong> <span id="linkedin-connection-text">No active connection</span>
+        </div>
+        
+        <div id="linkedin-connection-details" style="display: none;">
+            <p><strong>Connected Account:</strong> <span id="linkedin-account-email">-</span></p>
+            <p><strong>Last Sync:</strong> <span id="linkedin-last-sync">-</span></p>
+            <p><strong>Token Expires:</strong> <span id="linkedin-token-expiry">-</span></p>
+        </div>
+        
+        <div class="config-actions">
+            <button type="button" class="btn-test" id="test-linkedin-api">Test LinkedIn API</button>
+            <button type="button" class="btn-primary" id="sync-linkedin-data">Sync Profile Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Result Messages -->
+<div class="result-messages" id="result-messages"></div>
+
+<script src="{{ url_for('static', path='js/linkedin-oauth-admin.js') }}"></script>
+{% endblock %}

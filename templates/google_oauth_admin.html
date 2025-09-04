@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Google OAuth Administration{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
+    <h2>Google OAuth Configuration</h2>
+    
+    <!-- Google OAuth Configuration Section -->
+    <div class="config-section">
+        <h3>Google OAuth Application</h3>
+        
+        <div id="google-status-display" class="status-not-configured">
+            <strong>Status:</strong> <span id="google-status-text">Checking configuration...</span>
+        </div>
+        
+        <div class="config-form">
+            <form id="google-config-form">
+                <div class="form-group">
+                    <label for="google-app-name">Application Name:</label>
+                    <input type="text" id="google-app-name" name="app_name" placeholder="My Google App" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="google-client-id">Client ID:</label>
+                    <input type="text" id="google-client-id" name="client_id" placeholder="Google App Client ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="google-client-secret">Client Secret:</label>
+                    <input type="password" id="google-client-secret" name="client_secret" placeholder="Google App Client Secret" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="google-redirect-uri">Redirect URI:</label>
+                    <input type="url" id="google-redirect-uri" name="redirect_uri" 
+                           placeholder="https://yourdomain.com/auth/callback" required>
+                    <small>Must match exactly with your Google app configuration</small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="save-google-config">Save Google Configuration</button>
+                    <button type="button" class="btn-test" id="test-google-connection">Test Connection</button>
+                    <button type="button" class="btn-secondary" id="clear-google-config">Clear Configuration</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="test-results" id="google-test-results" style="display: none;"></div>
+    </div>
+    
+    <!-- Google API Scopes Information -->
+    <div class="config-section">
+        <h3>Required Google API Scopes</h3>
+        <div class="scopes-list">
+            <div class="scope-item required">
+                <div class="scope-header">
+                    <strong>Profile Access</strong>
+                    <span class="scope-name">openid</span>
+                    <span class="required-badge">Required</span>
+                </div>
+                <div class="scope-description">Access to basic profile information</div>
+                <div class="scope-data-access">Provides: User ID, basic profile</div>
+            </div>
+            
+            <div class="scope-item required">
+                <div class="scope-header">
+                    <strong>Email Access</strong>
+                    <span class="scope-name">email</span>
+                    <span class="required-badge">Required</span>
+                </div>
+                <div class="scope-description">Access to email address</div>
+                <div class="scope-data-access">Provides: Primary email address</div>
+            </div>
+            
+            <div class="scope-item required">
+                <div class="scope-header">
+                    <strong>Profile Data</strong>
+                    <span class="scope-name">profile</span>
+                    <span class="required-badge">Required</span>
+                </div>
+                <div class="scope-description">Access to detailed profile information</div>
+                <div class="scope-data-access">Provides: Name, profile picture, locale</div>
+            </div>
+        </div>
+        
+        <div class="config-actions">
+            <button type="button" class="btn-primary" id="initiate-google-oauth">Authorize Google Access</button>
+            <button type="button" class="btn-secondary" id="revoke-google-oauth">Revoke Access</button>
+        </div>
+    </div>
+    
+    <!-- Google OAuth Connection Status -->
+    <div class="config-section">
+        <h3>Current Google Connection</h3>
+        <div id="google-connection-status" class="status-not-configured">
+            <strong>Connection Status:</strong> <span id="google-connection-text">No active connection</span>
+        </div>
+        
+        <div id="google-connection-details" style="display: none;">
+            <p><strong>Connected Account:</strong> <span id="google-account-email">-</span></p>
+            <p><strong>Last Login:</strong> <span id="google-last-sync">-</span></p>
+            <p><strong>Token Expires:</strong> <span id="google-token-expiry">-</span></p>
+        </div>
+        
+        <div class="config-actions">
+            <button type="button" class="btn-test" id="test-google-api">Test Google API</button>
+        </div>
+    </div>
+</div>
+
+<!-- Result Messages -->
+<div class="result-messages" id="result-messages"></div>
+
+<script src="{{ url_for('static', path='js/google-oauth-admin.js') }}"></script>
+{% endblock %}

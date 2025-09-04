@@ -1,38 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Connected Successfully</title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body class="oauth-success">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component -->
-            {% with current_page='linkedin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            
-            <div class="success-container">
-                <div class="success-icon">✅</div>
-                <h1>LinkedIn Connected Successfully!</h1>
-                <p>Your LinkedIn account has been connected to your portfolio admin.</p>
-                <p><strong>Admin:</strong> {{ admin_email }}</p>
-                {% if linkedin_profile_id %}
-                <p><strong>LinkedIn Profile ID:</strong> {{ linkedin_profile_id }}</p>
-                {% endif %}
-                <p>You can now sync your LinkedIn data from the admin interface.</p>
-                <a href="/linkedin" class="btn">Return to LinkedIn Admin</a>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}LinkedIn OAuth Success{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
+    <div class="status-configured">
+        <div class="success-icon">✅</div>
+        <h2>LinkedIn OAuth Authorization Successful</h2>
+        <p>{{ message or "Your LinkedIn account has been successfully connected!" }}</p>
+        
+        {% if admin_email %}
+        <p><strong>Admin:</strong> {{ admin_email }}</p>
+        {% endif %}
+        
+        {% if linkedin_profile_id %}
+        <p><strong>LinkedIn Profile ID:</strong> {{ linkedin_profile_id }}</p>
+        {% endif %}
+        
+        <p>You can now sync your LinkedIn data from the admin interface.</p>
+        
+        <div class="config-actions">
+            <a href="/admin/linkedin/oauth" class="btn-primary">Return to LinkedIn OAuth Admin</a>
+            <a href="/linkedin" class="btn-secondary">Go to LinkedIn Sync</a>
         </div>
     </div>
-    
-    <script>
-        // Auto-redirect after 5 seconds
-        setTimeout(() => {
-            window.location.href = '/linkedin';
-        }, 5000);
-    </script>
-</body>
-</html>
+</div>
+
+<script>
+    // Auto-redirect after 8 seconds
+    setTimeout(() => {
+        window.location.href = '/admin/linkedin/oauth';
+    }, 8000);
+</script>
+{% endblock %}

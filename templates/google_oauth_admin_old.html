@@ -1,0 +1,911 @@
+{% extends "base.html" %}
+
+{% block title %}Google OAuth Administration - Daniel Blackburn{% endblock %}
+
+{% block body_class %}google-oauth-admin{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
+    <h2>🔐 Google OAuth Administration</h2>
+    
+    <!-- Google OAuth Configuration -->
+    <div class="config-section">
+        <h3>Google OAuth Configuration</h3>
+        <div id="googleConfigStatus">Loading Google OAuth status...</div>
+        
+        <div id="googleConfigForm" class="config-form hidden">
+            <form id="googleOAuthForm">
+                <div class="form-group">
+                    <label for="googleClientId">Google Client ID:</label>
+                    <input type="text" id="googleClientId" name="client_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="googleClientSecret">Google Client Secret:</label>
+                    <input type="password" id="googleClientSecret" name="client_secret" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="googleRedirectUri">Google Redirect URI:</label>
+                    <input type="url" id="googleRedirectUri" name="redirect_uri" 
+                           value="https://www.blackburnsystems.com/auth/callback" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="authorizedEmails">Authorized Emails (comma-separated):</label>
+                    <textarea id="authorizedEmails" name="authorized_emails" rows="3" 
+                              placeholder="admin@example.com, user@example.com" required></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Google OAuth Config</button>
+                    <button type="button" onclick="cancelGoogleEdit()" class="btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="googleConfigActions" class="config-actions">
+            <button onclick="editGoogleConfig()" class="btn-edit">Edit Configuration</button>
+            <button onclick="deleteGoogleConfig()" class="btn-delete">Delete Configuration</button>
+        </div>
+    </div>
+
+    <!-- LinkedIn OAuth Configuration -->
+    <div class="config-section">
+        <h3>LinkedIn OAuth Configuration</h3>
+        <div id="linkedinConfigStatus">Loading LinkedIn OAuth status...</div>
+        
+        <div id="linkedinConfigForm" class="config-form hidden">
+            <form id="linkedinOAuthForm">
+                <div class="form-group">
+                    <label for="linkedinAppName">App Name:</label>
+                    <input type="text" id="linkedinAppName" name="app_name" 
+                           value="Portfolio LinkedIn Integration" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedinClientId">LinkedIn Client ID:</label>
+                    <input type="text" id="linkedinClientId" name="client_id" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedinClientSecret">LinkedIn Client Secret:</label>
+                    <input type="password" id="linkedinClientSecret" name="client_secret" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="linkedinRedirectUri">LinkedIn Redirect URI:</label>
+                    <input type="url" id="linkedinRedirectUri" name="redirect_uri" 
+                           value="https://www.blackburnsystems.com/admin/linkedin/callback" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save LinkedIn OAuth Config</button>
+                    <button type="button" onclick="cancelLinkedInEdit()" class="btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="linkedinConfigActions" class="config-actions">
+            <button onclick="editLinkedInConfig()" class="btn-edit">Edit Configuration</button>
+            <button onclick="deleteLinkedInConfig()" class="btn-delete">Delete Configuration</button>
+        </div>
+    </div>
+
+    <!-- OAuth Scope Management -->
+    <div class="config-section">
+        <h3>LinkedIn OAuth Scopes</h3>
+        <div id="scopesStatus">Loading available scopes...</div>
+        <div id="scopesList" class="scopes-list"></div>
+    </div>
+
+    <!-- Test Connections -->
+    <div class="config-section">
+        <h3>Test OAuth Connections</h3>
+        <div class="test-actions">
+            <button onclick="testGoogleConnection()" class="btn-test">Test Google OAuth</button>
+            <button onclick="testLinkedInConnection()" class="btn-test">Test LinkedIn OAuth</button>
+        </div>
+        <div id="testResults" class="test-results"></div>
+    </div>
+
+    <!-- Results Display -->
+    <div id="resultMessages" class="result-messages"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global state
+    let editingGoogle = false;
+    let editingLinkedIn = false;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGoogleConfig();
+        loadLinkedInConfig();
+        loadLinkedInScopes();
+    });
+
+    // Google OAuth Configuration Functions
+    async function loadGoogleConfig() {
+        try {
+            const response = await fetch('/admin/oauth/google/status');
+            const data = await response.json();
+            
+            updateGoogleConfigUI(data);
+        } catch (error) {
+            console.error('Error loading Google config:', error);
+            document.getElementById('googleConfigStatus').innerHTML = 
+                '<div class="status-error">Error loading Google OAuth configuration</div>';
+        }
+    }
+
+    function updateGoogleConfigUI(config) {
+        const statusDiv = document.getElementById('googleConfigStatus');
+        
+        if (config.configured) {
+            statusDiv.innerHTML = `
+                <div class="status-configured">
+                    <strong>✅ Google OAuth Configured</strong><br>
+                    Client ID: ${config.client_id}<br>
+                    Redirect URI: ${config.redirect_uri}<br>
+                    Authorized Emails: ${config.authorized_emails}
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div class="status-not-configured">
+                    <strong>❌ Google OAuth Not Configured</strong><br>
+                    Configure your Google OAuth settings to enable admin authentication.
+                </div>
+            `;
+        }
+    }
+
+    function editGoogleConfig() {
+        editingGoogle = true;
+        document.getElementById('googleConfigForm').classList.remove('hidden');
+        document.getElementById('googleConfigActions').classList.add('hidden');
+        
+        // Load current values if they exist
+        loadGoogleConfigValues();
+    }
+
+    function cancelGoogleEdit() {
+        editingGoogle = false;
+        document.getElementById('googleConfigForm').classList.add('hidden');
+        document.getElementById('googleConfigActions').classList.remove('hidden');
+    }
+
+    async function loadGoogleConfigValues() {
+        try {
+            const response = await fetch('/admin/oauth/google/config');
+            if (response.ok) {
+                const config = await response.json();
+                if (config.configured) {
+                    document.getElementById('googleClientId').value = config.client_id || '';
+                    document.getElementById('googleRedirectUri').value = config.redirect_uri || '';
+                    document.getElementById('authorizedEmails').value = config.authorized_emails || '';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading Google config values:', error);
+        }
+    }
+
+    // LinkedIn OAuth Configuration Functions
+    async function loadLinkedInConfig() {
+        try {
+            const response = await fetch('/admin/oauth/linkedin/status');
+            const data = await response.json();
+            
+            updateLinkedInConfigUI(data);
+        } catch (error) {
+            console.error('Error loading LinkedIn config:', error);
+            document.getElementById('linkedinConfigStatus').innerHTML = 
+                '<div class="status-error">Error loading LinkedIn OAuth configuration</div>';
+        }
+    }
+
+    function updateLinkedInConfigUI(config) {
+        const statusDiv = document.getElementById('linkedinConfigStatus');
+        
+        if (config.configured) {
+            statusDiv.innerHTML = `
+                <div class="status-configured">
+                    <strong>✅ LinkedIn OAuth Configured</strong><br>
+                    App Name: ${config.app_name}<br>
+                    Client ID: ${config.client_id}<br>
+                    Redirect URI: ${config.redirect_uri}<br>
+                    Configured By: ${config.configured_by_email}
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div class="status-not-configured">
+                    <strong>❌ LinkedIn OAuth Not Configured</strong><br>
+                    Configure your LinkedIn OAuth app to enable LinkedIn integration.
+                </div>
+            `;
+        }
+    }
+
+    function editLinkedInConfig() {
+        editingLinkedIn = true;
+        document.getElementById('linkedinConfigForm').classList.remove('hidden');
+        document.getElementById('linkedinConfigActions').classList.add('hidden');
+        
+        // Load current values if they exist
+        loadLinkedInConfigValues();
+    }
+
+    function cancelLinkedInEdit() {
+        editingLinkedIn = false;
+        document.getElementById('linkedinConfigForm').classList.add('hidden');
+        document.getElementById('linkedinConfigActions').classList.remove('hidden');
+    }
+
+    async function loadLinkedInConfigValues() {
+        try {
+            const response = await fetch('/admin/oauth/linkedin/config');
+            if (response.ok) {
+                const config = await response.json();
+                if (config.configured) {
+                    document.getElementById('linkedinAppName').value = config.app_name || '';
+                    document.getElementById('linkedinClientId').value = config.client_id || '';
+                    document.getElementById('linkedinRedirectUri').value = config.redirect_uri || '';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading LinkedIn config values:', error);
+        }
+    }
+
+    // Form submission handlers
+    document.getElementById('googleOAuthForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/admin/oauth/google/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showSuccess('Google OAuth configuration saved successfully!');
+                cancelGoogleEdit();
+                loadGoogleConfig();
+            } else {
+                showError(result.error || 'Failed to save Google OAuth configuration');
+            }
+        } catch (error) {
+            showError('Network error saving Google OAuth configuration: ' + error.message);
+        }
+    });
+
+    document.getElementById('linkedinOAuthForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            const response = await fetch('/admin/oauth/linkedin/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showSuccess('LinkedIn OAuth configuration saved successfully!');
+                cancelLinkedInEdit();
+                loadLinkedInConfig();
+            } else {
+                showError(result.error || 'Failed to save LinkedIn OAuth configuration');
+            }
+        } catch (error) {
+            showError('Network error saving LinkedIn OAuth configuration: ' + error.message);
+        }
+    });
+
+    // Delete functions
+    async function deleteGoogleConfig() {
+        if (!confirm('Are you sure you want to delete the Google OAuth configuration? This will disable admin authentication.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/oauth/google/config', {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showSuccess('Google OAuth configuration deleted successfully!');
+                loadGoogleConfig();
+            } else {
+                showError(result.error || 'Failed to delete Google OAuth configuration');
+            }
+        } catch (error) {
+            showError('Network error deleting Google OAuth configuration: ' + error.message);
+        }
+    }
+
+    async function deleteLinkedInConfig() {
+        if (!confirm('Are you sure you want to delete the LinkedIn OAuth configuration? This will disable LinkedIn integration.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/oauth/linkedin/config', {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showSuccess('LinkedIn OAuth configuration deleted successfully!');
+                loadLinkedInConfig();
+            } else {
+                showError(result.error || 'Failed to delete LinkedIn OAuth configuration');
+            }
+        } catch (error) {
+            showError('Network error deleting LinkedIn OAuth configuration: ' + error.message);
+        }
+    }
+
+    // LinkedIn Scopes Management
+    async function loadLinkedInScopes() {
+        try {
+            const response = await fetch('/admin/oauth/linkedin/scopes');
+            const data = await response.json();
+            
+            updateScopesUI(data.scopes || []);
+        } catch (error) {
+            console.error('Error loading LinkedIn scopes:', error);
+            document.getElementById('scopesStatus').innerHTML = 
+                '<div class="status-error">Error loading LinkedIn scopes</div>';
+        }
+    }
+
+    function updateScopesUI(scopes) {
+        const scopesList = document.getElementById('scopesList');
+        
+        if (scopes.length === 0) {
+            scopesList.innerHTML = '<p>No scopes available</p>';
+            return;
+        }
+        
+        const scopesHTML = scopes.map(scope => `
+            <div class="scope-item ${scope.is_required ? 'required' : ''}">
+                <div class="scope-header">
+                    <strong>${scope.display_name}</strong>
+                    <span class="scope-name">(${scope.scope_name})</span>
+                    ${scope.is_required ? '<span class="required-badge">Required</span>' : ''}
+                </div>
+                <div class="scope-description">${scope.description}</div>
+                <div class="scope-data-access">${scope.data_access_description}</div>
+            </div>
+        `).join('');
+        
+        scopesList.innerHTML = scopesHTML;
+    }
+
+    // Test connection functions
+    async function testGoogleConnection() {
+        try {
+            const response = await fetch('/admin/oauth/google/test');
+            const result = await response.json();
+            
+            updateTestResults('Google', result);
+        } catch (error) {
+            updateTestResults('Google', { success: false, error: error.message });
+        }
+    }
+
+    async function testLinkedInConnection() {
+        try {
+            const response = await fetch('/admin/oauth/linkedin/test');
+            const result = await response.json();
+            
+            updateTestResults('LinkedIn', result);
+        } catch (error) {
+            updateTestResults('LinkedIn', { success: false, error: error.message });
+        }
+    }
+
+    function updateTestResults(provider, result) {
+        const testResults = document.getElementById('testResults');
+        
+        const resultClass = result.success ? 'test-success' : 'test-error';
+        const resultMessage = result.success ? 
+            `✅ ${provider} OAuth connection successful` :
+            `❌ ${provider} OAuth connection failed: ${result.error}`;
+        
+        testResults.innerHTML = `<div class="${resultClass}">${resultMessage}</div>`;
+    }
+
+    // Utility functions
+    function showSuccess(message) {
+        const resultMessages = document.getElementById('resultMessages');
+        resultMessages.innerHTML = `<div class="message-success">${message}</div>`;
+        setTimeout(() => {
+            resultMessages.innerHTML = '';
+        }, 5000);
+    }
+
+    function showError(message) {
+        const resultMessages = document.getElementById('resultMessages');
+        resultMessages.innerHTML = `<div class="message-error">${message}</div>`;
+    }
+</script>
+{% endblock %}
+
+<body class="oauth-admin">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component -->
+            {% with current_page='oauth_admin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div class="oauth-admin-content">
+                <h1>🔐 OAuth Configuration Management</h1>
+                <p>Manage Google and LinkedIn OAuth configurations for secure authentication.</p>
+                
+                <!-- Results Display -->
+                <div id="resultMessages"></div>
+                
+                <!-- Google OAuth Configuration -->
+                <div class="oauth-section">
+                    <h3>🔵 Google OAuth Configuration</h3>
+                    
+                    <div class="current-config">
+                        <h4>Current Configuration</h4>
+                        <div id="googleConfigStatus">Loading...</div>
+                    </div>
+                    
+                    <form id="googleConfigForm" class="config-form">
+                        <div class="form-group">
+                            <label for="google_client_id">Client ID *</label>
+                            <input type="text" id="google_client_id" name="client_id" required 
+                                   placeholder="Google OAuth Client ID">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="google_client_secret">Client Secret *</label>
+                            <input type="password" id="google_client_secret" name="client_secret" required 
+                                   placeholder="Google OAuth Client Secret">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="google_redirect_uri">Redirect URI *</label>
+                            <input type="url" id="google_redirect_uri" name="redirect_uri" required 
+                                   placeholder="https://yourdomain.com/auth/callback">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="authorized_emails">Authorized Emails *</label>
+                            <textarea id="authorized_emails" name="authorized_emails" required 
+                                      placeholder="admin@example.com,user@example.com"></textarea>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Save Google OAuth</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetGoogleForm()">Reset</button>
+                            <button type="button" class="btn btn-danger" onclick="deleteGoogleConfig()">Delete Config</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- LinkedIn OAuth Configuration -->
+                <div class="oauth-section">
+                    <h3>🔗 LinkedIn OAuth Configuration</h3>
+                    
+                    <div class="current-config">
+                        <h4>Current Configuration</h4>
+                        <div id="linkedinConfigStatus">Loading...</div>
+                    </div>
+                    
+                    <form id="linkedinConfigForm" class="config-form">
+                        <div class="form-group">
+                            <label for="linkedin_app_name">App Name</label>
+                            <input type="text" id="linkedin_app_name" name="app_name" 
+                                   placeholder="Portfolio LinkedIn Integration">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="linkedin_client_id">Client ID *</label>
+                            <input type="text" id="linkedin_client_id" name="client_id" required 
+                                   placeholder="LinkedIn OAuth Client ID">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="linkedin_client_secret">Client Secret *</label>
+                            <input type="password" id="linkedin_client_secret" name="client_secret" required 
+                                   placeholder="LinkedIn OAuth Client Secret">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="linkedin_redirect_uri">Redirect URI *</label>
+                            <input type="url" id="linkedin_redirect_uri" name="redirect_uri" required 
+                                   placeholder="https://yourdomain.com/admin/linkedin/callback">
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Save LinkedIn OAuth</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetLinkedInForm()">Reset</button>
+                            <button type="button" class="btn btn-danger" onclick="deleteLinkedInConfig()">Delete Config</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Active Connections -->
+                <div class="oauth-section">
+                    <h3>👥 Active OAuth Connections</h3>
+                    <div id="activeConnections">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGoogleConfig();
+            loadLinkedInConfig();
+            loadActiveConnections();
+        });
+
+        // Load Google OAuth configuration
+        async function loadGoogleConfig() {
+            try {
+                const response = await fetch('/admin/oauth/google/config');
+                const data = await response.json();
+                
+                updateGoogleConfigDisplay(data);
+                if (data.status === 'success' && data.config) {
+                    populateGoogleForm(data.config);
+                }
+            } catch (error) {
+                console.error('Error loading Google config:', error);
+                document.getElementById('googleConfigStatus').innerHTML = 
+                    '<div class="alert alert-error">Failed to load Google OAuth configuration</div>';
+            }
+        }
+
+        // Load LinkedIn OAuth configuration
+        async function loadLinkedInConfig() {
+            try {
+                const response = await fetch('/admin/oauth/linkedin/config');
+                const data = await response.json();
+                
+                updateLinkedInConfigDisplay(data);
+                if (data.status === 'success' && data.config) {
+                    populateLinkedInForm(data.config);
+                }
+            } catch (error) {
+                console.error('Error loading LinkedIn config:', error);
+                document.getElementById('linkedinConfigStatus').innerHTML = 
+                    '<div class="alert alert-error">Failed to load LinkedIn OAuth configuration</div>';
+            }
+        }
+
+        // Update Google config display
+        function updateGoogleConfigDisplay(data) {
+            const statusDiv = document.getElementById('googleConfigStatus');
+            
+            if (data.status === 'success' && data.config) {
+                const config = data.config;
+                statusDiv.innerHTML = `
+                    <div class="config-item">
+                        <label>Status:</label> 
+                        <span class="status-indicator status-active">✅ Configured</span>
+                    </div>
+                    <div class="config-item">
+                        <label>Client ID:</label> ${config.client_id || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Redirect URI:</label> ${config.redirect_uri || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Authorized Emails:</label> ${config.authorized_emails || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Last Updated:</label> ${config.updated_at ? new Date(config.updated_at).toLocaleString() : 'Never'}
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="config-item">
+                        <label>Status:</label> 
+                        <span class="status-indicator status-inactive">❌ Not Configured</span>
+                    </div>
+                    <div class="alert alert-warning">
+                        Google OAuth is not configured. Add configuration below.
+                    </div>
+                `;
+            }
+        }
+
+        // Update LinkedIn config display
+        function updateLinkedInConfigDisplay(data) {
+            const statusDiv = document.getElementById('linkedinConfigStatus');
+            
+            if (data.status === 'success' && data.config) {
+                const config = data.config;
+                statusDiv.innerHTML = `
+                    <div class="config-item">
+                        <label>Status:</label> 
+                        <span class="status-indicator status-active">✅ Configured</span>
+                    </div>
+                    <div class="config-item">
+                        <label>App Name:</label> ${config.app_name || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Client ID:</label> ${config.client_id || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Redirect URI:</label> ${config.redirect_uri || 'Not set'}
+                    </div>
+                    <div class="config-item">
+                        <label>Configured By:</label> ${config.configured_by_email || 'Unknown'}
+                    </div>
+                    <div class="config-item">
+                        <label>Last Updated:</label> ${config.created_at ? new Date(config.created_at).toLocaleString() : 'Never'}
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="config-item">
+                        <label>Status:</label> 
+                        <span class="status-indicator status-inactive">❌ Not Configured</span>
+                    </div>
+                    <div class="alert alert-warning">
+                        LinkedIn OAuth is not configured. Add configuration below.
+                    </div>
+                `;
+            }
+        }
+
+        // Populate Google form with existing config
+        function populateGoogleForm(config) {
+            document.getElementById('google_client_id').value = config.client_id || '';
+            document.getElementById('google_redirect_uri').value = config.redirect_uri || '';
+            document.getElementById('authorized_emails').value = config.authorized_emails || '';
+            // Don't populate client_secret for security
+        }
+
+        // Populate LinkedIn form with existing config
+        function populateLinkedInForm(config) {
+            document.getElementById('linkedin_app_name').value = config.app_name || '';
+            document.getElementById('linkedin_client_id').value = config.client_id || '';
+            document.getElementById('linkedin_redirect_uri').value = config.redirect_uri || '';
+            // Don't populate client_secret for security
+        }
+
+        // Handle Google OAuth form submission
+        document.getElementById('googleConfigForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const config = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/oauth/google/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('Google OAuth configuration saved successfully!');
+                    loadGoogleConfig();
+                } else {
+                    showError('Failed to save Google OAuth configuration: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error saving Google OAuth configuration: ' + error.message);
+            }
+        });
+
+        // Handle LinkedIn OAuth form submission
+        document.getElementById('linkedinConfigForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const config = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/oauth/linkedin/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('LinkedIn OAuth configuration saved successfully!');
+                    loadLinkedInConfig();
+                } else {
+                    showError('Failed to save LinkedIn OAuth configuration: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error saving LinkedIn OAuth configuration: ' + error.message);
+            }
+        });
+
+        // Reset forms
+        function resetGoogleForm() {
+            document.getElementById('googleConfigForm').reset();
+        }
+
+        function resetLinkedInForm() {
+            document.getElementById('linkedinConfigForm').reset();
+        }
+
+        // Delete configurations
+        async function deleteGoogleConfig() {
+            if (!confirm('Are you sure you want to delete the Google OAuth configuration? This will disable Google authentication.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/oauth/google/config', {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('Google OAuth configuration deleted successfully!');
+                    loadGoogleConfig();
+                    resetGoogleForm();
+                } else {
+                    showError('Failed to delete Google OAuth configuration: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error deleting Google OAuth configuration: ' + error.message);
+            }
+        }
+
+        async function deleteLinkedInConfig() {
+            if (!confirm('Are you sure you want to delete the LinkedIn OAuth configuration? This will disable LinkedIn integration.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/oauth/linkedin/config', {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('LinkedIn OAuth configuration deleted successfully!');
+                    loadLinkedInConfig();
+                    resetLinkedInForm();
+                } else {
+                    showError('Failed to delete LinkedIn OAuth configuration: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error deleting LinkedIn OAuth configuration: ' + error.message);
+            }
+        }
+
+        // Load active connections
+        async function loadActiveConnections() {
+            try {
+                const response = await fetch('/admin/oauth/connections');
+                const data = await response.json();
+                
+                updateConnectionsDisplay(data);
+            } catch (error) {
+                console.error('Error loading connections:', error);
+                document.getElementById('activeConnections').innerHTML = 
+                    '<div class="alert alert-error">Failed to load active connections</div>';
+            }
+        }
+
+        // Update connections display
+        function updateConnectionsDisplay(data) {
+            const connectionsDiv = document.getElementById('activeConnections');
+            
+            if (data.status === 'success' && data.connections && data.connections.length > 0) {
+                const connectionsHtml = data.connections.map(conn => `
+                    <div class="connection-item">
+                        <div class="connection-header">
+                            <strong>${conn.provider} - ${conn.admin_email}</strong>
+                            <span class="status-indicator ${conn.is_active ? 'status-active' : 'status-inactive'}">
+                                ${conn.is_active ? '✅ Active' : '❌ Inactive'}
+                            </span>
+                        </div>
+                        <div class="connection-details">
+                            ${conn.provider === 'LinkedIn' ? `
+                                <div>Profile: ${conn.linkedin_profile_name || 'Unknown'}</div>
+                                <div>Scopes: ${conn.granted_scopes || 'None'}</div>
+                                <div>Expires: ${conn.token_expires_at ? new Date(conn.token_expires_at).toLocaleString() : 'Never'}</div>
+                            ` : ''}
+                            <div>Connected: ${new Date(conn.created_at).toLocaleString()}</div>
+                            <div>Last Updated: ${new Date(conn.updated_at).toLocaleString()}</div>
+                        </div>
+                        <div class="btn-group connection-btn-group">
+                            <button class="btn btn-danger" onclick="disconnectUser('${conn.provider}', '${conn.admin_email}')">
+                                Disconnect
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                connectionsDiv.innerHTML = connectionsHtml;
+            } else {
+                connectionsDiv.innerHTML = '<div class="alert alert-warning">No active OAuth connections found.</div>';
+            }
+        }
+
+        // Disconnect user
+        async function disconnectUser(provider, email) {
+            if (!confirm(`Are you sure you want to disconnect ${provider} for ${email}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/oauth/connections/${provider.toLowerCase()}/${encodeURIComponent(email)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess(`${provider} connection for ${email} disconnected successfully!`);
+                    loadActiveConnections();
+                } else {
+                    showError(`Failed to disconnect ${provider} for ${email}: ` + data.error);
+                }
+            } catch (error) {
+                showError(`Error disconnecting ${provider} for ${email}: ` + error.message);
+            }
+        }
+
+        // Utility functions
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'error');
+        }
+
+        function showMessage(message, type) {
+            const resultDiv = document.getElementById('resultMessages');
+            resultDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
