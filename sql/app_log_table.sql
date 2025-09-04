@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS app_log (
     module TEXT,
     function TEXT,
     line INTEGER,
-    user TEXT,
+    "user" TEXT,
     extra TEXT
 );

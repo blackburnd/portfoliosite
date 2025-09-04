@@ -778,7 +778,7 @@ async def get_logs_data():
         return obj
     
     await db.connect()
-    query = "SELECT id, timestamp, level, message, module, function, line, user, extra FROM app_log ORDER BY timestamp DESC LIMIT 100"
+    query = "SELECT id, timestamp, level, message, module, function, line, \"user\", extra FROM app_log ORDER BY timestamp DESC LIMIT 100"
     logs = await db.fetch_all(query)
     await db.disconnect()
     

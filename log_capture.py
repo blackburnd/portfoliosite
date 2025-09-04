@@ -50,7 +50,7 @@ async def write_log_to_db(level, source, message, **kwargs):
     module = kwargs.get("module") or source
     timestamp = datetime.utcnow()
     query = """
-        INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
+        INSERT INTO app_log (timestamp, level, message, module, function, line, "user", extra)
         VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
     """
     values = {
