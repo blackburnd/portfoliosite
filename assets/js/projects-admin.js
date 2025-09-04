@@ -14,7 +14,7 @@ require([
     
     function createProjectDialog() {
         if (projectDialog) {
-            projectDialog.destroyRecursively();
+            projectDialog.destroyRecursive();
         }
         
         const dialogContent = `
