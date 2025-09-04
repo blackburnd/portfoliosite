@@ -169,7 +169,7 @@ require([
             })
             .catch(error => {
                 console.error('Error fetching project:', error);
-                alert('Error loading project data: ' + error.message);
+                showErrorMessage('Error loading project data: ' + error.message);
             });
     }
     
@@ -200,7 +200,7 @@ require([
         const description = dijit.byId("description").get("value");
         
         if (!title || !description) {
-            alert("Please enter both Title and Description.");
+            showErrorMessage("Please enter both Title and Description.");
             return;
         }
         
@@ -251,11 +251,11 @@ require([
             console.log((isEdit ? 'Updated' : 'Added') + ' project:', response);
             loadGrid();
             projectDialog.hide();
-            alert('Project ' + (isEdit ? 'updated' : 'added') + ' successfully!');
+            showSuccessMessage('Project ' + (isEdit ? 'updated' : 'added') + ' successfully!');
         })
         .catch(error => {
             console.error('Error ' + (isEdit ? 'updating' : 'adding') + ' project:', error);
-            alert('Error ' + (isEdit ? 'updating' : 'adding') + ' project: ' + error.message);
+            showErrorMessage('Error ' + (isEdit ? 'updating' : 'adding') + ' project: ' + error.message);
         })
         .finally(() => {
             dijit.byId("submitBtn").set("disabled", false);
@@ -313,7 +313,7 @@ require([
     function deleteSelected() {
         const selected = document.querySelectorAll('.select-row:checked');
         if (selected.length === 0) {
-            alert('Please select projects to delete.');
+            showErrorMessage('Please select projects to delete.');
             return;
         }
         
@@ -339,11 +339,11 @@ require([
         Promise.all(deletePromises)
             .then(() => {
                 loadGrid();
-                alert('Projects deleted successfully!');
+                showSuccessMessage('Projects deleted successfully!');
             })
             .catch(error => {
                 console.error('Error deleting projects:', error);
-                alert('Error deleting projects: ' + error.message);
+                showErrorMessage('Error deleting projects: ' + error.message);
                 loadGrid(); // Refresh to show current state
             });
     }
@@ -363,6 +363,47 @@ require([
             deleteBtn.addEventListener('click', deleteSelected);
         }
     });
+    
+    // Status message utility functions
+    function showStatusMessage(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('statusMessages');
+        if (!container) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `status-message ${type}`;
+        messageDiv.innerHTML = `
+            ${message}
+            <button class="close-btn" onclick="this.parentElement.remove()" aria-label="Close message">&times;</button>
+        `;
+        
+        container.appendChild(messageDiv);
+        
+        // Auto-remove after specified duration
+        if (duration > 0) {
+            setTimeout(() => {
+                if (messageDiv.parentElement) {
+                    messageDiv.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (messageDiv.parentElement) {
+                            messageDiv.remove();
+                        }
+                    }, 300);
+                }
+            }, duration);
+        }
+    }
+    
+    function showSuccessMessage(message, duration = 4000) {
+        showStatusMessage(message, 'success', duration);
+    }
+    
+    function showErrorMessage(message, duration = 6000) {
+        showStatusMessage(message, 'error', duration);
+    }
+    
+    function showInfoMessage(message, duration = 5000) {
+        showStatusMessage(message, 'info', duration);
+    }
     
     // Function to force proper dialog styling
     function forceDialogStyling() {
