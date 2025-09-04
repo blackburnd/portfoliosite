@@ -158,7 +158,7 @@
                                 return '<span class="log-level-' + value + '">' + value + '</span>';
                             }
                         },
-                        source: {
+                        module: {
                             label: "Source",
                             width: "100px"
                         },
@@ -212,7 +212,7 @@
                     }
                     
                     // Source filter
-                    if (sourceFilter && !log.source.includes(sourceFilter)) {
+                    if (sourceFilter && (!log.module || !log.module.includes(sourceFilter))) {
                         return false;
                     }
                     
@@ -241,8 +241,8 @@
             
             function updateStats(stats) {
                 dom.byId('totalLogs').textContent = 'Total: ' + (stats.total || 0);
-                dom.byId('errorCount').textContent = 'Errors: ' + (stats.errors || 0);
-                dom.byId('warningCount').textContent = 'Warnings: ' + (stats.warnings || 0);
+                dom.byId('errorCount').textContent = 'Errors: ' + ((stats.by_level && stats.by_level.ERROR) || 0);
+                dom.byId('warningCount').textContent = 'Warnings: ' + ((stats.by_level && stats.by_level.WARNING) || 0);
             }
             
             function setupEventListeners() {
