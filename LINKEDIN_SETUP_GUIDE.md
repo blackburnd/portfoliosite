@@ -33,18 +33,15 @@ You need to request these permissions from LinkedIn:
 
 1. Copy your **Client ID** 
 2. Copy your **Client Secret**
-3. Keep these secure - you'll add them via the OAuth bootstrap page
+3. Keep these secure - you'll configure them through the LinkedIn admin interface
 
-## Step 5: Environment Variables
+## Step 5: Configure OAuth App
 
-After getting approved, you can either:
-- Use the web interface at `/oauth/bootstrap` 
-- Or set environment variables:
-  ```
-  LINKEDIN_CLIENT_ID=your_client_id
-  LINKEDIN_CLIENT_SECRET=your_client_secret
-  LINKEDIN_REDIRECT_URI=https://www.blackburnsystems.com/admin/linkedin/callback
-  ```
+After getting approved:
+- Login as admin at `/auth/login`
+- Go to LinkedIn admin interface at `/linkedin`
+- Configure your LinkedIn OAuth app through the web interface
+- No environment variables needed!
 
 ## What Data Will Be Synced
 

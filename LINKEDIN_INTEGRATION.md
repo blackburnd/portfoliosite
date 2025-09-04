@@ -1,259 +1,209 @@
-# LinkedIn API Integration Setup
+````markdown
+# LinkedIn Through-The-Web (TTW) OAuth Integration
 
 ## Overview
 
-Your portfolio site now includes **LinkedIn API integration** that allows authenticated administrators to automatically sync their LinkedIn profile and work experience data to the portfolio database. This feature provides:
+Your portfolio site includes a **complete Through-The-Web LinkedIn OAuth integration** that eliminates the need for environment variables. This self-contained system allows authenticated administrators to:
 
-- **Automatic profile sync**: Update portfolio bio, title, and tagline from LinkedIn
-- **Work experience sync**: Import LinkedIn work history to the portfolio database
-- **Admin-controlled**: Only authenticated administrators can trigger sync operations
-- **Secure**: Uses existing Google OAuth admin authentication system
+- **Configure LinkedIn OAuth app through web interface**: No environment variables needed
+- **Connect their LinkedIn accounts via OAuth 2.0**: Secure token-based authentication
+- **Sync LinkedIn data automatically**: Profile and work experience synchronization
+- **Manage permissions granularly**: Configure which LinkedIn data to access
+- **Auto-refresh tokens**: Persistent connectivity without manual intervention
 
-## 🚀 Quick Setup
+## 🏗️ Architecture
 
-### 1. Configure LinkedIn Credentials
+### Database-Driven Configuration
+- **`linkedin_oauth_config`**: Stores LinkedIn OAuth app credentials (encrypted)
+- **`linkedin_oauth_connections`**: Individual admin OAuth connections
+- **`linkedin_oauth_scopes`**: Available LinkedIn permissions and descriptions
 
-Add the following environment variables to your system:
+### Security Features
+- ✅ **Zero environment variables**: All configuration stored encrypted in database
+- ✅ **OAuth 2.0 compliant**: Secure authorization code flow
+- ✅ **Token encryption**: All access/refresh tokens encrypted at rest
+- ✅ **Automatic refresh**: Handles token expiration transparently
+- ✅ **Per-admin isolation**: Each admin has their own LinkedIn connection
 
-```bash
-# LinkedIn Account Credentials
-LINKEDIN_USERNAME=your_email@example.com
-LINKEDIN_PASSWORD=your_linkedin_password
+## 🚀 Setup Process
 
-# Optional: Target Profile ID (defaults to 'blackburnd')
-LINKEDIN_PROFILE_ID=your_linkedin_profile_id
-```
+### Step 1: Create LinkedIn OAuth App (One-Time)
 
-**⚠️ Security Note**: LinkedIn credentials should be stored securely. Consider using:
-- Environment variables in production
-- Secure credential management systems
-- App-specific passwords if your LinkedIn account has 2FA enabled
+1. **LinkedIn Developer Portal**:
+   - Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/)
+   - Create new OAuth 2.0 app
+   - Note Client ID and Client Secret
+   - Set redirect URI: `https://yourdomain.com/admin/linkedin/callback`
 
-### 2. Access LinkedIn Sync Admin
+### Step 2: Configure OAuth App (Through Web Interface)
 
-1. **Login as Admin**: Use the existing Google OAuth admin login at `/auth/login`
-2. **Navigate to LinkedIn Sync**: Visit `/linkedin` or use the "🔗 LinkedIn Sync" link in the admin navigation
-3. **Check Configuration**: The page will show your configuration status
-4. **Sync Data**: Use the provided buttons to sync profile and/or experience data
+1. **Admin Login**: Authenticate via Google OAuth at `/auth/login`
+2. **LinkedIn Admin Page**: Navigate to `/linkedin`
+3. **OAuth Configuration**: If not configured, you'll see configuration form
+4. **Enter Credentials**: Input LinkedIn Client ID, Client Secret, and Redirect URI
+5. **Save Configuration**: System encrypts and stores credentials in database
 
-## 🔄 Available Sync Operations
+### Step 3: Connect Individual LinkedIn Accounts
+
+Each admin can connect their LinkedIn account independently:
+
+1. **Navigate to `/linkedin`**: Access LinkedIn admin interface
+2. **Click "Connect LinkedIn"**: Initiates OAuth 2.0 authorization flow
+3. **Grant Permissions**: Approve requested scopes on LinkedIn
+4. **Return to Admin**: System stores encrypted tokens and profile info
+5. **Start Syncing**: Use sync buttons to import LinkedIn data
+
+## 📊 Available Scopes & Permissions
+
+The system supports configurable LinkedIn OAuth scopes:
+
+| Scope | Display Name | Description | Required |
+|-------|-------------|-------------|----------|
+| `r_liteprofile` | Basic Profile | First name, last name, profile picture, headline | ✅ Required |
+| `r_emailaddress` | Email Address | Primary email address | ✅ Required |
+| `r_basicprofile` | Full Profile | Complete profile including summary, location | Optional |
+| `w_member_social` | Share Content | Post updates to LinkedIn feed | Optional |
+| `rw_company_admin` | Company Admin | Access company pages (if admin) | Optional |
+
+Admins can select which scopes to request during the OAuth flow.
+
+## 🔄 Sync Operations
 
 ### Profile Sync (`POST /linkedin/sync/profile`)
-- Updates portfolio `name`, `title`, `bio`, and `tagline` from LinkedIn profile
-- Maps LinkedIn `firstName` + `lastName` → portfolio `name`
-- Maps LinkedIn `headline` → portfolio `title` and `tagline`
-- Maps LinkedIn `summary` → portfolio `bio`
+- Syncs basic LinkedIn profile to portfolio
+- Updates `name`, `title` from LinkedIn profile data
+- Uses OAuth access token for secure API calls
 
-### Experience Sync (`POST /linkedin/sync/experience`)
-- **⚠️ Warning**: Replaces ALL existing work experience entries
-- Imports LinkedIn work history to `work_experience` table
-- Maps LinkedIn company, position, location, dates, and descriptions
-- Automatically detects current vs. past positions
-- Sets appropriate sort order
+### Experience Sync (`POST /linkedin/sync/experience`)  
+- Imports LinkedIn work experience to portfolio database
+- Maps LinkedIn positions to `work_experience` table
+- Preserves existing data while updating LinkedIn-sourced entries
 
 ### Full Sync (`POST /linkedin/sync/full`)
-- Performs both profile and experience sync in sequence
-- Returns combined results with error handling
-- Recommended for initial setup
+- Combines profile and experience sync operations
+- Provides comprehensive data import from LinkedIn
+- Returns detailed results for both sync types
 
-## 📊 Data Mapping
+## �️ Security & Data Flow
 
-### LinkedIn Profile → Portfolio Fields
+### OAuth 2.0 Flow
+1. **Authorization**: Admin clicks "Connect LinkedIn" → redirects to LinkedIn
+2. **User Consent**: User grants permissions on LinkedIn
+3. **Code Exchange**: LinkedIn redirects back with authorization code
+4. **Token Exchange**: System exchanges code for access/refresh tokens
+5. **Secure Storage**: Tokens encrypted and stored in database
+6. **API Access**: Encrypted tokens used for LinkedIn API calls
 
-| LinkedIn Field | Portfolio Field | Notes |
-|---------------|----------------|-------|
-| `firstName` + `lastName` | `name` | Combined full name |
-| `headline` | `title` | Professional title |
-| `headline` | `tagline` | Same as title |
-| `summary` | `bio` | Profile description |
-| `locationName` | *(not stored)* | Location info available but not used |
+### Token Management
+- **Encryption**: All tokens encrypted using Fernet (AES 128)
+- **Expiration**: Automatic token refresh before expiration
+- **Isolation**: Each admin has separate encrypted token storage
+- **Revocation**: Admins can disconnect and revoke tokens anytime
 
-### LinkedIn Experience → Work Experience Fields
+### Data Protection
+- **Minimal Scope**: Only requests necessary LinkedIn permissions
+- **Read-Only**: Default scopes are read-only access
+- **No Persistence**: LinkedIn data only cached temporarily during sync
+- **Audit Trail**: All sync operations logged with timestamps
 
-| LinkedIn Field | Work Experience Field | Notes |
-|---------------|----------------------|-------|
-| `companyName` | `company` | Company name |
-| `title` | `position` | Job title/position |
-| `locationName` | `location` | Work location |
-| `timePeriod.startDate` | `start_date` | Format: `YYYY-MM` |
-| `timePeriod.endDate` | `end_date` | Format: `YYYY-MM` or NULL |
-| `description` | `description` | Job description |
-| *(calculated)* | `is_current` | TRUE if no end date |
-| `companyUrn` | `company_url` | Company URL (if available) |
-| *(auto-generated)* | `sort_order` | Sequential ordering |
+## 🔧 Admin Interface Features
 
-## 🛡️ Security & Authentication
+### Connection Status Display
+- **Connection State**: Shows if LinkedIn is connected for current admin
+- **Token Expiry**: Displays when OAuth tokens expire
+- **Granted Scopes**: Shows which permissions were actually granted
+- **Profile Info**: Basic LinkedIn profile information
+- **Last Sync**: Timestamp of most recent data synchronization
 
-### Access Control
-- **Admin Only**: All LinkedIn sync endpoints require admin authentication
-- **Google OAuth**: Uses existing Google OAuth system for authentication
-- **Session-based**: Maintains admin session security
+### Sync Controls
+- **Individual Operations**: Separate buttons for profile vs experience sync
+- **Full Sync**: Complete data import with single action
+- **Real-time Results**: Live feedback on sync operation success/failure
+- **Error Handling**: Detailed error messages for troubleshooting
 
-### Protected Endpoints
-- `GET /linkedin/status` - Configuration status (admin-only)
-- `POST /linkedin/sync/profile` - Profile sync (admin-only)
-- `POST /linkedin/sync/experience` - Experience sync (admin-only)
-- `POST /linkedin/sync/full` - Full sync (admin-only)
-- `GET /linkedin` - Admin interface (admin-only)
+### OAuth Management
+- **Connect/Disconnect**: Easy LinkedIn account connection management
+- **Scope Selection**: Choose which LinkedIn permissions to request
+- **Token Status**: Visual indicators for token health and expiration
 
-### Public Endpoints
-All existing public endpoints remain unchanged and don't require LinkedIn credentials.
+## � API Endpoints
 
-## 🔧 Troubleshooting
+### OAuth Management
+- `GET /linkedin/oauth/authorize` - Start OAuth flow
+- `GET /admin/linkedin/callback` - OAuth callback handler
+- `DELETE /linkedin/oauth/disconnect` - Disconnect LinkedIn account
 
-### Common Issues
+### Sync Operations
+- `GET /linkedin/status` - Get connection and sync status
+- `POST /linkedin/sync/profile` - Sync LinkedIn profile data
+- `POST /linkedin/sync/experience` - Sync LinkedIn work experience
+- `POST /linkedin/sync/full` - Complete LinkedIn data sync
 
-#### 1. "LinkedIn credentials not configured"
-**Solution**: Set `LINKEDIN_USERNAME` and `LINKEDIN_PASSWORD` environment variables
-
-#### 2. "LinkedIn authentication failed"
-**Possible causes**:
-- Incorrect username/password
-- LinkedIn account locked or requires verification
-- Two-factor authentication blocking programmatic access
-
-**Solutions**:
-- Verify credentials
-- Check LinkedIn account status
-- Consider using app-specific password
-- Temporarily disable 2FA for API access
-
-#### 3. "Profile sync failed: Portfolio not found"
-**Solution**: Ensure the target portfolio exists in the database with ID `daniel-blackburn`
-
-#### 4. "Experience sync partially failed"
-**Cause**: Some LinkedIn experience entries may have incomplete data
-**Solution**: Check sync results for specific error details
-
-### Environment Variables Debug
-
-Use the LinkedIn Sync admin page to check configuration status:
-- **LinkedIn API**: Shows if credentials are configured
-- **Username**: Shows configured LinkedIn username (without password)
-- **Target Profile ID**: Shows which LinkedIn profile will be synced
-- **Portfolio ID**: Shows target portfolio in database
-
-## 📋 API Reference
-
-### GET /linkedin/status
-Returns LinkedIn sync configuration status.
-
-**Response**:
-```json
-{
-  "status": "success",
-  "linkedin_sync": {
-    "linkedin_configured": true,
-    "linkedin_username": "user@example.com",
-    "target_profile_id": "blackburnd",
-    "portfolio_id": "daniel-blackburn"
-  }
-}
-```
-
-### POST /linkedin/sync/profile
-Syncs LinkedIn profile data to portfolio.
-
-**Response**:
-```json
-{
-  "status": "success",
-  "result": {
-    "status": "success",
-    "updated_fields": ["name", "title", "bio", "tagline"],
-    "profile_data": { ... }
-  }
-}
-```
-
-### POST /linkedin/sync/experience
-Syncs LinkedIn work experience to database.
-
-**Response**:
-```json
-{
-  "status": "success",
-  "result": {
-    "status": "success",
-    "experiences_count": 3,
-    "experiences": [ ... ]
-  }
-}
-```
-
-### POST /linkedin/sync/full
-Performs complete sync of profile and experience data.
-
-**Response**:
-```json
-{
-  "status": "success",
-  "result": {
-    "status": "success",
-    "sync_timestamp": "2024-01-01T12:00:00",
-    "profile_sync": { ... },
-    "experience_sync": { ... },
-    "errors": []
-  }
-}
-```
+### Configuration (Admin Only)
+- `POST /admin/linkedin/config` - Configure LinkedIn OAuth app
+- `GET /admin/linkedin/scopes` - Get available OAuth scopes
 
 ## 🚀 Production Deployment
 
-### Environment Variables
-Set these in your production environment:
+### Database Migration
+Run the TTW schema setup:
+```sql
+-- Apply the TTW OAuth schema
+\i sql/linkedin_oauth_ttw_schema.sql
+```
 
+### Environment Variables (Minimal)
+Only encryption key needed:
 ```bash
-# Required for LinkedIn sync
-export LINKEDIN_USERNAME="your_email@example.com"
-export LINKEDIN_PASSWORD="your_secure_password"
-export LINKEDIN_PROFILE_ID="your_profile_id"  # Optional
-
-# Existing OAuth variables (already configured)
-export GOOGLE_CLIENT_ID="your-google-client-id"
-export GOOGLE_CLIENT_SECRET="your-google-client-secret"
-export AUTHORIZED_EMAILS="admin@example.com"
+# Optional: Specify encryption key (auto-generated if not set)
+export OAUTH_ENCRYPTION_KEY="your-generated-fernet-key"
 ```
 
-### Systemd Service Configuration
-Add LinkedIn environment variables to your systemd service:
+### No LinkedIn Environment Variables Needed
+The TTW system eliminates these traditional requirements:
+- ❌ `LINKEDIN_CLIENT_ID` (stored in database)
+- ❌ `LINKEDIN_CLIENT_SECRET` (stored encrypted in database)  
+- ❌ `LINKEDIN_REDIRECT_URI` (stored in database)
+- ❌ `LINKEDIN_USERNAME` (OAuth eliminates username/password)
+- ❌ `LINKEDIN_PASSWORD` (OAuth eliminates username/password)
 
-```ini
-[Service]
-Environment="LINKEDIN_USERNAME=your_email@example.com"
-Environment="LINKEDIN_PASSWORD=your_secure_password"
-Environment="LINKEDIN_PROFILE_ID=your_profile_id"
-```
+## 🔍 Troubleshooting
 
-### Docker Deployment
-Add to your Docker environment:
+### OAuth App Not Configured
+**Symptom**: "LinkedIn OAuth app not configured" error
+**Solution**: Admin needs to configure LinkedIn OAuth app through web interface
 
-```yaml
-environment:
-  - LINKEDIN_USERNAME=your_email@example.com
-  - LINKEDIN_PASSWORD=your_secure_password
-  - LINKEDIN_PROFILE_ID=your_profile_id
-```
+### Token Expired
+**Symptom**: Sync operations fail with authentication errors
+**Solution**: System automatically refreshes tokens; if persistent, reconnect LinkedIn
 
-## 🎯 Usage Workflow
+### Insufficient Permissions
+**Symptom**: Some data not syncing (e.g., full profile, experience)
+**Solution**: Disconnect and reconnect with additional requested scopes
 
-1. **Initial Setup**: Configure LinkedIn credentials in environment
-2. **Admin Login**: Authenticate using Google OAuth admin system
-3. **Access Sync Interface**: Navigate to `/linkedin` admin page
-4. **Verify Configuration**: Check that LinkedIn credentials are properly configured
-5. **Perform Initial Sync**: Run "Full Sync" to import all data
-6. **Regular Updates**: Use individual profile or experience sync as needed
-7. **Monitor Results**: Review sync results and handle any errors
+### Configuration Errors
+**Symptom**: OAuth flow fails or redirects incorrectly
+**Solution**: Verify LinkedIn app redirect URI matches configured URI exactly
 
-## 🔗 Integration with Existing System
+## 💡 Benefits Over Environment Variables
 
-This LinkedIn integration seamlessly integrates with your existing portfolio system:
+### Security Improvements
+- **No Secrets in Environment**: OAuth app credentials encrypted in database
+- **No Plaintext Passwords**: OAuth tokens instead of username/password
+- **Per-User Authentication**: Each admin authenticates individually
+- **Automatic Rotation**: OAuth tokens refresh automatically
 
-- **Database Schema**: Uses existing `portfolios` and `work_experience` tables
-- **Authentication**: Leverages existing Google OAuth admin system  
-- **Admin Interface**: Consistent with existing admin page design
-- **Navigation**: Added to existing admin navigation structure
-- **Error Handling**: Follows existing error response patterns
-- **Logging**: Uses existing application logging infrastructure
+### Operational Benefits  
+- **Self-Service Configuration**: Admins configure through web interface
+- **Multiple Admins**: Each admin can connect their own LinkedIn account
+- **No Deployment Variables**: Zero environment variable configuration
+- **Audit Trail**: Database tracks all OAuth operations and configurations
 
-The integration is designed to be **non-intrusive** and **backward-compatible** with all existing functionality.
+### Scalability
+- **Multi-Tenant Ready**: Supports multiple LinkedIn accounts per instance
+- **Scope Flexibility**: Different admins can grant different permission levels
+- **Independent Tokens**: Token expiration doesn't affect other admins
+- **Configuration Management**: OAuth app config versioned in database
+
+This TTW OAuth implementation provides enterprise-grade LinkedIn integration without the security and operational challenges of environment variable management.
+````

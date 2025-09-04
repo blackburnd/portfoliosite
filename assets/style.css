@@ -606,15 +606,6 @@ input[type="checkbox"] {
     padding: 20px;
 }
 
-.bootstrap-warning {
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 20px;
-    margin-bottom: 20px;
-    color: #333;
-}
-
 .config-form {
     max-width: 600px;
     margin: 0 auto;

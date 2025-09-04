@@ -48,7 +48,6 @@ from auth import (
 )
 from cookie_auth import require_admin_auth_cookie
 from linkedin_sync import linkedin_sync, LinkedInSyncError, LinkedInSync
-from bootstrap_security import require_bootstrap_or_admin_auth, get_bootstrap_ui_context, mark_system_configured
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
@@ -1098,32 +1097,26 @@ async def projects_admin_page(
 
 
 @app.get("/linkedin", response_class=HTMLResponse)
-async def linkedin_admin_page(request: Request, user: dict = Depends(require_bootstrap_or_admin_auth)):
-    """LinkedIn sync admin interface - redirects to bootstrap if not configured"""
+async def linkedin_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+    """LinkedIn sync admin interface"""
     try:
-        # Check if LinkedIn OAuth is configured
-        admin_email = user.get('email') if user else 'bootstrap_user@system.local'
+        admin_email = admin.get('email')
         sync_service = TTWLinkedInSync(admin_email)
         app_status = await sync_service.get_oauth_app_status()
         
-        # If OAuth app is not configured, redirect to bootstrap setup
-        if not app_status.get('configured', False):
-            logger.info("LinkedIn OAuth not configured - redirecting to bootstrap setup")
-            return RedirectResponse(url="/oauth/bootstrap", status_code=302)
-        
-        # OAuth is configured, show admin interface
+        # Show admin interface regardless of OAuth app configuration
+        # The interface will handle the "not configured" state
         return templates.TemplateResponse("linkedin_admin.html", {
             "request": request,
             "current_page": "linkedin_admin",
-            "user_info": user,
-            "user_authenticated": bool(user),
-            "user_email": user.get("email", "") if user else ""
+            "user_info": admin,
+            "user_authenticated": True,
+            "user_email": admin.get("email", "")
         })
         
     except Exception as e:
         logger.error(f"Error loading LinkedIn admin page: {str(e)}")
-        # On error, redirect to bootstrap setup as fallback
-        return RedirectResponse(url="/oauth/bootstrap", status_code=302)
+        raise HTTPException(status_code=500, detail=f"Failed to load LinkedIn admin page: {str(e)}")
 
 
 # --- LinkedIn Sync Admin Endpoints ---
@@ -1279,12 +1272,12 @@ async def oauth_status_page(request: Request):
             <p><strong>Redirect URI:</strong> {result['redirect_uri']}</p>
             <p><strong>Configured By:</strong> {result['configured_by_email']}</p>
             <p><strong>Created:</strong> {result['created_at']}</p>
-            <p><a href="/oauth/bootstrap">Edit Configuration</a></p>
+            <p><em>OAuth app is configured and active</em></p>
             """
         else:
             config_html += """
             <p><strong>Status:</strong> ❌ Not configured</p>
-            <p><a href="/oauth/bootstrap">Configure OAuth</a></p>
+            <p><em>Use the LinkedIn admin interface to configure OAuth</em></p>
             """
         
         return HTMLResponse(f"""
@@ -1309,24 +1302,6 @@ async def oauth_status_page(request: Request):
         return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth status: {e}</p>", status_code=500)
 
 # --- LinkedIn OAuth App Configuration Endpoints ---
-
-@app.get("/oauth/bootstrap")
-async def oauth_bootstrap_page(request: Request):
-    """Bootstrap OAuth configuration page - accessible without authentication"""
-    try:
-        # Get bootstrap context
-        bootstrap_context = await get_bootstrap_ui_context(request)
-        
-        return templates.TemplateResponse("oauth_bootstrap.html", {
-            "request": request,
-            "current_page": "oauth_config",
-            "bootstrap": bootstrap_context["bootstrap"],
-            "user": bootstrap_context["user"],
-            "auth_status": bootstrap_context["auth_status"]
-        })
-    except Exception as e:
-        logger.error(f"Error loading OAuth bootstrap page: {str(e)}")
-        return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth configuration page: {e}</p>", status_code=500)
 
 @app.get("/linkedin/oauth/config")
 async def get_linkedin_oauth_config(request: Request):
