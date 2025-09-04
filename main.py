@@ -880,6 +880,7 @@ async def execute_sql(
 ):
     """Execute SQL query against the database"""
     import time
+    import json
     from datetime import datetime, date
     
     def serialize_datetime(obj):
@@ -909,6 +910,22 @@ async def execute_sql(
         
         # Determine if this is a SELECT query or a modification query
         is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
+        
+        # Add specific log entry for query history tracking
+        from log_capture import add_log
+        add_log(
+            level="INFO", 
+            source="sql_admin", 
+            message=f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}", 
+            user=admin.get('email', 'unknown'),
+            module="sql_admin",
+            function="execute_sql",
+            extra=json.dumps({
+                "query_type": "SELECT" if is_select else "MODIFY",
+                "query_length": len(query),
+                "user_email": admin.get('email', 'unknown')
+            })
+        )
         
         if is_select:
             # For SELECT queries, fetch results

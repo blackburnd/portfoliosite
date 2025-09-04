@@ -185,9 +185,15 @@ SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 20;
             <h3>Quick Examples (click to use):</h3>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 10;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT level, COUNT(*) as count FROM app_log GROUP BY level;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log WHERE module = 'sql_admin' ORDER BY timestamp DESC LIMIT 20;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM portfolios;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">PRAGMA table_info(app_log);</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM work_experience ORDER BY sort_order;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM projects ORDER BY sort_order;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 10;</div>
             <div class="example-query" onclick="setQuery(this.textContent)">SELECT name FROM sqlite_master WHERE type='table';</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_work_items FROM work_experience;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_projects FROM projects;</div>
+            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM oauth_apps;</div>
         </div>
         
         <div id="resultsContainer" class="results-container">
