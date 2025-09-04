@@ -767,27 +767,44 @@ db = databases.Database(DATABASE_URL)
 @app.get("/debug/logs/data")
 async def get_logs_data():
     """API endpoint to get log data from app_log table as JSON (no auth required for debugging)"""
+    from datetime import datetime, date
+    
+    def serialize_datetime(obj):
+        """Convert datetime objects to ISO format strings"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, date):
+            return obj.isoformat()
+        return obj
+    
     await db.connect()
     query = "SELECT id, timestamp, level, message, module, function, line, user, extra FROM app_log ORDER BY timestamp DESC LIMIT 100"
     logs = await db.fetch_all(query)
     await db.disconnect()
-    # Convert logs to dicts
-    logs = [dict(log) for log in logs]
+    
+    # Convert logs to dicts and serialize datetime objects
+    logs_data = []
+    for log in logs:
+        log_dict = {}
+        for key, value in dict(log).items():
+            log_dict[key] = serialize_datetime(value)
+        logs_data.append(log_dict)
+    
     # Basic stats
     stats = {
-        "total": len(logs),
+        "total": len(logs_data),
         "by_level": {},
         "by_module": {},
-        "newest": logs[0]["timestamp"] if logs else None,
-        "oldest": logs[-1]["timestamp"] if logs else None
+        "newest": logs_data[0]["timestamp"] if logs_data else None,
+        "oldest": logs_data[-1]["timestamp"] if logs_data else None
     }
-    for log in logs:
+    for log in logs_data:
         stats["by_level"].setdefault(log["level"], 0)
         stats["by_level"][log["level"]] += 1
         stats["by_module"].setdefault(log["module"], 0)
         stats["by_module"][log["module"]] += 1
     return JSONResponse({
-        "logs": logs,
+        "logs": logs_data,
         "stats": stats
     })
 
@@ -863,6 +880,16 @@ async def execute_sql(
 ):
     """Execute SQL query against the database"""
     import time
+    from datetime import datetime, date
+    
+    def serialize_datetime(obj):
+        """Convert datetime objects to ISO format strings"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, date):
+            return obj.isoformat()
+        return obj
+    
     start_time = time.time()
     
     try:
@@ -886,7 +913,13 @@ async def execute_sql(
         if is_select:
             # For SELECT queries, fetch results
             rows = await db.fetch_all(query)
-            rows_data = [dict(row) for row in rows]
+            # Convert rows to dicts and serialize datetime objects
+            rows_data = []
+            for row in rows:
+                row_dict = {}
+                for key, value in dict(row).items():
+                    row_dict[key] = serialize_datetime(value)
+                rows_data.append(row_dict)
             
             execution_time = round((time.time() - start_time) * 1000, 2)
             
