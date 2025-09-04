@@ -770,11 +770,14 @@ async def get_logs_data():
     from datetime import datetime, date
     
     def serialize_datetime(obj):
-        """Convert datetime objects to ISO format strings"""
+        """Convert datetime and UUID objects to JSON-serializable strings"""
+        import uuid
         if isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, date):
             return obj.isoformat()
+        elif isinstance(obj, uuid.UUID):
+            return str(obj)
         return obj
     
     await db.connect()
@@ -884,11 +887,14 @@ async def execute_sql(
     from datetime import datetime, date
     
     def serialize_datetime(obj):
-        """Convert datetime objects to ISO format strings"""
+        """Convert datetime and UUID objects to JSON-serializable strings"""
+        import uuid
         if isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, date):
             return obj.isoformat()
+        elif isinstance(obj, uuid.UUID):
+            return str(obj)
         return obj
     
     start_time = time.time()
