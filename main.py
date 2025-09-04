@@ -1327,9 +1327,6 @@ async def get_oauth_status():
             FROM oauth_apps 
             ORDER BY provider, created_at DESC
         """
-        oauth_apps = await database.fetch_all(oauth_apps_query) 
-            ORDER BY created_at DESC
-        """
         try:
             oauth_apps = await database.fetch_all(oauth_apps_query)
         except:
