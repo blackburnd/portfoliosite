@@ -3003,6 +3003,54 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_cookie)
         }, status_code=500)
 
 
+@app.get("/admin/linkedin/config")
+async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin_auth_cookie)):
+    """Get LinkedIn OAuth configuration for admin form"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_config_form_load", f"Admin {admin_email} loading LinkedIn OAuth config form")
+        
+        ttw_manager = TTWOAuthManager()
+        config = await ttw_manager.get_oauth_app_config()
+        
+        if config:
+            return JSONResponse({
+                "app_name": config.get("app_name", ""),
+                "client_id": config.get("client_id", ""),
+                "client_secret": "",  # Never return the actual secret for security
+                "redirect_uri": config.get("redirect_uri", ""),
+                "scopes": ",".join(config.get("scopes", ["r_liteprofile", "r_emailaddress"])) if isinstance(config.get("scopes"), list) else "r_liteprofile,r_emailaddress",
+                "configured": True
+            })
+        else:
+            return JSONResponse({
+                "app_name": "blackburnsystems profile site",
+                "client_id": "",
+                "client_secret": "",
+                "redirect_uri": "https://www.blackburnsystems.com/admin/linkedin/callback",
+                "scopes": "r_liteprofile,r_emailaddress",
+                "configured": False
+            })
+        
+    except Exception as e:
+        logger.error(f"Error getting LinkedIn OAuth config for form: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.post("/admin/linkedin/config")
+async def save_linkedin_config_shortcut(
+    config: dict,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Save LinkedIn OAuth configuration (shortcut route for JavaScript)"""
+    # Forward to the main OAuth config route
+    return await save_linkedin_oauth_config(config, admin)
+
+
 @app.post("/admin/linkedin/oauth/config")
 async def save_linkedin_oauth_config(
     config: dict,
@@ -3052,6 +3100,13 @@ async def save_linkedin_oauth_config(
             "status": "error",
             "error": str(e)
         }, status_code=500)
+
+
+@app.get("/admin/linkedin/test-config")
+async def test_linkedin_config_shortcut(admin: dict = Depends(require_admin_auth_cookie)):
+    """Test LinkedIn OAuth configuration (shortcut route for JavaScript)"""
+    # Forward to the main OAuth test route
+    return await test_linkedin_oauth_config(admin)
 
 
 @app.delete("/admin/linkedin/oauth/config")
