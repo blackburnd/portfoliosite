@@ -397,7 +397,7 @@ require([
         showStatusMessage(message, 'success', duration);
     }
     
-    function showErrorMessage(message, duration = 6000) {
+    function showErrorMessage(message, duration = 0) {
         showStatusMessage(message, 'error', duration);
     }
     

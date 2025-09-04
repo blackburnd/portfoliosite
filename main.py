@@ -864,8 +864,8 @@ DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
 db = databases.Database(DATABASE_URL)
 
 @app.get("/debug/logs/data")
-async def get_logs_data():
-    """API endpoint to get log data from app_log table as JSON (no auth required for debugging)"""
+async def get_logs_data(page: int = 1, limit: int = 50, level: str = None, module: str = None):
+    """API endpoint to get log data from app_log table as JSON with pagination support (no auth required for debugging)"""
     from datetime import datetime, date
     
     def serialize_datetime(obj):
@@ -880,8 +880,31 @@ async def get_logs_data():
         return obj
     
     await db.connect()
-    query = "SELECT id, timestamp, level, message, module, function, line, \"user\", extra FROM app_log ORDER BY timestamp DESC LIMIT 100"
-    logs = await db.fetch_all(query)
+    
+    # Build WHERE clause for filtering
+    where_conditions = []
+    params = {}
+    if level:
+        where_conditions.append("level = :level")
+        params["level"] = level
+    if module:
+        where_conditions.append("module = :module")
+        params["module"] = module
+    
+    where_clause = f" WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+    
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+    
+    # Get total count for pagination info
+    count_query = f"SELECT COUNT(*) as total FROM app_log{where_clause}"
+    total_result = await db.fetch_one(count_query, params)
+    total_count = total_result["total"] if total_result else 0
+    
+    # Get paginated logs
+    query = f"SELECT id, timestamp, level, message, module, function, line, \"user\", extra FROM app_log{where_clause} ORDER BY timestamp DESC LIMIT :limit OFFSET :offset"
+    params.update({"limit": limit, "offset": offset})
+    logs = await db.fetch_all(query, params)
     await db.disconnect()
     
     # Convert logs to dicts and serialize datetime objects
@@ -892,9 +915,20 @@ async def get_logs_data():
             log_dict[key] = serialize_datetime(value)
         logs_data.append(log_dict)
     
+    # Calculate pagination info
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    has_next = page < total_pages
+    has_prev = page > 1
+    
     # Basic stats
     stats = {
-        "total": len(logs_data),
+        "total": total_count,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "has_next": has_next,
+        "has_prev": has_prev,
+        "showing": len(logs_data),
         "by_level": {},
         "by_module": {},
         "newest": logs_data[0]["timestamp"] if logs_data else None,
