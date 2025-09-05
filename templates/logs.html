@@ -17,7 +17,9 @@
             }
         }
     </script>
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
     <link rel="stylesheet" href="/assets/style.css?v=20250905190000">
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dijit/themes/claro/claro.css">
 </head>
 
 <body class="logs claro">
@@ -29,60 +31,72 @@
             {% endwith %}
             
             <div id="bw" aria-live="polite">
-                <div class="logs-container">
-        <div class="logs-toolbar">
-            <div class="logs-filters">
-                <div class="filter-group">
-                    <input type="text" id="searchBox" placeholder="Search logs..." class="search-input" />
-                </div>
-                <div class="filter-group">
-                    <select id="levelFilter" class="filter-select">
-                        <option value="">All Levels</option>
-                        <option value="DEBUG">DEBUG</option>
-                        <option value="INFO">INFO</option>
-                        <option value="WARNING">WARNING</option>
-                        <option value="ERROR">ERROR</option>
-                    </select>
-                    <select id="moduleFilter" class="filter-select">
-                        <option value="">All Modules</option>
-                    </select>
-                    <select id="timeFilter" class="filter-select">
-                        <option value="">All Time</option>
-                        <option value="5">Last 5 min</option>
-                        <option value="15">Last 15 min</option>
-                        <option value="60">Last hour</option>
-                        <option value="1440">Last 24h</option>
-                    </select>
-                </div>
-                <div class="filter-group actions">
-                    <button onclick="refreshLogs()" class="btn-action" title="Refresh">🔄</button>
-                    <button onclick="clearFilters()" class="btn-action" title="Clear Filters">🗑️</button>
-                    <span id="filteredLogs" class="log-count">Showing: 0</span>
+                <div class="logs-admin-content">
+                    <h2>Application Logs</h2>
+                    <div class="status-messages" id="statusMessages"></div>
+                    
+                    <!-- Filters and Controls -->
+                    <div class="logs-toolbar">
+                        <div class="logs-filters">
+                            <div class="filter-group">
+                                <input type="text" id="searchBox" placeholder="Search logs..." class="search-input" />
+                            </div>
+                            <div class="filter-group">
+                                <select id="levelFilter" class="filter-select">
+                                    <option value="">All Levels</option>
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                                <select id="moduleFilter" class="filter-select">
+                                    <option value="">All Modules</option>
+                                </select>
+                                <select id="timeFilter" class="filter-select">
+                                    <option value="">All Time</option>
+                                    <option value="5">Last 5 min</option>
+                                    <option value="15">Last 15 min</option>
+                                    <option value="60">Last hour</option>
+                                    <option value="1440">Last 24h</option>
+                                </select>
+                            </div>
+                            <div class="filter-group actions">
+                                <button onclick="refreshLogs()" class="btn" title="Refresh">🔄 Refresh</button>
+                                <button onclick="clearFilters()" class="btn btn-secondary" title="Clear Filters">🗑️ Clear</button>
+                                <span id="filteredLogs" class="log-count">Showing: 0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Logs Grid -->
+                    <div class="logs-table-container" id="logsContainer">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="timestamp" style="width: 150px;">Time<span class="sort-indicator"></span></th>
+                                    <th data-sort="level" style="width: 80px;">Level<span class="sort-indicator"></span></th>
+                                    <th data-sort="module" style="width: 100px;">Module<span class="sort-indicator"></span></th>
+                                    <th data-sort="message">Message<span class="sort-indicator"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <!-- Logs will be populated here -->
+                            </tbody>
+                        </table>
+                        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                            Loading more logs...
+                        </div>
+                        <div id="noMoreLogs" class="no-more-logs" style="display: none;">
+                            No more logs to load
+                        </div>
+                        <div id="scrollTrigger" class="scroll-trigger"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="logs-table-container" id="logsContainer">
-            <table class="logs-table">
-                <thead>
-                    <tr>
-                        <th data-sort="timestamp" style="width: 150px;">Time<span class="sort-indicator"></span></th>
-                        <th data-sort="level" style="width: 80px;">Level<span class="sort-indicator"></span></th>
-                        <th data-sort="module" style="width: 100px;">Module<span class="sort-indicator"></span></th>
-                        <th data-sort="message">Message<span class="sort-indicator"></span></th>
-                    </tr>
-                </thead>
-                <tbody id="logsTableBody">
-                    <!-- Logs will be populated here -->
-                </tbody>
-            </table>
-            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-                Loading more logs...
-            </div>
-            <div id="noMoreLogs" class="no-more-logs" style="display: none;">
-                No more logs to load
-            </div>
-            <div id="scrollTrigger" class="scroll-trigger"></div>
+            
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
         </div>
     </div>
 
