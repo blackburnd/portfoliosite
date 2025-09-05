@@ -1009,11 +1009,11 @@ async def logs_admin_page(
 @app.get("/logs/data")
 async def get_logs_data(
     request: Request,
-    page: int = 1,
-    limit: int = 100,
+    offset: int = 0,
+    limit: int = 50,
     admin: dict = Depends(require_admin_auth_cookie)
 ):
-    """Get paginated log data for the logs admin interface"""
+    """Get log data for endless scrolling logs interface"""
     from datetime import datetime
     
     def serialize_datetime(obj):
@@ -1023,14 +1023,7 @@ async def get_logs_data(
         return obj
     
     try:
-        offset = (page - 1) * limit
-        
-        # Get total count
-        count_query = "SELECT COUNT(*) as total FROM app_log"
-        count_result = await database.fetch_one(count_query)
-        total_logs = count_result["total"] if count_result else 0
-        
-        # Get paginated logs
+        # Get logs with offset/limit for endless scrolling
         logs_query = """
             SELECT timestamp, level, message, module, function, line, user, extra
             FROM app_log 
@@ -1048,15 +1041,15 @@ async def get_logs_data(
                 log_dict[key] = serialize_datetime(value)
             logs_data.append(log_dict)
         
+        # Check if there are more logs
+        has_more = len(logs_data) == limit
+        
         return JSONResponse({
             "status": "success",
             "logs": logs_data,
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total": total_logs,
-                "pages": (total_logs + limit - 1) // limit
-            }
+            "has_more": has_more,
+            "offset": offset,
+            "limit": limit
         })
         
     except Exception as e:
@@ -1258,12 +1251,18 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
     try:
         add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
         
-        # Get database connection details from environment
-        db_host = os.getenv("DB_HOST", "localhost")
-        db_name = os.getenv("DB_NAME", "daniel_profile")
-        db_user = os.getenv("DB_USER", "postgres")
-        db_password = os.getenv("DB_PASSWORD", "")
-        db_port = os.getenv("DB_PORT", "5432")
+        # Parse database connection details from DATABASE_URL
+        from urllib.parse import urlparse
+        database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+        if not database_url:
+            raise Exception("DATABASE_URL not found in environment")
+            
+        parsed = urlparse(database_url)
+        db_host = parsed.hostname
+        db_port = parsed.port or 5432
+        db_name = parsed.path.lstrip('/')
+        db_user = parsed.username
+        db_password = parsed.password
         
         # Create temporary file for the schema dump
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_file:
