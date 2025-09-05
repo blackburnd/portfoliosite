@@ -1254,6 +1254,116 @@ async def execute_sql(
             pass
 
 
+@app.get("/admin/sql/download-schema")
+async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
+    """Download the current database schema as a SQL dump file"""
+    import subprocess
+    import tempfile
+    import os
+    from datetime import datetime
+    
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
+        
+        # Get database connection details from environment
+        db_host = os.getenv("DB_HOST", "localhost")
+        db_name = os.getenv("DB_NAME", "daniel_profile")
+        db_user = os.getenv("DB_USER", "postgres")
+        db_password = os.getenv("DB_PASSWORD", "")
+        db_port = os.getenv("DB_PORT", "5432")
+        
+        # Create temporary file for the schema dump
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_file:
+            temp_filename = temp_file.name
+        
+        # Construct pg_dump command
+        # Using schema-only (-s), no owner (-O), plain format (-F plain), disable triggers, UTF8 encoding
+        pg_dump_cmd = [
+            "pg_dump",
+            f"-h{db_host}",
+            f"-p{db_port}",
+            f"-U{db_user}",
+            f"-d{db_name}",
+            "-s",  # schema only
+            "-O",  # no owner
+            "-F", "plain",  # plain text format
+            "--disable-triggers",
+            "--encoding=UTF8",
+            "-f", temp_filename
+        ]
+        
+        # Set environment variable for password if provided
+        env = os.environ.copy()
+        if db_password:
+            env["PGPASSWORD"] = db_password
+        
+        # Execute pg_dump
+        result = subprocess.run(
+            pg_dump_cmd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=60  # 60 second timeout
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"pg_dump failed: {result.stderr}")
+            add_log("ERROR", "sql_admin_schema_download_error", f"Schema download failed for {admin_email}: {result.stderr}")
+            return JSONResponse({
+                "status": "error",
+                "message": f"Schema dump failed: {result.stderr}"
+            }, status_code=500)
+        
+        # Read the generated schema file
+        try:
+            with open(temp_filename, 'r', encoding='utf-8') as f:
+                schema_content = f.read()
+        except Exception as read_error:
+            logger.error(f"Failed to read schema file: {read_error}")
+            return JSONResponse({
+                "status": "error", 
+                "message": f"Failed to read schema file: {read_error}"
+            }, status_code=500)
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_filename)
+            except:
+                pass
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"database_schema_{timestamp}.sql"
+        
+        add_log("INFO", "sql_admin_schema_downloaded", f"Schema successfully downloaded by {admin_email}")
+        
+        # Return the schema as a downloadable file
+        return Response(
+            content=schema_content,
+            media_type="application/sql",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Type": "application/sql; charset=utf-8"
+            }
+        )
+        
+    except subprocess.TimeoutExpired:
+        add_log("ERROR", "sql_admin_schema_timeout", f"Schema download timeout for {admin_email}")
+        return JSONResponse({
+            "status": "error",
+            "message": "Schema dump timed out after 60 seconds"
+        }, status_code=500)
+    except Exception as e:
+        logger.error(f"Error downloading schema: {str(e)}")
+        add_log("ERROR", "sql_admin_schema_error", f"Schema download error for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to download schema: {str(e)}"
+        }, status_code=500)
+
+
 # --- Projects Admin Page ---
 @app.get("/projectsadmin", response_class=HTMLResponse)
 async def projects_admin_page(

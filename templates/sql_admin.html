@@ -73,6 +73,15 @@
             background-color: #c82333;
         }
         
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        
         .results-container {
             margin: 20px 0;
         }
@@ -181,6 +190,7 @@ CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
             <button id="runBtn" class="btn btn-primary" onclick="executeSQL()">▶️ Run Query</button>
             <button id="clearBtn" class="btn btn-secondary" onclick="clearQuery()">🗑️ Clear</button>
             <button id="cancelBtn" class="btn btn-danger" onclick="cancelQuery()" style="display: none;">❌ Cancel</button>
+            <a href="/admin/sql/download-schema" class="btn btn-info" target="_blank" title="Download current database schema as SQL file">📄 Download Schema</a>
             <span id="loadingIndicator" style="display: none;">⏳ Executing...</span>
         </div>
         
