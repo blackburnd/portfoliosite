@@ -2,39 +2,66 @@
 
 class GoogleOAuthAdmin {
     constructor() {
+        console.log('GoogleOAuthAdmin: Constructor called');
         this.init();
     }
 
     init() {
+        console.log('GoogleOAuthAdmin: Init called');
         this.bindEvents();
         this.loadGoogleStatus();
     }
 
     bindEvents() {
+        console.log('GoogleOAuthAdmin: Binding events...');
+        
         // Google Configuration Form
         const googleForm = document.getElementById('google-config-form');
         if (googleForm) {
             googleForm.addEventListener('submit', (e) => this.saveGoogleConfig(e));
+            console.log('GoogleOAuthAdmin: Bound google-config-form submit event');
         }
 
         // Google Action Buttons
         const testBtn = document.getElementById('test-google-connection');
-        if (testBtn) testBtn.addEventListener('click', () => this.testGoogleConnection());
+        if (testBtn) {
+            testBtn.addEventListener('click', () => this.testGoogleConnection());
+            console.log('GoogleOAuthAdmin: Bound test-google-connection click event');
+        }
 
         const clearBtn = document.getElementById('clear-google-config');
-        if (clearBtn) clearBtn.addEventListener('click', () => this.clearGoogleConfig());
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearGoogleConfig());
+            console.log('GoogleOAuthAdmin: Bound clear-google-config click event');
+        }
 
         const authorizeBtn = document.getElementById('initiate-google-oauth');
-        if (authorizeBtn) authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
+        if (authorizeBtn) {
+            authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
+            console.log('GoogleOAuthAdmin: Bound initiate-google-oauth click event');
+        }
 
         const revokeBtn = document.getElementById('revoke-google-oauth');
-        if (revokeBtn) revokeBtn.addEventListener('click', () => this.revokeGoogleAuth());
+        if (revokeBtn) {
+            revokeBtn.addEventListener('click', () => this.revokeGoogleAuth());
+            console.log('GoogleOAuthAdmin: Bound revoke-google-oauth click event');
+        }
 
         const testApiBtn = document.getElementById('test-google-api');
-        if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
+        if (testApiBtn) {
+            testApiBtn.addEventListener('click', () => this.testGoogleAPI());
+            console.log('GoogleOAuthAdmin: Bound test-google-api click event');
+        }
         
         const testProfileBtn = document.getElementById('test-profile-access');
-        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
+        if (testProfileBtn) {
+            testProfileBtn.addEventListener('click', () => this.testProfileAccess());
+            console.log('GoogleOAuthAdmin: Bound test-profile-access click event');
+        } else {
+            console.error('GoogleOAuthAdmin: Could not find test-profile-access button');
+        }
+        
+        console.log('GoogleOAuthAdmin: Finished binding events');
     }
 
     async loadGoogleStatus() {
@@ -201,8 +228,19 @@ class GoogleOAuthAdmin {
     }
 
     async testProfileAccess() {
+        console.log('testProfileAccess called');
+        
         const statusSpan = document.getElementById('profile-test-status');
         const resultsDiv = document.getElementById('profile-test-results');
+        
+        console.log('Status span:', statusSpan);
+        console.log('Results div:', resultsDiv);
+        
+        if (!statusSpan || !resultsDiv) {
+            console.error('Required elements not found');
+            alert('Error: Required page elements not found. Please refresh the page.');
+            return;
+        }
         
         // Show loading state
         statusSpan.textContent = 'Testing...';
@@ -340,5 +378,7 @@ class GoogleOAuthAdmin {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('GoogleOAuthAdmin: DOMContentLoaded event fired');
+    console.log('GoogleOAuthAdmin: Creating new instance');
     new GoogleOAuthAdmin();
 });
