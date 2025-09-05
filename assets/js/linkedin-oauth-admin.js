@@ -104,6 +104,15 @@ class LinkedInOAuthAdmin {
         }
     }
 
+    updateLinkedInConfigForm(data) {
+        // Populate LinkedIn OAuth configuration form with data
+        document.getElementById('linkedin-app-name').value = data.app_name || '';
+        document.getElementById('linkedin-client-id').value = data.client_id || '';
+        document.getElementById('linkedin-client-secret').value = data.client_secret || '';
+        document.getElementById('linkedin-redirect-uri').value = data.redirect_uri || '';
+        document.getElementById('linkedin-scopes').value = data.scopes || '';
+    }
+
     async saveLinkedInConfig(e) {
         e.preventDefault();
         
