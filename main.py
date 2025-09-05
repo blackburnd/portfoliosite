@@ -1054,8 +1054,12 @@ async def get_logs_data(
             "status": "success",
             "logs": logs_data,
             "has_more": has_more,
-            "offset": offset,
-            "limit": limit
+            "pagination": {
+                "page": (offset // limit) + 1,
+                "limit": limit,
+                "offset": offset,
+                "total": len(logs_data)
+            }
         })
         
     except Exception as e:
