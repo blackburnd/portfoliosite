@@ -1364,60 +1364,6 @@ async def setup_oauth_tables():
             "error": str(e)
         }, status_code=500)
 
-@app.get("/oauth/status")
-async def oauth_status_page(request: Request):
-    """Simple page to view current OAuth configuration status"""
-    try:
-        # Get current LinkedIn OAuth config from oauth_apps table
-        query = """
-            SELECT app_name, client_id, redirect_uri, is_active, created_by, created_at
-            FROM oauth_apps 
-            WHERE provider = 'linkedin' AND is_active = true
-            ORDER BY created_at DESC
-            LIMIT 1
-        """
-        result = await database.fetch_one(query)
-        
-        config_html = "<h2>Current LinkedIn OAuth Configuration</h2>"
-        
-        if result:
-            config_html += f"""
-            <p><strong>Status:</strong> ✅ Configured</p>
-            <p><strong>App Name:</strong> {result['app_name']}</p>
-            <p><strong>Client ID:</strong> {result['client_id']}</p>
-            <p><strong>Redirect URI:</strong> {result['redirect_uri']}</p>
-            <p><strong>Configured By:</strong> {result['created_by']}</p>
-            <p><strong>Created:</strong> {result['created_at']}</p>
-            <p><em>OAuth app is configured and active</em></p>
-            """
-        else:
-            config_html += """
-            <p><strong>Status:</strong> ❌ Not configured</p>
-            <p><em>Use the LinkedIn admin interface to configure OAuth</em></p>
-            """
-        
-        return HTMLResponse(f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>OAuth Status - Daniel Blackburn</title>
-            <link href="/assets/style.css" rel="stylesheet">
-        </head>
-        <body>
-            <div class="container">
-                <h1>OAuth Configuration Status</h1>
-                {config_html}
-                <p><a href="/">← Back to Home</a></p>
-            </div>
-        </body>
-        </html>
-        """)
-        
-    except Exception as e:
-        logger.error(f"Error loading OAuth status page: {str(e)}")
-        return HTMLResponse(f"<h1>Error</h1><p>Failed to load OAuth status: {e}</p>", status_code=500)
-
-
 # --- CRUD Endpoints for Work Items ---
 
 # List all work items
@@ -2589,31 +2535,33 @@ async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(requ
 
 
 @app.get("/admin/linkedin/oauth/status")
-async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
     """Get LinkedIn OAuth configuration and connection status"""
     admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_linkedin_oauth_status_check", f"Admin {admin_email} checking LinkedIn OAuth status")
         
-        sync_service = TTWLinkedInSync(admin_email)
+        # Check if LinkedIn OAuth is configured in database
+        ttw_manager = TTWOAuthManager()
+        linkedin_configured = await ttw_manager.is_linkedin_oauth_app_configured()
         
-        # Get OAuth app configuration status
-        oauth_status = await sync_service.get_oauth_app_status()
+        config = None
+        if linkedin_configured:
+            config = await ttw_manager.get_linkedin_oauth_app_config()
         
-        # Get connection status
-        connection_status = await sync_service.get_connection_status()
+        # Check current session for LinkedIn auth
+        linkedin_connected = "linkedin_user" in request.session if hasattr(request, 'session') else False
         
         return JSONResponse({
-            "configured": oauth_status.get("configured", False),
-            "connected": connection_status.get("has_active_connection", False),
-            "app_name": oauth_status.get("app_name", ""),
-            "client_id": oauth_status.get("client_id", "")[:8] + "..." if oauth_status.get("client_id") else "",
-            "redirect_uri": oauth_status.get("redirect_uri", ""),
-            "account_email": admin_email,
-            "last_sync": connection_status.get("last_sync"),
-            "token_expiry": connection_status.get("token_expires_at"),
-            "connection_details": connection_status
+            "configured": linkedin_configured,
+            "connected": linkedin_connected,
+            "app_name": config.get("app_name", "") if config else "",
+            "client_id": config.get("client_id", "")[:8] + "..." if config and config.get("client_id") else "",
+            "redirect_uri": config.get("redirect_uri", "") if config else "",
+            "account_email": request.session.get("linkedin_user", {}).get("email") if linkedin_connected else None,
+            "last_sync": request.session.get("linkedin_user", {}).get("login_time") if linkedin_connected else None,
+            "token_expiry": request.session.get("linkedin_user", {}).get("expires_at") if linkedin_connected else None
         })
         
     except Exception as e:
@@ -2632,16 +2580,23 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
     try:
         add_log("INFO", "admin_linkedin_config_form_load", f"Admin {admin_email} loading LinkedIn OAuth config form")
         
-        ttw_manager = TTWOAuthManager()
-        config = await ttw_manager.get_oauth_app_config()
+        # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
+        query = """
+            SELECT app_name, client_id, redirect_uri, scopes, is_active, created_by, created_at
+            FROM oauth_apps 
+            WHERE provider = 'linkedin' AND is_active = true
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
         
-        if config:
+        if result:
             return JSONResponse({
-                "app_name": config.get("app_name", ""),
-                "client_id": config.get("client_id", ""),
+                "app_name": result["app_name"] or "",
+                "client_id": result["client_id"] or "",
                 "client_secret": "",  # Never return the actual secret for security
-                "redirect_uri": config.get("redirect_uri", ""),
-                "scopes": ",".join(config.get("scopes", ["r_liteprofile", "r_emailaddress"])) if isinstance(config.get("scopes"), list) else "r_liteprofile,r_emailaddress",
+                "redirect_uri": result["redirect_uri"] or "",
+                "scopes": result["scopes"] or "r_liteprofile,r_emailaddress",
                 "configured": True
             })
         else:
@@ -2674,17 +2629,18 @@ async def save_linkedin_config_shortcut(
 
 @app.post("/admin/linkedin/oauth/config")
 async def save_linkedin_oauth_config(
+    request: Request,
     config: dict,
     admin: dict = Depends(require_admin_auth_cookie)
 ):
-    """Save LinkedIn OAuth configuration"""
+    """Save LinkedIn OAuth configuration to database"""
     admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_linkedin_oauth_config_update", f"Admin {admin_email} updating LinkedIn OAuth configuration")
         
         # Validate required fields
-        required_fields = ["app_name", "client_id", "client_secret", "redirect_uri"]
+        required_fields = ["client_id", "client_secret", "redirect_uri"]
         for field in required_fields:
             if not config.get(field):
                 return JSONResponse({
@@ -2692,18 +2648,12 @@ async def save_linkedin_oauth_config(
                     "detail": f"Missing required field: {field}"
                 }, status_code=400)
         
+        # Save configuration to database
         ttw_manager = TTWOAuthManager()
-        
-        # Use the configure_oauth_app method that exists in TTWOAuthManager
-        result = await ttw_manager.configure_oauth_app(admin_email, {
-            "app_name": config["app_name"],
-            "client_id": config["client_id"],
-            "client_secret": config["client_secret"],
-            "redirect_uri": config["redirect_uri"]
-        })
+        result = await ttw_manager.configure_linkedin_oauth_app(admin_email, config)
         
         if result:
-            add_log("INFO", "admin_linkedin_oauth_config_saved", f"LinkedIn OAuth config saved successfully by {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_config_saved", f"LinkedIn OAuth config saved by {admin_email}")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth configuration saved successfully"
@@ -2716,7 +2666,7 @@ async def save_linkedin_oauth_config(
         
     except Exception as e:
         logger.error(f"Error saving LinkedIn OAuth config: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_config_error", f"Error saving LinkedIn OAuth config by {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_config_save_error", f"Error saving LinkedIn OAuth config by {admin_email}: {str(e)}")
         return JSONResponse({
             "status": "error",
             "error": str(e)

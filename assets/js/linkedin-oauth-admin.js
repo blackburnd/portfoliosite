@@ -8,6 +8,7 @@ class LinkedInOAuthAdmin {
     init() {
         this.bindEvents();
         this.loadLinkedInStatus();
+        this.loadLinkedInConfig();
     }
 
     bindEvents() {
@@ -49,6 +50,21 @@ class LinkedInOAuthAdmin {
         } catch (error) {
             console.error('Error loading LinkedIn status:', error);
             this.showMessage('Error loading LinkedIn OAuth status', 'error');
+        }
+    }
+
+    async loadLinkedInConfig() {
+        try {
+            const response = await fetch('/admin/linkedin/config');
+            if (response.ok) {
+                const data = await response.json();
+                this.updateLinkedInConfigForm(data);
+            } else {
+                this.showMessage('Failed to load LinkedIn OAuth configuration', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading LinkedIn config:', error);
+            this.showMessage('Error loading LinkedIn OAuth configuration', 'error');
         }
     }
 
