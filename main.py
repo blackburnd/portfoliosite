@@ -1268,11 +1268,30 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
         add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
         
         # Get database connection details from environment variables
-        db_host = os.getenv("_PG_HOST", "localhost")
+        db_host = os.getenv("_PG_HOST")
         db_port = os.getenv("_PG_PORT", "5432")
-        db_name = os.getenv("_PG_DB", "daniel_portfolio")
-        db_user = os.getenv("_PG_USER", "postgres")
-        db_password = os.getenv("_PG_PASS", "")
+        db_name = os.getenv("_PG_DB")
+        db_user = os.getenv("_PG_USER")
+        db_password = os.getenv("_PG_PASS")
+        
+        # Log the connection details (without password) for debugging
+        add_log("DEBUG", "sql_admin_schema_download", 
+                f"Using connection: host={db_host}, port={db_port}, db={db_name}, user={db_user}")
+        
+        # Verify required environment variables are set
+        if not all([db_host, db_port, db_name, db_user]):
+            missing_vars = []
+            if not db_host: missing_vars.append("_PG_HOST")
+            if not db_port: missing_vars.append("_PG_PORT") 
+            if not db_name: missing_vars.append("_PG_DB")
+            if not db_user: missing_vars.append("_PG_USER")
+            
+            error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+            add_log("ERROR", "sql_admin_schema_env_error", error_msg)
+            return JSONResponse({
+                "status": "error",
+                "message": error_msg
+            }, status_code=500)
         
         # Create temporary file for the schema dump
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_file:
@@ -1300,6 +1319,7 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
             env["PGPASSWORD"] = db_password
         
         # Execute pg_dump
+        add_log("DEBUG", "sql_admin_schema_dump", f"Executing pg_dump command: {' '.join(pg_dump_cmd[:6])}...")
         result = subprocess.run(
             pg_dump_cmd,
             env=env,
@@ -1309,11 +1329,12 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
         )
         
         if result.returncode != 0:
-            logger.error(f"pg_dump failed: {result.stderr}")
-            add_log("ERROR", "sql_admin_schema_download_error", f"Schema download failed for {admin_email}: {result.stderr}")
+            logger.error(f"pg_dump failed with return code {result.returncode}: {result.stderr}")
+            add_log("ERROR", "sql_admin_schema_download_error", 
+                   f"Schema download failed for {admin_email}: return code {result.returncode}, stderr: {result.stderr}")
             return JSONResponse({
                 "status": "error",
-                "message": f"Schema dump failed: {result.stderr}"
+                "message": f"Schema dump failed (exit code {result.returncode}): {result.stderr}"
             }, status_code=500)
         
         # Read the generated schema file
