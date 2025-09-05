@@ -139,14 +139,23 @@ Headers: {dict(request.headers)}
 Full Traceback:
 {error_traceback}"""
         
-        add_log(
+        # Build extra data for the log entry
+        extra_data = {
+            "error_id": error_id,
+            "error_type": error_type,
+            "request_url": str(request.url),
+            "request_method": request.method,
+            "request_headers": dict(request.headers)
+        }
+        
+        await add_log(
             "ERROR",
-            "unhandled_exception", 
             detailed_message,
-            error_id=error_id,
-            error_type=error_type,
-            request_url=str(request.url),
-            request_method=request.method
+            "unhandled_exception",
+            "global_exception_handler",
+            0,  # line number
+            None,  # user
+            extra_data
         )
     except Exception as log_error:
         logger.error(f"Failed to log exception to database: {log_error}")
