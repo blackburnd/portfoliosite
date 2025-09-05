@@ -56,6 +56,7 @@ from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
 from app.resolvers import schema
 from database import init_database, close_database, database
+from databases import Database
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -1021,42 +1022,50 @@ async def get_logs_data(
         # Add a test log entry to ensure we have something to display
         add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
         
-        # Get logs with offset/limit for endless scrolling
-        logs_query = """
-            SELECT timestamp, level, message, module, function, line, user, extra
-            FROM app_log 
-            ORDER BY timestamp DESC 
-            LIMIT :limit OFFSET :offset
-        """
+        # Create our own database connection like add_log does
+        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+        db = Database(DATABASE_URL)
+        await db.connect()
         
-        logs = await database.fetch_all(logs_query, {"limit": limit, "offset": offset})
-        
-        # Debug: Log what we found
-        add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs in database")
-        
-        # Convert logs to dict and serialize datetime objects
-        logs_data = []
-        for log in logs:
-            log_dict = {}
-            for key, value in dict(log).items():
-                log_dict[key] = serialize_datetime(value)
-            logs_data.append(log_dict)
-        
-        # Check if there are more logs
-        has_more = len(logs_data) == limit
-        
-        return JSONResponse({
-            "status": "success",
-            "logs": logs_data,
-            "has_more": has_more,
-            "has_next": has_more,  # Backward compatibility - same as has_more
-            "pagination": {
-                "page": (offset // limit) + 1,
-                "limit": limit,
-                "offset": offset,
-                "total": len(logs_data)
-            }
-        })
+        try:
+            # Get logs with offset/limit for endless scrolling
+            logs_query = """
+                SELECT timestamp, level, message, module, function, line, user, extra
+                FROM app_log 
+                ORDER BY timestamp DESC 
+                LIMIT :limit OFFSET :offset
+            """
+            
+            logs = await db.fetch_all(logs_query, {"limit": limit, "offset": offset})
+            
+            # Debug: Log what we found
+            add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs in database")
+            
+            # Convert logs to dict and serialize datetime objects
+            logs_data = []
+            for log in logs:
+                log_dict = {}
+                for key, value in dict(log).items():
+                    log_dict[key] = serialize_datetime(value)
+                logs_data.append(log_dict)
+            
+            # Check if there are more logs
+            has_more = len(logs_data) == limit
+            
+            return JSONResponse({
+                "status": "success",
+                "logs": logs_data,
+                "has_more": has_more,
+                "has_next": has_more,  # Backward compatibility - same as has_more
+                "pagination": {
+                    "page": (offset // limit) + 1,
+                    "limit": limit,
+                    "offset": offset,
+                    "total": len(logs_data)
+                }
+            })
+        finally:
+            await db.disconnect()
         
     except Exception as e:
         logger.error(f"Error fetching logs: {str(e)}")
