@@ -979,157 +979,237 @@ async def work_admin_page(
 
 
 # --- Logs Admin Page ---
-@app.get("/debug/test")
-async def debug_test():
-    """Simple test route to verify deployment"""
-    return {"status": "ok", "message": "Debug route working", "timestamp": time.time()}
-
-
-@app.get("/debug/logs", response_class=HTMLResponse)
-async def logs_admin_page(request: Request):
-    """Admin page for viewing application logs (no auth required for debugging)"""
+@app.get("/logs", response_class=HTMLResponse)
+async def logs_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Application logs viewer interface"""
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "current_page": "logs",
-        "user_info": {"email": "debug@example.com", "name": "Debug User"},
+        "user_info": admin,
         "user_authenticated": True,
-        "user_email": "debug@example.com"
+        "user_email": admin.get("email", "")
     })
 
 
-
-import databases
-DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-db = databases.Database(DATABASE_URL)
-
-@app.get("/debug/logs/data")
-async def get_logs_data(page: int = 1, limit: int = 50, level: str = None, module: str = None):
-    """API endpoint to get log data from app_log table as JSON with pagination support (no auth required for debugging)"""
-    from datetime import datetime, date
+@app.get("/logs/data")
+async def get_logs_data(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Get paginated log data for the logs admin interface"""
+    from datetime import datetime
     
     def serialize_datetime(obj):
-        """Convert datetime and UUID objects to JSON-serializable strings"""
-        import uuid
+        """Convert datetime objects to JSON-serializable strings"""
         if isinstance(obj, datetime):
             return obj.isoformat()
-        elif isinstance(obj, date):
-            return obj.isoformat()
-        elif isinstance(obj, uuid.UUID):
-            return str(obj)
         return obj
     
-    await db.connect()
-    
-    # Build WHERE clause for filtering
-    where_conditions = []
-    params = {}
-    if level:
-        where_conditions.append("level = :level")
-        params["level"] = level
-    if module:
-        where_conditions.append("module = :module")
-        params["module"] = module
-    
-    where_clause = f" WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
-    
-    # Calculate offset for pagination
-    offset = (page - 1) * limit
-    
-    # Get total count for pagination info
-    count_query = f"SELECT COUNT(*) as total FROM app_log{where_clause}"
-    total_result = await db.fetch_one(count_query, params)
-    total_count = total_result["total"] if total_result else 0
-    
-    # Get paginated logs
-    query = f"SELECT id, timestamp, level, message, module, function, line, \"user\", extra FROM app_log{where_clause} ORDER BY timestamp DESC LIMIT :limit OFFSET :offset"
-    params.update({"limit": limit, "offset": offset})
-    logs = await db.fetch_all(query, params)
-    await db.disconnect()
-    
-    # Convert logs to dicts and serialize datetime objects
-    logs_data = []
-    for log in logs:
-        log_dict = {}
-        for key, value in dict(log).items():
-            log_dict[key] = serialize_datetime(value)
-        logs_data.append(log_dict)
-    
-    # Calculate pagination info
-    total_pages = (total_count + limit - 1) // limit  # Ceiling division
-    has_next = page < total_pages
-    has_prev = page > 1
-    
-    # Basic stats
-    stats = {
-        "total": total_count,
-        "page": page,
-        "limit": limit,
-        "total_pages": total_pages,
-        "has_next": has_next,
-        "has_prev": has_prev,
-        "showing": len(logs_data),
-        "by_level": {},
-        "by_module": {},
-        "newest": logs_data[0]["timestamp"] if logs_data else None,
-        "oldest": logs_data[-1]["timestamp"] if logs_data else None
-    }
-    for log in logs_data:
-        stats["by_level"].setdefault(log["level"], 0)
-        stats["by_level"][log["level"]] += 1
-        stats["by_module"].setdefault(log["module"], 0)
-        stats["by_module"][log["module"]] += 1
-    return JSONResponse({
-        "logs": logs_data,
-        "stats": stats
-    })
-
-
-@app.post("/debug/logs/clear")
-async def clear_logs_data():
-    """API endpoint to clear all logs (no auth required for debugging)"""
-    log_capture.clear_logs()
-    return JSONResponse({"status": "success", "message": "Logs cleared"})
-
-
-@app.get("/debug/migrate/app-log-table")
-async def migrate_app_log_table():
-    """Execute the app_log table creation SQL migration"""
     try:
-        await db.connect()
+        offset = (page - 1) * limit
         
-        # Read the SQL file
-        sql_file_path = "sql/app_log_table.sql"
-        with open(sql_file_path, 'r') as f:
-            sql_content = f.read()
+        # Get total count
+        count_query = "SELECT COUNT(*) as total FROM app_log"
+        count_result = await database.fetch_one(count_query)
+        total_logs = count_result["total"] if count_result else 0
         
-        # Execute the SQL
-        await db.execute(sql_content)
-        await db.disconnect()
+        # Get paginated logs
+        logs_query = """
+            SELECT timestamp, level, message, module, function, line, user, extra
+            FROM app_log 
+            ORDER BY timestamp DESC 
+            LIMIT :limit OFFSET :offset
+        """
         
-        logger.info("Successfully created app_log table")
+        logs = await database.fetch_all(logs_query, {"limit": limit, "offset": offset})
+        
+        # Convert logs to dict and serialize datetime objects
+        logs_data = []
+        for log in logs:
+            log_dict = {}
+            for key, value in dict(log).items():
+                log_dict[key] = serialize_datetime(value)
+            logs_data.append(log_dict)
+        
         return JSONResponse({
-            "status": "success", 
-            "message": "app_log table created successfully",
-            "sql_executed": sql_content
+            "status": "success",
+            "logs": logs_data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_logs,
+                "pages": (total_logs + limit - 1) // limit
+            }
         })
         
     except Exception as e:
-        logger.error(f"Failed to create app_log table: {str(e)}")
-        try:
-            await db.disconnect()
-        except:
-            pass
+        logger.error(f"Error fetching logs: {str(e)}")
         return JSONResponse({
             "status": "error",
-            "message": f"Failed to create app_log table: {str(e)}"
+            "message": f"Failed to fetch logs: {str(e)}"
         }, status_code=500)
 
 
-# --- Redirect admin/logs to debug/logs for convenience ---
+@app.post("/logs/clear")
+async def clear_logs(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Clear all application logs"""
+    admin_email = admin.get("email")
+    
+    try:
+        # Log the clear action before clearing
+        await add_log(
+            level="INFO",
+            message=f"Admin {admin_email} cleared all application logs",
+            module="logs_admin",
+            function="clear_logs",
+            line=0,
+            user=admin_email,
+            extra={}
+        )
+        
+        # Clear all logs
+        await database.execute("DELETE FROM app_log")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "All logs cleared successfully"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error clearing logs: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to clear logs: {str(e)}"
+        }, status_code=500)
+
+
+# --- Redirect admin/logs to /logs for convenience ---
+# --- Logs Admin Page ---
+@app.get("/logs", response_class=HTMLResponse)
+async def logs_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Application logs viewer interface"""
+    return templates.TemplateResponse("logs.html", {
+        "request": request,
+        "current_page": "logs",
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", "")
+    })
+
+
+@app.get("/logs/data")
+async def get_logs_data(
+    request: Request,
+    page: int = 1,
+    limit: int = 100,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Get paginated log data for the logs admin interface"""
+    from datetime import datetime
+    
+    def serialize_datetime(obj):
+        """Convert datetime objects to JSON-serializable strings"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return obj
+    
+    try:
+        offset = (page - 1) * limit
+        
+        # Get total count
+        count_query = "SELECT COUNT(*) as total FROM app_log"
+        count_result = await database.fetch_one(count_query)
+        total_logs = count_result["total"] if count_result else 0
+        
+        # Get paginated logs
+        logs_query = """
+            SELECT timestamp, level, message, module, function, line, user, extra
+            FROM app_log 
+            ORDER BY timestamp DESC 
+            LIMIT :limit OFFSET :offset
+        """
+        
+        logs = await database.fetch_all(logs_query, {"limit": limit, "offset": offset})
+        
+        # Convert logs to dict and serialize datetime objects
+        logs_data = []
+        for log in logs:
+            log_dict = {}
+            for key, value in dict(log).items():
+                log_dict[key] = serialize_datetime(value)
+            logs_data.append(log_dict)
+        
+        return JSONResponse({
+            "status": "success",
+            "logs": logs_data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_logs,
+                "pages": (total_logs + limit - 1) // limit
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching logs: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to fetch logs: {str(e)}"
+        }, status_code=500)
+
+
+@app.post("/logs/clear")
+async def clear_logs(
+    request: Request,
+    admin: dict = Depends(require_admin_auth_cookie)
+):
+    """Clear all application logs"""
+    admin_email = admin.get("email")
+    
+    try:
+        # Log the clear action before clearing
+        await add_log(
+            level="INFO",
+            message=f"Admin {admin_email} cleared all application logs",
+            module="logs_admin",
+            function="clear_logs",
+            line=0,
+            user=admin_email,
+            extra={}
+        )
+        
+        # Clear all logs
+        await database.execute("DELETE FROM app_log")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": "All logs cleared successfully"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error clearing logs: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to clear logs: {str(e)}"
+        }, status_code=500)
+
+
+# --- Redirect admin/logs to /logs for convenience ---
 @app.get("/admin/logs")
 async def admin_logs_redirect():
-    """Redirect admin logs to debug logs for debugging without auth"""
-    return RedirectResponse(url="/debug/logs", status_code=302)
+    """Redirect admin logs to /logs route"""
+    return RedirectResponse(url="/logs", status_code=302)
 
 
 # --- SQL Admin Tool ---
