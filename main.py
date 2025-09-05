@@ -55,6 +55,24 @@ from cookie_auth import require_admin_auth_cookie
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
+# Session-based authentication dependency
+async def require_admin_auth_session(request: Request):
+    """Require admin authentication via session"""
+    if not hasattr(request, 'session') or 'user' not in request.session:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required. Please log in."
+        )
+    
+    user_session = request.session.get('user', {})
+    if not user_session.get('authenticated') or not user_session.get('is_admin'):
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required."
+        )
+    
+    return user_session
+
 from app.resolvers import schema
 from database import init_database, close_database, database
 from databases import Database
@@ -664,39 +682,36 @@ async def auth_callback(request: Request):
                 status_code=403
             )
         
-        # Create JWT token
-        session_data = create_user_session(user_info)
-        access_token = create_access_token(session_data)
+        # Store user data in session only (no JWT)
+        request.session['user'] = {
+            'email': email,
+            'name': user_info.get('name', 'Unknown'),
+            'access_token': token.get('access_token'),
+            'refresh_token': token.get('refresh_token'),
+            'token_expires_at': token.get('expires_at'),
+            'authenticated': True,
+            'is_admin': True  # Since they passed the admin check
+        }
         
-        # Log successful login
+        # Log successful login and session creation
         add_log(
             level="INFO",
             source="auth",
-            message=f"Successful login by {email}",
+            message=f"Successful login by {email} - session auth created",
             user=email,
             module="auth",
             function="auth_callback",
             extra=json.dumps({
                 "email": email,
                 "name": user_info.get('name', 'Unknown'),
-                "ip_address": request.client.host if request.client else "unknown"
+                "ip_address": request.client.host if request.client else "unknown",
+                "session_created": True,
+                "auth_method": "session_only"
             })
         )
         
-        # Redirect to admin page with token
+        # Redirect to admin page
         response = RedirectResponse(url="/workadmin")
-        
-        # Set secure cookie based on environment
-        is_production = os.getenv("ENV") == "production"
-        
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {access_token}",
-            httponly=True,
-            secure=is_production,  # True in production with HTTPS
-            samesite="lax",
-            max_age=28800  # 8 hours
-        )
         
         logger.info(f"Authentication successful for {email}")
         return response
@@ -718,21 +733,15 @@ async def auth_callback(request: Request):
 
 @app.get("/auth/logout")
 async def logout(request: Request, response: Response):
-    """Log out the user by clearing all authentication data and session state"""
+    """Log out the user by clearing session state"""
     try:
-        logger.info("=== OAuth Logout Request ===")
+        logger.info("=== Session Logout Request ===")
         
-        # Try to get user info before clearing session
+        # Get user info from session before clearing
         user_email = "unknown"
-        try:
-            access_token = request.cookies.get("access_token")
-            if access_token:
-                # Extract email from token if possible
-                token = access_token.replace("Bearer ", "")
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                user_email = payload.get("email", "unknown")
-        except:
-            pass
+        if hasattr(request, 'session') and 'user' in request.session:
+            user_session = request.session.get('user', {})
+            user_email = user_session.get('email', 'unknown')
         
         # Add log entry for logout
         add_log(
@@ -743,21 +752,15 @@ async def logout(request: Request, response: Response):
             module="auth",
             function="logout",
             extra=json.dumps({
-                "ip_address": request.client.host if request.client else "unknown"
+                "ip_address": request.client.host if request.client else "unknown",
+                "auth_method": "session_only"
             })
         )
         
-        # Clear the authentication cookie
-        response.delete_cookie(key="access_token", path="/")
-        
-        # Clear all session data to ensure clean state for re-authentication
+        # Clear all session data
         request.session.clear()
         
-        # Also clear any potential session cookie variations
-        response.delete_cookie(key="session", path="/")
-        response.delete_cookie(key="oauth_state", path="/")
-        
-        logger.info("Successfully cleared authentication cookie and session data")
+        logger.info("Successfully cleared session data")
         return RedirectResponse(url="/", status_code=303)
     except Exception as e:
         logger.error(f"Logout error: {str(e)}", exc_info=True)
@@ -1067,7 +1070,7 @@ async def projects(request: Request):
 @app.get("/workadmin", response_class=HTMLResponse)
 async def work_admin_page(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     return templates.TemplateResponse("workadmin.html", {
         "request": request,
@@ -2096,7 +2099,8 @@ async def google_oauth_admin_page(request: Request, admin: dict = Depends(requir
         "admin": admin,
         "user_info": admin,
         "user_authenticated": True,
-        "user_email": admin.get("email", "")
+        "user_email": admin.get("email", ""),
+        "cache_bust": int(time.time())
     })
 
 
@@ -2218,7 +2222,7 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_coo
 
 
 @app.get("/admin/google/oauth/authorize")
-async def initiate_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def initiate_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Initiate Google OAuth authorization flow"""
     admin_email = admin.get("email")
     
@@ -2289,7 +2293,7 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
 
 
 @app.get("/admin/google/oauth/test")
-async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_cookie)):
+async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_session)):
     """Test Google OAuth connection"""
     admin_email = admin.get("email")
     
@@ -2322,7 +2326,7 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
 
 
 @app.get("/admin/google/oauth/profile")
-async def get_google_profile(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def get_google_profile(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Retrieve Google profile information using current session token"""
     import httpx
     admin_email = admin.get("email")
