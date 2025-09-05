@@ -1061,9 +1061,27 @@ async def get_logs_data(
         
     except Exception as e:
         logger.error(f"Error fetching logs: {str(e)}")
+        logger.error(f"Error details: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        
+        # Also log this error to database
+        try:
+            add_log("ERROR", "logs_endpoint",
+                    f"Failed to fetch logs: {str(e)}", extra=str(e))
+        except Exception:
+            pass
+            
         return JSONResponse({
             "status": "error",
-            "message": f"Failed to fetch logs: {str(e)}"
+            "message": f"Failed to fetch logs: {str(e)}",
+            "logs": [],
+            "pagination": {
+                "page": 1,
+                "limit": limit,
+                "total": 0,
+                "pages": 0
+            }
         }, status_code=500)
 
 
