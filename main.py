@@ -2265,16 +2265,22 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
 
 
 @app.post("/admin/google/oauth/revoke")
-async def revoke_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def revoke_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Revoke Google OAuth access"""
     admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_google_oauth_revoke", f"Admin {admin_email} revoking Google OAuth access")
         
-        # Clear session
-        if hasattr(request, 'session'):
-            request.session.clear()
+        # Only clear Google OAuth data from session, keep admin authentication
+        if hasattr(request, 'session') and 'user' in request.session:
+            user_session = request.session['user']
+            # Remove only Google OAuth tokens, keep admin authentication
+            user_session.pop('access_token', None)
+            user_session.pop('refresh_token', None)
+            user_session.pop('token_expires_at', None)
+            # Keep authenticated and is_admin flags
+            request.session['user'] = user_session
         
         add_log("INFO", "admin_google_oauth_revoked", f"Google OAuth access revoked for {admin_email}")
         
