@@ -1023,6 +1023,9 @@ async def get_logs_data(
         return obj
     
     try:
+        # Add a test log entry to ensure we have something to display
+        add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
+        
         # Get logs with offset/limit for endless scrolling
         logs_query = """
             SELECT timestamp, level, message, module, function, line, user, extra
@@ -1032,6 +1035,9 @@ async def get_logs_data(
         """
         
         logs = await database.fetch_all(logs_query, {"limit": limit, "offset": offset})
+        
+        # Debug: Log what we found
+        add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs in database")
         
         # Convert logs to dict and serialize datetime objects
         logs_data = []
@@ -1251,18 +1257,12 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
     try:
         add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
         
-        # Parse database connection details from DATABASE_URL
-        from urllib.parse import urlparse
-        database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        if not database_url:
-            raise Exception("DATABASE_URL not found in environment")
-            
-        parsed = urlparse(database_url)
-        db_host = parsed.hostname
-        db_port = parsed.port or 5432
-        db_name = parsed.path.lstrip('/')
-        db_user = parsed.username
-        db_password = parsed.password
+        # Get database connection details from environment variables
+        db_host = os.getenv("_PG_HOST", "localhost")
+        db_port = os.getenv("_PG_PORT", "5432")
+        db_name = os.getenv("_PG_DB", "daniel_portfolio")
+        db_user = os.getenv("_PG_USER", "postgres")
+        db_password = os.getenv("_PG_PASS", "")
         
         # Create temporary file for the schema dump
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_file:
