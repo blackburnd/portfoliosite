@@ -55,13 +55,7 @@ from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
 from app.resolvers import schema
-try:
-    from database import init_database, close_database, database
-    DATABASE_AVAILABLE = True
-except Exception as e:
-    print(f"Database connection not available: {e}")
-    DATABASE_AVAILABLE = False
-    database = None
+from database import init_database, close_database, database
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -428,15 +422,12 @@ async def favicon():
 async def startup_event():
     logger.info("=== Database Startup ===")
     try:
-        if DATABASE_AVAILABLE:
-            logger.info("Initializing database connection...")
-            await init_database()
-            logger.info("Database initialized successfully")
-            
-            # Database logging is now handled directly by add_log function
-            logger.info("Database logging ready via add_log function")
-        else:
-            logger.warning("Running without database connection")
+        logger.info("Initializing database connection...")
+        await init_database()
+        logger.info("Database initialized successfully")
+        
+        # Database logging is now handled directly by add_log function
+        logger.info("Database logging ready via add_log function")
     except Exception as e:
         logger.error(f"Startup error: {str(e)}", exc_info=True)
         raise
@@ -444,8 +435,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    if DATABASE_AVAILABLE:
-        await close_database()
+    await close_database()
 
 
 # --- Google OAuth Authentication Routes ---
@@ -1426,24 +1416,6 @@ async def get_oauth_status():
 # List all work items
 @app.get("/workitems", response_model=List[WorkItem])
 async def list_workitems():
-    if not DATABASE_AVAILABLE:
-        # Return sample data for testing
-        return [
-            WorkItem(
-                id="sample-1",
-                portfolio_id="daniel-blackburn",
-                company="Sample Company",
-                position="Software Engineer",
-                location="Remote",
-                start_date="2023",
-                end_date="",
-                description="Sample work experience for testing",
-                is_current=True,
-                company_url="https://example.com",
-                sort_order=1
-            )
-        ]
-    
     try:
         # Query work experience directly
         add_log("DEBUG", "workitems", "Fetching work items from database")
@@ -1539,21 +1511,6 @@ async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth_cook
 # List all projects
 @app.get("/projects", response_model=List[Project])
 async def list_projects():
-    if not DATABASE_AVAILABLE:
-        # Return sample data for testing
-        return [
-            Project(
-                id="sample-1",
-                portfolio_id="daniel-blackburn",
-                title="Sample Project",
-                description="A sample project for testing",
-                url="https://github.com/example/project",
-                image_url="https://via.placeholder.com/300x200",
-                technologies=["Python", "FastAPI", "React"],
-                sort_order=1
-            )
-        ]
-    
     try:
         # First check if table exists
         check_table = "SELECT to_regclass('projects')"
