@@ -1,4 +1,5 @@
 # main.py - Lightweight FastAPI application with GraphQL and Google OAuth
+# Restored to working state - ce98ca2 with full CRUD functionality
 import os
 import secrets
 import logging
