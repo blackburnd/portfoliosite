@@ -1144,7 +1144,7 @@ async def execute_sql(
         # Log the SQL execution attempt
         logger.info(f"SQL Admin: User {admin.get('email')} executing query: {query[:100]}{'...' if len(query) > 100 else ''}")
         
-        await db.connect()
+        await database.connect()
         
         # Determine if this is a SELECT query or a modification query
         is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
@@ -1166,7 +1166,7 @@ async def execute_sql(
         
         if is_select:
             # For SELECT queries, fetch results
-            rows = await db.fetch_all(query)
+            rows = await database.fetch_all(query)
             # Convert rows to dicts and serialize datetime objects
             rows_data = []
             for row in rows:
@@ -1186,7 +1186,7 @@ async def execute_sql(
             })
         else:
             # For INSERT/UPDATE/DELETE queries, execute and return row count
-            result = await db.execute(query)
+            result = await database.execute(query)
             execution_time = round((time.time() - start_time) * 1000, 2)
             
             return JSONResponse({
@@ -1210,7 +1210,7 @@ async def execute_sql(
         }, status_code=500)
     finally:
         try:
-            await db.disconnect()
+            await database.disconnect()
         except:
             pass
 
