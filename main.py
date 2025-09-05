@@ -1059,6 +1059,7 @@ async def get_logs_data(
             "status": "success",
             "logs": logs_data,
             "has_more": has_more,
+            "has_next": has_more,  # Backward compatibility - same as has_more
             "pagination": {
                 "page": (offset // limit) + 1,
                 "limit": limit,
