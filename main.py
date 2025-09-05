@@ -148,14 +148,14 @@ Full Traceback:
             "request_headers": dict(request.headers)
         }
         
-        await add_log(
+        add_log(
             "ERROR",
-            detailed_message,
-            "unhandled_exception",
             "global_exception_handler",
-            0,  # line number
-            None,  # user
-            extra_data
+            detailed_message,
+            function="global_exception_handler",
+            line=0,
+            user=None,
+            extra=extra_data
         )
     except Exception as log_error:
         logger.error(f"Failed to log exception to database: {log_error}")
@@ -1077,10 +1077,10 @@ async def clear_logs(
     
     try:
         # Log the clear action before clearing
-        await add_log(
-            level="INFO",
-            message=f"Admin {admin_email} cleared all application logs",
-            module="logs_admin",
+        add_log(
+            "INFO",
+            "logs_admin",
+            f"Admin {admin_email} cleared all application logs",
             function="clear_logs",
             line=0,
             user=admin_email,
@@ -1393,59 +1393,6 @@ async def get_oauth_status():
             "error": str(e)
         }, status_code=500)
 
-@app.get("/admin/setup-oauth-tables")
-async def setup_oauth_tables():
-    """Create missing OAuth tables - admin endpoint"""
-    try:
-        # Create oauth_system_settings table
-        oauth_system_settings_sql = """
-        CREATE TABLE IF NOT EXISTS oauth_system_settings (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            setting_key VARCHAR(100) UNIQUE NOT NULL,
-            setting_value TEXT NOT NULL,
-            description TEXT,
-            is_encrypted BOOLEAN DEFAULT false,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            created_by VARCHAR(255) NOT NULL
-        );
-        """
-        
-        # Create oauth_apps table  
-        oauth_apps_sql = """
-        CREATE TABLE IF NOT EXISTS oauth_apps (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            provider VARCHAR(50) NOT NULL,
-            app_name VARCHAR(255) NOT NULL,
-            client_id VARCHAR(255) NOT NULL,
-            client_secret TEXT NOT NULL,
-            redirect_uri VARCHAR(500) NOT NULL,
-            scopes TEXT[],
-            is_active BOOLEAN DEFAULT true,
-            encryption_key TEXT NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            created_by VARCHAR(255) NOT NULL,
-            UNIQUE(provider, app_name)
-        );
-        """
-        
-        # Execute table creation
-        await database.execute(oauth_system_settings_sql)
-        await database.execute(oauth_apps_sql)
-        
-        return JSONResponse({
-            "status": "success",
-            "message": "OAuth tables created successfully",
-            "tables_created": ["oauth_system_settings", "oauth_apps"]
-        })
-        
-    except Exception as e:
-        logger.error(f"Error creating OAuth tables: {str(e)}")
-        return JSONResponse({
-            "status": "error", 
-            "error": str(e)
-        }, status_code=500)
 
 # --- CRUD Endpoints for Work Items ---
 

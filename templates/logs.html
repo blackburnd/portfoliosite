@@ -369,7 +369,7 @@
                     if (this.currentFilters.level) params.append('level', this.currentFilters.level);
                     if (this.currentFilters.module) params.append('module', this.currentFilters.module);
                     
-                    const response = await fetch(`/debug/logs/data?${params}`);
+                    const response = await fetch(`/logs/data?${params}`);
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     
                     const data = await response.json();
@@ -544,7 +544,7 @@
                 if (!confirm('Are you sure you want to clear all logs?')) return;
                 
                 try {
-                    const response = await fetch('/debug/logs/clear', { method: 'POST' });
+                    const response = await fetch('/logs/clear', { method: 'POST' });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     
                     this.refresh();
