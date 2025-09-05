@@ -21,7 +21,10 @@ steps:
     # Navigate to the repository directory or clone it
     if [ -d "/opt/portfoliosite/.git" ]; then
       cd /opt/portfoliosite
-      git pull origin main
+      # Force reset to remote main - never merge in production
+      git fetch origin main
+      git reset --hard origin/main
+      git clean -fd
     else
       sudo git clone https://github.com/blackburnd/portfoliosite.git /opt/portfoliosite
       sudo chown -R blackburnd:blackburnd /opt/portfoliosite
