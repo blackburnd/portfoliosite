@@ -535,23 +535,12 @@ async def auth_login(request: Request):
         
         logger.info(f"Using redirect URI: {redirect_uri}")
         
-        # Clear any existing session state to prevent CSRF issues
-        request.session.clear()
-        
-        # Generate a new state parameter for CSRF protection
-        import secrets
-        state = secrets.token_urlsafe(32)
-        request.session['oauth_state'] = state
-        
-        logger.info("Initiating OAuth redirect with fresh state...")
-        
-        # Use the OAuth client to redirect with proper state handling
+        # Use the OAuth client to redirect
         google = oauth.google
         try:
             result = await google.authorize_redirect(
                 request, 
-                redirect_uri,
-                state=state
+                redirect_uri
             )
             logger.info("OAuth redirect created successfully")
         except Exception as redirect_error:
