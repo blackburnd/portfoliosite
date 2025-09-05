@@ -51,7 +51,6 @@ from auth import (
     create_access_token,
     get_auth_status
 )
-from cookie_auth import require_admin_auth_cookie
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 
@@ -1085,7 +1084,7 @@ async def work_admin_page(
 @app.get("/logs", response_class=HTMLResponse)
 async def logs_admin_page(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Application logs viewer interface"""
     return templates.TemplateResponse("logs.html", {
@@ -1104,7 +1103,7 @@ async def get_logs_data(
     offset: int = 0,
     limit: int = 50,
     page: int = None,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Get log data for endless scrolling logs interface"""
     from datetime import datetime
@@ -1197,7 +1196,7 @@ async def get_logs_data(
 @app.post("/logs/clear")
 async def clear_logs(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Clear all application logs"""
     admin_email = admin.get("email")
@@ -1235,7 +1234,7 @@ async def clear_logs(
 @app.get("/admin/sql", response_class=HTMLResponse)
 async def sql_admin_page(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """SQL Admin interface for executing database queries"""
     return templates.TemplateResponse("sql_admin.html", {
@@ -1250,7 +1249,7 @@ async def sql_admin_page(
 @app.post("/admin/sql/execute")
 async def execute_sql(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Execute SQL query against the database"""
     import time
@@ -1355,7 +1354,7 @@ async def execute_sql(
 
 
 @app.get("/admin/sql/download-schema")
-async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
+async def download_schema(admin: dict = Depends(require_admin_auth_session)):
     """Download the current database schema as a SQL dump file"""
     from datetime import datetime
     from schema_dump import generate_schema_dump
@@ -1397,7 +1396,7 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
 @app.get("/projectsadmin", response_class=HTMLResponse)
 async def projects_admin_page(
     request: Request,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     return templates.TemplateResponse("projectsadmin.html", {
         "request": request,
@@ -1493,7 +1492,7 @@ async def list_workitems():
 
 # Get a single work item
 @app.get("/workitems/{id}", response_model=WorkItem)
-async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_session)):
     query = "SELECT * FROM work_experience WHERE id=:id"
     row = await database.fetch_one(query, {"id": id})
     if not row:
@@ -1506,7 +1505,7 @@ async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)
 
 # Create a new work item
 @app.post("/workitems", response_model=WorkItem)
-async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth_cookie)):
+async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_auth_session)):
     query = """
         INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
         VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
@@ -1521,7 +1520,7 @@ async def create_workitem(item: WorkItem, admin: dict = Depends(require_admin_au
 
 # Update a work item
 @app.put("/workitems/{id}", response_model=WorkItem)
-async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require_admin_auth_cookie)):
+async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require_admin_auth_session)):
     query = """
         UPDATE work_experience SET
             company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
@@ -1541,7 +1540,7 @@ async def update_workitem(id: str, item: WorkItem, admin: dict = Depends(require
 
 # Delete a work item
 @app.delete("/workitems/{id}")
-async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+async def delete_workitem(id: str, admin: dict = Depends(require_admin_auth_session)):
     query = "DELETE FROM work_experience WHERE id=:id"
     result = await database.execute(query, {"id": id})
     return {"success": True}
@@ -1596,7 +1595,7 @@ async def list_projects():
 
 # Get a single project by ID
 @app.get("/projects/{id}", response_model=Project)
-async def get_project(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+async def get_project(id: str, admin: dict = Depends(require_admin_auth_session)):
     query = "SELECT * FROM projects WHERE id = :id"
     row = await database.fetch_one(query, {"id": id})
     
@@ -1626,7 +1625,7 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth_cookie))
 
 # Create a new project
 @app.post("/projects", response_model=Project)
-async def create_project(project: Project, admin: dict = Depends(require_admin_auth_cookie)):
+async def create_project(project: Project, admin: dict = Depends(require_admin_auth_session)):
     query = """
         INSERT INTO projects (portfolio_id, title, description, url, image_url, technologies, sort_order)
         VALUES (:portfolio_id, :title, :description, :url, :image_url, :technologies, :sort_order)
@@ -1667,7 +1666,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
 
 # Update a project
 @app.put("/projects/{id}", response_model=Project)
-async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth_cookie)):
+async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth_session)):
     query = """
         UPDATE projects SET
             title=:title, description=:description, url=:url, image_url=:image_url,
@@ -1713,7 +1712,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
 
 # Delete a project
 @app.delete("/projects/{id}")
-async def delete_project(id: str, admin: dict = Depends(require_admin_auth_cookie)):
+async def delete_project(id: str, admin: dict = Depends(require_admin_auth_session)):
     query = "DELETE FROM projects WHERE id=:id"
     await database.execute(query, {"id": id})
     return {"deleted": True, "id": id}
@@ -1846,7 +1845,7 @@ async def get_database_schema():
 
 # --- Google OAuth Admin Endpoints ---
 @app.get("/admin/oauth/google/status")
-async def google_oauth_status(admin: dict = Depends(require_admin_auth_cookie)):
+async def google_oauth_status(admin: dict = Depends(require_admin_auth_session)):
     """Get Google OAuth configuration status"""
     admin_email = admin.get("email")
     
@@ -1871,7 +1870,7 @@ async def google_oauth_status(admin: dict = Depends(require_admin_auth_cookie)):
 
 
 @app.post("/admin/oauth/google/configure")
-async def configure_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def configure_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Configure Google OAuth application"""
     admin_email = admin.get("email")
     
@@ -1897,7 +1896,7 @@ async def configure_google_oauth(request: Request, admin: dict = Depends(require
 # --- LinkedIn OAuth Admin Endpoints ---
 
 @app.get("/admin/oauth/linkedin/status")
-async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration and connection status"""
     admin_email = admin.get("email")
     
@@ -1930,7 +1929,7 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_cookie)
 
 
 @app.post("/admin/oauth/linkedin/configure")
-async def configure_linkedin_oauth(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def configure_linkedin_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Configure LinkedIn OAuth application settings"""
     admin_email = admin.get("email")
     
@@ -1974,7 +1973,7 @@ async def configure_linkedin_oauth(request: Request, admin: dict = Depends(requi
 
 
 @app.post("/admin/oauth/linkedin/connect")
-async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Initiate LinkedIn OAuth connection flow"""
     admin_email = admin.get("email")
     
@@ -2014,7 +2013,7 @@ async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require
 
 
 @app.post("/admin/oauth/linkedin/disconnect")
-async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_auth_session)):
     """Disconnect LinkedIn OAuth connection"""
     admin_email = admin.get("email")
     
@@ -2047,7 +2046,7 @@ async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_au
 
 
 @app.post("/admin/oauth/linkedin/test")
-async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_auth_cookie)):
+async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth connection by making an API call"""
     admin_email = admin.get("email")
     
@@ -2089,7 +2088,7 @@ async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_aut
 
 # --- Google OAuth Admin Routes ---
 @app.get("/admin/google/oauth", response_class=HTMLResponse)
-async def google_oauth_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def google_oauth_admin_page(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Google OAuth administration interface"""
     add_log("INFO", "admin_google_oauth_page_access", f"Admin {admin.get('email')} accessed Google OAuth admin page")
     
@@ -2105,7 +2104,7 @@ async def google_oauth_admin_page(request: Request, admin: dict = Depends(requir
 
 
 @app.get("/admin/google/oauth/status")
-async def google_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def google_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Get Google OAuth configuration and connection status"""
     admin_email = admin.get("email")
     
@@ -2147,7 +2146,7 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
 async def save_google_oauth_config(
     request: Request,
     config: dict,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Save Google OAuth configuration to database"""
     admin_email = admin.get("email")
@@ -2190,7 +2189,7 @@ async def save_google_oauth_config(
 
 
 @app.delete("/admin/google/oauth/config")
-async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_cookie)):
+async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Clear Google OAuth configuration"""
     admin_email = admin.get("email")
     
@@ -2451,7 +2450,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
 # --- LinkedIn OAuth Admin Routes ---
 
 @app.get("/admin/linkedin/oauth", response_class=HTMLResponse)
-async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """LinkedIn OAuth administration interface"""
     add_log("INFO", "admin_linkedin_oauth_page_access", f"Admin {admin.get('email')} accessed LinkedIn OAuth admin page")
     
@@ -2466,7 +2465,7 @@ async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(requ
 
 
 @app.get("/admin/linkedin/oauth/status")
-async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration and connection status"""
     admin_email = admin.get("email")
     
@@ -2505,7 +2504,7 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
 
 
 @app.get("/admin/linkedin/config")
-async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin_auth_cookie)):
+async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration for admin form"""
     admin_email = admin.get("email")
     
@@ -2552,7 +2551,7 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
 @app.post("/admin/linkedin/config")
 async def save_linkedin_config_shortcut(
     config: dict,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Save LinkedIn OAuth configuration (shortcut route for JavaScript)"""
     # Forward to the main OAuth config route
@@ -2563,7 +2562,7 @@ async def save_linkedin_config_shortcut(
 async def save_linkedin_oauth_config(
     request: Request,
     config: dict,
-    admin: dict = Depends(require_admin_auth_cookie)
+    admin: dict = Depends(require_admin_auth_session)
 ):
     """Save LinkedIn OAuth configuration to database"""
     admin_email = admin.get("email")
@@ -2606,14 +2605,14 @@ async def save_linkedin_oauth_config(
 
 
 @app.get("/admin/linkedin/test-config")
-async def test_linkedin_config_shortcut(admin: dict = Depends(require_admin_auth_cookie)):
+async def test_linkedin_config_shortcut(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth configuration (shortcut route for JavaScript)"""
     # Forward to the main OAuth test route
     return await test_linkedin_oauth_config(admin)
 
 
 @app.delete("/admin/linkedin/oauth/config")
-async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_cookie)):
+async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Clear LinkedIn OAuth configuration"""
     admin_email = admin.get("email")
     
@@ -2645,7 +2644,7 @@ async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_c
 
 
 @app.get("/admin/linkedin/oauth/authorize")
-async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_cookie)):
+async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_session)):
     """Initiate LinkedIn OAuth authorization flow"""
     admin_email = admin.get("email")
     
@@ -2676,7 +2675,7 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_cooki
 
 
 @app.post("/admin/linkedin/oauth/revoke")
-async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_cookie)):
+async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session)):
     """Revoke LinkedIn OAuth access"""
     admin_email = admin.get("email")
     
@@ -2708,7 +2707,7 @@ async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_cookie)
 
 
 @app.get("/admin/linkedin/oauth/test")
-async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_cookie)):
+async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth configuration"""
     admin_email = admin.get("email")
     
@@ -2751,7 +2750,7 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_co
 
 
 @app.get("/admin/linkedin/oauth/test-api")
-async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_cookie)):
+async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth API access"""
     admin_email = admin.get("email")
     
@@ -2787,7 +2786,7 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_cooki
 
 
 @app.post("/admin/linkedin/sync")
-async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_cookie)):
+async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_session)):
     """Sync LinkedIn profile data to portfolio database"""
     admin_email = admin.get("email")
     
