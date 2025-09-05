@@ -1354,102 +1354,16 @@ async def execute_sql(
 @app.get("/admin/sql/download-schema")
 async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
     """Download the current database schema as a SQL dump file"""
-    import subprocess
-    import tempfile
-    import os
     from datetime import datetime
+    from schema_dump import generate_schema_dump
     
     admin_email = admin.get("email")
     
     try:
         add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
         
-        # Get database connection details from environment variables
-        db_host = os.getenv("_PG_HOST")
-        db_port = os.getenv("_PG_PORT", "5432")
-        db_name = os.getenv("_PG_DB")
-        db_user = os.getenv("_PG_USER")
-        db_password = os.getenv("_PG_PASS")
-        
-        # Log the connection details (without password) for debugging
-        add_log("DEBUG", "sql_admin_schema_download", 
-                f"Using connection: host={db_host}, port={db_port}, db={db_name}, user={db_user}")
-        
-        # Verify required environment variables are set
-        if not all([db_host, db_port, db_name, db_user]):
-            missing_vars = []
-            if not db_host: missing_vars.append("_PG_HOST")
-            if not db_port: missing_vars.append("_PG_PORT") 
-            if not db_name: missing_vars.append("_PG_DB")
-            if not db_user: missing_vars.append("_PG_USER")
-            
-            error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
-            add_log("ERROR", "sql_admin_schema_env_error", error_msg)
-            return JSONResponse({
-                "status": "error",
-                "message": error_msg
-            }, status_code=500)
-        
-        # Create temporary file for the schema dump
-        with tempfile.NamedTemporaryFile(mode='w+', suffix='.sql', delete=False) as temp_file:
-            temp_filename = temp_file.name
-        
-        # Construct pg_dump command
-        # Using schema-only (-s), no owner (-O), plain format (-F plain), disable triggers, UTF8 encoding
-        pg_dump_cmd = [
-            "pg_dump",
-            f"-h{db_host}",
-            f"-p{db_port}",
-            f"-U{db_user}",
-            f"-d{db_name}",
-            "-s",  # schema only
-            "-O",  # no owner
-            "-F", "plain",  # plain text format
-            "--disable-triggers",
-            "--encoding=UTF8",
-            "-f", temp_filename
-        ]
-        
-        # Set environment variable for password if provided
-        env = os.environ.copy()
-        if db_password:
-            env["PGPASSWORD"] = db_password
-        
-        # Execute pg_dump
-        add_log("DEBUG", "sql_admin_schema_dump", f"Executing pg_dump command: {' '.join(pg_dump_cmd[:6])}...")
-        result = subprocess.run(
-            pg_dump_cmd,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=60  # 60 second timeout
-        )
-        
-        if result.returncode != 0:
-            logger.error(f"pg_dump failed with return code {result.returncode}: {result.stderr}")
-            add_log("ERROR", "sql_admin_schema_download_error", 
-                   f"Schema download failed for {admin_email}: return code {result.returncode}, stderr: {result.stderr}")
-            return JSONResponse({
-                "status": "error",
-                "message": f"Schema dump failed (exit code {result.returncode}): {result.stderr}"
-            }, status_code=500)
-        
-        # Read the generated schema file
-        try:
-            with open(temp_filename, 'r', encoding='utf-8') as f:
-                schema_content = f.read()
-        except Exception as read_error:
-            logger.error(f"Failed to read schema file: {read_error}")
-            return JSONResponse({
-                "status": "error", 
-                "message": f"Failed to read schema file: {read_error}"
-            }, status_code=500)
-        finally:
-            # Clean up temporary file
-            try:
-                os.unlink(temp_filename)
-            except:
-                pass
+        # Use the new schema dump module
+        schema_content = await generate_schema_dump()
         
         # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1467,18 +1381,12 @@ async def download_schema(admin: dict = Depends(require_admin_auth_cookie)):
             }
         )
         
-    except subprocess.TimeoutExpired:
-        add_log("ERROR", "sql_admin_schema_timeout", f"Schema download timeout for {admin_email}")
-        return JSONResponse({
-            "status": "error",
-            "message": "Schema dump timed out after 60 seconds"
-        }, status_code=500)
     except Exception as e:
         logger.error(f"Error downloading schema: {str(e)}")
         add_log("ERROR", "sql_admin_schema_error", f"Schema download error for {admin_email}: {str(e)}")
         return JSONResponse({
             "status": "error",
-            "message": f"Failed to download schema: {str(e)}"
+            "message": f"Schema download failed: {str(e)}"
         }, status_code=500)
 
 
