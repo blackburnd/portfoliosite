@@ -587,43 +587,10 @@ async def auth_callback(request: Request):
                 status_code=503
             )
         
-        # Validate state parameter to prevent CSRF attacks
-        received_state = request.query_params.get('state')
-        session_state = request.session.get('oauth_state')
-        
-        if not received_state or not session_state:
-            logger.error("Missing state parameters in OAuth callback")
-            return HTMLResponse(
-                content="""
-                <html><body>
-                <h1>Authentication Error</h1>
-                <p>Invalid OAuth state. Please try logging in again.</p>
-                <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
-                </body></html>
-                """, 
-                status_code=400
-            )
-        
-        if received_state != session_state:
-            logger.error(f"State mismatch: received={received_state}, session={session_state}")
-            return HTMLResponse(
-                content="""
-                <html><body>
-                <h1>Authentication Error</h1>
-                <p>OAuth state mismatch detected (CSRF protection). Please try logging in again.</p>
-                <p><a href="/auth/login">Try again</a> | <a href="/">Return to main site</a></p>
-                </body></html>
-                """, 
-                status_code=400
-            )
-        
         logger.info("State validation passed, exchanging code for token...")
         google = oauth.google
         token = await google.authorize_access_token(request)
         logger.info(f"Token received: {bool(token)}")
-        
-        # Clear the OAuth state from session
-        request.session.pop('oauth_state', None)
         
         user_info = token.get('userinfo')
         
