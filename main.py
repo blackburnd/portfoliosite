@@ -6,6 +6,7 @@ import logging
 import time
 import traceback
 import sys
+import uuid
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -83,6 +84,20 @@ class Project(BaseModel):
     image_url: Optional[str] = None
     technologies: Optional[List[str]] = []
     sort_order: Optional[int] = 0
+
+
+# Pydantic model for contact message
+class ContactMessage(BaseModel):
+    id: Optional[str] = None
+    name: str
+    email: str
+    subject: Optional[str] = None
+    message: str
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    submitted_at: Optional[str] = None
+    is_read: Optional[bool] = False
+    admin_notes: Optional[str] = None
 
 
 # Initialize FastAPI app
@@ -881,20 +896,102 @@ async def contact(request: Request):
 @app.post("/contact/submit")
 async def contact_submit(request: Request):
     """Handle contact form submission"""
-    form_data = await request.form()
-    
-    # In a real implementation, this would save to database or send email
-    # For now, just return a simple response
-    return {
-        "status": "success",
-        "message": "Thank you for your message! I'll get back to you soon.",
-        "data": {
-            "name": form_data.get("name"),
-            "email": form_data.get("email"),
-            "subject": form_data.get("subject"),
-            "message": form_data.get("message")
-        }
-    }
+    try:
+        form = await request.form()
+        
+        # Extract form data
+        name = form.get("name", "").strip()
+        email = form.get("email", "").strip()
+        subject = form.get("subject", "").strip()
+        message = form.get("message", "").strip()
+        
+        # Basic validation
+        if not name or not email or not message:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error", 
+                    "message": "Name, email, and message are required."
+                }
+            )
+        
+        # Get client IP and user agent
+        client_ip = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent", "unknown")
+        
+        # Create contact message object
+        contact_data = ContactMessage(
+            name=name,
+            email=email,
+            subject=subject if subject else None,
+            message=message,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            status="new"
+        )
+        
+        # Save to database with dedicated connection like logs endpoint
+        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+        db = Database(DATABASE_URL)
+        await db.connect()
+        
+        try:
+            query = """
+                INSERT INTO contact_messages 
+                (name, email, subject, message, created_at, ip_address, 
+                 user_agent, status)
+                VALUES (:name, :email, :subject, :message, NOW(), 
+                        :ip_address, :user_agent, :status)
+                RETURNING id
+            """
+            result = await db.fetch_one(
+                query,
+                {
+                    "name": contact_data.name,
+                    "email": contact_data.email,
+                    "subject": contact_data.subject,
+                    "message": contact_data.message,
+                    "ip_address": contact_data.ip_address,
+                    "user_agent": contact_data.user_agent,
+                    "status": contact_data.status
+                }
+            )
+            
+            contact_id = result['id'] if result else None
+            
+        finally:
+            await db.disconnect()
+        
+        logger.info(f"Contact form submitted: ID {contact_id}, "
+                   f"from {name} ({email})")
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "message": "Thank you for your message! I'll get back to you soon."
+            }
+        )
+        
+    except Exception as e:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(f"CONTACT FORM ERROR [{error_id}]: {str(e)}")
+        
+        # Log to app_log table
+        await add_log(
+            level="ERROR",
+            message=f"[{error_id}] Contact form submission failed: {str(e)}",
+            details=f"Form data: name={name if 'name' in locals() else 'unknown'}, "
+                   f"email={email if 'email' in locals() else 'unknown'}"
+        )
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": "An error occurred while submitting your message. Please try again."
+            }
+        )
 
 @app.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):
