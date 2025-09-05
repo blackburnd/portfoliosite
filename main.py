@@ -31,7 +31,7 @@ import sqlite3
 import asyncio
 import secrets
 import hashlib
-from log_capture import log_capture, add_log
+from log_capture import add_log
 
 # Configure logging
 logging.basicConfig(
@@ -433,10 +433,8 @@ async def startup_event():
             await init_database()
             logger.info("Database initialized successfully")
             
-            # Set up database logging for exceptions
-            logger.info("Setting up database logging handler...")
-            log_capture.setup_database_logging()
-            logger.info("Database logging handler configured")
+            # Database logging is now handled directly by add_log function
+            logger.info("Database logging ready via add_log function")
         else:
             logger.warning("Running without database connection")
     except Exception as e:

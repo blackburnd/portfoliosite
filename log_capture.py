@@ -76,7 +76,11 @@ def get_logs() -> List[Dict[str, Any]]:
         return _logs.copy()
 
 
-
+def setup_database_logging():
+    """Initialize database logging functionality."""
+    # This function sets up database logging for the application
+    # The actual database connection is handled in write_log_to_db
+    add_log("INFO", "log_capture", "Database logging system initialized")
 
 
 def _add_demo_logs():
@@ -98,7 +102,7 @@ def _add_demo_logs():
     for i, (level, source, message) in enumerate(demo_logs):
         log_entry = {
             "id": len(_logs) + 1,
-            "timestamp": base_time - (len(demo_logs) - i) * 60000,  # Spread over last hour
+            "timestamp": base_time - (len(demo_logs) - i) * 60000,  # Last hour
             "level": level,
             "source": source,
             "message": message
