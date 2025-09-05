@@ -1011,10 +1011,15 @@ async def get_logs_data(
     request: Request,
     offset: int = 0,
     limit: int = 50,
+    page: int = None,
     admin: dict = Depends(require_admin_auth_cookie)
 ):
     """Get log data for endless scrolling logs interface"""
     from datetime import datetime
+    
+    # Handle backward compatibility with page parameter
+    if page is not None:
+        offset = (page - 1) * limit
     
     def serialize_datetime(obj):
         """Convert datetime objects to JSON-serializable strings"""
