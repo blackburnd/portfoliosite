@@ -32,6 +32,9 @@ class GoogleOAuthAdmin {
 
         const testApiBtn = document.getElementById('test-google-api');
         if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
+        
+        const testProfileBtn = document.getElementById('test-profile-access');
+        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
     }
 
     async loadGoogleStatus() {
@@ -194,6 +197,107 @@ class GoogleOAuthAdmin {
         } catch (error) {
             console.error('Error revoking Google auth:', error);
             this.showMessage('Error revoking Google access', 'error');
+        }
+    }
+
+    async testProfileAccess() {
+        const statusSpan = document.getElementById('profile-test-status');
+        const resultsDiv = document.getElementById('profile-test-results');
+        
+        // Show loading state
+        statusSpan.textContent = 'Testing...';
+        statusSpan.className = 'test-status testing';
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Retrieving Google profile information...</div>';
+
+        try {
+            const response = await fetch('/admin/google/oauth/profile');
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                statusSpan.textContent = '✅ Success';
+                statusSpan.className = 'test-status success';
+                
+                const profile = result.profile;
+                const debugInfo = result.debug_info;
+                const sessionInfo = result.session_info;
+                
+                let profileHtml = `
+                    <div class="test-success">
+                        <h4>✅ Profile Access Successful</h4>
+                        <div class="profile-data">
+                            <div class="profile-section">
+                                <h5>Profile Information</h5>
+                                <div class="data-item"><strong>Name:</strong> ${profile.name || 'N/A'}</div>
+                                <div class="data-item"><strong>Email:</strong> ${profile.email || 'N/A'}</div>
+                                <div class="data-item"><strong>Google ID:</strong> ${profile.id || 'N/A'}</div>
+                                <div class="data-item"><strong>Verified Email:</strong> ${profile.verified_email || 'N/A'}</div>
+                                <div class="data-item"><strong>Locale:</strong> ${profile.locale || 'N/A'}</div>
+                                <div class="data-item"><strong>Profile Picture:</strong> ${profile.picture ? 'Available' : 'Not available'}</div>
+                            </div>
+                            
+                            <div class="profile-section">
+                                <h5>Debug Information</h5>
+                                <div class="data-item"><strong>API Endpoint:</strong> ${debugInfo.api_endpoint}</div>
+                                <div class="data-item"><strong>User Verified Email:</strong> ${debugInfo.user_verified_email}</div>
+                                <div class="data-item"><strong>Profile Picture Available:</strong> ${debugInfo.profile_picture_available}</div>
+                                <div class="data-item"><strong>Google User ID:</strong> ${debugInfo.google_user_id}</div>
+                            </div>
+                            
+                            <div class="profile-section">
+                                <h5>Session Information</h5>
+                                <div class="data-item"><strong>Token Length:</strong> ${sessionInfo.token_length} characters</div>
+                                <div class="data-item"><strong>Session Email:</strong> ${sessionInfo.session_user_email || 'N/A'}</div>
+                                <div class="data-item"><strong>Session Expires:</strong> ${sessionInfo.session_expires_at || 'N/A'}</div>
+                            </div>
+                        </div>
+                `;
+                
+                if (profile.picture) {
+                    profileHtml += `
+                        <div class="profile-section">
+                            <h5>Profile Picture</h5>
+                            <img src="${profile.picture}" alt="Profile Picture" style="max-width: 100px; border-radius: 50px;">
+                        </div>
+                    `;
+                }
+                
+                profileHtml += '</div>';
+                resultsDiv.innerHTML = profileHtml;
+                
+            } else if (response.status === 401) {
+                statusSpan.textContent = '⚠️ Auth Required';
+                statusSpan.className = 'test-status warning';
+                resultsDiv.innerHTML = `
+                    <div class="test-warning">
+                        <h4>⚠️ Authorization Required</h4>
+                        <p>${result.message}</p>
+                        <p>Please click "Authorize Google Access" button to grant permission first.</p>
+                    </div>
+                `;
+                
+            } else {
+                statusSpan.textContent = '❌ Failed';
+                statusSpan.className = 'test-status error';
+                resultsDiv.innerHTML = `
+                    <div class="test-error">
+                        <h4>❌ Profile Access Failed</h4>
+                        <p><strong>Error:</strong> ${result.message}</p>
+                        ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
+                    </div>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('Error testing profile access:', error);
+            statusSpan.textContent = '❌ Error';
+            statusSpan.className = 'test-status error';
+            resultsDiv.innerHTML = `
+                <div class="test-error">
+                    <h4>❌ Network Error</h4>
+                    <p>Failed to contact the server: ${error.message}</p>
+                </div>
+            `;
         }
     }
 

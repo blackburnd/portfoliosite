@@ -2321,6 +2321,123 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
         }, status_code=500)
 
 
+@app.get("/admin/google/oauth/profile")
+async def get_google_profile(request: Request, admin: dict = Depends(require_admin_auth_cookie)):
+    """Retrieve Google profile information using current session token"""
+    import httpx
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_google_profile_request", f"Admin {admin_email} requesting Google profile data")
+        
+        # Check if user has an active Google session
+        if not hasattr(request, 'session') or 'user' not in request.session:
+            add_log("WARNING", "admin_google_profile_no_session", f"Admin {admin_email} has no active Google session")
+            return JSONResponse({
+                "status": "error",
+                "message": "No active Google session. Please authorize Google access first."
+            }, status_code=401)
+        
+        user_session = request.session.get('user', {})
+        access_token = user_session.get('access_token')
+        
+        if not access_token:
+            add_log("WARNING", "admin_google_profile_no_token", f"Admin {admin_email} session missing access token")
+            return JSONResponse({
+                "status": "error", 
+                "message": "No Google access token found. Please re-authorize Google access."
+            }, status_code=401)
+        
+        # Log the token retrieval (without exposing the actual token)
+        add_log("DEBUG", "admin_google_profile_token_found", 
+               f"Admin {admin_email} - Google access token found, length: {len(access_token) if access_token else 0}")
+        
+        # Make request to Google People API for profile information
+        profile_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json"
+        }
+        
+        add_log("DEBUG", "admin_google_profile_api_request", 
+               f"Admin {admin_email} - Making request to Google People API")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(profile_url, headers=headers)
+            
+            # Log the API response details
+            add_log("DEBUG", "admin_google_profile_api_response", 
+                   f"Admin {admin_email} - Google API response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                profile_data = response.json()
+                
+                # Log successful profile retrieval (without sensitive data)
+                add_log("INFO", "admin_google_profile_success", 
+                       f"Admin {admin_email} - Successfully retrieved Google profile for user: {profile_data.get('email', 'unknown')}")
+                
+                # Extract interesting data for debugging
+                debug_info = {
+                    "api_endpoint": profile_url,
+                    "response_time": response.elapsed.total_seconds() if hasattr(response, 'elapsed') else "N/A",
+                    "user_verified_email": profile_data.get('verified_email', False),
+                    "user_locale": profile_data.get('locale', 'unknown'),
+                    "profile_picture_available": bool(profile_data.get('picture')),
+                    "google_user_id": profile_data.get('id', 'unknown')
+                }
+                
+                add_log("DEBUG", "admin_google_profile_debug_info", 
+                       f"Admin {admin_email} - Google profile debug data: {debug_info}")
+                
+                return JSONResponse({
+                    "status": "success",
+                    "profile": profile_data,
+                    "debug_info": debug_info,
+                    "session_info": {
+                        "token_length": len(access_token),
+                        "session_user_email": user_session.get('email'),
+                        "session_expires_at": user_session.get('expires_at')
+                    }
+                })
+            
+            elif response.status_code == 401:
+                add_log("WARNING", "admin_google_profile_token_expired", 
+                       f"Admin {admin_email} - Google access token expired or invalid")
+                return JSONResponse({
+                    "status": "error",
+                    "message": "Google access token expired or invalid. Please re-authorize Google access.",
+                    "error_code": "TOKEN_EXPIRED"
+                }, status_code=401)
+            
+            else:
+                error_text = response.text
+                add_log("ERROR", "admin_google_profile_api_error", 
+                       f"Admin {admin_email} - Google API error: {response.status_code} - {error_text}")
+                return JSONResponse({
+                    "status": "error",
+                    "message": f"Google API error: {response.status_code}",
+                    "details": error_text
+                }, status_code=response.status_code)
+                
+    except httpx.RequestError as e:
+        add_log("ERROR", "admin_google_profile_network_error", 
+               f"Admin {admin_email} - Network error contacting Google API: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": "Network error contacting Google API",
+            "details": str(e)
+        }, status_code=500)
+        
+    except Exception as e:
+        logger.error(f"Error retrieving Google profile: {str(e)}")
+        add_log("ERROR", "admin_google_profile_error", 
+               f"Admin {admin_email} - Error retrieving Google profile: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Error retrieving Google profile: {str(e)}"
+        }, status_code=500)
+
+
 # --- LinkedIn OAuth Admin Routes ---
 
 @app.get("/admin/linkedin/oauth", response_class=HTMLResponse)

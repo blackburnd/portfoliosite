@@ -72,36 +72,21 @@
     
     <!-- Google API Scopes Information -->
     <div class="config-section">
-        <h3>Required Google API Scopes</h3>
+        <h3>Google API Scopes Testing</h3>
         <div class="scopes-list">
             <div class="scope-item required">
                 <div class="scope-header">
                     <strong>Profile Access</strong>
-                    <span class="scope-name">openid</span>
+                    <span class="scope-name">openid, email, profile</span>
                     <span class="required-badge">Required</span>
                 </div>
-                <div class="scope-description">Access to basic profile information</div>
-                <div class="scope-data-access">Provides: User ID, basic profile</div>
-            </div>
-            
-            <div class="scope-item required">
-                <div class="scope-header">
-                    <strong>Email Access</strong>
-                    <span class="scope-name">email</span>
-                    <span class="required-badge">Required</span>
+                <div class="scope-description">Access to basic profile information including email and name</div>
+                <div class="scope-data-access">Provides: User ID, email, name, profile picture, locale</div>
+                <div class="scope-test-actions">
+                    <button type="button" class="btn-test" id="test-profile-access">Test Profile Access</button>
+                    <span class="test-status" id="profile-test-status"></span>
                 </div>
-                <div class="scope-description">Access to email address</div>
-                <div class="scope-data-access">Provides: Primary email address</div>
-            </div>
-            
-            <div class="scope-item required">
-                <div class="scope-header">
-                    <strong>Profile Data</strong>
-                    <span class="scope-name">profile</span>
-                    <span class="required-badge">Required</span>
-                </div>
-                <div class="scope-description">Access to detailed profile information</div>
-                <div class="scope-data-access">Provides: Name, profile picture, locale</div>
+                <div class="scope-test-results" id="profile-test-results" style="display: none;"></div>
             </div>
         </div>
         
