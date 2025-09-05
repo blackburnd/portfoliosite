@@ -2350,7 +2350,7 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
     admin_email = admin.get("email")
     
     try:
-        await add_log("INFO", f"Admin {admin_email} checking Google OAuth status", "admin_google_oauth_status_check")
+        add_log("INFO", "admin_google_oauth_status", f"Admin {admin_email} checking Google OAuth status")
         
         # Check if Google OAuth is configured in database
         ttw_manager = TTWOAuthManager()
@@ -2588,7 +2588,7 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
     admin_email = admin.get("email")
     
     try:
-        await add_log("INFO", f"Admin {admin_email} checking LinkedIn OAuth status", "admin_linkedin_oauth_status_check")
+        add_log("INFO", "admin_linkedin_oauth_status", f"Admin {admin_email} checking LinkedIn OAuth status")
         
         # Check if LinkedIn OAuth is configured in database
         ttw_manager = TTWOAuthManager()
@@ -2627,7 +2627,7 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
     admin_email = admin.get("email")
     
     try:
-        await add_log("INFO", f"Admin {admin_email} loading LinkedIn OAuth config form", "admin_linkedin_config_form_load")
+        add_log("INFO", "admin_linkedin_config_form_load", f"Admin {admin_email} loading LinkedIn OAuth config form")
         
         # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
         query = """
