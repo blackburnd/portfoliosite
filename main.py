@@ -432,6 +432,11 @@ async def startup_event():
             logger.info("Initializing database connection...")
             await init_database()
             logger.info("Database initialized successfully")
+            
+            # Set up database logging for exceptions
+            logger.info("Setting up database logging handler...")
+            log_capture.setup_database_logging()
+            logger.info("Database logging handler configured")
         else:
             logger.warning("Running without database connection")
     except Exception as e:
