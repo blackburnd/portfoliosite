@@ -993,7 +993,8 @@ async def logs_admin_page(
         "current_page": "logs",
         "user_info": admin,
         "user_authenticated": True,
-        "user_email": admin.get("email", "")
+        "user_email": admin.get("email", ""),
+        "cache_bust_version": str(int(time.time()))
     })
 
 
@@ -1378,7 +1379,9 @@ async def projects_admin_page(
         })
 
 
-# --- Database Schema Setup Endpoint ---@app.get("/admin/oauth-status")
+# --- Database Schema Setup Endpoint ---
+
+@app.get("/admin/oauth-status")
 async def get_oauth_status():
     """Show current OAuth configuration status - no auth required"""
     try:
