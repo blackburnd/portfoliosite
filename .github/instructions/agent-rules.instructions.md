@@ -37,6 +37,15 @@ When production shows 502 errors or application failures, use these gcloud comma
 - Zone: us-central1-c
 - Instance ID: 8718870209064193364
 
+## CI/CD Pipeline and Testing
+**CRITICAL**: This project uses Google Cloud Build CI/CD pipeline. Testing happens ONLY after deployment:
+
+- **No local testing environment** - changes can only be verified after push to production
+- **Pipeline triggers on git push** - every commit automatically deploys to live production
+- **Full testing only possible post-deployment** - we cannot validate changes until pipeline completes
+- **Breaking changes affect live users immediately** - no staging environment buffer
+- **Recovery requires immediate git revert** - broken deployments must be reverted instantly
+
 ## Deployment Safety Rules
 - NEVER break working functionality
 - Test changes locally first
