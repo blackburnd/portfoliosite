@@ -1444,24 +1444,11 @@ async def list_workitems():
         ]
     
     try:
-        # Check if table exists - different for SQLite vs PostgreSQL
-        database_url = os.getenv("DATABASE_URL", "")
-        if "sqlite" in database_url.lower():
-            # SQLite syntax
-            check_table = ("SELECT name FROM sqlite_master "
-                          "WHERE type='table' AND name='work_experience'")
-            table_exists = await database.fetch_val(check_table)
-        else:
-            # PostgreSQL syntax
-            check_table = "SELECT to_regclass('work_experience')"
-            table_exists = await database.fetch_val(check_table)
-        
-        if not table_exists:
-            # Return empty list if table doesn't exist
-            return []
-            
+        # Query work experience directly
+        add_log("DEBUG", "workitems", "Fetching work items from database")
         query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
         rows = await database.fetch_all(query)
+        add_log("DEBUG", "workitems", f"Found {len(rows)} work items in database")
         
         # Convert rows to WorkItem objects, handling any missing fields
         work_items = []
