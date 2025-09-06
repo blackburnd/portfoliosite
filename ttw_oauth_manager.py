@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from database import database
+from log_capture import add_log
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -89,38 +90,51 @@ class TTWOAuthManager:
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth app through admin interface"""
         try:
-            # Encrypt client secret
-            encrypted_secret = self._encrypt_token(app_config["client_secret"])
+            # Log the configuration attempt
+            add_log("INFO", "linkedin_oauth_config", 
+                   f"Admin {admin_email} configuring LinkedIn OAuth app: {app_config.get('app_name', 'LinkedIn OAuth App')}",
+                   admin_email, "configure_oauth_app")
+            
+            # Store client secret in plain text
+            client_secret = app_config["client_secret"]
             
             # Insert or update LinkedIn OAuth configuration in oauth_apps table
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
                 ON CONFLICT (provider, app_name) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
-                    updated_at = CURRENT_TIMESTAMP,
-                    is_active = true
+                    updated_at = CURRENT_TIMESTAMP
             """
             
             await database.execute(query, {
                 "provider": "linkedin",
                 "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
-                "client_secret": encrypted_secret,
+                "client_secret": client_secret,
                 "redirect_uri": app_config["redirect_uri"],
-                "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
-                "encryption_key": "oauth_key",  # Using same key pattern as Google
+                "scopes": ",".join(app_config.get("scopes", ["r_liteprofile", "r_emailaddress"])),
                 "created_by": admin_email
             })
+            
+            # Log successful configuration
+            add_log("INFO", "linkedin_oauth_config_success", 
+                   f"LinkedIn OAuth app successfully configured by {admin_email}",
+                   admin_email, "configure_oauth_app")
             
             logger.info(f"LinkedIn OAuth app configured by admin: {admin_email}")
             return True
             
         except Exception as e:
+            # Log configuration failure
+            add_log("ERROR", "linkedin_oauth_config_failed", 
+                   f"Failed to configure LinkedIn OAuth app for {admin_email}: {str(e)}",
+                   admin_email, "configure_oauth_app")
+            
             logger.error(f"Failed to configure OAuth app: {e}")
             return False
     
@@ -284,55 +298,73 @@ class TTWOAuthManager:
     async def _store_linkedin_connection(self, admin_email: str, token_data: Dict[str, Any], 
                                        requested_scopes: List[str], profile_data: Dict[str, Any]):
         """Store LinkedIn connection with permissions"""
-        # Encrypt tokens
-        access_token = self._encrypt_token(token_data["access_token"])
-        refresh_token = self._encrypt_token(token_data.get("refresh_token", "")) if token_data.get("refresh_token") else None
-        
-        # Calculate expiration time
-        expires_in = token_data.get("expires_in", 5184000)  # LinkedIn default: 60 days
-        expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-        
-        # Extract profile info
-        linkedin_profile_id = profile_data.get("id")
-        profile_name = None
-        if profile_data.get("localizedFirstName") or profile_data.get("localizedLastName"):
-            profile_name = f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
-        
-        # Get granted scopes from token response or assume requested scopes were granted
-        granted_scopes = token_data.get("scope", " ".join(requested_scopes))
-        
-        # Store connection
-        query = """
-            INSERT INTO linkedin_oauth_connections 
-            (admin_email, linkedin_profile_id, linkedin_profile_name, access_token, refresh_token, 
-             token_expires_at, granted_scopes, requested_scopes)
-            VALUES (:admin_email, :profile_id, :profile_name, :access_token, :refresh_token, 
-                    :expires_at, :granted_scopes, :requested_scopes)
-            ON CONFLICT (admin_email) 
-            DO UPDATE SET 
-                linkedin_profile_id = EXCLUDED.linkedin_profile_id,
-                linkedin_profile_name = EXCLUDED.linkedin_profile_name,
-                access_token = EXCLUDED.access_token,
-                refresh_token = EXCLUDED.refresh_token,
-                token_expires_at = EXCLUDED.token_expires_at,
-                granted_scopes = EXCLUDED.granted_scopes,
-                requested_scopes = EXCLUDED.requested_scopes,
-                is_active = true,
-                updated_at = NOW()
-        """
-        
-        await database.execute(query, {
-            "admin_email": admin_email,
-            "profile_id": linkedin_profile_id,
-            "profile_name": profile_name,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "expires_at": expires_at,
-            "granted_scopes": granted_scopes,
-            "requested_scopes": " ".join(requested_scopes)
-        })
-        
-        logger.info(f"LinkedIn connection stored for admin: {admin_email} with scopes: {granted_scopes}")
+        try:
+            # Log connection storage attempt
+            add_log("INFO", "linkedin_connection_store",
+                    f"Storing LinkedIn connection for {admin_email}",
+                    admin_email, "_store_linkedin_connection")
+
+            # Encrypt tokens
+            access_token = self._encrypt_token(token_data["access_token"])
+            refresh_token = self._encrypt_token(token_data.get("refresh_token", "")) if token_data.get("refresh_token") else None
+            
+            # Calculate expiration time
+            expires_in = token_data.get("expires_in", 5184000)  # LinkedIn default: 60 days
+            expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+            
+            # Extract profile info
+            linkedin_profile_id = profile_data.get("id")
+            profile_name = None
+            if profile_data.get("localizedFirstName") or profile_data.get("localizedLastName"):
+                profile_name = f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
+            
+            # Get granted scopes from token response or assume requested scopes were granted
+            granted_scopes = token_data.get("scope", " ".join(requested_scopes))
+            
+            # Store connection
+            query = """
+                INSERT INTO linkedin_oauth_connections 
+                (admin_email, linkedin_profile_id, linkedin_profile_name, access_token, refresh_token, 
+                 token_expires_at, granted_scopes, requested_scopes)
+                VALUES (:admin_email, :profile_id, :profile_name, :access_token, :refresh_token, 
+                        :expires_at, :granted_scopes, :requested_scopes)
+                ON CONFLICT (admin_email) 
+                DO UPDATE SET 
+                    linkedin_profile_id = EXCLUDED.linkedin_profile_id,
+                    linkedin_profile_name = EXCLUDED.linkedin_profile_name,
+                    access_token = EXCLUDED.access_token,
+                    refresh_token = EXCLUDED.refresh_token,
+                    token_expires_at = EXCLUDED.token_expires_at,
+                    granted_scopes = EXCLUDED.granted_scopes,
+                    requested_scopes = EXCLUDED.requested_scopes,
+                    is_active = true,
+                    updated_at = NOW()
+            """
+            
+            await database.execute(query, {
+                "admin_email": admin_email,
+                "profile_id": linkedin_profile_id,
+                "profile_name": profile_name,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expires_at": expires_at,
+                "granted_scopes": granted_scopes,
+                "requested_scopes": " ".join(requested_scopes)
+            })
+
+            # Log successful storage
+            add_log("INFO", "linkedin_connection_store_success",
+                    f"LinkedIn connection stored for {admin_email}, scopes: {granted_scopes}",
+                    admin_email, "_store_linkedin_connection")
+
+            logger.info(f"LinkedIn connection stored for admin: {admin_email} with scopes: {granted_scopes}")
+
+        except Exception as e:
+            # Log storage failure
+            add_log("ERROR", "linkedin_connection_store_failed",
+                    f"Failed to store LinkedIn connection: {str(e)}",
+                    admin_email, "_store_linkedin_connection")
+            raise
     
     # Connection Management Methods
     
@@ -380,8 +412,16 @@ class TTWOAuthManager:
     
     async def _refresh_linkedin_token(self, admin_email: str, refresh_token: str):
         """Refresh LinkedIn access token using refresh token"""
+        # Log token refresh attempt
+        add_log("INFO", "linkedin_token_refresh",
+                f"Refreshing LinkedIn token for {admin_email}",
+                admin_email, "_refresh_linkedin_token")
+
         config = await self.get_oauth_app_config()
         if not config:
+            add_log("ERROR", "linkedin_token_refresh_failed",
+                    f"LinkedIn OAuth app not configured for {admin_email}",
+                    admin_email, "_refresh_linkedin_token")
             raise TTWOAuthManagerError("LinkedIn OAuth app not configured")
         
         token_data = {
@@ -421,10 +461,20 @@ class TTWOAuthManager:
                     "refresh_token": encrypted_refresh,
                     "expires_at": expires_at
                 })
+
+                # Log successful refresh
+                add_log("INFO", "linkedin_token_refresh_success",
+                        f"LinkedIn token successfully refreshed for {admin_email}",
+                        admin_email, "_refresh_linkedin_token")
                 
                 logger.info(f"LinkedIn token refreshed for {admin_email}")
                 
             except Exception as e:
+                # Log refresh failure
+                add_log("ERROR", "linkedin_token_refresh_failed",
+                        f"Failed to refresh LinkedIn token: {str(e)}",
+                        admin_email, "_refresh_linkedin_token")
+
                 logger.error(f"Failed to refresh LinkedIn token for {admin_email}: {e}")
                 # Remove invalid connection
                 await self.remove_linkedin_connection(admin_email)
@@ -433,11 +483,31 @@ class TTWOAuthManager:
     async def remove_linkedin_connection(self, admin_email: str) -> bool:
         """Remove LinkedIn connection for admin user"""
         try:
-            query = "UPDATE linkedin_oauth_connections SET is_active = false WHERE admin_email = :admin_email"
+            # Log the connection removal attempt
+            add_log("INFO", "linkedin_connection_remove",
+                    f"Admin {admin_email} removing LinkedIn connection",
+                    admin_email, "remove_linkedin_connection")
+
+            query = """
+                DELETE FROM linkedin_oauth_connections
+                WHERE admin_email = :admin_email
+            """
             await database.execute(query, {"admin_email": admin_email})
+
+            # Log successful removal
+            add_log("INFO", "linkedin_connection_remove_success",
+                    f"LinkedIn connection successfully removed for {admin_email}",
+                    admin_email, "remove_linkedin_connection")
+
             logger.info(f"LinkedIn connection removed for {admin_email}")
             return True
+
         except Exception as e:
+            # Log removal failure
+            add_log("ERROR", "linkedin_connection_remove_failed",
+                    f"Failed to remove LinkedIn connection: {str(e)}",
+                    admin_email, "remove_linkedin_connection")
+
             logger.error(f"Failed to remove LinkedIn connection for {admin_email}: {e}")
             return False
     
@@ -459,6 +529,11 @@ class TTWOAuthManager:
     async def configure_google_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure Google OAuth application settings"""
         try:
+            # Log the configuration attempt
+            add_log("INFO", "google_oauth_config", 
+                   f"Admin {admin_email} configuring Google OAuth app: {app_config.get('app_name', 'Google OAuth App')}",
+                   admin_email, "configure_google_oauth_app")
+            
             # Encrypt the client secret
             encrypted_secret = self._encrypt_token(app_config["client_secret"])
             
@@ -472,8 +547,7 @@ class TTWOAuthManager:
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
-                    updated_at = CURRENT_TIMESTAMP,
-                    is_active = true
+                    updated_at = CURRENT_TIMESTAMP
             """
             
             await database.execute(query, {
@@ -482,15 +556,25 @@ class TTWOAuthManager:
                 "client_id": app_config["client_id"],
                 "client_secret": encrypted_secret,
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
-                "scopes": ["email", "profile"],  # Default Google scopes
-                "encryption_key": "oauth_key",  # Using same key pattern as LinkedIn
+                "scopes": ",".join(["email", "profile"]),  # Default Google scopes
+                "encryption_key": self.encryption_key.decode(),
                 "created_by": admin_email
             })
+            
+            # Log successful configuration
+            add_log("INFO", "google_oauth_config_success", 
+                   f"Google OAuth app successfully configured by {admin_email}",
+                   admin_email, "configure_google_oauth_app")
             
             logger.info(f"Google OAuth app configured by {admin_email}")
             return True
             
         except Exception as e:
+            # Log configuration failure
+            add_log("ERROR", "google_oauth_config_failed", 
+                   f"Failed to configure Google OAuth app for {admin_email}: {str(e)}",
+                   admin_email, "configure_google_oauth_app")
+            
             logger.error(f"Failed to configure Google OAuth app: {e}")
             return False
 
@@ -553,34 +637,62 @@ class TTWOAuthManager:
     async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
         """Remove LinkedIn OAuth app configuration"""
         try:
+            # Log the removal attempt
+            add_log("INFO", "linkedin_oauth_remove",
+                    f"Admin {admin_email} removing LinkedIn OAuth app config",
+                    admin_email, "remove_linkedin_oauth_app")
+
             query = """
-                UPDATE oauth_apps 
-                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                DELETE FROM oauth_apps
                 WHERE provider = 'linkedin'
             """
             await database.execute(query)
-            
+
+            # Log successful removal
+            add_log("INFO", "linkedin_oauth_remove_success",
+                    f"LinkedIn OAuth app successfully removed by {admin_email}",
+                    admin_email, "remove_linkedin_oauth_app")
+
             logger.info(f"LinkedIn OAuth app removed by {admin_email}")
             return True
-            
+
         except Exception as e:
+            # Log removal failure
+            add_log("ERROR", "linkedin_oauth_remove_failed",
+                    f"Failed to remove LinkedIn OAuth app: {str(e)}",
+                    admin_email, "remove_linkedin_oauth_app")
+
             logger.error(f"Failed to remove LinkedIn OAuth app: {e}")
             return False
 
     async def remove_google_oauth_app(self, admin_email: str) -> bool:
         """Remove Google OAuth app configuration"""
         try:
+            # Log the removal attempt
+            add_log("INFO", "google_oauth_remove",
+                    f"Admin {admin_email} removing Google OAuth app config",
+                    admin_email, "remove_google_oauth_app")
+
             query = """
-                UPDATE oauth_apps 
-                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                DELETE FROM oauth_apps
                 WHERE provider = 'google'
             """
             await database.execute(query)
-            
+
+            # Log successful removal
+            add_log("INFO", "google_oauth_remove_success",
+                    f"Google OAuth app successfully removed by {admin_email}",
+                    admin_email, "remove_google_oauth_app")
+
             logger.info(f"Google OAuth app removed by {admin_email}")
             return True
-            
+
         except Exception as e:
+            # Log removal failure
+            add_log("ERROR", "google_oauth_remove_failed",
+                    f"Failed to remove Google OAuth app: {str(e)}",
+                    admin_email, "remove_google_oauth_app")
+
             logger.error(f"Failed to remove Google OAuth app: {e}")
             return False
 
