@@ -118,11 +118,15 @@ class LinkedInOAuthAdmin {
 
     updateLinkedInConfigForm(data) {
         // Populate LinkedIn OAuth configuration form with data
-        document.getElementById('linkedin-app-name').value = data.app_name || '';
-        document.getElementById('linkedin-client-id').value = data.client_id || '';
-        document.getElementById('linkedin-client-secret').value = data.client_secret || '';
-        document.getElementById('linkedin-redirect-uri').value = data.redirect_uri || '';
-        document.getElementById('linkedin-scopes').value = data.scopes || '';
+        const appNameField = document.getElementById('linkedin-app-name');
+        const clientIdField = document.getElementById('linkedin-client-id');
+        const clientSecretField = document.getElementById('linkedin-client-secret');
+        const redirectUriField = document.getElementById('linkedin-redirect-uri');
+        
+        if (appNameField) appNameField.value = data.app_name || '';
+        if (clientIdField) clientIdField.value = data.client_id || '';
+        if (clientSecretField) clientSecretField.value = data.client_secret || '';
+        if (redirectUriField) redirectUriField.value = data.redirect_uri || '';
     }
 
     async saveLinkedInConfig(e) {
