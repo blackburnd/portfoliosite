@@ -202,17 +202,17 @@ class GoogleOAuthAdmin {
         resultsDiv.innerHTML = '<div class="test-results">Testing Google API access...</div>';
 
         try {
-            const response = await fetch('/admin/google/oauth/test-api');
+            const response = await fetch('/admin/google/oauth/profile');
             const result = await response.json();
 
             if (response.ok) {
-                resultsDiv.innerHTML = `<div class="test-success">✅ Google API test passed: ${result.message}</div>`;
+                resultsDiv.innerHTML = `<div class="test-success">✅ Google Profile API test passed: ${result.name} (${result.email})</div>`;
             } else {
-                resultsDiv.innerHTML = `<div class="test-error">❌ Google API test failed: ${result.detail}</div>`;
+                resultsDiv.innerHTML = `<div class="test-error">❌ Google Profile API test failed: ${result.detail}</div>`;
             }
         } catch (error) {
             console.error('Error testing Google API:', error);
-            resultsDiv.innerHTML = '<div class="test-error">❌ Google API test failed: Network error</div>';
+            resultsDiv.innerHTML = '<div class="test-error">❌ Google Profile API test failed: Network error</div>';
         }
     }
 
