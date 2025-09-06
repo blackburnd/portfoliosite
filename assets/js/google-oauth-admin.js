@@ -248,6 +248,12 @@ class GoogleOAuthAdmin {
 
     async testProfileAccess() {
         const resultsDiv = document.getElementById('google-test-results');
+        if (!resultsDiv) {
+            console.error('google-test-results element not found');
+            alert('Error: Test results area not found on page');
+            return;
+        }
+        
         resultsDiv.style.display = 'block';
         resultsDiv.innerHTML = '<div class="test-results">Testing Google Profile Access...</div>';
 
