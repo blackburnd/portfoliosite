@@ -181,6 +181,12 @@ class TTWOAuthManager:
                         f"LinkedIn OAuth not configured for {admin_email}")
                 raise TTWOAuthManagerError("LinkedIn OAuth app not configured. Please configure it first.")
 
+            # Debug: Log config details (without secrets)
+            add_log("DEBUG", "linkedin_auth_url_config_check",
+                    f"OAuth config found - client_id present: "
+                    f"{bool(config.get('client_id'))}, "
+                    f"redirect_uri: {config.get('redirect_uri', 'None')}")
+
             if not requested_scopes:
                 requested_scopes = await self.get_default_scopes()
 
@@ -194,6 +200,7 @@ class TTWOAuthManager:
             state = self._encrypt_token(json.dumps(state_data))
 
             # Build authorization URL
+            import urllib.parse
             params = {
                 "response_type": "code",
                 "client_id": config["client_id"],
@@ -202,8 +209,12 @@ class TTWOAuthManager:
                 "scope": " ".join(requested_scopes)
             }
 
-            param_string = "&".join([f"{k}={v}" for k, v in params.items()])
-            auth_url = f"https://www.linkedin.com/oauth/v2/authorization?{param_string}"
+            # URL encode parameters properly
+            encoded_params = [f"{k}={urllib.parse.quote_plus(str(v))}"
+                              for k, v in params.items()]
+            param_string = "&".join(encoded_params)
+            auth_url = (f"https://www.linkedin.com/oauth/v2/authorization?"
+                        f"{param_string}")
 
             # Log successful URL generation
             add_log("INFO", "linkedin_auth_url_success",

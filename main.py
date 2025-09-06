@@ -2626,6 +2626,24 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_sessi
         add_log("INFO", "admin_linkedin_oauth_initiate", f"Admin {admin_email} initiating LinkedIn OAuth authorization")
         
         ttw_manager = TTWOAuthManager()
+        
+        # First check if OAuth app is configured
+        if not await ttw_manager.is_oauth_app_configured():
+            add_log("ERROR", "admin_linkedin_oauth_not_configured", f"LinkedIn OAuth app not configured for {admin_email}")
+            return JSONResponse({
+                "status": "error",
+                "detail": "LinkedIn OAuth application must be configured first. Please configure the app in the admin panel."
+            }, status_code=400)
+        
+        # Get configuration to verify client_id exists
+        config = await ttw_manager.get_oauth_app_config()
+        if not config or not config.get("client_id"):
+            add_log("ERROR", "admin_linkedin_oauth_missing_client_id", f"LinkedIn OAuth missing client_id for {admin_email}")
+            return JSONResponse({
+                "status": "error", 
+                "detail": "LinkedIn OAuth configuration is incomplete. Please reconfigure the application."
+            }, status_code=400)
+        
         auth_url, state = await ttw_manager.get_linkedin_authorization_url(admin_email)
         
         if auth_url:
@@ -2648,7 +2666,58 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_sessi
         }, status_code=500)
 
 
-@app.post("/admin/linkedin/oauth/revoke")
+@app.get("/admin/linkedin/oauth/debug-config")
+async def debug_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
+    """Debug LinkedIn OAuth configuration"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_oauth_debug", 
+                f"Admin {admin_email} checking LinkedIn OAuth config")
+        
+        ttw_manager = TTWOAuthManager()
+        
+        # Check if OAuth app is configured
+        is_configured = await ttw_manager.is_oauth_app_configured()
+        
+        debug_info = {
+            "is_configured": is_configured,
+            "config_data": None,
+            "error": None
+        }
+        
+        if is_configured:
+            try:
+                config = await ttw_manager.get_oauth_app_config()
+                if config:
+                    # Don't expose sensitive data, just check if fields exist
+                    debug_info["config_data"] = {
+                        "app_name": config.get("app_name"),
+                        "client_id_exists": bool(config.get("client_id")),
+                        "client_secret_exists": bool(config.get("client_secret")),
+                        "redirect_uri": config.get("redirect_uri"),
+                        "scopes": config.get("scopes"),
+                        "configured_by": config.get("configured_by_email"),
+                        "created_at": config.get("created_at")
+                    }
+                else:
+                    debug_info["error"] = "Configuration exists but data is null"
+            except Exception as e:
+                debug_info["error"] = f"Error retrieving config: {str(e)}"
+        
+        return JSONResponse({
+            "status": "success",
+            "debug_info": debug_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error debugging LinkedIn OAuth config: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session)):
     """Revoke LinkedIn OAuth access"""
     admin_email = admin.get("email")
