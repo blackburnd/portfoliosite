@@ -131,8 +131,10 @@ async def add_log(level: str, message: str, module: str = "manual", function: st
         await db.connect()
         
         query = """
-            INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
-            VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
+            INSERT INTO app_log (timestamp, level, message, module, function,
+                                line, "user", extra)
+            VALUES (:timestamp, :level, :message, :module, :function,
+                   :line, :user, :extra)
         """
         
         values = {
