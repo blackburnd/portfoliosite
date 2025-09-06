@@ -2228,6 +2228,9 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
     import httpx
     admin_email = admin.get("email")
     
+    # Prominent log entry to ensure we see this endpoint being called
+    add_log("INFO", "google_profile_endpoint_accessed", f"Google profile endpoint accessed by {admin_email}")
+    
     try:
         add_log("INFO", "admin_google_profile_request", f"Admin {admin_email} requesting Google profile data")
         
