@@ -51,21 +51,19 @@ body {
 
 .tagline {
     color: #666;
-    margin: 0; /* Remove individual margin since spacing is handled by title-container */
+    margin: 5px 0 0 0; /* Move closer to H1 - reduced top margin */
 }
 
-/* Header Social Links */
-.header-social-links {
-    display: flex;
-    gap: 10px;
+/* Social Links in Navigation */
+.social-links {
+    display: flex !important;
+    gap: 15px;
     align-items: center;
-    margin-top: 8px; /* Small gap below the title */
-    margin-bottom: 5px; /* Small gap above the tagline */
 }
 
-.header-social-links a {
-    text-decoration: none;
-    color: #333;
+.social-links a {
+    text-decoration: none !important;
+    color: #333 !important;
     font-size: 0.9em;
     display: inline-flex;
     align-items: center;
@@ -75,9 +73,9 @@ body {
     transition: all 0.2s ease;
 }
 
-.header-social-links a:hover {
+.social-links a:hover {
     background-color: #f0f0f0;
-    text-decoration: underline;
+    text-decoration: underline !important;
 }
 
 /* Authentication and admin links */
