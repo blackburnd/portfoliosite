@@ -62,7 +62,7 @@ class TTWOAuthManager:
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get active LinkedIn OAuth app configuration"""
         try:
-            add_log("DEBUG", "oauth_config_lookup", "Looking up LinkedIn OAuth configuration")
+            #add_log("DEBUG", "oauth_config_lookup", "Looking up LinkedIn OAuth configuration")
             
             query = """
                 SELECT app_name, client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
@@ -173,7 +173,7 @@ class TTWOAuthManager:
         try:
             # Log authorization URL generation attempt
             add_log("INFO", "linkedin_auth_url_generate",
-                    f"Generating LinkedIn auth URL for {admin_email}")
+                    f"Get LinkedIn auth URL for {admin_email}")
 
             config = await self.get_oauth_app_config()
             if not config:
@@ -217,7 +217,7 @@ class TTWOAuthManager:
                         f"{param_string}")
 
             # Log successful URL generation
-            add_log("INFO", "linkedin_auth_url_success",
+            add_log("DEBUG", "linkedin_auth_url_success",
                     f"LinkedIn auth URL generated for {admin_email}, scopes: {requested_scopes}")
 
             logger.info(f"Generated LinkedIn auth URL for {admin_email} with scopes: {requested_scopes}")
