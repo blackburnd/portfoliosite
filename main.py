@@ -3121,11 +3121,18 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
         admin_email = None
         if state:
             try:
-                import json
-                state_data = json.loads(state)
+                # Use TTW OAuth Manager to verify and decode encrypted state
+                ttw_manager = TTWOAuthManager()
+                state_data = ttw_manager.verify_linkedin_state(state)
                 admin_email = state_data.get("admin_email")
-            except:
-                pass
+            except Exception as e:
+                add_log("ERROR", "linkedin_oauth_callback_state_error",
+                        f"Failed to verify state: {str(e)}")
+                return templates.TemplateResponse(
+                    "linkedin_oauth_error.html", {
+                        "request": request,
+                        "error": "Invalid state parameter"
+                    })
         
         if not admin_email:
             add_log("linkedin_oauth_callback_no_admin", "LinkedIn OAuth callback missing admin email in state")
