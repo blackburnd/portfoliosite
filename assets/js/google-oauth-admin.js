@@ -261,17 +261,48 @@ class GoogleOAuthAdmin {
             const response = await fetch('/admin/google/oauth/profile');
             const result = await response.json();
 
-            if (response.ok) {
-                const data = result.data || result;
-                resultsDiv.innerHTML = `
+            if (response.ok && result.status === 'success') {
+                const profile = result.profile;
+                const debug = result.debug_info;
+                
+                // Extract key profile information
+                const primaryName = profile.names?.[0]?.displayName || 'N/A';
+                const primaryEmail = profile.email_addresses?.[0]?.value || 'N/A';
+                const profilePhoto = profile.photos?.[0]?.url || null;
+                const resourceName = profile.resource_name || 'N/A';
+                
+                // Build comprehensive profile display
+                let profileHtml = `
                     <div class="test-success">
                         ✅ Profile Access test passed<br>
-                        <strong>Name:</strong> ${data.name || 'N/A'}<br>
-                        <strong>Email:</strong> ${data.email || 'N/A'}<br>
-                        <strong>Profile ID:</strong> ${data.id || data.profile_id || 'N/A'}
+                        <div style="margin-top: 10px;">
+                            <strong>Name:</strong> ${primaryName}<br>
+                            <strong>Email:</strong> ${primaryEmail}<br>
+                            <strong>Resource ID:</strong> ${resourceName}<br>
+                `;
+                
+                if (profilePhoto) {
+                    profileHtml += `<strong>Profile Photo:</strong> <img src="${profilePhoto}" alt="Profile" style="width: 50px; height: 50px; border-radius: 25px; margin-left: 10px;"><br>`;
+                }
+                
+                // Add counts of available data
+                profileHtml += `
+                            <br><strong>Available Data:</strong><br>
+                            • Names: ${debug.total_names}<br>
+                            • Emails: ${debug.total_emails}<br>
+                            • Photos: ${debug.total_photos}<br>
+                            • Phone Numbers: ${debug.total_phone_numbers}<br>
+                            • Addresses: ${debug.total_addresses}<br>
+                        </div>
+                        <details style="margin-top: 10px;">
+                            <summary><strong>Full Profile Data (Click to expand)</strong></summary>
+                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-size: 12px;">${JSON.stringify(profile, null, 2)}</pre>
+                        </details>
                     </div>`;
+                
+                resultsDiv.innerHTML = profileHtml;
             } else {
-                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.detail || result.message}</div>`;
+                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.message || result.detail}</div>`;
             }
         } catch (error) {
             console.error('Error testing profile access:', error);

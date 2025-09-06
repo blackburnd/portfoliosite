@@ -214,6 +214,21 @@ nav li.active a:hover {
     margin-bottom: 24px;
 }
 
+/* Profile Image Styles */
+.profile-image {
+    float: left;
+    width: 50%;
+    margin: 0 20px 20px 0;
+    text-align: center;
+}
+
+.profile-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 .amp {
     font-family: serif;
     font-size: 1.2em;
