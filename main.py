@@ -25,12 +25,9 @@ from typing import Optional, List
 load_dotenv()
 import uvicorn
 import json
-import os
-import logging
 from pathlib import Path
 import sqlite3
 import asyncio
-import secrets
 import hashlib
 from log_capture import add_log
 
@@ -886,7 +883,7 @@ async def contact_submit(request: Request):
         logger.error(f"CONTACT FORM ERROR [{error_id}]: {str(e)}")
         
         # Log to app_log table
-        await add_log(
+        add_log(
             level="ERROR",
             message=f"[{error_id}] Contact form submission failed: {str(e)}",
             details=f"Form data: name={name if 'name' in locals() else 'unknown'}, "
