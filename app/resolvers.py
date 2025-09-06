@@ -136,13 +136,15 @@ class Query:
                 company=row["company"],
                 position=row["position"],
                 location=row["location"],
-                start_date=str(row["start_date"]) if row["start_date"] else "",
+                start_date=(str(row["start_date"])
+                            if row["start_date"] else None),
                 end_date=str(row["end_date"]) if row["end_date"] else None,
                 description=row["description"],
                 is_current=row["is_current"],
                 company_url=row["company_url"]
             ) for row in rows
         ]
+
 
 # Create the schema
 schema = strawberry.Schema(query=Query)
