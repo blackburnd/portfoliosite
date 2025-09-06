@@ -2,10 +2,37 @@
 
 class GoogleOAuthAdmin {
     constructor() {
-        this.init();
+        try {
+            this.init();
+        } catch (error) {
+            console.error('Error initializing GoogleOAuthAdmin:', error);
+            alert('Error: Failed to initialize Google OAuth admin. Please refresh the page.');
+        }
     }
 
     init() {
+        // Check for required elements before binding events
+        const requiredElements = [
+            'google-status-display',
+            'google-status-text', 
+            'google-connection-status',
+            'google-connection-text',
+            'result-messages'
+        ];
+        
+        const missingElements = [];
+        requiredElements.forEach(elementId => {
+            if (!document.getElementById(elementId)) {
+                missingElements.push(elementId);
+            }
+        });
+        
+        if (missingElements.length > 0) {
+            console.error('Missing required elements:', missingElements);
+            alert('Error: Required page elements not found. Please refresh the page.');
+            return;
+        }
+        
         this.bindEvents();
         this.loadGoogleStatus();
     }
