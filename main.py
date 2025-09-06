@@ -495,29 +495,12 @@ async def auth_login(request: Request):
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
-        add_log(
-            level="INFO",
-            source="auth",
-            message="User initiated Google OAuth login process",
-            module="auth",
-            function="auth_login",
-            extra=json.dumps({
-                "ip_address": request.client.host if request.client else "unknown",
-                "user_agent": request.headers.get("user-agent", "unknown")
-            })
-        )
+        add_log("INFO", "auth", "User initiated Google OAuth login process")
         
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured - missing credentials")
-            add_log(
-                level="ERROR",
-                source="auth",
-                message="OAuth login failed - missing Google OAuth configuration",
-                module="auth",
-                function="auth_login",
-                extra=json.dumps({"reason": "missing_oauth_config"})
-            )
+            add_log("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration")
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -628,19 +611,7 @@ async def auth_callback(request: Request):
             )
         
         if not is_authorized_user(email):
-            add_log(
-                level="WARNING",
-                source="auth",
-                message=f"Unauthorized login attempt by {email}",
-                user=email,
-                module="auth",
-                function="auth_callback",
-                extra=json.dumps({
-                    "email": email,
-                    "reason": "not_authorized",
-                    "ip_address": request.client.host if request.client else "unknown"
-                })
-            )
+            add_log("WARNING", "auth", f"Unauthorized login attempt by {email}")
             return HTMLResponse(
                 content=f"""
                 <html><body>
@@ -664,21 +635,7 @@ async def auth_callback(request: Request):
         }
         
         # Log successful login and session creation
-        add_log(
-            level="INFO",
-            source="auth",
-            message=f"Successful login by {email} - session auth created",
-            user=email,
-            module="auth",
-            function="auth_callback",
-            extra=json.dumps({
-                "email": email,
-                "name": user_info.get('name', 'Unknown'),
-                "ip_address": request.client.host if request.client else "unknown",
-                "session_created": True,
-                "auth_method": "session_only"
-            })
-        )
+        add_log("INFO", "auth", f"Successful login by {email} - session auth created")
         
         # Redirect to admin page
         response = RedirectResponse(url="/workadmin")
@@ -714,18 +671,7 @@ async def logout(request: Request, response: Response):
             user_email = user_session.get('email', 'unknown')
         
         # Add log entry for logout
-        add_log(
-            level="INFO",
-            source="auth",
-            message=f"User logged out: {user_email}",
-            user=user_email,
-            module="auth",
-            function="logout",
-            extra=json.dumps({
-                "ip_address": request.client.host if request.client else "unknown",
-                "auth_method": "session_only"
-            })
-        )
+        add_log("INFO", "auth", f"User logged out: {user_email}")
         
         # Clear all session data
         request.session.clear()
@@ -755,18 +701,7 @@ async def disconnect(request: Request, response: Response):
             pass
         
         # Add log entry for disconnect
-        add_log(
-            level="INFO",
-            source="auth",
-            message=f"User disconnected (revoked tokens): {user_email}",
-            user=user_email,
-            module="auth",
-            function="disconnect",
-            extra=json.dumps({
-                "ip_address": request.client.host if request.client else "unknown",
-                "action": "revoke_tokens"
-            })
-        )
+        add_log("INFO", "auth", f"User disconnected (revoked tokens): {user_email}")
         
         # First try to revoke the Google token if we have one
         try:
@@ -1259,19 +1194,7 @@ async def execute_sql(
         is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
         
         # Add specific log entry for query history tracking
-        add_log(
-            level="INFO", 
-            source="sql_admin", 
-            message=f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}", 
-            user=admin.get('email', 'unknown'),
-            module="sql_admin",
-            function="execute_sql",
-            extra=json.dumps({
-                "query_type": "SELECT" if is_select else "MODIFY",
-                "query_length": len(query),
-                "user_email": admin.get('email', 'unknown')
-            })
-        )
+        add_log("INFO", "sql_admin", f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}")
         
         if is_select:
             # For SELECT queries, fetch results
