@@ -90,10 +90,9 @@ class TTWOAuthManager:
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth app through admin interface"""
         try:
-            # Log the configuration attempt
+                        # Log the configuration attempt
             add_log("INFO", "linkedin_oauth_config", 
-                   f"Admin {admin_email} configuring LinkedIn OAuth app: {app_config.get('app_name', 'LinkedIn OAuth App')}",
-                   admin_email, "configure_oauth_app")
+                    f"Admin {admin_email} configuring LinkedIn OAuth app: {app_config.get('app_name', 'LinkedIn OAuth App')}")
             
             # Store client secret in plain text
             client_secret = app_config["client_secret"]
@@ -123,8 +122,7 @@ class TTWOAuthManager:
             
             # Log successful configuration
             add_log("INFO", "linkedin_oauth_config_success", 
-                   f"LinkedIn OAuth app successfully configured by {admin_email}",
-                   admin_email, "configure_oauth_app")
+                    f"LinkedIn OAuth app successfully configured by {admin_email}")
             
             logger.info(f"LinkedIn OAuth app configured by admin: {admin_email}")
             return True
@@ -132,8 +130,7 @@ class TTWOAuthManager:
         except Exception as e:
             # Log configuration failure
             add_log("ERROR", "linkedin_oauth_config_failed", 
-                   f"Failed to configure LinkedIn OAuth app for {admin_email}: {str(e)}",
-                   admin_email, "configure_oauth_app")
+                    f"Failed to configure LinkedIn OAuth app for {admin_email}: {str(e)}")
             
             logger.error(f"Failed to configure OAuth app: {e}")
             return False
@@ -168,14 +165,12 @@ class TTWOAuthManager:
         try:
             # Log authorization URL generation attempt
             add_log("INFO", "linkedin_auth_url_generate",
-                    f"Generating LinkedIn auth URL for {admin_email}",
-                    admin_email, "get_linkedin_authorization_url")
+                    f"Generating LinkedIn auth URL for {admin_email}")
 
             config = await self.get_oauth_app_config()
             if not config:
                 add_log("ERROR", "linkedin_auth_url_no_config",
-                        f"LinkedIn OAuth not configured for {admin_email}",
-                        admin_email, "get_linkedin_authorization_url")
+                        f"LinkedIn OAuth not configured for {admin_email}")
                 raise TTWOAuthManagerError("LinkedIn OAuth app not configured. Please configure it first.")
 
             if not requested_scopes:
@@ -204,8 +199,7 @@ class TTWOAuthManager:
 
             # Log successful URL generation
             add_log("INFO", "linkedin_auth_url_success",
-                    f"LinkedIn auth URL generated for {admin_email}, scopes: {requested_scopes}",
-                    admin_email, "get_linkedin_authorization_url")
+                    f"LinkedIn auth URL generated for {admin_email}, scopes: {requested_scopes}")
 
             logger.info(f"Generated LinkedIn auth URL for {admin_email} with scopes: {requested_scopes}")
             return auth_url, state
@@ -213,8 +207,7 @@ class TTWOAuthManager:
         except Exception as e:
             # Log URL generation failure
             add_log("ERROR", "linkedin_auth_url_failed",
-                    f"Failed to generate LinkedIn auth URL: {str(e)}",
-                    admin_email, "get_linkedin_authorization_url")
+                    f"Failed to generate LinkedIn auth URL: {str(e)}")
             raise
     
     def verify_linkedin_state(self, state: str) -> Dict[str, Any]:
@@ -239,14 +232,12 @@ class TTWOAuthManager:
         try:
             # Log token exchange attempt
             add_log("INFO", "linkedin_token_exchange",
-                    f"Exchanging LinkedIn auth code for tokens: {admin_email}",
-                    admin_email, "exchange_linkedin_code_for_tokens")
+                    f"Exchanging LinkedIn auth code for tokens: {admin_email}")
 
             config = await self.get_oauth_app_config()
             if not config:
                 add_log("ERROR", "linkedin_token_exchange_no_config",
-                        f"LinkedIn OAuth not configured for token exchange: {admin_email}",
-                        admin_email, "exchange_linkedin_code_for_tokens")
+                        f"LinkedIn OAuth not configured for token exchange: {admin_email}")
                 raise TTWOAuthManagerError("LinkedIn OAuth app not configured")
 
             requested_scopes = state_data["requested_scopes"]
