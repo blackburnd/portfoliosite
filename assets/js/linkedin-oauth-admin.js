@@ -90,11 +90,16 @@ class LinkedInOAuthAdmin {
             statusDisplay.className = 'status-configured';
             statusText.textContent = 'LinkedIn OAuth configured and ready';
             
-            // Populate form with existing config
-            document.getElementById('linkedin-app-name').value = data.app_name || '';
-            document.getElementById('linkedin-client-id').value = data.client_id || '';
-            document.getElementById('linkedin-client-secret').value = data.client_secret || '';
-            document.getElementById('linkedin-redirect-uri').value = data.redirect_uri || '';
+            // Populate form with existing config - with null checks
+            const appNameField = document.getElementById('linkedin-app-name');
+            const clientIdField = document.getElementById('linkedin-client-id');
+            const clientSecretField = document.getElementById('linkedin-client-secret');
+            const redirectUriField = document.getElementById('linkedin-redirect-uri');
+            
+            if (appNameField) appNameField.value = data.app_name || '';
+            if (clientIdField) clientIdField.value = data.client_id || '';
+            if (clientSecretField) clientSecretField.value = data.client_secret || '';
+            if (redirectUriField) redirectUriField.value = data.redirect_uri || '';
         } else {
             statusDisplay.className = 'status-not-configured';
             statusText.textContent = 'LinkedIn OAuth not configured';
@@ -105,14 +110,20 @@ class LinkedInOAuthAdmin {
             connectionText.textContent = 'Connected to LinkedIn';
             
             const details = document.getElementById('linkedin-connection-details');
-            details.style.display = 'block';
-            document.getElementById('linkedin-account-email').textContent = data.account_email || 'Unknown';
-            document.getElementById('linkedin-last-sync').textContent = data.last_sync || 'Never';
-            document.getElementById('linkedin-token-expiry').textContent = data.token_expiry || 'Unknown';
+            if (details) details.style.display = 'block';
+            
+            const accountEmailField = document.getElementById('linkedin-account-email');
+            const lastSyncField = document.getElementById('linkedin-last-sync');
+            const tokenExpiryField = document.getElementById('linkedin-token-expiry');
+            
+            if (accountEmailField) accountEmailField.textContent = data.account_email || 'Unknown';
+            if (lastSyncField) lastSyncField.textContent = data.last_sync || 'Never';
+            if (tokenExpiryField) tokenExpiryField.textContent = data.token_expiry || 'Unknown';
         } else {
             connectionStatus.className = 'status-not-configured';
             connectionText.textContent = 'Not connected to LinkedIn';
-            document.getElementById('linkedin-connection-details').style.display = 'none';
+            const details = document.getElementById('linkedin-connection-details');
+            if (details) details.style.display = 'none';
         }
     }
 
