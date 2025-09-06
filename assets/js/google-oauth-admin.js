@@ -32,6 +32,9 @@ class GoogleOAuthAdmin {
 
         const testApiBtn = document.getElementById('test-google-api');
         if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
+
+        const testProfileBtn = document.getElementById('test-profile-access');
+        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
     }
 
     async loadGoogleStatus() {
@@ -213,6 +216,33 @@ class GoogleOAuthAdmin {
         } catch (error) {
             console.error('Error testing Google API:', error);
             resultsDiv.innerHTML = '<div class="test-error">❌ Google Profile API test failed: Network error</div>';
+        }
+    }
+
+    async testProfileAccess() {
+        const resultsDiv = document.getElementById('google-test-results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Testing Google Profile Access...</div>';
+
+        try {
+            const response = await fetch('/admin/google/oauth/profile');
+            const result = await response.json();
+
+            if (response.ok) {
+                const data = result.data || result;
+                resultsDiv.innerHTML = `
+                    <div class="test-success">
+                        ✅ Profile Access test passed<br>
+                        <strong>Name:</strong> ${data.name || 'N/A'}<br>
+                        <strong>Email:</strong> ${data.email || 'N/A'}<br>
+                        <strong>Profile ID:</strong> ${data.id || data.profile_id || 'N/A'}
+                    </div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.detail || result.message}</div>`;
+            }
+        } catch (error) {
+            console.error('Error testing profile access:', error);
+            resultsDiv.innerHTML = '<div class="test-error">❌ Profile Access test failed: Network error</div>';
         }
     }
 
