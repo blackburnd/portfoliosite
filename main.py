@@ -2713,10 +2713,19 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_sessi
     try:
         add_log("INFO", "admin_linkedin_oauth_api_test", f"Admin {admin_email} testing LinkedIn OAuth API access")
         
-        sync_service = TTWLinkedInSync(admin_email)
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
         
-        # Test API access by getting profile info
-        profile_data = await sync_service.get_linkedin_profile()
+        if not connection:
+            add_log("ERROR", "admin_linkedin_oauth_api_test_failure", f"LinkedIn OAuth API test failed for {admin_email} - no connection")
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
+            }, status_code=400)
+        
+        # Test API access by getting profile info using stored token
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        profile_data = await ttw_manager._get_linkedin_profile(access_token)
         
         if profile_data:
             add_log("INFO", "admin_linkedin_oauth_api_test_success", f"LinkedIn OAuth API test successful for {admin_email}")

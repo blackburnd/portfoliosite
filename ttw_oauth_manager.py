@@ -257,13 +257,23 @@ class TTWOAuthManager:
                         data=token_data,
                         headers={"Content-Type": "application/x-www-form-urlencoded"}
                     )
+                    
+                    # Log the OAuth response details
+                    add_log("INFO", "linkedin_token_exchange_response",
+                            f"LinkedIn token exchange response: status {response.status_code}")
+                    
                     response.raise_for_status()
                     token_response = response.json()
+                    
+                    # Log token response details (without sensitive data)
+                    expires_in = token_response.get('expires_in', 'unknown')
+                    scope = token_response.get('scope', 'none')
+                    add_log("INFO", "linkedin_token_response_details",
+                            f"LinkedIn token response: expires_in={expires_in}, scope={scope}")
 
                     # Log successful token exchange
                     add_log("INFO", "linkedin_token_exchange_success",
-                            f"LinkedIn tokens obtained for {admin_email}",
-                            admin_email, "exchange_linkedin_code_for_tokens")
+                            f"LinkedIn tokens obtained for {admin_email}")
 
                     # Get user profile to extract granted scopes and profile info
                     profile_data = await self._get_linkedin_profile(token_response["access_token"])
