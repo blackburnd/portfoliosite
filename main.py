@@ -2251,90 +2251,28 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
                 "message": "No Google access token found. Please re-authorize Google access."
             }, status_code=401)
         
-        # Log the token retrieval (without exposing the actual token)
-        add_log("DEBUG", "admin_google_profile_token_found", 
-               f"Admin {admin_email} - Google access token found, length: {len(access_token) if access_token else 0}")
-        
-        # Make request to Google People API for comprehensive profile information
-        # Using People API to get more detailed profile data including photos, names, etc.
-        profile_url = "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,photos,phoneNumbers,addresses,birthdays,genders,locales,metadata,userDefined,ageRanges"
+        # Use simple Google userinfo endpoint that works with basic OAuth scopes
+        profile_url = "https://www.googleapis.com/oauth2/v2/userinfo"
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Accept": "application/json"
         }
         
         add_log("DEBUG", "admin_google_profile_api_request", 
-               f"Admin {admin_email} - Making request to Google People API for comprehensive profile data")
+               f"Admin {admin_email} - Making request to Google userinfo API")
         
         async with httpx.AsyncClient() as client:
             response = await client.get(profile_url, headers=headers)
             
-            # Log the API response details
-            add_log("DEBUG", "admin_google_profile_api_response", 
-                   f"Admin {admin_email} - Google API response status: {response.status_code}")
-            
             if response.status_code == 200:
                 profile_data = response.json()
                 
-                # Extract and structure the profile data for better readability
-                structured_profile = {
-                    "resource_name": profile_data.get("resourceName"),
-                    "etag": profile_data.get("etag"),
-                    "names": profile_data.get("names", []),
-                    "email_addresses": profile_data.get("emailAddresses", []),
-                    "photos": profile_data.get("photos", []),
-                    "phone_numbers": profile_data.get("phoneNumbers", []),
-                    "addresses": profile_data.get("addresses", []),
-                    "birthdays": profile_data.get("birthdays", []),
-                    "genders": profile_data.get("genders", []),
-                    "locales": profile_data.get("locales", []),
-                    "metadata": profile_data.get("metadata", {}),
-                    "user_defined": profile_data.get("userDefined", []),
-                    "age_ranges": profile_data.get("ageRanges", [])
-                }
-                
-                # Extract primary email and name for logging
-                primary_email = "unknown"
-                primary_name = "unknown"
-                
-                if structured_profile["email_addresses"]:
-                    primary_email = structured_profile["email_addresses"][0].get("value", "unknown")
-                
-                if structured_profile["names"]:
-                    primary_name = structured_profile["names"][0].get("displayName", "unknown")
-                
-                # Log successful profile retrieval (without sensitive data)
                 add_log("INFO", "admin_google_profile_success", 
-                       f"Admin {admin_email} - Successfully retrieved comprehensive Google profile for user: {primary_email}")
-                
-                # Extract interesting data for debugging
-                debug_info = {
-                    "api_endpoint": profile_url,
-                    "response_time": response.elapsed.total_seconds() if hasattr(response, 'elapsed') else "N/A",
-                    "total_names": len(structured_profile["names"]),
-                    "total_emails": len(structured_profile["email_addresses"]),
-                    "total_photos": len(structured_profile["photos"]),
-                    "total_phone_numbers": len(structured_profile["phone_numbers"]),
-                    "total_addresses": len(structured_profile["addresses"]),
-                    "primary_name": primary_name,
-                    "primary_email": primary_email,
-                    "has_profile_photo": len(structured_profile["photos"]) > 0,
-                    "resource_name": structured_profile["resource_name"]
-                }
-                
-                add_log("DEBUG", "admin_google_profile_debug_info", 
-                       f"Admin {admin_email} - Google profile debug data: {debug_info}")
+                       f"Admin {admin_email} - Successfully retrieved Google profile")
                 
                 return JSONResponse({
                     "status": "success",
-                    "profile": structured_profile,
-                    "raw_response": profile_data,  # Include raw response for debugging
-                    "debug_info": debug_info,
-                    "session_info": {
-                        "token_length": len(access_token),
-                        "session_user_email": user_session.get('email'),
-                        "session_expires_at": user_session.get('expires_at')
-                    }
+                    "data": profile_data
                 })
             
             elif response.status_code == 401:
@@ -2342,14 +2280,13 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
                        f"Admin {admin_email} - Google access token expired or invalid")
                 return JSONResponse({
                     "status": "error",
-                    "message": "Google access token expired or invalid. Please re-authorize Google access.",
-                    "error_code": "TOKEN_EXPIRED"
+                    "message": "Google access token expired or invalid. Please re-authorize Google access."
                 }, status_code=401)
             
             else:
                 error_text = response.text
                 add_log("ERROR", "admin_google_profile_api_error", 
-                       f"Admin {admin_email} - Google API error: {response.status_code} - {error_text}")
+                       f"Admin {admin_email} - Google API error: {response.status_code}")
                 return JSONResponse({
                     "status": "error",
                     "message": f"Google API error: {response.status_code}",
@@ -2361,8 +2298,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
                f"Admin {admin_email} - Network error contacting Google API: {str(e)}")
         return JSONResponse({
             "status": "error",
-            "message": "Network error contacting Google API",
-            "details": str(e)
+            "message": "Network error contacting Google API"
         }, status_code=500)
         
     except Exception as e:
