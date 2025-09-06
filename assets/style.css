@@ -55,13 +55,11 @@ body {
 
 /* Header Social Links */
 .header-social-links {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically with the title */
     display: flex;
     gap: 10px;
     align-items: center;
+    margin-top: 8px; /* Small gap below the title */
+    margin-bottom: 5px; /* Small gap above the tagline */
 }
 
 .header-social-links a {
