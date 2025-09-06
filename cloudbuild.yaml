@@ -64,17 +64,28 @@ steps:
         echo "✗ Assets directory not found"
     fi
 
-    # Create the service file with environment variables substituted
-    envsubst < portfolio.service > portfolio.service.tmp
-    sudo mv portfolio.service.tmp portfolio.service.final
+    # Create a systemd override file to set the environment variables
+    sudo mkdir -p /etc/systemd/system/portfolio.service.d
+    sudo tee /etc/systemd/system/portfolio.service.d/override.conf > /dev/null << EOF
+    [Service]
+    Environment=_DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+    Environment=DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+    Environment=GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID}
+    Environment=GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET}
+    Environment=GOOGLE_REDIRECT_URI=${_GOOGLE_REDIRECT_URI}
+    Environment=ADMIN_USERNAME=${_ADMIN_USERNAME}
+    Environment=ADMIN_PASSWORD=${_ADMIN_PASSWORD}
+    Environment=SECRET_KEY=${_SECRET_KEY}
+    Environment=AUTHORIZED_EMAILS=${_AUTHORIZED_EMAILS}
+    Environment=ENV=production
+    EOF
 
     # Set up the systemd service - force complete reset
     sudo systemctl stop portfolio.service || true
     sudo systemctl disable portfolio.service || true
     sudo rm -f /etc/systemd/system/portfolio.service
-    sudo rm -rf /etc/systemd/system/portfolio.service.d
     sudo systemctl daemon-reload
-    sudo cp portfolio.service.final /etc/systemd/system/portfolio.service
+    sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
     sudo systemctl start portfolio.service
