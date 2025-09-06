@@ -16,20 +16,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             padding: 15px;
             background: #2c3e50;
             border-radius: 8px;
             color: white;
-            flex-wrap: wrap;
-            gap: 15px;
         }
         
         .logs-controls {
             display: flex;
             gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
         }
         
         .logs-controls input[type="text"] {
@@ -37,7 +34,6 @@
             border: none;
             border-radius: 4px;
             background: rgba(255,255,255,0.9);
-            min-width: 200px;
         }
         
         .logs-controls button {
@@ -47,34 +43,38 @@
             background: #3498db;
             color: white;
             cursor: pointer;
-            white-space: nowrap;
         }
         
         .logs-controls button:hover {
             background: #2980b9;
         }
         
+        .logs-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        
         .filter-group {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 5px;
-            min-width: 120px;
         }
         
         .filter-group label {
             font-weight: bold;
             font-size: 12px;
-            color: white;
-            margin: 0;
-            white-space: nowrap;
+            color: #34495e;
         }
         
-        .filter-group select {
+        .filter-group select, .filter-group input {
             padding: 6px;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid #bdc3c7;
             border-radius: 4px;
-            background: rgba(255,255,255,0.9);
-            font-size: 13px;
         }
         
         .logs-stats {
@@ -110,31 +110,6 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .logs-table th:hover {
-            background: #2c3e50;
-        }
-        
-        .logs-table th .sort-indicator {
-            margin-left: 5px;
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .logs-table th.sorted-asc .sort-indicator::after {
-            content: "▲";
-        }
-        
-        .logs-table th.sorted-desc .sort-indicator::after {
-            content: "▼";
-        }
-        
-        .logs-table th:not(.sorted-asc):not(.sorted-desc) .sort-indicator::after {
-            content: "⇅";
-            opacity: 0.4;
         }
         
         .logs-table td {
@@ -221,544 +196,377 @@
             {% endwith %}
             
             <div id="bw" aria-live="polite">
-            border-collapse: collapse;
-        }
-        
-        .logs-table th {
-            background: #34495e;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .logs-table th:hover {
-            background: #2c3e50;
-        }
-        
-        .logs-table th .sort-indicator {
-            margin-left: 5px;
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .logs-table th.sorted-asc .sort-indicator::after {
-            content: "▲";
-        }
-        
-        .logs-table th.sorted-desc .sort-indicator::after {
-            content: "▼";
-        }
-        
-        .logs-table th:not(.sorted-asc):not(.sorted-desc) .sort-indicator::after {
-            content: "⇅";
-            opacity: 0.4;
-        }
-        
-        .logs-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-        }
-        
-        .logs-table tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .log-level {
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        .log-level-DEBUG { background: #6c757d; color: white; }
-        .log-level-INFO { background: #17a2b8; color: white; }
-        .log-level-WARNING { background: #ffc107; color: black; }
-        .log-level-ERROR { background: #dc3545; color: white; }
-        
-        .log-message {
-            max-width: 400px;
-            word-wrap: break-word;
-        }
-        
-        .log-timestamp {
-            font-size: 12px;
-            color: #666;
-            white-space: nowrap;
-        }
-        
-        .log-module {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .loading-indicator {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-        
-        .no-more-logs {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-            font-style: italic;
-        }
-        
-        .scroll-trigger {
-            height: 1px;
-            margin: 10px 0;
-        }
-        
-        .logs-info {
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-    </style>
-</head>
-
-<body>
-    <!-- Include the navigation component -->
-    {% with current_page='logs', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-        {% include 'navigation.html' %}
-    {% endwith %}
-    
-    <div class="logs-container">
-        <div class="logs-header">
-            <div class="logs-controls">
-                <input type="text" id="searchBox" placeholder="Search logs..." />
-                
-                <div class="filter-group">
-                    <label>Level:</label>
-                    <select id="levelFilter">
-                        <option value="">All Levels</option>
-                        <option value="DEBUG">DEBUG</option>
-                        <option value="INFO">INFO</option>
-                        <option value="WARNING">WARNING</option>
-                        <option value="ERROR">ERROR</option>
-                    </select>
+                <div class="logs-container">
+                    <div class="logs-header">
+                        <h1>Application Logs</h1>
+                        <div class="logs-controls">
+                            <input type="text" id="searchInput" placeholder="Search logs..." />
+                            <button id="refreshBtn">Refresh</button>
+                            <button id="clearBtn">Clear Logs</button>
+                        </div>
+                    </div>
+                    
+                    <div class="logs-filters">
+                        <div class="filter-group">
+                            <label for="levelFilter">Level:</label>
+                            <select id="levelFilter">
+                                <option value="">All Levels</option>
+                                <option value="error">Error</option>
+                                <option value="warning">Warning</option>
+                                <option value="info">Info</option>
+                                <option value="debug">Debug</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="moduleFilter">Module:</label>
+                            <select id="moduleFilter">
+                                <option value="">All Modules</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="timeFilter">Time Range:</label>
+                            <select id="timeFilter">
+                                <option value="">All Time</option>
+                                <option value="1h">Last Hour</option>
+                                <option value="24h">Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="searchStatus" class="search-status" style="display: none;"></div>
+                    
+                    <div class="logs-stats" id="logsStats">
+                        <span id="totalCount">Total: 0</span>
+                        <span id="pageInfo">Page: 1</span>
+                        <span id="errorCount">Errors: 0</span>
+                        <span id="warningCount">Warnings: 0</span>
+                    </div>
+                    
+                    <div class="logs-table-container">
+                        <table class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Timestamp</th>
+                                    <th style="width: 80px;">Level</th>
+                                    <th style="width: 120px;">Module</th>
+                                    <th>Message</th>
+                                    <th style="width: 100px;">Function</th>
+                                    <th style="width: 60px;">Line</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading">Loading logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="loadingIndicator" class="loading" style="display: none;">Loading more logs...</div>
+                        <div id="errorMessage" class="error" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="pagination-info" id="paginationInfo"></div>
                 </div>
-                
-                <div class="filter-group">
-                    <label>Module:</label>
-                    <select id="moduleFilter">
-                        <option value="">All Modules</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Time:</label>
-                    <select id="timeFilter">
-                        <option value="">All Time</option>
-                        <option value="5">Last 5 min</option>
-                        <option value="15">Last 15 min</option>
-                        <option value="60">Last hour</option>
-                        <option value="1440">Last 24h</option>
-                    </select>
-                </div>
-                
-                <button onclick="refreshLogs()">🔄 Refresh</button>
-                <button onclick="clearFilters()">🗑️ Clear Filters</button>
             </div>
-        </div>
-        
-        <div class="logs-stats">
-            <span id="totalLogs">Total: 0</span>
-            <span id="filteredLogs">Showing: 0</span>
-            <span id="errorCount">Errors: 0</span>
-            <span id="warningCount">Warnings: 0</span>
-            <span id="lastUpdate">Last Update: Never</span>
-        </div>
-        
-        <div class="logs-table-container" id="logsContainer">
-            <table class="logs-table">
-                <thead>
-                    <tr>
-                        <th data-sort="timestamp" style="width: 150px;">Time<span class="sort-indicator"></span></th>
-                        <th data-sort="level" style="width: 80px;">Level<span class="sort-indicator"></span></th>
-                        <th data-sort="module" style="width: 100px;">Module<span class="sort-indicator"></span></th>
-                        <th data-sort="message">Message<span class="sort-indicator"></span></th>
-                    </tr>
-                </thead>
-                <tbody id="logsTableBody">
-                    <!-- Logs will be populated here -->
-                </tbody>
-            </table>
-            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-                Loading more logs...
-            </div>
-            <div id="noMoreLogs" class="no-more-logs" style="display: none;">
-                No more logs to load
-            </div>
-            <div id="scrollTrigger" class="scroll-trigger"></div>
         </div>
     </div>
 
     <script>
-        // Global variables
-        let allLogs = [];
-        let filteredLogs = [];
-        let currentPage = 0;
-        let pageSize = 50;
-        let isLoading = false;
-        let hasMoreLogs = true;
-        let intersectionObserver;
-        
-        // Sorting variables
-        let currentSortField = 'timestamp';
-        let currentSortOrder = 'desc'; // Default to newest first
-        
-        // Global functions - defined immediately so buttons work
-        window.refreshLogs = function() {
-            console.log('Refresh button clicked');
-            currentPage = 0;
-            allLogs = [];
-            filteredLogs = [];
-            hasMoreLogs = true;
-            document.getElementById('logsTableBody').innerHTML = '';
-            loadLogs();
-        };
-        
-        window.clearLogs = async function() {
-            console.log('Clear button clicked');
-            if (confirm('Are you sure you want to clear all logs?')) {
-                try {
-                    const response = await fetch('/logs/clear', { method: 'POST' });
-                    if (response.ok) {
-                        refreshLogs();
-                    } else {
-                        alert('Failed to clear logs');
-                    }
-                } catch (error) {
-                    alert('Failed to clear logs: ' + error.message);
-                }
+        class LogsManager {
+            constructor() {
+                this.currentPage = 1;
+                this.pageSize = 50;
+                this.allLogs = [];
+                this.filteredLogs = [];
+                this.isLoading = false;
+                this.hasMore = true;
+                this.searchTimeout = null;
+                this.currentFilters = {
+                    search: '',
+                    level: '',
+                    module: '',
+                    time: ''
+                };
+                
+                this.init();
             }
-        };
-        
-        window.clearFilters = function() {
-            console.log('Clear filters button clicked');
-            document.getElementById('searchBox').value = '';
-            document.getElementById('levelFilter').value = '';
-            document.getElementById('moduleFilter').value = '';
-            document.getElementById('timeFilter').value = '';
-            applyFilters();
-        };
-        
-        // Load logs from API with pagination
-        async function loadLogs(append = false) {
-            if (isLoading) return;
             
-            isLoading = true;
-            document.getElementById('loadingIndicator').style.display = 'block';
+            init() {
+                this.bindEvents();
+                this.loadLogs(true);
+                this.setupInfiniteScroll();
+            }
             
-            try {
-                console.log('Loading logs, page:', currentPage);
-                const response = await fetch(`/logs/data?page=${currentPage}&limit=${pageSize}`);
-                const data = await response.json();
+            bindEvents() {
+                // Search input with debouncing
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    clearTimeout(this.searchTimeout);
+                    this.searchTimeout = setTimeout(() => {
+                        this.currentFilters.search = e.target.value;
+                        this.applyFilters();
+                    }, 300);
+                });
                 
-                console.log('Received data:', data);
-                console.log('Logs count:', data.logs ? data.logs.length : 0);
+                // Filter dropdowns
+                document.getElementById('levelFilter').addEventListener('change', (e) => {
+                    this.currentFilters.level = e.target.value;
+                    this.applyFilters();
+                });
                 
-                if (!data.logs || data.logs.length === 0) {
-                    hasMoreLogs = false;
-                    document.getElementById('noMoreLogs').style.display = 'block';
-                } else {
-                    if (append) {
-                        allLogs = allLogs.concat(data.logs);
+                document.getElementById('moduleFilter').addEventListener('change', (e) => {
+                    this.currentFilters.module = e.target.value;
+                    this.applyFilters();
+                });
+                
+                document.getElementById('timeFilter').addEventListener('change', (e) => {
+                    this.currentFilters.time = e.target.value;
+                    this.applyFilters();
+                });
+                
+                // Control buttons
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.refresh();
+                });
+                
+                document.getElementById('clearBtn').addEventListener('click', () => {
+                    this.clearLogs();
+                });
+            }
+            
+            setupInfiniteScroll() {
+                const container = document.querySelector('.logs-table-container');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && this.hasMore && !this.isLoading) {
+                            this.loadMore();
+                        }
+                    });
+                }, {
+                    root: container,
+                    threshold: 0.1
+                });
+                
+                // Create a sentinel element at the bottom
+                const sentinel = document.createElement('div');
+                sentinel.id = 'scrollSentinel';
+                sentinel.style.height = '1px';
+                container.appendChild(sentinel);
+                observer.observe(sentinel);
+            }
+            
+            async loadLogs(reset = false) {
+                if (this.isLoading) return;
+                
+                this.isLoading = true;
+                this.showLoading();
+                
+                try {
+                    const params = new URLSearchParams({
+                        page: reset ? 1 : this.currentPage,
+                        limit: this.pageSize
+                    });
+                    
+                    if (this.currentFilters.level) params.append('level', this.currentFilters.level);
+                    if (this.currentFilters.module) params.append('module', this.currentFilters.module);
+                    
+                    const response = await fetch(`/debug/logs/data?${params}`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const data = await response.json();
+                    
+                    if (reset) {
+                        this.allLogs = data.logs;
+                        this.currentPage = 1;
                     } else {
-                        allLogs = data.logs;
+                        this.allLogs = [...this.allLogs, ...data.logs];
                     }
                     
-                    currentPage++;
-                    updateStats(data.stats || {});
-                    applyFilters();
+                    this.hasMore = data.stats.has_next;
+                    this.updateStats(data.stats);
+                    this.populateModuleFilter(data.stats.by_module);
+                    this.applyFilters();
+                    
+                    if (!reset) this.currentPage++;
+                    
+                } catch (error) {
+                    this.showError(`Failed to load logs: ${error.message}`);
+                } finally {
+                    this.isLoading = false;
+                    this.hideLoading();
                 }
-                
-                document.getElementById('lastUpdate').textContent = 'Last Update: ' + new Date().toLocaleString();
-            } catch (error) {
-                console.error('Failed to load logs:', error);
-                alert('Failed to load logs: ' + error.message);
-            } finally {
-                isLoading = false;
-                document.getElementById('loadingIndicator').style.display = 'none';
             }
-        }
-        
-        // Apply filters and update display
-        function applyFilters() {
-            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-            const levelFilter = document.getElementById('levelFilter').value;
-            const moduleFilter = document.getElementById('moduleFilter').value;
-            const timeFilter = document.getElementById('timeFilter').value;
             
-            console.log('Applying filters. Total logs:', allLogs.length);
-            console.log('Filters:', { searchTerm, levelFilter, moduleFilter, timeFilter });
+            loadMore() {
+                if (this.hasMore && !this.isLoading) {
+                    this.loadLogs(false);
+                }
+            }
             
-            filteredLogs = allLogs.filter(log => {
-                // Search filter
-                if (searchTerm && log.message && !log.message.toLowerCase().includes(searchTerm)) {
-                    return false;
-                }
-                
-                // Level filter
-                if (levelFilter && log.level !== levelFilter) {
-                    return false;
-                }
-                
-                // Module filter
-                if (moduleFilter && (!log.module || !log.module.includes(moduleFilter))) {
-                    return false;
-                }
-                
-                // Time filter
-                if (timeFilter) {
-                    const cutoff = new Date(Date.now() - timeFilter * 60 * 1000);
-                    if (new Date(log.timestamp) < cutoff) {
+            applyFilters() {
+                this.filteredLogs = this.allLogs.filter(log => {
+                    // Search filter
+                    if (this.currentFilters.search) {
+                        const search = this.currentFilters.search.toLowerCase();
+                        if (!log.message.toLowerCase().includes(search) &&
+                            !log.module.toLowerCase().includes(search) &&
+                            !log.function.toLowerCase().includes(search)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Level filter
+                    if (this.currentFilters.level && log.level !== this.currentFilters.level) {
                         return false;
                     }
-                }
-                
-                return true;
-            });
-            
-            console.log('Filtered logs count:', filteredLogs.length);
-            
-            // Apply sorting
-            filteredLogs = sortLogs(filteredLogs);
-            
-            updateDisplay();
-            updateModuleFilter();
-            document.getElementById('filteredLogs').textContent = 'Showing: ' + filteredLogs.length;
-        }
-        
-        // Update the table display
-        function updateDisplay() {
-            const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = '';
-            
-            filteredLogs.forEach(log => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</td>
-                    <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
-                    <td class="log-module">${escapeHtml(log.module || '')}</td>
-                    <td class="log-message">
-                        <div class="message-content">
-                            <span class="message-text">${escapeHtml(log.message || '')}</span>
-                            <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                                <span class="copy-icon">⧉</span>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        // Render logs without filtering (used for sorting)
-        function renderLogs() {
-            const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = '';
-            
-            filteredLogs.forEach(log => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</td>
-                    <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
-                    <td class="log-module">${escapeHtml(log.module || '')}</td>
-                    <td class="log-message">
-                        <div class="message-content">
-                            <span class="message-text">${escapeHtml(log.message || '')}</span>
-                            <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                                <span class="copy-icon">⧉</span>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        // Update stats display
-        function updateStats(stats) {
-            document.getElementById('totalLogs').textContent = 'Total: ' + (stats.total || allLogs.length);
-            document.getElementById('errorCount').textContent = 'Errors: ' + ((stats.by_level && stats.by_level.ERROR) || 0);
-            document.getElementById('warningCount').textContent = 'Warnings: ' + ((stats.by_level && stats.by_level.WARNING) || 0);
-        }
-        
-        // Update module filter options
-        function updateModuleFilter() {
-            const moduleFilter = document.getElementById('moduleFilter');
-            const currentValue = moduleFilter.value;
-            const modules = [...new Set(allLogs.map(log => log.module).filter(Boolean))].sort();
-            
-            moduleFilter.innerHTML = '<option value="">All Modules</option>';
-            modules.forEach(module => {
-                const option = document.createElement('option');
-                option.value = module;
-                option.textContent = module;
-                moduleFilter.appendChild(option);
-            });
-            
-            moduleFilter.value = currentValue;
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Search box
-            document.getElementById('searchBox').addEventListener('keyup', debounce(applyFilters, 300));
-            
-            // Filter dropdowns
-            document.getElementById('levelFilter').addEventListener('change', applyFilters);
-            document.getElementById('moduleFilter').addEventListener('change', applyFilters);
-            document.getElementById('timeFilter').addEventListener('change', applyFilters);
-            
-            // Column sorting
-            document.querySelectorAll('.logs-table th[data-sort]').forEach(th => {
-                th.addEventListener('click', () => {
-                    const sortField = th.getAttribute('data-sort');
                     
-                    // Toggle sort order if clicking the same column, otherwise default to descending
-                    if (currentSortField === sortField) {
-                        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        currentSortField = sortField;
-                        currentSortOrder = 'desc';
+                    // Module filter
+                    if (this.currentFilters.module && log.module !== this.currentFilters.module) {
+                        return false;
                     }
                     
-                    updateSortIndicators();
-                    sortAndRenderLogs();
+                    // Time filter
+                    if (this.currentFilters.time) {
+                        const logTime = new Date(log.timestamp);
+                        const now = new Date();
+                        const diff = now - logTime;
+                        
+                        switch (this.currentFilters.time) {
+                            case '1h':
+                                if (diff > 60 * 60 * 1000) return false;
+                                break;
+                            case '24h':
+                                if (diff > 24 * 60 * 60 * 1000) return false;
+                                break;
+                            case '7d':
+                                if (diff > 7 * 24 * 60 * 60 * 1000) return false;
+                                break;
+                        }
+                    }
+                    
+                    return true;
                 });
-            });
-            
-            // Initialize sort indicators
-            updateSortIndicators();
-            
-            // Intersection Observer for infinite scroll
-            intersectionObserver = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && hasMoreLogs && !isLoading) {
-                    console.log('Loading more logs due to scroll');
-                    loadLogs(true);
-                }
-            }, {
-                threshold: 0.1
-            });
-            
-            intersectionObserver.observe(document.getElementById('scrollTrigger'));
-        }
-        
-        // Utility functions
-        function escapeHtml(text) {
-            if (text === null || text === undefined) {
-                return '';
+                
+                this.renderLogs();
+                this.updateSearchStatus();
             }
-            const div = document.createElement('div');
-            div.textContent = String(text);
-            return div.innerHTML;
-        }
-        
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-        
-        // Copy text to clipboard
-        function copyToClipboard(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
-                // Show feedback
-                const originalIcon = button.innerHTML;
-                button.innerHTML = '<span class="copy-icon">✓</span>';
-                button.classList.add('copied');
-                
-                setTimeout(() => {
-                    button.innerHTML = originalIcon;
-                    button.classList.remove('copied');
-                }, 1000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                
-                // Show feedback
-                const originalIcon = button.innerHTML;
-                button.innerHTML = '<span class="copy-icon">✓</span>';
-                button.classList.add('copied');
-                
-                setTimeout(() => {
-                    button.innerHTML = originalIcon;
-                    button.classList.remove('copied');
-                }, 1000);
-            });
-        }
-        
-        // Sorting functions
-        function updateSortIndicators() {
-            // Remove all sort classes
-            document.querySelectorAll('.logs-table th').forEach(th => {
-                th.classList.remove('sorted-asc', 'sorted-desc');
-            });
             
-            // Add appropriate class to current sort column
-            const currentTh = document.querySelector(`.logs-table th[data-sort="${currentSortField}"]`);
-            if (currentTh) {
-                currentTh.classList.add(currentSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            renderLogs() {
+                const tbody = document.getElementById('logsTableBody');
+                tbody.innerHTML = '';
+                
+                if (this.filteredLogs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">No logs found</td></tr>';
+                    return;
+                }
+                
+                this.filteredLogs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="log-timestamp">${this.formatTimestamp(log.timestamp)}</td>
+                        <td><span class="log-level ${log.level}">${log.level}</span></td>
+                        <td class="log-meta">${log.module}</td>
+                        <td class="log-message">${this.escapeHtml(log.message)}</td>
+                        <td class="log-meta">${log.function || '-'}</td>
+                        <td class="log-meta">${log.line || '-'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            updateStats(stats) {
+                document.getElementById('totalCount').textContent = `Total: ${stats.total}`;
+                document.getElementById('pageInfo').textContent = `Page: ${stats.page} of ${stats.total_pages}`;
+                document.getElementById('errorCount').textContent = `Errors: ${stats.by_level.error || 0}`;
+                document.getElementById('warningCount').textContent = `Warnings: ${stats.by_level.warning || 0}`;
+                
+                const paginationInfo = document.getElementById('paginationInfo');
+                paginationInfo.textContent = `Showing ${stats.showing} of ${stats.total} logs`;
+            }
+            
+            populateModuleFilter(modules) {
+                const moduleFilter = document.getElementById('moduleFilter');
+                const currentValue = moduleFilter.value;
+                
+                // Keep existing options, add new ones
+                const existingOptions = Array.from(moduleFilter.options).map(opt => opt.value);
+                
+                Object.keys(modules).forEach(module => {
+                    if (!existingOptions.includes(module)) {
+                        const option = document.createElement('option');
+                        option.value = module;
+                        option.textContent = `${module} (${modules[module]})`;
+                        moduleFilter.appendChild(option);
+                    }
+                });
+                
+                moduleFilter.value = currentValue;
+            }
+            
+            updateSearchStatus() {
+                const statusDiv = document.getElementById('searchStatus');
+                const hasFilters = this.currentFilters.search || this.currentFilters.level || 
+                                 this.currentFilters.module || this.currentFilters.time;
+                
+                if (hasFilters) {
+                    statusDiv.textContent = `Showing ${this.filteredLogs.length} filtered results`;
+                    statusDiv.style.display = 'block';
+                } else {
+                    statusDiv.style.display = 'none';
+                }
+            }
+            
+            showLoading() {
+                document.getElementById('loadingIndicator').style.display = 'block';
+            }
+            
+            hideLoading() {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+            
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+            
+            refresh() {
+                this.allLogs = [];
+                this.filteredLogs = [];
+                this.currentPage = 1;
+                this.hasMore = true;
+                this.loadLogs(true);
+            }
+            
+            async clearLogs() {
+                if (!confirm('Are you sure you want to clear all logs?')) return;
+                
+                try {
+                    const response = await fetch('/debug/logs/clear', { method: 'POST' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    this.refresh();
+                } catch (error) {
+                    this.showError(`Failed to clear logs: ${error.message}`);
+                }
+            }
+            
+            formatTimestamp(timestamp) {
+                return new Date(timestamp).toLocaleString();
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
         }
         
-        function sortLogs(logs) {
-            return logs.slice().sort((a, b) => {
-                let aVal = a[currentSortField];
-                let bVal = b[currentSortField];
-                
-                // Handle timestamp sorting
-                if (currentSortField === 'timestamp') {
-                    aVal = new Date(aVal);
-                    bVal = new Date(bVal);
-                } else if (typeof aVal === 'string') {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
-                }
-                
-                let comparison = 0;
-                if (aVal < bVal) {
-                    comparison = -1;
-                } else if (aVal > bVal) {
-                    comparison = 1;
-                }
-                
-                return currentSortOrder === 'asc' ? comparison : -comparison;
-            });
-        }
-        
-        function sortAndRenderLogs() {
-            filteredLogs = sortLogs(filteredLogs);
-            renderLogs();
-        }
-        
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing logs interface');
-            setupEventListeners();
-            loadLogs();
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new LogsManager();
         });
     </script>
 </body>
