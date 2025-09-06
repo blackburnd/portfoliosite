@@ -59,6 +59,7 @@ body {
     display: flex !important;
     gap: 15px;
     align-items: center;
+    margin-left: auto; /* Push social links to the far right */
 }
 
 .social-links a {
