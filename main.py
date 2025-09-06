@@ -60,8 +60,8 @@ async def require_admin_auth_session(request: Request):
     try:
         if not hasattr(request, 'session') or 'user' not in request.session:
             client_host = request.client.host if request.client else 'unknown'
-            add_log("WARNING", "admin_auth_no_session",
-                    f"Request from {client_host} missing session or user")
+            add_log("WARNING", f"Request from {client_host} missing session or user",
+                    module="admin_auth_no_session")
             raise HTTPException(
                 status_code=401,
                 detail="Authentication required. Please log in."
@@ -71,8 +71,8 @@ async def require_admin_auth_session(request: Request):
         if (not user_session.get('authenticated') or
                 not user_session.get('is_admin')):
             user_email = user_session.get('email', 'unknown')
-            add_log("WARNING", "admin_auth_insufficient_privileges",
-                    f"User {user_email} attempted admin access")
+            add_log("WARNING", f"User {user_email} attempted admin access",
+                    module="admin_auth_insufficient_privileges")
             raise HTTPException(
                 status_code=403,
                 detail="Admin access required."
@@ -83,8 +83,8 @@ async def require_admin_auth_session(request: Request):
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        add_log("ERROR", "admin_auth_exception",
-                f"Unexpected error in admin auth: {str(e)}")
+        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}",
+                module="admin_auth_exception")
         raise HTTPException(
             status_code=500,
             detail="Authentication error occurred."
