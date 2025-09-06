@@ -181,6 +181,7 @@ CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
             <button id="runBtn" class="btn btn-primary" onclick="executeSQL()">▶️ Run Query</button>
             <button id="clearBtn" class="btn btn-secondary" onclick="clearQuery()">🗑️ Clear</button>
             <button id="cancelBtn" class="btn btn-danger" onclick="cancelQuery()" style="display: none;">❌ Cancel</button>
+            <a href="/admin/sql/download-schema" class="btn btn-secondary">📥 Download Schema</a>
             <span id="loadingIndicator" style="display: none;">⏳ Executing...</span>
         </div>
         
