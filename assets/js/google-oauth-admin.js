@@ -2,66 +2,36 @@
 
 class GoogleOAuthAdmin {
     constructor() {
-        console.log('GoogleOAuthAdmin: Constructor called');
         this.init();
     }
 
     init() {
-        console.log('GoogleOAuthAdmin: Init called');
         this.bindEvents();
         this.loadGoogleStatus();
     }
 
     bindEvents() {
-        console.log('GoogleOAuthAdmin: Binding events...');
-        
         // Google Configuration Form
         const googleForm = document.getElementById('google-config-form');
         if (googleForm) {
             googleForm.addEventListener('submit', (e) => this.saveGoogleConfig(e));
-            console.log('GoogleOAuthAdmin: Bound google-config-form submit event');
         }
 
         // Google Action Buttons
         const testBtn = document.getElementById('test-google-connection');
-        if (testBtn) {
-            testBtn.addEventListener('click', () => this.testGoogleConnection());
-            console.log('GoogleOAuthAdmin: Bound test-google-connection click event');
-        }
+        if (testBtn) testBtn.addEventListener('click', () => this.testGoogleConnection());
 
         const clearBtn = document.getElementById('clear-google-config');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => this.clearGoogleConfig());
-            console.log('GoogleOAuthAdmin: Bound clear-google-config click event');
-        }
+        if (clearBtn) clearBtn.addEventListener('click', () => this.clearGoogleConfig());
 
         const authorizeBtn = document.getElementById('initiate-google-oauth');
-        if (authorizeBtn) {
-            authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
-            console.log('GoogleOAuthAdmin: Bound initiate-google-oauth click event');
-        }
+        if (authorizeBtn) authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
 
         const revokeBtn = document.getElementById('revoke-google-oauth');
-        if (revokeBtn) {
-            revokeBtn.addEventListener('click', () => this.revokeGoogleAuth());
-            console.log('GoogleOAuthAdmin: Bound revoke-google-oauth click event');
-        }
+        if (revokeBtn) revokeBtn.addEventListener('click', () => this.revokeGoogleAuth());
 
         const testApiBtn = document.getElementById('test-google-api');
-        if (testApiBtn) {
-            testApiBtn.addEventListener('click', () => this.testGoogleAPI());
-            console.log('GoogleOAuthAdmin: Bound test-google-api click event');
-        }
-        
-        const testProfileBtn = document.getElementById('test-profile-access');
-        if (testProfileBtn) {
-            testProfileBtn.addEventListener('click', () => this.testProfileAccess());
-            console.log('GoogleOAuthAdmin: Bound test-profile-access click event');
-        } else {
-            console.error('GoogleOAuthAdmin: Could not find test-profile-access button');
-        }
-        
-        console.log('GoogleOAuthAdmin: Finished binding events');
+        if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
     }
 
     async loadGoogleStatus() {
@@ -92,7 +62,6 @@ class GoogleOAuthAdmin {
             // Populate form with existing config
             document.getElementById('google-app-name').value = data.app_name || '';
             document.getElementById('google-client-id').value = data.client_id || '';
-            document.getElementById('google-client-secret').value = data.client_secret || '';
             document.getElementById('google-redirect-uri').value = data.redirect_uri || '';
         } else {
             statusDisplay.className = 'status-not-configured';
@@ -227,118 +196,6 @@ class GoogleOAuthAdmin {
         }
     }
 
-    async testProfileAccess() {
-        console.log('testProfileAccess called');
-        
-        const statusSpan = document.getElementById('profile-test-status');
-        const resultsDiv = document.getElementById('profile-test-results');
-        
-        console.log('Status span:', statusSpan);
-        console.log('Results div:', resultsDiv);
-        
-        if (!statusSpan || !resultsDiv) {
-            console.error('Required elements not found');
-            alert('Error: Required page elements not found. Please refresh the page.');
-            return;
-        }
-        
-        // Show loading state
-        statusSpan.textContent = 'Testing...';
-        statusSpan.className = 'test-status testing';
-        resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div class="test-results">Retrieving Google profile information...</div>';
-
-        try {
-            const response = await fetch('/admin/google/oauth/profile');
-            const result = await response.json();
-
-            if (response.ok && result.status === 'success') {
-                statusSpan.textContent = '✅ Success';
-                statusSpan.className = 'test-status success';
-                
-                const profile = result.profile;
-                const debugInfo = result.debug_info;
-                const sessionInfo = result.session_info;
-                
-                let profileHtml = `
-                    <div class="test-success">
-                        <h4>✅ Profile Access Successful</h4>
-                        <div class="profile-data">
-                            <div class="profile-section">
-                                <h5>Profile Information</h5>
-                                <div class="data-item"><strong>Name:</strong> ${profile.name || 'N/A'}</div>
-                                <div class="data-item"><strong>Email:</strong> ${profile.email || 'N/A'}</div>
-                                <div class="data-item"><strong>Google ID:</strong> ${profile.id || 'N/A'}</div>
-                                <div class="data-item"><strong>Verified Email:</strong> ${profile.verified_email || 'N/A'}</div>
-                                <div class="data-item"><strong>Locale:</strong> ${profile.locale || 'N/A'}</div>
-                                <div class="data-item"><strong>Profile Picture:</strong> ${profile.picture ? 'Available' : 'Not available'}</div>
-                            </div>
-                            
-                            <div class="profile-section">
-                                <h5>Debug Information</h5>
-                                <div class="data-item"><strong>API Endpoint:</strong> ${debugInfo.api_endpoint}</div>
-                                <div class="data-item"><strong>User Verified Email:</strong> ${debugInfo.user_verified_email}</div>
-                                <div class="data-item"><strong>Profile Picture Available:</strong> ${debugInfo.profile_picture_available}</div>
-                                <div class="data-item"><strong>Google User ID:</strong> ${debugInfo.google_user_id}</div>
-                            </div>
-                            
-                            <div class="profile-section">
-                                <h5>Session Information</h5>
-                                <div class="data-item"><strong>Token Length:</strong> ${sessionInfo.token_length} characters</div>
-                                <div class="data-item"><strong>Session Email:</strong> ${sessionInfo.session_user_email || 'N/A'}</div>
-                                <div class="data-item"><strong>Session Expires:</strong> ${sessionInfo.session_expires_at || 'N/A'}</div>
-                            </div>
-                        </div>
-                `;
-                
-                if (profile.picture) {
-                    profileHtml += `
-                        <div class="profile-section">
-                            <h5>Profile Picture</h5>
-                            <img src="${profile.picture}" alt="Profile Picture" style="max-width: 100px; border-radius: 50px;">
-                        </div>
-                    `;
-                }
-                
-                profileHtml += '</div>';
-                resultsDiv.innerHTML = profileHtml;
-                
-            } else if (response.status === 401) {
-                statusSpan.textContent = '⚠️ Auth Required';
-                statusSpan.className = 'test-status warning';
-                resultsDiv.innerHTML = `
-                    <div class="test-warning">
-                        <h4>⚠️ Authorization Required</h4>
-                        <p>${result.message}</p>
-                        <p>Please click "Authorize Google Access" button to grant permission first.</p>
-                    </div>
-                `;
-                
-            } else {
-                statusSpan.textContent = '❌ Failed';
-                statusSpan.className = 'test-status error';
-                resultsDiv.innerHTML = `
-                    <div class="test-error">
-                        <h4>❌ Profile Access Failed</h4>
-                        <p><strong>Error:</strong> ${result.message}</p>
-                        ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
-                    </div>
-                `;
-            }
-            
-        } catch (error) {
-            console.error('Error testing profile access:', error);
-            statusSpan.textContent = '❌ Error';
-            statusSpan.className = 'test-status error';
-            resultsDiv.innerHTML = `
-                <div class="test-error">
-                    <h4>❌ Network Error</h4>
-                    <p>Failed to contact the server: ${error.message}</p>
-                </div>
-            `;
-        }
-    }
-
     async testGoogleAPI() {
         const resultsDiv = document.getElementById('google-test-results');
         resultsDiv.style.display = 'block';
@@ -378,7 +235,5 @@ class GoogleOAuthAdmin {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('GoogleOAuthAdmin: DOMContentLoaded event fired');
-    console.log('GoogleOAuthAdmin: Creating new instance');
     new GoogleOAuthAdmin();
 });

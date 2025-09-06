@@ -1,171 +1,209 @@
 """
-Log capture utility for the application.
-Provides in-memory logging functionality for debugging and admin monitoring.
+Log capture module for writing application logs to the database
 """
-
-import time
-import os
-import re
-from datetime import datetime
-from typing import List, Dict, Any
-from collections import defaultdict
-import threading
-
-# Thread-safe storage for logs
-_logs = []
-_log_lock = threading.Lock()
-
-
 import asyncio
-from databases import Database
+import logging
+import os
+import traceback
+from datetime import datetime
+from typing import Optional
+import json
 
-def add_log(level: str, source: str, message: str, **kwargs):
-    """Add a log entry to the in-memory store and database."""
-    with _log_lock:
-        log_entry = {
-            "id": len(_logs) + 1,
-            "timestamp": time.time() * 1000,  # JavaScript timestamp format
-            "level": level.upper(),
-            "source": source,
-            "message": message,
-            **kwargs
-        }
-        _logs.append(log_entry)
-        # Keep only the last 1000 log entries to prevent memory issues
-        if len(_logs) > 1000:
-            _logs.pop(0)
-    # Also write to database asynchronously
-    asyncio.create_task(write_log_to_db(level, source, message, **kwargs))
-
-async def write_log_to_db(level, source, message, **kwargs):
-    # Use DATABASE_URL from environment
-    DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    db = Database(DATABASE_URL)
-    await db.connect()
-    # Compose extra fields
-    extra = kwargs.get("extra") or ""
-    user = kwargs.get("user") or None
-    function = kwargs.get("function") or None
-    line = kwargs.get("line") or None
-    module = kwargs.get("module") or source
-    timestamp = datetime.utcnow()
-    query = """
-        INSERT INTO app_log (timestamp, level, message, module, function, line, "user", extra)
-        VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
-    """
-    values = {
-        "timestamp": timestamp,
-        "level": level.upper(),
-        "message": message,
-        "module": module,
-        "function": function,
-        "line": line,
-        "user": user,
-        "extra": extra
-    }
-    try:
-        await db.execute(query=query, values=values)
-    except Exception as e:
-        pass
-    await db.disconnect()
+import databases
 
 
-def get_logs() -> List[Dict[str, Any]]:
-    """Get all logs as a list of dictionaries."""
-    with _log_lock:
-        return _logs.copy()
+class DatabaseLogHandler(logging.Handler):
+    """Custom logging handler that writes logs to the database"""
+    
+    def __init__(self, database_url: str):
+        super().__init__()
+        self.database_url = database_url
+        self.db = databases.Database(database_url)
+        self._loop = None
+        
+    def emit(self, record: logging.LogRecord):
+        """Emit a log record to the database"""
+        try:
+            # Get or create event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Run the async insert in the loop
+            if loop.is_running():
+                # If loop is already running, schedule the task
+                asyncio.create_task(self._insert_log(record))
+            else:
+                # If loop is not running, run it
+                loop.run_until_complete(self._insert_log(record))
+                
+        except Exception as e:
+            # Fallback to print if database insert fails
+            print(f"Failed to insert log to database: {e}")
+            print(f"Log record: {record.getMessage()}")
+    
+    async def _insert_log(self, record: logging.LogRecord):
+        """Insert log record into database"""
+        try:
+            await self.db.connect()
+            
+            # Extract extra information
+            extra = {}
+            if hasattr(record, 'exc_info') and record.exc_info:
+                extra['traceback'] = ''.join(traceback.format_exception(*record.exc_info))
+            
+            # Get user info if available
+            user = getattr(record, 'user', None)
+            
+            query = """
+                INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
+                VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
+            """
+            
+            values = {
+                'timestamp': datetime.fromtimestamp(record.created),
+                'level': record.levelname,
+                'message': record.getMessage(),
+                'module': record.module if hasattr(record, 'module') else record.name,
+                'function': record.funcName,
+                'line': record.lineno,
+                'user': user,
+                'extra': json.dumps(extra) if extra else None
+            }
+            
+            await self.db.execute(query, values)
+            await self.db.disconnect()
+            
+        except Exception as e:
+            print(f"Database log insert failed: {e}")
+            try:
+                await self.db.disconnect()
+            except:
+                pass
+
+
+# Global log handler instance
+_db_log_handler = None
 
 
 def setup_database_logging():
-    """Initialize database logging functionality."""
-    # This function sets up database logging for the application
-    # The actual database connection is handled in write_log_to_db
-    add_log("INFO", "log_capture", "Database logging system initialized")
-
-
-def _add_demo_logs():
-    """Add some demo log entries for testing."""
-    demo_logs = [
-        ("INFO", "system", "Portfolio application started successfully"),
-        ("INFO", "auth", "User authentication system initialized"),
-        ("DEBUG", "database", "Database connection established"),
-        ("INFO", "uvicorn", "Server listening on port 8000"),
-        ("WARNING", "oauth", "OAuth token refresh recommended"),
-        ("INFO", "main", "API endpoints registered"),
-        ("DEBUG", "templates", "Template rendering engine loaded"),
-        ("INFO", "assets", "Static assets served from /assets"),
-        ("ERROR", "linkedin", "LinkedIn API rate limit reached"),
-        ("INFO", "logs", "Log capture system active")
-    ]
+    """Set up database logging handler"""
+    global _db_log_handler
     
-    base_time = time.time() * 1000
-    for i, (level, source, message) in enumerate(demo_logs):
-        log_entry = {
-            "id": len(_logs) + 1,
-            "timestamp": base_time - (len(demo_logs) - i) * 60000,  # Last hour
-            "level": level,
-            "source": source,
-            "message": message
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found, skipping database logging setup")
+        return
+    
+    try:
+        _db_log_handler = DatabaseLogHandler(database_url)
+        _db_log_handler.setLevel(logging.INFO)
+        
+        # Add to root logger
+        root_logger = logging.getLogger()
+        root_logger.addHandler(_db_log_handler)
+        
+        # Add to specific loggers
+        for logger_name in ['uvicorn', 'fastapi', 'app']:
+            logger = logging.getLogger(logger_name)
+            logger.addHandler(_db_log_handler)
+            logger.setLevel(logging.INFO)
+        
+        print("Database logging handler set up successfully")
+        
+    except Exception as e:
+        print(f"Failed to set up database logging: {e}")
+
+
+async def add_log(level: str, message: str, module: str = "manual", function: str = "add_log", 
+                  line: int = 0, user: Optional[str] = None, extra: Optional[dict] = None):
+    """Manually add a log entry to the database"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found for manual log entry")
+        return
+    
+    db = databases.Database(database_url)
+    
+    try:
+        await db.connect()
+        
+        query = """
+            INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
+            VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
+        """
+        
+        values = {
+            'timestamp': datetime.now(),
+            'level': level.upper(),
+            'message': message,
+            'module': module,
+            'function': function,
+            'line': line,
+            'user': user,
+            'extra': json.dumps(extra) if extra else None
         }
-        _logs.append(log_entry)
-
-
-def get_stats() -> Dict[str, Any]:
-    """Get statistics about the current logs."""
-    with _log_lock:
-        if not _logs:
-            return {
-                "total": 0,
-                "by_level": {},
-                "by_source": {},
-                "newest": None,
-                "oldest": None
-            }
         
-        level_counts = defaultdict(int)
-        source_counts = defaultdict(int)
+        await db.execute(query, values)
+        await db.disconnect()
         
-        for log in _logs:
-            level_counts[log["level"]] += 1
-            source_counts[log["source"]] += 1
+    except Exception as e:
+        print(f"Failed to add manual log entry: {e}")
+        try:
+            await db.disconnect()
+        except:
+            pass
+
+
+async def clear_logs():
+    """Clear all logs from the database"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found for clearing logs")
+        return
+    
+    db = databases.Database(database_url)
+    
+    try:
+        await db.connect()
+        await db.execute("DELETE FROM app_log")
+        await db.disconnect()
+        print("All logs cleared from database")
         
-        timestamps = [log["timestamp"] for log in _logs]
-        
-        return {
-            "total": len(_logs),
-            "by_level": dict(level_counts),
-            "by_source": dict(source_counts),
-            "newest": max(timestamps) if timestamps else None,
-            "oldest": min(timestamps) if timestamps else None
-        }
+    except Exception as e:
+        print(f"Failed to clear logs: {e}")
+        try:
+            await db.disconnect()
+        except:
+            pass
 
 
-def clear_logs():
-    """Clear all log entries."""
-    with _log_lock:
-        _logs.clear()
-
-
-# Create a log_capture object that main.py can import
+# Legacy compatibility
 class LogCapture:
-    """Log capture object providing the interface expected by main.py"""
-    
-    @staticmethod
-    def get_logs():
-        return get_logs()
-    
-    @staticmethod
-    def get_stats():
-        return get_stats()
+    """Legacy log capture class for compatibility"""
     
     @staticmethod
     def clear_logs():
-        return clear_logs()
-    
-    @staticmethod
-    def add_log(level: str, source: str, message: str, **kwargs):
-        return add_log(level, source, message, **kwargs)
+        """Clear logs - runs async function synchronously"""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create a task if loop is running
+                asyncio.create_task(clear_logs())
+            else:
+                # Run synchronously if no loop
+                loop.run_until_complete(clear_logs())
+        except RuntimeError:
+            # Create new loop if none exists
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(clear_logs())
 
 
-# Create the instance that main.py expects to import
+# Create global instance for legacy compatibility
 log_capture = LogCapture()
+
+# Set up database logging when module is imported
+setup_database_logging()
