@@ -197,17 +197,23 @@ class LinkedInOAuthAdmin {
 
     async initiateLinkedInAuth() {
         try {
+            console.log('LinkedIn OAuth: Starting authorization request...');
+            
             const response = await fetch('/admin/linkedin/oauth/authorize');
+            console.log('LinkedIn OAuth: Response received, status:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('LinkedIn OAuth: Authorization URL received, redirecting...');
                 window.location.href = data.auth_url;
             } else {
                 const error = await response.json();
-                this.showMessage(`Failed to initiate LinkedIn authorization: ${error.detail}`, 'error');
+                console.error('LinkedIn OAuth: Authorization failed:', error);
+                this.showMessage(`Failed to initiate LinkedIn authorization: ${error.detail || error.error}`, 'error');
             }
         } catch (error) {
-            console.error('Error initiating LinkedIn auth:', error);
-            this.showMessage('Error initiating LinkedIn authorization', 'error');
+            console.error('LinkedIn OAuth: Network/JS error during authorization:', error);
+            this.showMessage(`Error initiating LinkedIn authorization: ${error.message}`, 'error');
         }
     }
 

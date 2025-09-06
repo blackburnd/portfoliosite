@@ -1,7 +1,8 @@
 /* Simple, modern, and consistent styling for the portfolio site */
+/* Updated styling for contact forms and admin pages */
 body {
     font-family: 'Segoe UI', 'Arial', sans-serif;
-    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+    background: #f8f9fa;
     color: #222;
     margin: 0;
     padding: 20px;
@@ -25,16 +26,59 @@ body {
     position: relative;
 }
 
+.header-left {
+    margin-left: 7%; /* 7% left margin for entire header content */
+}
+
+.title-container {
+    position: relative;
+    margin-bottom: 5px; /* Small gap between title area and tagline */
+}
+
+.brand {
+    position: relative;
+    width: fit-content; /* Ensures the container wraps the content properly */
+    margin: 0; /* Remove individual margin since header-left handles it */
+}
+
 .brand a {
     text-decoration: none;
-    color: #000;
-    font-size: 2em;
+    color: #333;
+    font-size: 2.2em; /* Increased from 2em - slightly larger */
     font-weight: bold;
 }
 
 .tagline {
     color: #666;
-    margin: 10px 0;
+    margin: 0; /* Remove individual margin since spacing is handled by title-container */
+}
+
+/* Header Social Links */
+.header-social-links {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%); /* Center vertically with the title */
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.header-social-links a {
+    text-decoration: none;
+    color: #333;
+    font-size: 0.9em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.header-social-links a:hover {
+    background-color: #f0f0f0;
+    text-decoration: underline;
 }
 
 /* Authentication and admin links */
@@ -47,7 +91,7 @@ body {
 }
 
 .auth-link {
-    background: linear-gradient(135deg, #555 0%, #333 100%);
+    background-color: #666;
     color: white !important;
     padding: 5px 12px;
     border-radius: 4px;
@@ -55,16 +99,25 @@ body {
 }
 
 .auth-link:hover {
-    background: linear-gradient(135deg, #333 0%, #111 100%);
+    background-color: #555;
     text-decoration: none;
 }
 
 .logout-link {
-    background: linear-gradient(135deg, #888 0%, #666 100%);
+    background-color: #444;
 }
 
 .logout-link:hover {
-    background: linear-gradient(135deg, #666 0%, #444 100%);
+    background-color: #333;
+}
+
+.disconnect-link {
+    background-color: #777;
+    font-size: 0.8em;
+}
+
+.disconnect-link:hover {
+    background-color: #666;
 }
 
 .admin-links {
@@ -75,7 +128,7 @@ body {
 }
 
 .admin-link {
-    background: linear-gradient(135deg, #999 0%, #777 100%);
+    background-color: #777;
     color: white !important;
     padding: 3px 8px;
     border-radius: 3px;
@@ -84,17 +137,15 @@ body {
 }
 
 .admin-link:hover {
-    background: linear-gradient(135deg, #777 0%, #555 100%);
+    background-color: #666;
     text-decoration: none;
 }
 
 /* Navigation Styles */
 nav {
     display: flex;
-    flex-direction: row;
-    gap: 20px;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 15px;
 }
 
 nav ul {
@@ -107,12 +158,8 @@ nav ul {
 }
 
 .primary-nav {
-    border-right: 1px solid #ccc;
-    padding-right: 20px;
-}
-
-.social-nav {
-    font-size: 0.9em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
 nav a {
@@ -129,7 +176,7 @@ nav a:hover {
 
 /* Active page indicator */
 nav li.active a {
-    background: linear-gradient(135deg, #444 0%, #222 100%);
+    background-color: #333;
     color: white;
     font-weight: bold;
     padding: 4px 8px;
@@ -159,30 +206,6 @@ nav li.active a:hover {
 /* Content Styles */
 .bc {
     margin-top: 24px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-/* Image styling for index page */
-figure {
-    float: right;
-    margin: 0 0 20px 20px;
-    max-width: 40vw;
-    order: 1;
-}
-
-figure img {
-    width: 100%;
-    height: auto;
-    filter: grayscale(100%);
-    border-radius: 8px;
-}
-
-.about {
-    flex: 1;
-    min-width: 300px;
-    order: 2;
 }
 
 .about {
@@ -194,15 +217,15 @@ figure img {
 .amp {
     font-family: serif;
     font-size: 1.2em;
-    color: #777;
+    color: #888;
 }
 
 .tech {
-    background: linear-gradient(135deg, #efefef 0%, #ddd 100%);
+    background: #f1f3f6;
     border-radius: 8px;
     padding: 18px 22px;
     margin-top: 18px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
 }
 
 .clearfix::after {
@@ -214,7 +237,7 @@ figure img {
 .footer {
     margin-top: 50px;
     padding: 20px 0;
-    border-top: 1px solid #ccc;
+    border-top: 1px solid #eee;
     text-align: center;
     color: #666;
 }
@@ -233,22 +256,21 @@ figure img {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
 }
 
 #grid th, #grid td {
     padding: 12px;
-    border: 1px solid #bbb;
+    border: 1px solid #ddd;
     text-align: left;
 }
 
 #grid th {
-    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%);
+    background-color: #f8f9fa;
     font-weight: bold;
 }
 
 #grid tr:nth-child(even) {
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    background-color: #f9f9f9;
 }
 
 .crud-buttons {
@@ -267,21 +289,21 @@ figure img {
 }
 
 #addBtn {
-    background: linear-gradient(135deg, #555 0%, #333 100%);
+    background-color: #555;
     color: white;
 }
 
 #addBtn:hover {
-    background: linear-gradient(135deg, #333 0%, #111 100%);
+    background-color: #666;
 }
 
 #deleteBtn {
-    background: linear-gradient(135deg, #888 0%, #666 100%);
+    background-color: #444;
     color: white;
 }
 
 #deleteBtn:hover {
-    background: linear-gradient(135deg, #666 0%, #444 100%);
+    background-color: #555;
 }
 
 .loading {
@@ -289,217 +311,16 @@ figure img {
     font-style: italic;
     padding: 20px;
     text-align: center;
-    background: linear-gradient(135deg, #f8f8f8 0%, #eee 100%);
-    border-radius: 4px;
 }
 
 .error {
-    color: #333;
+    color: red;
     padding: 20px;
     text-align: center;
-    background: linear-gradient(135deg, #eee 0%, #ddd 100%);
-    border-radius: 4px;
 }
 
 input[type="checkbox"] {
     cursor: pointer;
-}
-
-/* Logs page styles */
-.logs .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.logs .header {
-    background: linear-gradient(135deg, #333 0%, #111 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.logs .header h1 {
-    margin: 0;
-    font-size: 1.5em;
-}
-
-.logs .controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.logs .controls input, .logs .controls button, .logs .controls a {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    text-decoration: none;
-    color: white;
-    background: linear-gradient(135deg, #555 0%, #333 100%);
-}
-
-.logs .controls input {
-    color: #333;
-    background: white;
-}
-
-.logs .controls button:hover, .logs .controls a:hover {
-    background: linear-gradient(135deg, #777 0%, #555 100%);
-}
-
-.logs .filter-bar {
-    background: linear-gradient(135deg, #f8f8f8 0%, #eee 100%);
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.logs .filter-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-}
-
-.logs .filter-group label {
-    font-weight: bold;
-    color: #333;
-    white-space: nowrap;
-}
-
-.logs .filter-group select, .logs .filter-group input {
-    padding: 5px 8px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    background: white;
-}
-
-.logs .log-grid {
-    min-height: 400px;
-    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.logs .log-grid table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.logs .log-grid th {
-    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%);
-    padding: 12px;
-    border-bottom: 2px solid #ccc;
-    text-align: left;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.logs .log-grid th:hover {
-    background: linear-gradient(135deg, #d0d0d0 0%, #bbb 100%);
-}
-
-.logs .log-grid td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #eee;
-    vertical-align: top;
-}
-
-.logs .log-grid tr:nth-child(even) {
-    background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%);
-}
-
-.logs .log-grid tr:hover {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
-}
-
-.logs .log-level-ERROR {
-    background: linear-gradient(135deg, #333 0%, #111 100%);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
-.logs .log-level-WARNING {
-    background: linear-gradient(135deg, #666 0%, #444 100%);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
-.logs .log-level-INFO {
-    background: linear-gradient(135deg, #999 0%, #777 100%);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
-.logs .log-level-DEBUG {
-    background: linear-gradient(135deg, #ccc 0%, #aaa 100%);
-    color: #333;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
-.logs .log-message {
-    word-break: break-word;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-.logs .stats {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
-    padding: 15px;
-    border-radius: 6px;
-    margin-top: 15px;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 0.9em;
-    color: #333;
-}
-
-.logs .dgrid {
-    border: none !important;
-}
-
-.logs .dgrid-header {
-    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%) !important;
-}
-
-.logs .dgrid-header th {
-    background: linear-gradient(135deg, #e5e5e5 0%, #d0d0d0 100%) !important;
-    border-bottom: 2px solid #ccc !important;
-}
-
-.logs .dgrid-row:hover {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%) !important;
-}
-
-.logs .dgrid-row-even {
-    background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%) !important;
 }
 
 /* Responsive Design */
@@ -508,19 +329,8 @@ input[type="checkbox"] {
         flex-direction: column;
     }
 
-    figure {
-        float: none;
-        margin: 0 0 20px 0;
-        max-width: 100%;
-        order: 1;
-    }
-
     figure img {
         max-width: 100%;
-    }
-
-    .about {
-        order: 2;
     }
 
     .header-top {
@@ -539,11 +349,8 @@ input[type="checkbox"] {
     }
 
     .primary-nav {
-        border-right: none;
-        border-bottom: 1px solid #ccc;
-        padding-right: 0;
+        border-bottom: 1px solid #eee;
         padding-bottom: 10px;
-        margin-bottom: 10px;
     }
 
     .crud-buttons {
@@ -555,294 +362,403 @@ input[type="checkbox"] {
     }
 }
 
-/* Index page layout and image styling */
-.bc {
-    position: relative;
-}
-
-.bc section.about {
-    position: relative;
-}
-
-.bc .profile-image {
-    width: 40%;
-    float: right;
-    margin: 0 0 20px 20px;
-    position: relative;
-    clear: right;
-}
-
-.bc .profile-image img {
-    width: 100%;
-    height: auto;
-    filter: grayscale(100%);
+/* LinkedIn Integration Info */
+.linkedin-info {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
     border-radius: 8px;
-    border: 2px solid #333;
-    display: block;
-}
-
-/* Text flow around image */
-.bc section.about p {
-    text-align: justify;
-    line-height: 1.6;
-    margin-bottom: 15px;
-}
-
-/* Ensure text flows properly around the floated image */
-.bc section.about {
-    overflow: hidden; /* This creates a new block formatting context */
-}
-
-@media (max-width: 768px) {
-    .bc section.about {
-        margin-right: 0;
-    }
-}
-
-/* OAuth and LinkedIn Admin Pages Styling */
-.oauth-container, .linkedin-admin-content {
-    max-width: 1000px;
-    margin: 20px auto;
-    padding: 20px;
-}
-
-.config-form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.form-group {
+    padding: 15px;
     margin-bottom: 20px;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
+.linkedin-info h4 {
+    margin-top: 0;
+    color: #0066cc;
+}
+
+.linkedin-info ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.linkedin-info li {
+    margin-bottom: 5px;
+}
+
+/* ===== CONTACT PAGE STYLING ===== */
+.contact-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.contact-content h2 {
+    font-size: 2.5em;
     color: #333;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
-.form-group input, .form-group textarea, .form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
-    color: #333;
+.contact-content p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 30px;
+    text-align: center;
 }
 
-.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-    border-color: #666;
-    outline: none;
-    background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
-}
-
-.connection-section, .sync-section {
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-    border: 2px solid #ccc;
+.contact-info {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
     border-radius: 8px;
     padding: 25px;
-    margin: 25px 0;
+    margin-bottom: 40px;
 }
 
-.connection-status {
+.contact-info h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0066cc;
+    font-size: 1.3em;
+}
+
+.contact-info p {
+    margin-bottom: 10px;
+    text-align: left;
+    font-size: 1em;
+}
+
+.contact-info a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+/* ===== FORM STYLING ===== */
+.contact-form {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.contact-form div {
+    margin-bottom: 20px;
+}
+
+.contact-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9em;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.contact-form textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+.contact-form button {
+    background-color: #0066cc;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.contact-form button:hover {
+    background-color: #0052a3;
+}
+
+/* ===== ADMIN PAGES STYLING ===== */
+.work-admin-content,
+.projects-admin-content,
+.linkedin-admin-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.work-admin-content h2,
+.projects-admin-content h2,
+.linkedin-admin-content h2 {
+    font-size: 2.2em;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
+}
+
+/* Grid styling for admin tables */
+#grid {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    min-height: 300px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* CRUD Buttons */
+.crud-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.crud-buttons button,
+#addBtn,
+#deleteBtn,
+button[type="submit"],
+.btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.crud-buttons button:hover,
+#addBtn:hover,
+#deleteBtn:hover,
+button[type="submit"]:hover,
+.btn:hover {
+    background-color: #218838;
+}
+
+#deleteBtn {
+    background-color: #dc3545;
+}
+
+#deleteBtn:hover {
+    background-color: #c82333;
+}
+
+/* ===== GENERAL CONTENT STYLING ===== */
+.bc {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.9em;
+    border-top: 1px solid #eee;
+    margin-top: 40px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .contact-content,
+    .work-admin-content,
+    .projects-admin-content,
+    .linkedin-admin-content {
+        padding: 20px 15px;
+    }
+    
+    .contact-form {
+        padding: 20px;
+    }
+    
+    .crud-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .crud-buttons button {
+        width: 200px;
+    }
+}
+
+/* ===== LINKEDIN ADMIN SPECIFIC STYLING ===== */
+.status-card {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.status-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #0066cc;
+    font-size: 1.4em;
+}
+
+.sync-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+}
+
+.sync-button {
+    background-color: #17a2b8;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.sync-button:hover:not(:disabled) {
+    background-color: #138496;
+}
+
+.sync-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-profile {
+    background-color: #007bff;
+}
+
+.btn-profile:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.btn-experience {
+    background-color: #28a745;
+}
+
+.btn-experience:hover:not(:disabled) {
+    background-color: #1e7e34;
+}
+
+.btn-full {
+    background-color: #dc3545;
+}
+
+.btn-full:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.result-section {
+    margin-top: 30px;
+}
+
+.result-card {
     padding: 20px;
     border-radius: 8px;
-    margin: 20px 0;
-    border: 2px solid #ccc;
+    margin-bottom: 15px;
+    border-left: 4px solid;
 }
 
-.connection-status.connected {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
-    color: #333;
+.result-card.success {
+    background-color: #d4edda;
+    border-left-color: #28a745;
+    color: #155724;
 }
 
-.connection-status.disconnected {
-    background: linear-gradient(135deg, #ddd 0%, #ccc 100%);
+.result-card.error {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0066cc;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.sync-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.sync-section h3 {
+    margin-top: 0;
     color: #333;
 }
 
 .sync-buttons {
-    margin: 20px 0;
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.sync-buttons button, .btn {
-    background: linear-gradient(135deg, #666 0%, #444 100%);
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.sync-buttons button:hover, .btn:hover {
-    background: linear-gradient(135deg, #555 0%, #333 100%);
-}
-
-.sync-buttons button:disabled {
-    background: linear-gradient(135deg, #ccc 0%, #aaa 100%);
-    cursor: not-allowed;
-}
-
-.status-message {
-    padding: 15px;
-    margin: 15px 0;
-    border-radius: 6px;
-    border: 2px solid #ccc;
-}
-
-.status-message.success {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
-    color: #333;
-}
-
-.status-message.error {
-    background: linear-gradient(135deg, #ddd 0%, #ccc 100%);
-    color: #333;
-}
-
-.status-message.info {
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-    color: #333;
-}
-
-/* OAuth Success/Error Pages */
-.success-container, .error-container {
-    max-width: 600px;
-    margin: 50px auto;
-    padding: 40px;
-    text-align: center;
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-    border: 2px solid #ccc;
-    border-radius: 12px;
-}
-
-.success-icon, .error-icon {
-    font-size: 4em;
-    margin-bottom: 20px;
-}
-
-.success-container h1, .error-container h1 {
-    color: #333;
-    margin-bottom: 20px;
-}
-
-.success-container p, .error-container p {
-    color: #333;
-    margin-bottom: 15px;
-    line-height: 1.6;
-}
-
-.error-details {
-    background: linear-gradient(135deg, #ddd 0%, #ccc 100%);
-    padding: 15px;
-    border-radius: 6px;
-    margin: 20px 0;
-    font-family: monospace;
-    text-align: left;
-    color: #333;
-}
-
-/* Data grid styling for LinkedIn admin */
-.data-grid {
-    background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 20px 0;
-}
-
-.data-grid table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-grid th {
-    background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
-    padding: 15px;
-    border-bottom: 2px solid #ccc;
-    text-align: left;
-    font-weight: bold;
-    color: #333;
-}
-
-.data-grid td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #ddd;
-    vertical-align: top;
-    color: #333;
-}
-
-.data-grid tr:nth-child(even) {
-    background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%);
-}
-
-.data-grid tr:hover {
-    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
-}
-
-/* Utility classes */
-.hidden {
-    display: none !important;
-}
-
-.error-text {
-    color: #333;
-    font-weight: bold;
-}
-
-.current-config-section {
-    margin-top: 30px;
-}
-
-.debug-details {
     margin-top: 15px;
 }
 
-.debug-json {
-    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-    padding: 15px;
-    border-radius: 6px;
-    overflow-x: auto;
-    border: 1px solid #ccc;
-    color: #333;
-    font-family: monospace;
-    font-size: 0.9em;
+#syncAllBtn {
+    background-color: #555;
 }
 
-/* OAuth Admin Styles */
-.oauth-admin-content {
-    max-width: 1200px;
+#syncAllBtn:hover {
+    background-color: #444;
+}
+
+/* ===== CONTACT PAGE STYLING ===== */
+.contact-content {
+    max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 40px 20px;
 }
 
-.config-section {
+.contact-form {
     background: white;
-    border: 1px solid #ddd;
+    padding: 30px;
     border-radius: 8px;
-    margin: 20px 0;
-    padding: 20px;
-}
-
-.config-section h3 {
-    margin: 0 0 15px 0;
-    color: #333;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-}
-
-.config-form {
-    margin: 20px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
 }
 
 .form-group {
@@ -851,8 +767,8 @@ input[type="checkbox"] {
 
 .form-group label {
     display: block;
-    font-weight: bold;
     margin-bottom: 5px;
+    font-weight: 600;
     color: #333;
 }
 
@@ -860,214 +776,1361 @@ input[type="checkbox"] {
 .form-group textarea,
 .form-group select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    transition: border-color 0.3s ease;
     box-sizing: border-box;
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
-    border-color: #007cba;
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 124, 186, 0.3);
+    border-color: #666;
+    box-shadow: 0 0 0 2px rgba(102, 102, 102, 0.1);
 }
 
-.form-actions {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
 }
 
-.btn-primary,
-.btn-secondary,
-.btn-edit,
-.btn-delete,
-.btn-test {
-    padding: 10px 20px;
+.btn {
+    background-color: #333;
+    color: white;
+    padding: 12px 24px;
     border: none;
     border-radius: 4px;
-    cursor: pointer;
     font-size: 14px;
-    margin-right: 10px;
-    text-decoration: none;
-    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.btn-primary {
-    background: #007cba;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #005a87;
+.btn:hover {
+    background-color: #555;
 }
 
 .btn-secondary {
-    background: #6c757d;
-    color: white;
+    background-color: #666;
 }
 
 .btn-secondary:hover {
-    background: #545b62;
+    background-color: #777;
 }
 
-.btn-edit {
-    background: #28a745;
-    color: white;
+/* ===== GENERAL CONTENT STYLING ===== */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
 }
 
-.btn-edit:hover {
-    background: #1e7e34;
-}
-
-.btn-delete {
-    background: #dc3545;
-    color: white;
-}
-
-.btn-delete:hover {
-    background: #c82333;
-}
-
-.btn-test {
-    background: #17a2b8;
-    color: white;
-}
-
-.btn-test:hover {
-    background: #138496;
-}
-
-.config-actions {
-    margin-top: 15px;
-}
-
-.status-configured {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.status-not-configured {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.status-error {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.message-success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 15px 0;
-}
-
-.message-error {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 15px 0;
-}
-
-.scopes-list {
-    margin-top: 15px;
-}
-
-.scope-item {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    padding: 15px;
-    margin: 10px 0;
-}
-
-.scope-item.required {
-    border-left: 4px solid #dc3545;
-}
-
-.scope-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.scope-name {
-    color: #6c757d;
-    font-family: monospace;
-    margin-left: 10px;
-}
-
-.required-badge {
-    background: #dc3545;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 12px;
-    margin-left: auto;
-}
-
-.scope-description {
+.content-header h1,
+.content-header h2 {
+    font-size: 2.2em;
     color: #333;
-    margin-bottom: 5px;
+    margin-bottom: 30px;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
 }
 
-.scope-data-access {
-    color: #6c757d;
+/* ===== ADMIN PAGE CORRECTIONS ===== */
+.work-admin-content h2,
+.projects-admin-content h2,
+.linkedin-admin-content h2 {
+    border-bottom: 2px solid #333;
+}
+
+.linkedin-info {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}
+
+.linkedin-info h4 {
+    color: #333;
+}
+
+/* ===== LINKEDIN CONFIGURATION STYLES ===== */
+.config-section,
+.oauth-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.config-section h3,
+.oauth-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.config-form .form-group {
+    margin-bottom: 18px;
+}
+
+.form-actions {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.config-status {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.config-status h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.connection-status {
+    padding: 20px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.connection-status p {
+    margin: 0 0 15px 0;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.connection-status .note {
+    font-size: 14px;
+    color: #666;
+    font-weight: normal;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+#connection-details {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #333;
+    border: 1px solid #e9ecef;
+}
+
+.btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn:disabled:hover {
+    background-color: #ccc;
+    transform: none;
+}
+
+/* Responsive adjustments for config forms */
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Configuration status items */
+.config-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.config-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.config-item:last-child {
+    border-bottom: none;
+}
+
+.config-label {
+    font-weight: 600;
+    color: #333;
+}
+
+.config-value {
+    color: #666;
+}
+
+.config-value.configured {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.config-value.missing {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ===== WORK ADMIN FORM STYLING ===== */
+.form-container {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-top: 30px;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-wrapper {
+    padding: 30px;
+}
+
+.form-container h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 1.4em;
+}
+
+.work-item-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.work-item-form .form-group {
+    margin-bottom: 20px;
+}
+
+.work-item-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.checkbox-label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto !important;
+    margin: 0;
+}
+
+.work-item-form input,
+.work-item-form textarea,
+.work-item-form select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: white;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.work-item-form input:focus,
+.work-item-form textarea:focus,
+.work-item-form select:focus {
+    outline: none;
+    border-color: #666;
+    background-color: #fafafa;
+}
+
+.work-item-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-note {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
     font-style: italic;
 }
 
-.test-actions {
-    margin: 15px 0;
+.form-actions {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
-.test-results {
-    margin-top: 15px;
+/* Work items table styling */
+.work-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.work-items-table th,
+.work-items-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.work-items-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.work-items-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.work-items-table .btn-small {
+    padding: 6px 12px;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Projects table styling */
+.projects-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.projects-table th,
+.projects-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.projects-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.projects-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.projects-table .btn-small {
+    padding: 6px 12px;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Message styling */
+.message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    border: 1px solid;
+    font-weight: 600;
+}
+
+.message.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.message.info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* Status message system for admin pages */
+.status-message {
+    position: relative;
+    padding: 12px 40px 12px 16px;
+    margin: 15px 0;
+    border-radius: 6px;
+    border: 1px solid;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(0);
+}
+
+.status-message.success {
+    background-color: #f8fff8;
+    border-color: #e8f5e8;
+    color: #2d5a2d;
+    border-left: 4px solid #28a745;
+}
+
+.status-message.success::before {
+    content: "✓";
+    font-weight: bold;
+    color: #28a745;
+}
+
+.status-message.error {
+    background-color: #fff8f8;
+    border-color: #f5e8e8;
+    color: #5a2d2d;
+    border-left: 4px solid #dc3545;
+}
+
+.status-message.error::before {
+    content: "✗";
+    font-weight: bold;
+    color: #dc3545;
+}
+
+.status-message.info {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #495057;
+    border-left: 4px solid #6c757d;
+}
+
+.status-message.info::before {
+    content: "ℹ";
+    font-weight: bold;
+    color: #6c757d;
+}
+
+/* Test Results Styles */
+.test-results-container {
+    margin: 15px 0;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
 }
 
 .test-success {
+    padding: 15px;
     background: #d4edda;
     border: 1px solid #c3e6cb;
-    color: #155724;
-    padding: 10px;
     border-radius: 4px;
+    color: #155724;
+    margin: 10px 0;
 }
 
 .test-error {
+    padding: 15px;
     background: #f8d7da;
     border: 1px solid #f5c6cb;
-    color: #721c24;
-    padding: 10px;
     border-radius: 4px;
+    color: #721c24;
+    margin: 10px 0;
 }
 
-.hidden {
-    display: none;
+.test-results {
+    padding: 15px;
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    color: #0d47a1;
+    margin: 10px 0;
 }
 
-.result-messages {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
+.status-message.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.status-message .close-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.status-message .close-btn:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+/* Status message container */
+.status-messages {
+    position: relative;
+    z-index: 100;
+}
+
+/* Responsive design for forms */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .form-wrapper {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .work-items-table {
+        font-size: 14px;
+    }
+    
+    .work-items-table th,
+    .work-items-table td {
+        padding: 8px;
+    }
+}
+
+/* ===== DOJO DIALOG STYLING ===== */
+.dijitDialog {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+.dijitDialogTitleBar {
+    background: white !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    padding: 15px 20px !important;
+    color: #333 !important;
+    font-weight: 600 !important;
+}
+
+.dijitDialogTitle {
+    color: #333 !important;
+    font-size: 18px !important;
+}
+
+.dijitDialogCloseIcon {
+    background: transparent !important;
+    color: #666 !important;
+}
+
+.dijitDialogPaneContentArea {
+    padding: 20px !important;
+    background: white !important;
+}
+
+.dijitDialogPaneActionBar {
+    padding: 15px 20px !important;
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+.dijitDialogPaneContentArea .form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.dijitDialogPaneContentArea .form-row .form-group {
+    flex: 1;
+}
+
+.dijitDialogPaneContentArea .form-group {
+    margin-bottom: 15px;
+}
+
+.dijitDialogPaneContentArea label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.dijitDialogPaneContentArea .dijitTextBox,
+.dijitDialogPaneContentArea .dijitTextarea,
+.dijitDialogPaneContentArea .dijitDateTextBox,
+.dijitDialogPaneContentArea .dijitCheckBox,
+.dijitDialogPaneContentArea .dijitNumberTextBox {
+    width: 100% !important;
+    box-sizing: border-box;
+    border: 1px solid #ccc !important;
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+    background: white !important;
+    color: #333 !important;
+    font-size: 14px !important;
+}
+
+.dijitDialogPaneContentArea .dijitTextBox:focus,
+.dijitDialogPaneContentArea .dijitTextarea:focus,
+.dijitDialogPaneContentArea .dijitDateTextBox:focus,
+.dijitDialogPaneContentArea .dijitNumberTextBox:focus {
+    border-color: #666 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(102, 102, 102, 0.1) !important;
+}
+
+.dijitDialogPaneContentArea .form-note {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.dijitDialogPaneActionBar .dijitButton {
+    margin-right: 10px;
+    background: #333 !important;
+    color: white !important;
+    border: 1px solid #333 !important;
+    padding: 8px 16px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+}
+
+.dijitDialogPaneActionBar .dijitButton:hover {
+    background: #555 !important;
+    border-color: #555 !important;
+}
+
+.dijitDialogPaneActionBar .dijitButton .dijitButtonText {
+    color: white !important;
+}
+
+/* Override any blue backgrounds */
+.dijitDialog .dijitDialogPaneContent,
+.dijitDialog .dijitDialogPaneContentArea,
+.dijitDialog .dijitContentPane {
+    background: white !important;
+}
+
+/* Checkbox styling */
+.dijitDialogPaneContentArea .dijitCheckBox {
+    width: auto !important;
+    margin-right: 8px;
+}
+
+/* Override Claro theme blue colors completely */
+.dijitDialog,
+.dijitDialog .dijitDialogPaneContent,
+.dijitDialog .dijitDialogPaneContentArea,
+.dijitDialog .dijitContentPane,
+.dijitDialog .dijitDialogContainer,
+.dijitDialog .dijitDialogWrapper {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+}
+
+/* Force override any Claro blue backgrounds */
+.claro .dijitDialog,
+.claro .dijitDialogPaneContent,
+.claro .dijitDialogPaneContentArea,
+.claro .dijitContentPane {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+}
+
+/* Override specific Claro blue color #abd6ff */
+.dijitDialog *[style*="#abd6ff"],
+.dijitDialog *[style*="rgb(171, 214, 255)"] {
+    background: white !important;
+    background-color: white !important;
+}
+
+/* Force white background on all dialog elements */
+.dijitDialog table,
+.dijitDialog td,
+.dijitDialog div {
+    background: transparent !important;
+}
+
+.dijitDialogPaneContentArea table,
+.dijitDialogPaneContentArea td,
+.dijitDialogPaneContentArea div {
+    background: transparent !important;
+}
+
+/* Nuclear option: Override ALL possible blue backgrounds */
+.dijitDialog *,
+.dijitDialog *:before,
+.dijitDialog *:after {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+}
+
+.dijitDialogPaneContentArea,
+.dijitDialogPaneContentArea *,
+.dijitDialogPaneContentArea *:before,
+.dijitDialogPaneContentArea *:after {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    color: #333 !important;
+}
+
+/* Extremely aggressive blue color elimination */
+*[style*="#abd6ff"],
+*[style*="rgb(171, 214, 255)"],
+*[style*="171, 214, 255"] {
+    background: white !important;
+    background-color: white !important;
+}
+
+/* Target specific Claro theme classes */
+.claro .dijitDialog,
+.claro .dijitDialogPaneContentArea,
+.claro .dijitDialogContent,
+.claro .dijitDialogTitleBar {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+}
+
+/* Override any computed styles for these specific colors */
+.dijitDialog,
+.dijitDialogPaneContentArea,
+.dijitDialogContent {
+    background: white !important;
+    background-color: white !important;
+}
+
+/* Final override for any remaining blue elements */
+[style*="background"] {
+    background: white !important;
+}
+
+[style*="background-color"] {
+    background-color: white !important;
+}
+
+/* Comprehensive dialog styling for readability */
+.dijitDialog {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    border: 2px solid #ccc !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+}
+
+.dijitDialogPaneContentArea {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    padding: 20px !important;
+    color: #333 !important;
+}
+
+.dijitDialogTitleBar {
+    background: #f8f9fa !important;
+    background-color: #f8f9fa !important;
+    background-image: none !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    color: #333 !important;
+    font-weight: 600 !important;
+}
+
+/* Form styling within dialogs */
+.dijitDialog label,
+.dijitDialogPaneContentArea label {
+    display: block !important;
+    margin-bottom: 5px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    background: transparent !important;
+    font-size: 14px !important;
+}
+
+.dijitDialog input,
+.dijitDialog textarea,
+.dijitDialogPaneContentArea input,
+.dijitDialogPaneContentArea textarea,
+.dijitDialog .dijitTextBox,
+.dijitDialog .dijitTextarea,
+.dijitDialog .dijitNumberTextBox,
+.dijitDialogPaneContentArea .dijitTextBox,
+.dijitDialogPaneContentArea .dijitTextarea,
+.dijitDialogPaneContentArea .dijitNumberTextBox {
+    background: white !important;
+    background-color: white !important;
+    border: 2px solid #ccc !important;
+    border-radius: 6px !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    color: #333 !important;
+    font-size: 14px !important;
+    font-family: 'Segoe UI', 'Arial', sans-serif !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.dijitDialog input:focus,
+.dijitDialog textarea:focus,
+.dijitDialogPaneContentArea input:focus,
+.dijitDialogPaneContentArea textarea:focus,
+.dijitDialog .dijitTextBox:focus,
+.dijitDialog .dijitTextarea:focus,
+.dijitDialog .dijitNumberTextBox:focus,
+.dijitDialogPaneContentArea .dijitTextBox:focus,
+.dijitDialogPaneContentArea .dijitTextarea:focus,
+.dijitDialogPaneContentArea .dijitNumberTextBox:focus {
+    border-color: #666 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(102, 102, 102, 0.1) !important;
+    background-color: #fafafa !important;
+}
+
+.dijitDialog .form-note,
+.dijitDialogPaneContentArea .form-note {
+    font-size: 12px !important;
+    color: #666 !important;
+    margin-top: 6px !important;
+    background: transparent !important;
+    font-style: italic !important;
+    line-height: 1.4 !important;
+}
+
+/* Enhanced form layout within dialogs */
+.dijitDialogPaneContentArea .form-row {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+    align-items: flex-start !important;
+}
+
+.dijitDialogPaneContentArea .form-row .form-group {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.dijitDialogPaneContentArea .form-group {
+    margin-bottom: 20px !important;
+}
+
+/* Button styling within dialogs */
+.dijitDialogPaneActionBar .dijitButton {
+    margin-right: 12px !important;
+    background: #333 !important;
+    color: white !important;
+    border: 2px solid #333 !important;
+    padding: 12px 24px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    text-transform: none !important;
+}
+
+.dijitDialogPaneActionBar .dijitButton:hover {
+    background: #555 !important;
+    border-color: #555 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+.dijitDialogPaneActionBar .dijitButton .dijitButtonText {
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* Cancel button specific styling */
+.dijitDialogPaneActionBar .dijitButton:last-child {
+    background: #666 !important;
+    border-color: #666 !important;
+}
+
+.dijitDialogPaneActionBar .dijitButton:last-child:hover {
+    background: #777 !important;
+    border-color: #777 !important;
+}
+
+/* Textarea specific styling */
+.dijitDialog .dijitTextarea,
+.dijitDialogPaneContentArea .dijitTextarea {
+    min-height: 80px !important;
+    resize: vertical !important;
+    font-family: 'Segoe UI', 'Arial', sans-serif !important;
+    line-height: 1.5 !important;
+}
+
+/* Enhanced dialog container styling */
+.dijitDialog {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    border: 1px solid #ddd !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+    overflow: hidden !important;
+}
+
+.dijitDialogPaneContentArea {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    padding: 25px !important;
+    color: #333 !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+}
+
+.dijitDialogTitleBar {
+    background: #f8f9fa !important;
+    background-color: #f8f9fa !important;
+    background-image: none !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    color: #333 !important;
+    font-weight: 600 !important;
+    padding: 18px 25px !important;
+    font-size: 18px !important;
+}
+
+.dijitDialogPaneActionBar {
+    padding: 20px 25px !important;
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #dee2e6 !important;
+    text-align: right !important;
+}
+
+/* Override any remaining Claro gradients or blues */
+.claro .dijitDialog *,
+.claro .dijitDialogPaneContentArea * {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    border-color: #ccc !important;
+}
+
+/* Specifically target any remaining blue elements */
+*[style*="blue"],
+*[style*="#abd6ff"],
+*[style*="rgb(171, 214, 255)"],
+*[class*="blue"] {
+    background: white !important;
+    background-color: white !important;
+}
+
+/* Ultra-specific override for Dojo dialog blue backgrounds */
+.dijitDialog .dijitDialogPaneContent,
+.dijitDialog .dijitDialogPaneContentArea,
+.claro .dijitDialog .dijitDialogPaneContent,
+.claro .dijitDialog .dijitDialogPaneContentArea {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+}
+
+/* Target computed styles that might have the blue color */
+div[style*="rgb(171, 214, 255)"],
+div[style*="#abd6ff"],
+td[style*="rgb(171, 214, 255)"],
+td[style*="#abd6ff"] {
+    background: white !important;
+    background-color: white !important;
+}
+
+/* Force override on any Dojo widget containers */
+.dijitDialog * {
+    background-image: none !important;
+}
+
+.dijitDialog *:not(.dijitButton):not(.dijitButtonText) {
+    background-color: white !important;
+}
+
+/* Specific Dojo widget styling overrides */
+.dijitDialog .dijitInputField,
+.dijitDialog .dijitTextBoxContainer,
+.dijitDialog .dijitTextareaContainer,
+.dijitDialog .dijitNumberTextBoxContainer,
+.dijitDialogPaneContentArea .dijitInputField,
+.dijitDialogPaneContentArea .dijitTextBoxContainer,
+.dijitDialogPaneContentArea .dijitTextareaContainer,
+.dijitDialogPaneContentArea .dijitNumberTextBoxContainer {
+    background: white !important;
+    background-color: white !important;
+    border: 2px solid #ccc !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.dijitDialog .dijitInputField input,
+.dijitDialog .dijitInputField textarea,
+.dijitDialogPaneContentArea .dijitInputField input,
+.dijitDialogPaneContentArea .dijitInputField textarea {
+    border: none !important;
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.dijitDialog .dijitInputField:focus-within,
+.dijitDialog .dijitTextBoxContainer:focus-within,
+.dijitDialog .dijitTextareaContainer:focus-within,
+.dijitDialog .dijitNumberTextBoxContainer:focus-within,
+.dijitDialogPaneContentArea .dijitInputField:focus-within,
+.dijitDialogPaneContentArea .dijitTextBoxContainer:focus-within,
+.dijitDialogPaneContentArea .dijitTextareaContainer:focus-within,
+.dijitDialogPaneContentArea .dijitNumberTextBoxContainer:focus-within {
+    border-color: #666 !important;
+    box-shadow: 0 0 0 3px rgba(102, 102, 102, 0.1) !important;
+    background-color: #fafafa !important;
+}
+
+/* Remove any Dojo widget inner styling that might interfere */
+.dijitDialog .dijitReset,
+.dijitDialogPaneContentArea .dijitReset {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Responsive dialog styling */
+@media (max-width: 768px) {
+    .dijitDialog {
+        width: 95% !important;
+        max-width: 95% !important;
+    }
+    
+    .dijitDialogPaneContentArea .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .dijitDialogPaneContentArea {
+        padding: 15px !important;
+    }
+}
+
+/* ===== LOGS PAGE STYLING ===== */
+.logs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #2c3e50;
+    border-radius: 8px;
+    color: white;
+}
+
+.logs-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.logs-controls input[type="text"] {
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.9);
+    min-width: 200px;
+}
+
+.logs-controls button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.logs-controls button:hover {
+    background: #2980b9;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-weight: bold;
+    font-size: 12px;
+    color: white;
+    margin: 0;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 6px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.9);
+    min-width: 120px;
+}
+
+.logs-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.logs-table-container {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logs-table th {
+    background: #34495e;
+    color: white;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: pointer;
+    user-select: none;
+}
+
+.logs-table th:hover {
+    background: #2c3e50;
+}
+
+.logs-table th .sort-indicator {
+    margin-left: 5px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.logs-table th.sorted-asc .sort-indicator::after {
+    content: "▲";
+}
+
+.logs-table th.sorted-desc .sort-indicator::after {
+    content: "▼";
+}
+
+.logs-table th:not(.sorted-asc):not(.sorted-desc) .sort-indicator::after {
+    content: "⇅";
+    opacity: 0.4;
+}
+
+.logs-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.logs-table tr:hover {
+    background: #f8f9fa;
+}
+
+.log-level {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.log-level-DEBUG { background: #6c757d; color: white; }
+.log-level-INFO { background: #17a2b8; color: white; }
+.log-level-WARNING { background: #ffc107; color: black; }
+.log-level-ERROR { background: #dc3545; color: white; }
+
+.log-message {
     max-width: 400px;
+    word-wrap: break-word;
+}
+
+.log-timestamp {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.log-module {
+    font-size: 12px;
+    color: #666;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.no-more-logs {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-style: italic;
+}
+
+.scroll-trigger {
+    height: 1px;
+    margin: 10px 0;
+}
+
+.logs-info {
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+/* Copy button styling */
+.message-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-text {
+    flex: 1;
+}
+
+.copy-btn {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 2px 4px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn:hover {
+    opacity: 1;
+    background: #f0f0f0;
+    border-color: #999;
+}
+
+.copy-btn.copied {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.copy-icon {
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* Responsive logs styling */
+@media (max-width: 768px) {
+    .logs-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .logs-controls {
+        justify-content: center;
+    }
+    
+    .logs-stats {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filter-group {
+        min-width: 100px;
+    }
 }

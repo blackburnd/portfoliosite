@@ -61,18 +61,24 @@ class TTWOAuthManager:
     
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get active LinkedIn OAuth app configuration"""
-        query = """
-            SELECT app_name, client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
-            FROM oauth_apps 
-            WHERE provider = 'linkedin'
-            ORDER BY updated_at DESC
-            LIMIT 1
-        """
-        result = await database.fetch_one(query)
-        if not result:
-            return None
-        
         try:
+            add_log("DEBUG", "oauth_config_lookup", "Looking up LinkedIn OAuth configuration")
+            
+            query = """
+                SELECT app_name, client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
+                FROM oauth_apps 
+                WHERE provider = 'linkedin'
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """
+            result = await database.fetch_one(query)
+            
+            if not result:
+                add_log("ERROR", "oauth_config_not_found", "No LinkedIn OAuth configuration found in database")
+                return None
+            
+            add_log("INFO", "oauth_config_found", f"LinkedIn OAuth config found: app_name={result['app_name']}")
+            
             return {
                 "app_name": result["app_name"],
                 "client_id": result["client_id"],
@@ -83,8 +89,10 @@ class TTWOAuthManager:
                 "created_at": result["created_at"],
                 "updated_at": result["updated_at"]
             }
+            
         except Exception as e:
-            logger.error(f"Failed to decrypt OAuth app config: {e}")
+            add_log("ERROR", "oauth_config_error", f"Error retrieving OAuth config: {str(e)}")
+            logger.error(f"Failed to retrieve OAuth app config: {e}")
             return None
     
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
