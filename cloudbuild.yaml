@@ -86,10 +86,11 @@ steps:
     echo "======================================"
 
     # Set up the systemd service
+    sudo systemctl stop portfolio.service || true
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
-    sudo systemctl restart portfolio.service
+    sudo systemctl start portfolio.service
 
     # Start Nginx
     sudo systemctl start nginx
