@@ -117,46 +117,63 @@ def setup_database_logging():
         print(f"Failed to set up database logging: {e}")
 
 
-async def add_log(level: str, message: str, module: str = "manual", function: str = "add_log", 
-                  line: int = 0, user: Optional[str] = None, extra: Optional[dict] = None):
+def add_log(level: str, message: str, module: str = "manual",
+            function: str = "add_log", line: int = 0,
+            user: Optional[str] = None, extra: Optional[dict] = None):
     """Manually add a log entry to the database"""
     database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not database_url:
         print("No database URL found for manual log entry")
         return
-    
-    db = databases.Database(database_url)
-    
-    try:
-        await db.connect()
-        
-        query = """
-            INSERT INTO app_log (timestamp, level, message, module, function,
-                                line, "user", extra)
-            VALUES (:timestamp, :level, :message, :module, :function,
-                   :line, :user, :extra)
-        """
-        
-        values = {
-            'timestamp': datetime.now(),
-            'level': level.upper(),
-            'message': message,
-            'module': module,
-            'function': function,
-            'line': line,
-            'user': user,
-            'extra': json.dumps(extra) if extra else None
-        }
-        
-        await db.execute(query, values)
-        await db.disconnect()
-        
-    except Exception as e:
-        print(f"Failed to add manual log entry: {e}")
+
+    async def _add_log_async():
+        db = databases.Database(database_url)
+
         try:
+            await db.connect()
+
+            query = """
+                INSERT INTO app_log (timestamp, level, message, module,
+                                   function, line, "user", extra)
+                VALUES (:timestamp, :level, :message, :module, :function,
+                       :line, :user, :extra)
+            """
+
+            values = {
+                'timestamp': datetime.now(),
+                'level': level.upper(),
+                'message': message,
+                'module': module,
+                'function': function,
+                'line': line,
+                'user': user,
+                'extra': json.dumps(extra) if extra else None
+            }
+
+            await db.execute(query, values)
             await db.disconnect()
-        except:
-            pass
+
+        except Exception as e:
+            print(f"Failed to add manual log entry: {e}")
+            try:
+                await db.disconnect()
+            except Exception:
+                pass
+
+    # Run the async function synchronously
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If loop is already running, schedule the task
+            asyncio.create_task(_add_log_async())
+        else:
+            # If loop is not running, run it
+            loop.run_until_complete(_add_log_async())
+    except RuntimeError:
+        # Create new loop if none exists
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(_add_log_async())
 
 
 async def clear_logs():
