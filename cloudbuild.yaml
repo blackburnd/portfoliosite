@@ -85,8 +85,12 @@ steps:
     sudo cat /etc/systemd/system/portfolio.service.d/override.conf
     echo "======================================"
 
-    # Set up the systemd service
+    # Set up the systemd service - force complete reset
     sudo systemctl stop portfolio.service || true
+    sudo systemctl disable portfolio.service || true
+    sudo rm -f /etc/systemd/system/portfolio.service
+    sudo rm -rf /etc/systemd/system/portfolio.service.d
+    sudo systemctl daemon-reload
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
