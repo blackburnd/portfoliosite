@@ -39,6 +39,7 @@ body {
     position: relative;
     width: fit-content; /* Ensures the container wraps the content properly */
     margin: 0; /* Remove individual margin since header-left handles it */
+    margin-left: -3.5%; /* Move H1 left by about half the current distance */
 }
 
 .brand a {
