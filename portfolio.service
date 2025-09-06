@@ -6,7 +6,29 @@ After=network.target
 User=blackburnd
 Group=www-data
 WorkingDirectory=/opt/portfoliosite
-EnvironmentFile=/etc/environment
+Environment=DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
+Environment=GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID}
+Environment=GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET}
+Environment=GOOGLE_REDIRECT_URI=${_GOOGLE_REDIRECT_URI}
+Environment=ADMIN_USERNAME=${_ADMIN_USERNAME}
+Environment=ADMIN_PASSWORD=${_ADMIN_PASSWORD}
+Environment=SECRET_KEY=${_SECRET_KEY}
+Environment=AUTHORIZED_EMAILS=${_AUTHORIZED_EMAILS}
+Environment=ENV=production
+ExecStart=/opt/portfoliosite/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.targeton=Daniel Blackburn's Portfolio FastAPI Application
+After=network.target
+
+[Service]
+User=blackburnd
+Group=www-data
+WorkingDirectory=/opt/portfoliosite
+EnvironmentFile=-/etc/environment
 ExecStart=/opt/portfoliosite/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 
 Restart=always
