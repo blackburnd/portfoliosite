@@ -59,6 +59,7 @@
                     
                     <div class="logs-stats" id="logsStats">
                         <span id="totalCount">Total: 0</span>
+                        <span id="filteredLogs">Showing: 0</span>
                         <span id="errorCount">Errors: 0</span>
                         <span id="warningCount">Warnings: 0</span>
                     </div>
@@ -82,7 +83,9 @@
                             </tbody>
                         </table>
                         <div id="loadingIndicator" class="loading" style="display: none;">Loading more logs...</div>
+                        <div id="noMoreLogs" class="no-more-logs" style="display: none;">No more logs to load</div>
                         <div id="errorMessage" class="error" style="display: none;"></div>
+                        <div id="scrollTrigger" class="scroll-trigger"></div>
                     </div>
                 </div>
             </div>
