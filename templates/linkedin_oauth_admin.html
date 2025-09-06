@@ -49,7 +49,7 @@
                 
                 <div class="form-group">
                     <label for="linkedin-client-secret">Client Secret:</label>
-                    <input type="text" id="linkedin-client-secret" name="client_secret" placeholder="LinkedIn App Client Secret" required>
+                    <input type="password" id="linkedin-client-secret" name="client_secret" placeholder="LinkedIn App Client Secret" required>
                 </div>
                 
                 <div class="form-group">
@@ -125,7 +125,18 @@
         
         <div class="config-actions">
             <button type="button" class="btn-test" id="test-linkedin-api">Test LinkedIn API</button>
+            <button type="button" class="btn-test" id="test-profile-access">Test Profile Access</button>
+            <button type="button" class="btn-test" id="test-email-access">Test Email Access</button>
+            <button type="button" class="btn-test" id="test-positions-access">Test Position Data</button>
             <button type="button" class="btn-primary" id="sync-linkedin-data">Sync Profile Data</button>
+        </div>
+    </div>
+    
+    <!-- Test Results Section -->
+    <div class="config-section">
+        <h3>Test Results</h3>
+        <div id="linkedin-test-results" class="test-results-container" style="display: none;">
+            <div class="test-results"></div>
         </div>
     </div>
 </div>

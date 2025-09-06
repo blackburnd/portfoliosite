@@ -2741,6 +2741,183 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_sessi
         }, status_code=500)
 
 
+@app.get("/admin/linkedin/oauth/test-profile")
+async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_session)):
+    """Test LinkedIn Profile Access (r_liteprofile)"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_profile_test", f"Admin {admin_email} testing LinkedIn profile access")
+        
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
+            }, status_code=400)
+        
+        # Test profile access using stored token
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        profile_data = await ttw_manager._get_linkedin_profile(access_token)
+        
+        if profile_data:
+            profile_name = f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
+            headline = profile_data.get('headline', 'Not available')
+            
+            add_log("INFO", "admin_linkedin_profile_test_success", f"LinkedIn profile test successful for {admin_email}")
+            return JSONResponse({
+                "status": "success",
+                "message": "LinkedIn Profile Access test successful",
+                "data": {
+                    "name": profile_name,
+                    "headline": headline,
+                    "profile_id": profile_data.get('id', 'Not available')
+                }
+            })
+        else:
+            add_log("ERROR", "admin_linkedin_profile_test_failure", f"LinkedIn profile test failed for {admin_email}")
+            return JSONResponse({
+                "status": "error",
+                "detail": "Failed to retrieve profile data. Token may be expired."
+            }, status_code=400)
+        
+    except Exception as e:
+        logger.error(f"Error testing LinkedIn profile access: {str(e)}")
+        add_log("ERROR", "admin_linkedin_profile_test_error", f"Error testing LinkedIn profile access for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.get("/admin/linkedin/oauth/test-email")
+async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_session)):
+    """Test LinkedIn Email Access (r_emailaddress)"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_email_test", f"Admin {admin_email} testing LinkedIn email access")
+        
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
+            }, status_code=400)
+        
+        # Test email access using stored token
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        
+        # Get email data from LinkedIn API
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            
+            if response.status_code == 200:
+                email_data = response.json()
+                if email_data.get("elements") and len(email_data["elements"]) > 0:
+                    email_address = email_data["elements"][0].get("handle~", {}).get("emailAddress")
+                    
+                    add_log("INFO", "admin_linkedin_email_test_success", f"LinkedIn email test successful for {admin_email}")
+                    return JSONResponse({
+                        "status": "success",
+                        "message": "LinkedIn Email Access test successful",
+                        "data": {
+                            "email": email_address
+                        }
+                    })
+                else:
+                    add_log("ERROR", "admin_linkedin_email_test_failure", f"LinkedIn email test failed for {admin_email} - no email data")
+                    return JSONResponse({
+                        "status": "error",
+                        "detail": "No email data available. Check if r_emailaddress scope is granted."
+                    }, status_code=400)
+            else:
+                add_log("ERROR", "admin_linkedin_email_test_failure", f"LinkedIn email test failed for {admin_email} - API error {response.status_code}")
+                return JSONResponse({
+                    "status": "error",
+                    "detail": f"LinkedIn API error: {response.status_code}. Token may be expired."
+                }, status_code=400)
+        
+    except Exception as e:
+        logger.error(f"Error testing LinkedIn email access: {str(e)}")
+        add_log("ERROR", "admin_linkedin_email_test_error", f"Error testing LinkedIn email access for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.get("/admin/linkedin/oauth/test-positions")
+async def test_linkedin_positions_access(admin: dict = Depends(require_admin_auth_session)):
+    """Test LinkedIn Position Data Access (r_fullprofile)"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_positions_test", f"Admin {admin_email} testing LinkedIn positions access")
+        
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
+            }, status_code=400)
+        
+        # Test positions access using stored token
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        
+        # Get positions data from LinkedIn API
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.linkedin.com/v2/positions?q=person&person-id={person-id}",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            
+            if response.status_code == 200:
+                positions_data = response.json()
+                positions_count = len(positions_data.get("elements", []))
+                
+                add_log("INFO", "admin_linkedin_positions_test_success", f"LinkedIn positions test successful for {admin_email}")
+                return JSONResponse({
+                    "status": "success", 
+                    "message": "LinkedIn Position Data Access test successful",
+                    "data": {
+                        "positions_count": positions_count,
+                        "positions_available": positions_count > 0
+                    }
+                })
+            elif response.status_code == 403:
+                add_log("ERROR", "admin_linkedin_positions_test_failure", f"LinkedIn positions test failed for {admin_email} - insufficient permissions")
+                return JSONResponse({
+                    "status": "error",
+                    "detail": "Access denied. r_fullprofile scope may not be granted or available."
+                }, status_code=400)
+            else:
+                add_log("ERROR", "admin_linkedin_positions_test_failure", f"LinkedIn positions test failed for {admin_email} - API error {response.status_code}")
+                return JSONResponse({
+                    "status": "error",
+                    "detail": f"LinkedIn API error: {response.status_code}. Check scope permissions."
+                }, status_code=400)
+        
+    except Exception as e:
+        logger.error(f"Error testing LinkedIn positions access: {str(e)}")
+        add_log("ERROR", "admin_linkedin_positions_test_error", f"Error testing LinkedIn positions access for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 @app.post("/admin/linkedin/sync")
 async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_session)):
     """Sync LinkedIn profile data to portfolio database"""

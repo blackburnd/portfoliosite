@@ -34,6 +34,15 @@ class LinkedInOAuthAdmin {
         const testApiBtn = document.getElementById('test-linkedin-api');
         if (testApiBtn) testApiBtn.addEventListener('click', () => this.testLinkedInAPI());
 
+        const testProfileBtn = document.getElementById('test-profile-access');
+        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
+
+        const testEmailBtn = document.getElementById('test-email-access');
+        if (testEmailBtn) testEmailBtn.addEventListener('click', () => this.testEmailAccess());
+
+        const testPositionsBtn = document.getElementById('test-positions-access');
+        if (testPositionsBtn) testPositionsBtn.addEventListener('click', () => this.testPositionsAccess());
+
         const syncBtn = document.getElementById('sync-linkedin-data');
         if (syncBtn) syncBtn.addEventListener('click', () => this.syncLinkedInData());
     }
@@ -262,6 +271,84 @@ class LinkedInOAuthAdmin {
         } catch (error) {
             console.error('Error syncing LinkedIn data:', error);
             this.showMessage('Error syncing LinkedIn data', 'error');
+        }
+    }
+
+    async testProfileAccess() {
+        const resultsDiv = document.getElementById('linkedin-test-results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Testing LinkedIn Profile Access...</div>';
+
+        try {
+            const response = await fetch('/admin/linkedin/oauth/test-profile');
+            const result = await response.json();
+
+            if (response.ok) {
+                const data = result.data;
+                resultsDiv.innerHTML = `
+                    <div class="test-success">
+                        ✅ Profile Access test passed<br>
+                        <strong>Name:</strong> ${data.name}<br>
+                        <strong>Headline:</strong> ${data.headline}<br>
+                        <strong>Profile ID:</strong> ${data.profile_id}
+                    </div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.detail}</div>`;
+            }
+        } catch (error) {
+            console.error('Error testing profile access:', error);
+            resultsDiv.innerHTML = '<div class="test-error">❌ Profile Access test failed: Network error</div>';
+        }
+    }
+
+    async testEmailAccess() {
+        const resultsDiv = document.getElementById('linkedin-test-results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Testing LinkedIn Email Access...</div>';
+
+        try {
+            const response = await fetch('/admin/linkedin/oauth/test-email');
+            const result = await response.json();
+
+            if (response.ok) {
+                const data = result.data;
+                resultsDiv.innerHTML = `
+                    <div class="test-success">
+                        ✅ Email Access test passed<br>
+                        <strong>Email:</strong> ${data.email}
+                    </div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="test-error">❌ Email Access test failed: ${result.detail}</div>`;
+            }
+        } catch (error) {
+            console.error('Error testing email access:', error);
+            resultsDiv.innerHTML = '<div class="test-error">❌ Email Access test failed: Network error</div>';
+        }
+    }
+
+    async testPositionsAccess() {
+        const resultsDiv = document.getElementById('linkedin-test-results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Testing LinkedIn Position Data Access...</div>';
+
+        try {
+            const response = await fetch('/admin/linkedin/oauth/test-positions');
+            const result = await response.json();
+
+            if (response.ok) {
+                const data = result.data;
+                resultsDiv.innerHTML = `
+                    <div class="test-success">
+                        ✅ Position Data Access test passed<br>
+                        <strong>Positions Count:</strong> ${data.positions_count}<br>
+                        <strong>Data Available:</strong> ${data.positions_available ? 'Yes' : 'No'}
+                    </div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="test-error">❌ Position Data Access test failed: ${result.detail}</div>`;
+            }
+        } catch (error) {
+            console.error('Error testing positions access:', error);
+            resultsDiv.innerHTML = '<div class="test-error">❌ Position Data Access test failed: Network error</div>';
         }
     }
 
