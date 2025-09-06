@@ -1009,6 +1009,8 @@ async def get_logs_data(
     offset: int = 0,
     limit: int = 50,
     page: int = None,
+    sort_field: str = "timestamp",
+    sort_order: str = "desc",
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Get log data for endless scrolling logs interface"""
@@ -1034,18 +1036,33 @@ async def get_logs_data(
         await db.connect()
         
         try:
+            # Validate sort parameters
+            valid_sort_fields = {"timestamp", "level", "message", "module",
+                                 "function", "line", "user"}
+            if sort_field not in valid_sort_fields:
+                sort_field = "timestamp"
+            
+            valid_sort_orders = {"asc", "desc"}
+            if sort_order.lower() not in valid_sort_orders:
+                sort_order = "desc"
+            
+            # Build dynamic ORDER BY clause
+            order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
+            
             # Get logs with offset/limit for endless scrolling
-            logs_query = """
-                SELECT timestamp, level, message, module, function, line, user, extra
-                FROM app_log 
-                ORDER BY timestamp DESC 
+            logs_query = f"""
+                SELECT timestamp, level, message, module, function, line,
+                       user, extra
+                FROM app_log
+                {order_clause}
                 LIMIT :limit OFFSET :offset
             """
             
-            logs = await db.fetch_all(logs_query, {"limit": limit, "offset": offset})
+            logs = await db.fetch_all(
+                logs_query, {"limit": limit, "offset": offset})
             
             # Debug: Log what we found
-            add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs in database")
+            add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
             
             # Convert logs to dict and serialize datetime objects
             logs_data = []
@@ -1062,7 +1079,7 @@ async def get_logs_data(
                 "status": "success",
                 "logs": logs_data,
                 "has_more": has_more,
-                "has_next": has_more,  # Backward compatibility - same as has_more
+                "has_next": has_more,  # Backward compatibility
                 "pagination": {
                     "page": (offset // limit) + 1,
                     "limit": limit,

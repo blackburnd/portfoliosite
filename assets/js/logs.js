@@ -54,18 +54,26 @@ window.clearFilters = function() {
     applyFilters();
 };
 
-// Load logs from API with pagination
+// Load logs with pagination
 async function loadLogs(append = false) {
     if (isLoading) return;
     
     isLoading = true;
     document.getElementById('loadingIndicator').style.display = 'block';
     
+    console.log('Loading logs. Append:', append, 'Current offset:', currentOffset);
+    
     try {
-        console.log('Loading logs, offset:', currentOffset);
+        // Build URL with sorting parameters
+        const params = new URLSearchParams({
+            offset: append ? currentOffset : 0,
+            limit: pageSize,
+            sort_field: currentSortField,
+            sort_order: currentSortOrder
+        });
+        
         const cacheBust = Date.now() + Math.random();
-        const response = await fetch(`/logs/data?offset=${currentOffset}&limit=${pageSize}&v=${cacheBust}&cb=v3_fix_has_more`, {
-            method: 'GET',
+        const response = await fetch(`/logs/data?${params}&v=${cacheBust}&cb=v2_1`, {
             headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache'
@@ -196,9 +204,6 @@ function applyFilters() {
     });
     
     console.log('Filtered logs count:', filteredLogs.length);
-    
-    // Apply sorting
-    filteredLogs = sortLogs(filteredLogs);
     
     updateDisplay();
     updateModuleFilter();
@@ -340,7 +345,14 @@ function setupEventListeners() {
             }
             
             updateSortIndicators();
-            sortAndRenderLogs();
+            
+            // Reset pagination and reload all logs with new sorting
+            currentOffset = 0;
+            allLogs = [];
+            filteredLogs = [];
+            hasMoreLogs = true;
+            document.getElementById('logsTableBody').innerHTML = '';
+            loadLogs();
         });
     });
     
