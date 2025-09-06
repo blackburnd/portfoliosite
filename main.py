@@ -1352,10 +1352,8 @@ async def get_oauth_status():
 async def list_workitems():
     try:
         # Query work experience directly
-        add_log("DEBUG", "workitems", "Fetching work items from database")
         query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
         rows = await database.fetch_all(query)
-        add_log("DEBUG", "workitems", f"Found {len(rows)} work items in database")
         
         # Convert rows to WorkItem objects, handling any missing fields
         work_items = []
