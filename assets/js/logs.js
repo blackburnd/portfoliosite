@@ -124,7 +124,7 @@ async function loadLogs(append = false) {
 // Apply filters and update display
 function applyFilters() {
     const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    const levelFilter = document.getElementById('levelFilter').value;
+    const levelFilter = document.getElementById('levelFilter').value.toLowerCase();
     const moduleFilter = document.getElementById('moduleFilter').value;
     const timeFilter = document.getElementById('timeFilter').value;
     
@@ -134,28 +134,60 @@ function applyFilters() {
     filteredLogs = allLogs.filter(log => {
         console.log('Filtering log:', log);
         
-        // Search filter
-        if (searchTerm && log.message && !log.message.toLowerCase().includes(searchTerm)) {
-            console.log('Filtered out by search:', log.message);
-            return false;
+        // Search filter - search in message, module, function, and level
+        if (searchTerm && searchTerm.trim() !== '') {
+            const searchableText = [
+                log.message || '',
+                log.module || '',
+                log.function || '',
+                log.level || ''
+            ].join(' ').toLowerCase();
+            
+            if (!searchableText.includes(searchTerm)) {
+                console.log('Filtered out by search:', log.message);
+                return false;
+            }
         }
         
         // Level filter
-        if (levelFilter && log.level !== levelFilter) {
-            console.log('Filtered out by level:', log.level, 'vs', levelFilter);
-            return false;
+        if (levelFilter && levelFilter.trim() !== '') {
+            const logLevel = (log.level || '').toLowerCase();
+            if (logLevel !== levelFilter) {
+                console.log('Filtered out by level:', logLevel, 'vs', levelFilter);
+                return false;
+            }
         }
         
         // Module filter
-        if (moduleFilter && (!log.module || !log.module.includes(moduleFilter))) {
-            console.log('Filtered out by module:', log.module, 'vs', moduleFilter);
-            return false;
+        if (moduleFilter && moduleFilter.trim() !== '') {
+            const logModule = log.module || '';
+            if (!logModule.includes(moduleFilter)) {
+                console.log('Filtered out by module:', logModule, 'vs', moduleFilter);
+                return false;
+            }
         }
         
         // Time filter
-        if (timeFilter) {
-            const cutoff = new Date(Date.now() - timeFilter * 60 * 1000);
-            if (new Date(log.timestamp) < cutoff) {
+        if (timeFilter && timeFilter.trim() !== '') {
+            const now = new Date();
+            let cutoffTime;
+            
+            switch (timeFilter) {
+                case '1h':
+                    cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                case '7d':
+                    cutoffTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    cutoffTime = null;
+            }
+            
+            if (cutoffTime && new Date(log.timestamp) < cutoffTime) {
+                console.log('Filtered out by time:', log.timestamp, 'vs', cutoffTime);
                 return false;
             }
         }
@@ -170,7 +202,7 @@ function applyFilters() {
     
     updateDisplay();
     updateModuleFilter();
-    document.getElementById('filteredLogs').textContent = 'Showing: ' + filteredLogs.length;
+    updateStats();
 }
 
 // Update the table display
@@ -182,7 +214,7 @@ function updateDisplay() {
     if (filteredLogs.length === 0) {
         console.log('No filtered logs to display');
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="4" style="text-align: center; padding: 20px;">No logs found</td>';
+        row.innerHTML = '<td colspan="6" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
         return;
     }
@@ -202,6 +234,8 @@ function updateDisplay() {
                     </button>
                 </div>
             </td>
+            <td class="log-function">${escapeHtml(log.function || '')}</td>
+            <td class="log-line">${escapeHtml(log.line || '')}</td>
         `;
         tbody.appendChild(row);
     });
@@ -226,12 +260,32 @@ function renderLogs() {
                     </button>
                 </div>
             </td>
+            <td class="log-function">${escapeHtml(log.function || '')}</td>
+            <td class="log-line">${escapeHtml(log.line || '')}</td>
         `;
         tbody.appendChild(row);
     });
 }
 
 // Update stats display
+function updateStats() {
+    // Count total logs
+    const totalCount = allLogs.length;
+    document.getElementById('totalCount').textContent = `Total: ${totalCount}`;
+    
+    // Count filtered logs
+    const filteredCount = filteredLogs.length;
+    document.getElementById('filteredLogs').textContent = `Showing: ${filteredCount}`;
+    
+    // Count errors and warnings in filtered logs
+    const errorCount = filteredLogs.filter(log => log.level && log.level.toLowerCase() === 'error').length;
+    const warningCount = filteredLogs.filter(log => log.level && log.level.toLowerCase() === 'warning').length;
+    
+    document.getElementById('errorCount').textContent = `Errors: ${errorCount}`;
+    document.getElementById('warningCount').textContent = `Warnings: ${warningCount}`;
+}
+
+// Update pagination info
 function updatePagination(pagination) {
     console.log('Pagination info:', pagination);
     // Update the log count display

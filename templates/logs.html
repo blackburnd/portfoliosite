@@ -30,10 +30,10 @@
                             <label for="levelFilter">Level:</label>
                             <select id="levelFilter">
                                 <option value="">All Levels</option>
-                                <option value="error">Error</option>
-                                <option value="warning">Warning</option>
-                                <option value="info">Info</option>
                                 <option value="debug">Debug</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -42,6 +42,7 @@
                                 <option value="">All Modules</option>
                             </select>
                         </div>
+
                         <div class="filter-group">
                             <label for="timeFilter">Time Range:</label>
                             <select id="timeFilter">
@@ -66,12 +67,24 @@
                         <table class="logs-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 120px;">Timestamp</th>
-                                    <th style="width: 80px;">Level</th>
-                                    <th style="width: 120px;">Module</th>
-                                    <th>Message</th>
-                                    <th style="width: 100px;">Function</th>
-                                    <th style="width: 60px;">Line</th>
+                                    <th data-sort="timestamp" class="sortable" style="width: 180px;">
+                                        Timestamp <span class="sort-indicator"></span>
+                                    </th>
+                                    <th data-sort="level" class="sortable" style="width: 80px;">
+                                        Level <span class="sort-indicator"></span>
+                                    </th>
+                                    <th data-sort="module" class="sortable" style="width: 150px;">
+                                        Module <span class="sort-indicator"></span>
+                                    </th>
+                                    <th data-sort="message" class="sortable">
+                                        Message <span class="sort-indicator"></span>
+                                    </th>
+                                    <th data-sort="function" class="sortable" style="width: 120px;">
+                                        Function <span class="sort-indicator"></span>
+                                    </th>
+                                    <th data-sort="line" class="sortable" style="width: 60px;">
+                                        Line <span class="sort-indicator"></span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="logsTableBody">
