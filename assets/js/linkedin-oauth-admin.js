@@ -43,6 +43,9 @@ class LinkedInOAuthAdmin {
         const testPositionsBtn = document.getElementById('test-positions-access');
         if (testPositionsBtn) testPositionsBtn.addEventListener('click', () => this.testPositionsAccess());
 
+        const testMemberDataPortabilityBtn = document.getElementById('test-member-data-portability');
+        if (testMemberDataPortabilityBtn) testMemberDataPortabilityBtn.addEventListener('click', () => this.testMemberDataPortabilityAPI());
+
         const syncBtn = document.getElementById('sync-linkedin-data');
         if (syncBtn) syncBtn.addEventListener('click', () => this.syncLinkedInData());
     }
@@ -355,6 +358,85 @@ class LinkedInOAuthAdmin {
         } catch (error) {
             console.error('Error testing positions access:', error);
             resultsDiv.innerHTML = '<div class="test-error">❌ Position Data Access test failed: Network error</div>';
+        }
+    }
+
+    async testMemberDataPortabilityAPI() {
+        const resultsDiv = document.getElementById('linkedin-test-results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="test-results">Testing LinkedIn Member Data Portability API...</div>';
+
+        try {
+            const response = await fetch('/admin/linkedin/oauth/profile-data');
+            const result = await response.json();
+
+            if (response.ok) {
+                const data = result.data;
+                let resultHtml = '<div class="test-success">✅ Member Data Portability API Test Results:<br><br>';
+                
+                // Basic Profile Data
+                if (data.basic_profile) {
+                    const profile = data.basic_profile;
+                    resultHtml += `<strong>Basic Profile:</strong><br>`;
+                    resultHtml += `- Name: ${profile.firstName?.localized?.en_US || 'N/A'} ${profile.lastName?.localized?.en_US || 'N/A'}<br>`;
+                    resultHtml += `- Headline: ${profile.headline || 'N/A'}<br>`;
+                    resultHtml += `- Profile ID: ${profile.id || 'N/A'}<br><br>`;
+                } else if (data.basic_profile_error) {
+                    resultHtml += `<strong>Basic Profile Error:</strong> ${data.basic_profile_error}<br><br>`;
+                }
+
+                // Email Data
+                if (data.email) {
+                    resultHtml += `<strong>Email:</strong> ${data.email}<br><br>`;
+                } else if (data.email_error) {
+                    resultHtml += `<strong>Email Error:</strong> ${data.email_error}<br><br>`;
+                }
+
+                // Detailed Profile Data
+                if (data.detailed_profile) {
+                    const detailed = data.detailed_profile;
+                    resultHtml += `<strong>Detailed Profile:</strong><br>`;
+                    resultHtml += `- First Name: ${detailed.localizedFirstName || 'N/A'}<br>`;
+                    resultHtml += `- Last Name: ${detailed.localizedLastName || 'N/A'}<br>`;
+                    resultHtml += `- Headline: ${detailed.headline || 'N/A'}<br>`;
+                    if (detailed.summary) resultHtml += `- Summary: ${detailed.summary}<br>`;
+                    if (detailed.positions) resultHtml += `- Positions Available: Yes<br>`;
+                    if (detailed.educations) resultHtml += `- Education Available: Yes<br>`;
+                    if (detailed.skills) resultHtml += `- Skills Available: Yes<br>`;
+                    resultHtml += '<br>';
+                } else if (data.detailed_profile_error) {
+                    resultHtml += `<strong>Detailed Profile Error:</strong> ${data.detailed_profile_error}<br><br>`;
+                }
+
+                // Positions Data
+                if (data.positions) {
+                    resultHtml += `<strong>Positions Data:</strong> Available<br><br>`;
+                } else if (data.positions_error) {
+                    resultHtml += `<strong>Positions Error:</strong> ${data.positions_error}<br><br>`;
+                }
+
+                // Granted Scopes
+                if (result.granted_scopes && result.granted_scopes.length > 0) {
+                    resultHtml += `<strong>Granted Scopes:</strong> ${result.granted_scopes.join(', ')}<br><br>`;
+                }
+
+                // Connection Info
+                if (result.connection_info) {
+                    const conn = result.connection_info;
+                    resultHtml += `<strong>Connection Info:</strong><br>`;
+                    resultHtml += `- Profile ID: ${conn.profile_id || 'N/A'}<br>`;
+                    resultHtml += `- Profile Name: ${conn.profile_name || 'N/A'}<br>`;
+                    resultHtml += `- Token Expires: ${conn.expires_at || 'N/A'}<br>`;
+                }
+
+                resultHtml += '</div>';
+                resultsDiv.innerHTML = resultHtml;
+            } else {
+                resultsDiv.innerHTML = `<div class="test-error">❌ Member Data Portability API test failed: ${result.detail || result.error}</div>`;
+            }
+        } catch (error) {
+            console.error('Error testing Member Data Portability API:', error);
+            resultsDiv.innerHTML = '<div class="test-error">❌ Member Data Portability API test failed: Network error</div>';
         }
     }
 

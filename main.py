@@ -2945,6 +2945,134 @@ async def test_linkedin_positions_access(admin: dict = Depends(require_admin_aut
         }, status_code=500)
 
 
+@app.get("/admin/linkedin/oauth/profile-data")
+async def get_linkedin_profile_data(
+    admin: dict = Depends(require_admin_auth_session)
+):
+    """Retrieve comprehensive LinkedIn profile data using Member Data
+    Portability API"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_profile_data",
+                f"Admin {admin_email} retrieving LinkedIn profile data")
+        
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": ("No LinkedIn connection found. "
+                           "Please authorize LinkedIn access first.")
+            }, status_code=400)
+        
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        granted_scopes = (connection.get("granted_scopes", "").split()
+                          if connection.get("granted_scopes") else [])
+        
+        profile_data = {}
+        import httpx
+        
+        async with httpx.AsyncClient() as client:
+            headers = {"Authorization": f"Bearer {access_token}"}
+            
+            # 1. Get basic profile information (r_liteprofile)
+            if "r_liteprofile" in granted_scopes:
+                try:
+                    profile_url = ("https://api.linkedin.com/v2/people/~?"
+                                   "projection=(id,firstName,lastName,"
+                                   "profilePicture(displayImage~:"
+                                   "playableStreams),headline)")
+                    response = await client.get(profile_url, headers=headers)
+                    if response.status_code == 200:
+                        profile_data["basic_profile"] = response.json()
+                    else:
+                        profile_data["basic_profile_error"] = (
+                            f"Status: {response.status_code}, "
+                            f"Text: {response.text}")
+                except Exception as e:
+                    profile_data["basic_profile_error"] = str(e)
+            
+            # 2. Get email address (r_emailaddress)
+            if "r_emailaddress" in granted_scopes:
+                try:
+                    email_url = ("https://api.linkedin.com/v2/emailAddress"
+                                 "?q=members&projection=(elements*(handle~))")
+                    response = await client.get(email_url, headers=headers)
+                    if response.status_code == 200:
+                        email_data = response.json()
+                        if (email_data.get("elements") and
+                                len(email_data["elements"]) > 0):
+                            email_element = email_data["elements"][0]
+                            profile_data["email"] = (
+                                email_element.get("handle~", {})
+                                .get("emailAddress"))
+                    else:
+                        profile_data["email_error"] = (
+                            f"Status: {response.status_code}, "
+                            f"Text: {response.text}")
+                except Exception as e:
+                    profile_data["email_error"] = str(e)
+            
+            # 3. Try Member Data Portability Profile endpoint
+            # (requires specific scopes)
+            try:
+                detailed_url = ("https://api.linkedin.com/v2/people/~:"
+                                "(id,localizedFirstName,localizedLastName,"
+                                "profilePicture,headline,summary,positions,"
+                                "educations,skills)")
+                response = await client.get(detailed_url, headers=headers)
+                if response.status_code == 200:
+                    profile_data["detailed_profile"] = response.json()
+                else:
+                    profile_data["detailed_profile_error"] = (
+                        f"Status: {response.status_code}, "
+                        f"Text: {response.text}")
+            except Exception as e:
+                profile_data["detailed_profile_error"] = str(e)
+            
+            # 4. Try to get positions/work experience
+            try:
+                positions_url = ("https://api.linkedin.com/v2/people/~:"
+                                 "(positions)")
+                response = await client.get(positions_url, headers=headers)
+                if response.status_code == 200:
+                    profile_data["positions"] = response.json()
+                else:
+                    profile_data["positions_error"] = (
+                        f"Status: {response.status_code}, "
+                        f"Text: {response.text}")
+            except Exception as e:
+                profile_data["positions_error"] = str(e)
+        
+        # Return comprehensive profile data
+        add_log("INFO", "admin_linkedin_profile_data_success",
+                f"LinkedIn profile data retrieved for {admin_email}")
+        return JSONResponse({
+            "status": "success",
+            "message": "LinkedIn profile data retrieved",
+            "data": profile_data,
+            "granted_scopes": granted_scopes,
+            "connection_info": {
+                "profile_id": connection.get("linkedin_profile_id"),
+                "profile_name": connection.get("linkedin_profile_name"),
+                "expires_at": (connection.get("token_expires_at").isoformat()
+                               if connection.get("token_expires_at") else None)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error retrieving LinkedIn profile data: {str(e)}")
+        add_log("ERROR", "admin_linkedin_profile_data_error",
+                f"Error retrieving LinkedIn profile data for {admin_email}: "
+                f"{str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 @app.post("/admin/linkedin/sync")
 async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_session)):
     """Sync LinkedIn profile data to portfolio database"""
