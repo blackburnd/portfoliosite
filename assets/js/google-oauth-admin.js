@@ -15,8 +15,6 @@ class GoogleOAuthAdmin {
         const requiredElements = [
             'google-status-display',
             'google-status-text', 
-            'google-connection-status',
-            'google-connection-text',
             'result-messages'
         ];
         
@@ -59,17 +57,11 @@ class GoogleOAuthAdmin {
         }
 
         // Google Action Buttons
-        const testBtn = document.getElementById('test-google-connection');
-        if (testBtn) testBtn.addEventListener('click', () => this.testGoogleConnection());
-
         const clearBtn = document.getElementById('clear-google-config');
         if (clearBtn) clearBtn.addEventListener('click', () => this.clearGoogleConfig());
 
         const authorizeBtn = document.getElementById('initiate-google-oauth');
         if (authorizeBtn) authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
-
-        const testApiBtn = document.getElementById('test-google-api');
-        if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
 
         const testProfileBtn = document.getElementById('test-profile-access');
         if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
@@ -93,9 +85,6 @@ class GoogleOAuthAdmin {
     updateGoogleStatus(data) {
         const statusDisplay = document.getElementById('google-status-display');
         const statusText = document.getElementById('google-status-text');
-        const connectionStatus = document.getElementById('google-connection-status');
-        const connectionText = document.getElementById('google-connection-text');
-        const connectionDetails = document.getElementById('google-connection-details');
 
         if (data.configured) {
             statusDisplay.className = 'status-configured';
@@ -110,23 +99,11 @@ class GoogleOAuthAdmin {
             statusText.textContent = 'Google OAuth not configured';
         }
 
-        // Update connection status
+        // Check scopes if connected
         if (data.connected && data.account_email) {
-            connectionStatus.className = 'status-configured';
-            connectionText.textContent = 'Connected to Google';
-            connectionDetails.style.display = 'block';
-            
-            document.getElementById('google-account-email').textContent = data.account_email;
-            document.getElementById('google-last-sync').textContent = data.last_sync || 'Current session';
-            document.getElementById('google-token-expiry').textContent = data.token_expiry || 'Unknown';
-            
             // Automatically check scopes when connected
             this.checkGrantedScopes();
         } else {
-            connectionStatus.className = 'status-not-configured';
-            connectionText.textContent = 'Not connected to Google';
-            connectionDetails.style.display = 'none';
-            
             // Reset permission status indicators and show authorize button
             this.resetPermissionStatus();
             this.updateAuthorizationButtonVisibility(false);
@@ -290,26 +267,6 @@ class GoogleOAuthAdmin {
         }
     }
 
-    async testGoogleConnection() {
-        const resultsDiv = document.getElementById('google-test-results');
-        resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div class="test-results">Testing Google connection...</div>';
-
-        try {
-            const response = await fetch('/admin/google/oauth/test');
-            const result = await response.json();
-
-            if (response.ok) {
-                resultsDiv.innerHTML = `<div class="test-success">✅ Google connection test passed: ${result.message}</div>`;
-            } else {
-                resultsDiv.innerHTML = `<div class="test-error">❌ Google connection test failed: ${result.detail}</div>`;
-            }
-        } catch (error) {
-            console.error('Error testing Google connection:', error);
-            resultsDiv.innerHTML = '<div class="test-error">❌ Google connection test failed: Network error</div>';
-        }
-    }
-
     async clearGoogleConfig() {
         if (!confirm('Are you sure you want to clear the Google OAuth configuration?')) {
             return;
@@ -424,33 +381,12 @@ class GoogleOAuthAdmin {
         }
     }
 
-    async testGoogleAPI() {
-        const resultsDiv = document.getElementById('google-test-results');
-        resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div class="test-results">Testing Google API access...</div>';
-
-        try {
-            const response = await fetch('/admin/google/oauth/profile');
-            const result = await response.json();
-
-            if (response.ok) {
-                resultsDiv.innerHTML = `<div class="test-success">✅ Google Profile API test passed: ${result.name} (${result.email})</div>`;
-            } else {
-                resultsDiv.innerHTML = `<div class="test-error">❌ Google Profile API test failed: ${result.detail}</div>`;
-            }
-        } catch (error) {
-            console.error('Error testing Google API:', error);
-            resultsDiv.innerHTML = '<div class="test-error">❌ Google Profile API test failed: Network error</div>';
-        }
-    }
-
     async testProfileAccess() {
         const resultsDiv = document.getElementById('google-test-results');
         if (!resultsDiv) {
             console.error('google-test-results element not found');
             return;
         }
-        
         resultsDiv.style.display = 'block';
         resultsDiv.innerHTML = '<div class="test-results">Testing Google Profile Access...</div>';
 
