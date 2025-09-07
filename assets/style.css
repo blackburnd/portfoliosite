@@ -511,6 +511,168 @@ input[type="checkbox"] {
     background-color: #0052a3;
 }
 
+/* ===== CONTACT THANK YOU PAGE STYLING ===== */
+.thank-you-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.thank-you-header {
+    margin-bottom: 40px;
+}
+
+.thank-you-header h1 {
+    color: #333;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+
+.success-icon {
+    font-size: 4em;
+    color: #28a745;
+    background: #f8f9fa;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    border: 3px solid #28a745;
+}
+
+.thank-you-message {
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.thank-you-message h2 {
+    color: #333;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.thank-you-message p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.next-steps,
+.contact-alternatives {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+    border-left: 4px solid #007bff;
+}
+
+.next-steps h3,
+.contact-alternatives h3 {
+    color: #007bff;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+}
+
+.next-steps li {
+    padding: 8px 0;
+    position: relative;
+    padding-left: 25px;
+}
+
+.next-steps li:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+.action-buttons {
+    text-align: center;
+    margin-top: 40px;
+    gap: 15px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.contact-alternatives a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.contact-alternatives a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive design for thank you page */
+@media (max-width: 768px) {
+    .thank-you-content {
+        padding: 20px 15px;
+    }
+    
+    .thank-you-header h1 {
+        font-size: 2em;
+    }
+    
+    .success-icon {
+        width: 100px;
+        height: 100px;
+        font-size: 3em;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        max-width: 280px;
+        margin: 5px 0;
+    }
+}
+
 /* ===== ADMIN PAGES STYLING ===== */
 .work-admin-content,
 .projects-admin-content,

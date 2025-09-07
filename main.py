@@ -871,13 +871,8 @@ async def contact_submit(request: Request):
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
         
-        return JSONResponse(
-            status_code=200,
-            content={
-                "status": "success",
-                "message": "Thank you for your message! I'll get back to you soon."
-            }
-        )
+        # Redirect to thank you page instead of returning JSON
+        return RedirectResponse(url="/contact/thank-you", status_code=303)
         
     except Exception as e:
         error_id = str(uuid.uuid4())[:8]
@@ -898,6 +893,35 @@ async def contact_submit(request: Request):
                 "message": "An error occurred while submitting your message. Please try again."
             }
         )
+
+
+@app.get("/contact/thank-you", response_class=HTMLResponse)
+async def contact_thank_you(request: Request):
+    """Display thank you page after contact form submission"""
+    # Check if user is authenticated
+    user_authenticated = False
+    user_email = None
+    
+    try:
+        # Try to get token from cookies
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+    except Exception:
+        # Ignore authentication errors for public page
+        pass
+    
+    return templates.TemplateResponse("contact_thank_you.html", {
+        "request": request,
+        "title": "Thank You - Daniel Blackburn",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email,
+        "user_info": {"email": user_email} if user_authenticated else None
+    })
 
 @app.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):

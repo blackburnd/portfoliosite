@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thank You - Daniel Blackburn</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-27877508-5');
+    </script>
+</head>
+
+<body class="contact thank-you">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Include the navigation component with current page set to 'contact' -->
+            {% with current_page='contact', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
+                {% include 'navigation.html' %}
+            {% endwith %}
+            
+            <div id="bw" aria-live="polite">
+                <article class="bc clearfix">
+                    <section class="thank-you-content">
+                        <div class="thank-you-header">
+                            <h1>Thank You!</h1>
+                            <div class="success-icon">✓</div>
+                        </div>
+                        
+                        <div class="thank-you-message">
+                            <h2>Your message has been received</h2>
+                            <p>Thank you for reaching out! I've received your message and will get back to you within 24-48 hours. I appreciate your interest in working together.</p>
+                            
+                            <div class="next-steps">
+                                <h3>What happens next?</h3>
+                                <ul>
+                                    <li>I'll review your message and project requirements</li>
+                                    <li>You'll receive a personal response from me directly</li>
+                                    <li>We can schedule a call or meeting if needed</li>
+                                    <li>I'll provide initial thoughts and next steps</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="contact-alternatives">
+                                <h3>Need to reach me urgently?</h3>
+                                <p>For time-sensitive matters, feel free to contact me directly:</p>
+                                <p><strong>Email:</strong> <a href="mailto:danielb@blackburnsystems.com">danielb@blackburnsystems.com</a></p>
+                                <p><strong>Phone:</strong> <a href="tel:+13057733923">305-773-3923</a></p>
+                                <p><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin.com/in/blackburnd</a></p>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <a href="/" class="btn btn-primary">Return to Home</a>
+                                <a href="/contact/" class="btn btn-secondary">Send Another Message</a>
+                            </div>
+                        </div>
+                    </section>
+                </article>
+            </div><!-- barba wrapper -->
+            
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn.</p>
+            </footer>
+        </div><!-- #fg -->
+    </div><!-- .wrap -->
+</body>
+</html>
