@@ -203,7 +203,7 @@ nav li.active a:hover {
 
 /* Content Styles */
 .bc {
-    margin-top: 60px; /* Increased spacing between header and content for better readability */
+    margin-top: 120px; /* Doubled spacing between header and content for better visual separation */
 }
 
 .about {

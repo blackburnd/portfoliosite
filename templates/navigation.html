@@ -12,7 +12,6 @@
         <div class="auth-admin-section">
             {% if user_authenticated %}
                 <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
-                <a href="/auth/disconnect" class="auth-link disconnect-link" title="Complete disconnect from Google">Disconnect</a>
             {% else %}
                 <a href="/auth/login" class="auth-link">Login</a>
             {% endif %}
