@@ -650,13 +650,20 @@ class TTWOAuthManager:
 
     async def is_google_oauth_app_configured(self) -> bool:
         """Check if Google OAuth app is configured"""
-        query = """
-            SELECT COUNT(*) as count
-            FROM oauth_apps 
-            WHERE provider = 'google' AND is_active = true
-        """
-        result = await database.fetch_one(query)
-        return result["count"] > 0
+        try:
+            if not database.is_connected:
+                await database.connect()
+            
+            query = """
+                SELECT COUNT(*) as count
+                FROM oauth_apps 
+                WHERE provider = 'google' AND is_active = true
+            """
+            result = await database.fetch_one(query)
+            return result["count"] > 0
+        except Exception as e:
+            logger.error(f"Database error checking OAuth config: {e}")
+            return False
 
     async def get_google_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get Google OAuth app configuration (without secrets)"""
