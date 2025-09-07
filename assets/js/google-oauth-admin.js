@@ -216,8 +216,26 @@ class GoogleOAuthAdmin {
             }
         });
         
+        // Reset scope data fields to defaults
+        this.resetScopeDataFields();
+        
         // Show authorize button when permissions are unknown
         this.updateAuthorizationButtonVisibility(false);
+    }
+
+    resetScopeDataFields() {
+        // Reset to default placeholder values
+        const openidData = document.getElementById('openid-data');
+        if (openidData) openidData.innerHTML = 'User ID, basic profile';
+
+        const emailData = document.getElementById('email-data');
+        if (emailData) emailData.innerHTML = 'Primary email address';
+
+        const profileData = document.getElementById('profile-data');
+        if (profileData) profileData.innerHTML = 'Name, profile picture, locale';
+
+        const gmailData = document.getElementById('gmail-send-data');
+        if (gmailData) gmailData.innerHTML = 'Ability to send emails through Gmail API';
     }
 
     updatePermissionStatus(profileData) {
@@ -432,14 +450,6 @@ class GoogleOAuthAdmin {
     }
 
     async testProfileAccess() {
-        const resultsDiv = document.getElementById('google-test-results');
-        if (!resultsDiv) {
-            console.error('google-test-results element not found');
-            return;
-        }
-        resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div class="test-results">Testing Google Profile Access...</div>';
-
         try {
             const response = await fetch('/admin/google/oauth/profile');
             const result = await response.json();
@@ -453,26 +463,59 @@ class GoogleOAuthAdmin {
                 // Also check actual granted scopes from Google
                 this.checkGrantedScopes();
                 
-                resultsDiv.innerHTML = `
-                    <div class="test-success">
-                        ✅ Profile Access test passed - Required permissions working properly<br>
-                        <strong>ID:</strong> ${data.id || 'N/A'}<br>
-                        <strong>Name:</strong> ${data.name || 'N/A'}<br>
-                        <strong>Email:</strong> ${data.email || 'N/A'}<br>
-                        <strong>Picture:</strong> ${data.picture ? '<br><img src="' + data.picture + '" style="max-width: 100px; border-radius: 50%;">' : 'N/A'}<br>
-                        <strong>Verified Email:</strong> ${data.verified_email || 'N/A'}<br>
-                        <strong>Locale:</strong> ${data.locale || 'N/A'}
-                    </div>`;
+                // Populate the scope data fields with actual values
+                this.updateScopeDataFields(data);
+                
+                this.showMessage('✅ Google data fetched successfully!', 'success');
             } else {
                 // Reset permission status on failure and check actual scopes
                 this.resetPermissionStatus();
                 this.checkGrantedScopes();
-                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.message || result.detail}</div>`;
+                this.showMessage(`❌ Failed to fetch Google data: ${result.message || result.detail}`, 'error');
             }
         } catch (error) {
             console.error('Error testing profile access:', error);
             this.resetPermissionStatus();
-            resultsDiv.innerHTML = '<div class="test-error">❌ Profile Access test failed: Network error</div>';
+            this.showMessage('❌ Failed to fetch Google data: Network error', 'error');
+        }
+    }
+
+    updateScopeDataFields(data) {
+        // Update OpenID data
+        const openidData = document.getElementById('openid-data');
+        if (openidData && data.id) {
+            openidData.innerHTML = `User ID: ${data.id}`;
+        }
+
+        // Update Email data
+        const emailData = document.getElementById('email-data');
+        if (emailData && data.email) {
+            const verifiedText = data.verified_email ? ' (Verified)' : ' (Unverified)';
+            emailData.innerHTML = `${data.email}${verifiedText}`;
+        }
+
+        // Update Profile data
+        const profileData = document.getElementById('profile-data');
+        if (profileData) {
+            let profileHtml = '';
+            if (data.name) {
+                profileHtml += `Name: ${data.name}`;
+            }
+            if (data.picture) {
+                profileHtml += `<br><img src="${data.picture}" style="max-width: 40px; height: 40px; border-radius: 50%; margin-top: 5px; object-fit: cover;" alt="Profile Picture">`;
+            }
+            if (data.locale) {
+                profileHtml += `<br>Locale: ${data.locale}`;
+            }
+            if (profileHtml) {
+                profileData.innerHTML = profileHtml;
+            }
+        }
+
+        // Gmail send data remains static since we don't fetch Gmail-specific data
+        const gmailData = document.getElementById('gmail-send-data');
+        if (gmailData) {
+            gmailData.innerHTML = 'Gmail API access enabled for sending emails';
         }
     }
 
