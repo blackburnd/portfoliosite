@@ -4,9 +4,21 @@ class GoogleOAuthAdmin {
     constructor() {
         try {
             this.init();
+            // Listen for messages from OAuth popup
+            window.addEventListener('message', (event) => {
+                if (event.origin !== window.location.origin) return;
+                
+                if (event.data.type === 'OAUTH_SUCCESS') {
+                    this.showMessage('Google authorization successful! Updating status...', 'success');
+                    setTimeout(() => {
+                        this.loadGoogleStatus();
+                    }, 1000);
+                } else if (event.data.type === 'OAUTH_CANCELLED') {
+                    this.showMessage('Google authorization was cancelled.', 'warning');
+                }
+            });
         } catch (error) {
             console.error('Error initializing GoogleOAuthAdmin:', error);
-            alert('Error: Failed to initialize Google OAuth admin. Please refresh the page.');
         }
     }
 
@@ -296,17 +308,7 @@ class GoogleOAuthAdmin {
             const response = await fetch('/admin/google/oauth/authorize');
             if (response.ok) {
                 const data = await response.json();
-                
-                // Show permission details before redirecting
-                const permissionDetails = Object.entries(data.scope_descriptions)
-                    .map(([scope, description]) => `• ${scope}: ${description}`)
-                    .join('\n');
-                
-                const confirmMessage = `You will be asked to grant the following permissions:\n\n${permissionDetails}\n\nContinue to Google authorization?`;
-                
-                if (confirm(confirmMessage)) {
-                    window.location.href = data.auth_url;
-                }
+                this.openOAuthPopup(data.auth_url);
             } else {
                 const error = await response.json();
                 this.showMessage(`Failed to initiate Google authorization: ${error.detail}`, 'error');
@@ -317,13 +319,66 @@ class GoogleOAuthAdmin {
         }
     }
 
-    async revokeGoogleAuth() {
-        const revokeMessage = `Are you sure you want to revoke Google OAuth access?\n\nThis will:\n• Remove your Google authentication token\n• Clear your current Google session\n• Require re-authorization to access Google data\n\nNote: Your admin access to this site will remain intact.`;
+    openOAuthPopup(authUrl) {
+        // Calculate popup dimensions and position
+        const width = 500;
+        const height = 600;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
         
-        if (!confirm(revokeMessage)) {
+        // Open popup window
+        const popup = window.open(
+            authUrl,
+            'googleOAuth',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,status=yes,location=yes`
+        );
+        
+        if (!popup) {
+            this.showMessage('Popup blocked! Please allow popups for this site and try again.', 'error');
             return;
         }
+        
+        // Monitor popup for completion
+        this.monitorOAuthPopup(popup);
+    }
 
+    monitorOAuthPopup(popup) {
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                // Popup was closed, but we'll rely on postMessage for success notification
+                // Only show this message if we haven't received a postMessage
+                setTimeout(() => {
+                    // Check if status has been updated, if not show generic message
+                    this.loadGoogleStatus();
+                }, 1000);
+                return;
+            }
+            
+            try {
+                // Check if popup has navigated back to our domain (indicates completion)
+                const popupUrl = popup.location.href;
+                if (popupUrl.includes(window.location.origin)) {
+                    // We're back on our domain, the callback should handle the rest
+                    // Keep monitoring as the popup should close itself
+                }
+            } catch (e) {
+                // Cross-origin error is expected while on Google's domain
+                // Continue monitoring
+            }
+        }, 1000);
+        
+        // Set a timeout to stop monitoring after 10 minutes
+        setTimeout(() => {
+            if (!popup.closed) {
+                clearInterval(checkClosed);
+                popup.close();
+                this.showMessage('OAuth process timed out. Please try again.', 'warning');
+            }
+        }, 600000); // 10 minutes
+    }
+
+    async revokeGoogleAuth() {
         try {
             const response = await fetch('/admin/google/oauth/revoke', {
                 method: 'POST'
@@ -352,11 +407,6 @@ class GoogleOAuthAdmin {
         };
 
         const fullScopeName = scopeMapping[scopeName] || scopeName;
-        const revokeMessage = `Are you sure you want to revoke the "${scopeName}" scope?\n\nThis will remove access to this specific permission while keeping other Google OAuth permissions intact.`;
-        
-        if (!confirm(revokeMessage)) {
-            return;
-        }
 
         try {
             const response = await fetch('/admin/google/oauth/revoke-scope', {

@@ -799,11 +799,32 @@ async def auth_callback(request: Request):
         if error == 'access_denied':
             return HTMLResponse(
                 content="""
-                <html><body>
-                <h1>Authorization Cancelled</h1>
+                <html>
+                <head>
+                    <title>Authorization Cancelled</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                        .warning { color: #ffc107; }
+                    </style>
+                </head>
+                <body>
+                <h2 class="warning">⚠️ Authorization Cancelled</h2>
                 <p>You cancelled the Google authorization process.</p>
                 <p>To use admin features, you'll need to grant the required permissions.</p>
                 <p><a href="/admin/google/oauth">Try again</a> | <a href="/">Return to main site</a></p>
+                <script>
+                    // If this is a popup, close it after a delay
+                    if (window.opener) {
+                        setTimeout(function() {
+                            try {
+                                window.opener.postMessage({ type: 'OAUTH_CANCELLED' }, window.location.origin);
+                            } catch (e) {
+                                console.log('Could not notify parent window:', e);
+                            }
+                            window.close();
+                        }, 3000);
+                    }
+                </script>
                 </body></html>
                 """, 
                 status_code=200
@@ -928,9 +949,46 @@ async def auth_callback(request: Request):
         granted_scopes = token.get('scope', 'openid email profile')
         is_gmail_auth = 'gmail.send' in granted_scopes
         
+        # Check if this is a popup request (we can detect this via query param or opener existence)
+        # For now, we'll assume Gmail auth requests are likely from popup since they come from OAuth admin page
         if is_gmail_auth:
-            # Gmail authorization - redirect back to OAuth admin page
-            response = RedirectResponse(url="/admin/google/oauth")
+            # Gmail authorization - provide popup-friendly response that closes the popup
+            return HTMLResponse(
+                content="""
+                <html>
+                <head>
+                    <title>Authorization Successful</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                        .success { color: #28a745; }
+                    </style>
+                </head>
+                <body>
+                    <h2 class="success">✅ Authorization Successful!</h2>
+                    <p>Google OAuth permissions have been granted successfully.</p>
+                    <p>This window will close automatically...</p>
+                    <script>
+                        // Close popup and notify parent window
+                        setTimeout(function() {
+                            if (window.opener) {
+                                // Notify parent window that auth is complete
+                                try {
+                                    window.opener.postMessage({ type: 'OAUTH_SUCCESS' }, window.location.origin);
+                                } catch (e) {
+                                    console.log('Could not notify parent window:', e);
+                                }
+                                window.close();
+                            } else {
+                                // Not a popup, redirect normally
+                                window.location.href = '/admin/google/oauth';
+                            }
+                        }, 2000);
+                    </script>
+                </body>
+                </html>
+                """, 
+                status_code=200
+            )
         else:
             # Regular login - redirect to admin page
             response = RedirectResponse(url="/workadmin")
