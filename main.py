@@ -56,6 +56,7 @@ from auth import (
 )
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
+from google_oauth_manager import router as google_oauth_router
 
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):
@@ -585,6 +586,10 @@ except Exception as e:
     logger.error(f"GraphQL initialization error: {str(e)}", exc_info=True)
     raise
 
+# Include Google OAuth management router
+app.include_router(google_oauth_router)
+logger.info("Google OAuth management router included")
+
 # Create directories if they don't exist
 os.makedirs("app/assets/img", exist_ok=True)
 os.makedirs("app/assets/files", exist_ok=True)
@@ -760,6 +765,37 @@ async def auth_callback(request: Request):
     logger.info("=== OAuth Callback Received ===")
     logger.info(f"Callback URL: {request.url}")
     logger.info(f"Query params: {dict(request.query_params)}")
+    
+    # Check for OAuth errors (user denied access, etc.)
+    error = request.query_params.get('error')
+    if error:
+        error_description = request.query_params.get('error_description', '')
+        logger.warning(f"OAuth error received: {error} - {error_description}")
+        
+        if error == 'access_denied':
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authorization Cancelled</h1>
+                <p>You cancelled the Google authorization process.</p>
+                <p>To use admin features, you'll need to grant the required permissions.</p>
+                <p><a href="/admin/google/oauth">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=200
+            )
+        else:
+            return HTMLResponse(
+                content=f"""
+                <html><body>
+                <h1>Authorization Error</h1>
+                <p>An error occurred during authorization: {error}</p>
+                <p>Description: {error_description}</p>
+                <p><a href="/admin/google/oauth">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
     
     try:
         # Check if OAuth is properly configured
