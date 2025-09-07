@@ -447,9 +447,38 @@ function sortAndRenderLogs() {
     reloadWithFilters();
 }
 
+// Calculate and set the dynamic height for the logs table
+function calculateAndSetTableHeight() {
+    // Calculate the height of all elements above the table
+    const navigation = document.querySelector('.site-header');
+    const logsControls = document.querySelector('.logs-controls-row');
+    const logsStats = document.querySelector('.logs-stats');
+    
+    let headerHeight = 20; // Base padding
+    
+    if (navigation) {
+        headerHeight += navigation.offsetHeight;
+    }
+    if (logsControls) {
+        headerHeight += logsControls.offsetHeight + 20; // Add margin
+    }
+    if (logsStats) {
+        headerHeight += logsStats.offsetHeight + 20; // Add margin
+    }
+    
+    // Set the CSS custom property
+    document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+    
+    console.log('Calculated header height:', headerHeight + 'px');
+}
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing logs interface');
+    calculateAndSetTableHeight();
     setupEventListeners();
     loadLogs();
+    
+    // Recalculate on window resize
+    window.addEventListener('resize', debounce(calculateAndSetTableHeight, 100));
 });

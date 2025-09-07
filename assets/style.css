@@ -1902,7 +1902,7 @@ td[style*="#abd6ff"] {
     gap: 15px;
     margin-bottom: 20px;
     padding: 15px;
-    background: #2c3e50;
+    background: rgba(44, 62, 80, 0.5); /* Reduced opacity by half for better contrast */
     border-radius: 8px;
     color: white;
     flex-wrap: wrap;
@@ -2034,7 +2034,8 @@ td[style*="#abd6ff"] {
     border-radius: 8px;
     overflow: auto; /* Allow both horizontal and vertical scrolling */
     background: white;
-    max-height: 600px;
+    height: calc(95vh - var(--header-height, 280px)); /* Dynamic height calculation */
+    min-height: 400px; /* Minimum height fallback */
 }
 
 .logs-table {
@@ -2044,7 +2045,7 @@ td[style*="#abd6ff"] {
 }
 
 .logs-table th {
-    background: #34495e;
+    background: rgba(52, 73, 94, 0.5); /* Reduced opacity by half for better contrast */
     color: white;
     padding: 12px 8px;
     text-align: left;
@@ -2057,7 +2058,7 @@ td[style*="#abd6ff"] {
 }
 
 .logs-table th:hover {
-    background: #2c3e50;
+    background: rgba(44, 62, 80, 0.6); /* Reduced opacity for hover state */
 }
 
 .logs-table th .sort-indicator {
