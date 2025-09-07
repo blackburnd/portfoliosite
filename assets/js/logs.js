@@ -114,21 +114,37 @@ async function loadLogs(append = false) {
             data.has_more = false;
         }
         
+        // Store backend total count for accurate statistics
+        backendTotalCount = data.total_count || 0;
+        
         if (!data.logs || data.logs.length === 0) {
             hasMoreLogs = false;
             document.getElementById('noMoreLogs').style.display = 'block';
+            if (!append) {
+                // Clear the display if this is a fresh load with no results
+                allLogs = [];
+                filteredLogs = [];
+                updateDisplay();
+                updateStats();
+            }
         } else {
             if (append) {
                 allLogs = allLogs.concat(data.logs);
             } else {
                 allLogs = data.logs;
+                currentOffset = 0; // Reset offset for fresh loads
             }
             
             currentOffset += data.logs.length;
             hasMoreLogs = data.has_more;
+            
+            // Since backend handles filtering, filtered logs = all loaded logs
+            filteredLogs = allLogs;
+            
             updatePagination(data.pagination || {});
             updateModuleFilter();
-            applyFilters();
+            updateDisplay();
+            updateStats();
         }
         
         console.log('Logs loaded successfully. Total logs:', allLogs.length);
@@ -141,85 +157,21 @@ async function loadLogs(append = false) {
     }
 }
 
-// Apply filters and update display
+// Reload logs with current filters (called when filters change)
+function reloadWithFilters() {
+    console.log('Reloading logs with new filters');
+    currentOffset = 0;
+    allLogs = [];
+    filteredLogs = [];
+    hasMoreLogs = true;
+    document.getElementById('logsTableBody').innerHTML = '';
+    document.getElementById('noMoreLogs').style.display = 'none';
+    loadLogs(false); // false = don't append, start fresh
+}
+
+// Apply filters by reloading data from backend
 function applyFilters() {
-    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-    const levelFilter = document.getElementById('levelFilter').value.toLowerCase();
-    const moduleFilter = document.getElementById('moduleFilter').value;
-    const timeFilter = document.getElementById('timeFilter').value;
-    
-    console.log('Applying filters. Total logs:', allLogs.length);
-    console.log('Filters:', { searchTerm, levelFilter, moduleFilter, timeFilter });
-    
-    filteredLogs = allLogs.filter(log => {
-        console.log('Filtering log:', log);
-        
-        // Search filter - search in message, module, function, and level
-        if (searchTerm && searchTerm.trim() !== '') {
-            const searchableText = [
-                log.message || '',
-                log.module || '',
-                log.function || '',
-                log.level || ''
-            ].join(' ').toLowerCase();
-            
-            if (!searchableText.includes(searchTerm)) {
-                console.log('Filtered out by search:', log.message);
-                return false;
-            }
-        }
-        
-        // Level filter
-        if (levelFilter && levelFilter.trim() !== '') {
-            const logLevel = (log.level || '').toLowerCase();
-            if (logLevel !== levelFilter) {
-                console.log('Filtered out by level:', logLevel, 'vs', levelFilter);
-                return false;
-            }
-        }
-        
-        // Module filter
-        if (moduleFilter && moduleFilter.trim() !== '') {
-            const logModule = log.module || '';
-            if (!logModule.includes(moduleFilter)) {
-                console.log('Filtered out by module:', logModule, 'vs', moduleFilter);
-                return false;
-            }
-        }
-        
-        // Time filter
-        if (timeFilter && timeFilter.trim() !== '') {
-            const now = new Date();
-            let cutoffTime;
-            
-            switch (timeFilter) {
-                case '1h':
-                    cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
-                    break;
-                case '24h':
-                    cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                    break;
-                case '7d':
-                    cutoffTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    break;
-                default:
-                    cutoffTime = null;
-            }
-            
-            if (cutoffTime && new Date(log.timestamp) < cutoffTime) {
-                console.log('Filtered out by time:', log.timestamp, 'vs', cutoffTime);
-                return false;
-            }
-        }
-        
-        return true;
-    });
-    
-    console.log('Filtered logs count:', filteredLogs.length);
-    
-    updateDisplay();
-    updateModuleFilter();
-    updateStats();
+    reloadWithFilters();
 }
 
 // Update the table display
@@ -286,15 +238,15 @@ function renderLogs() {
 
 // Update stats display
 function updateStats() {
-    // Use backend total count (with filters applied) instead of loaded logs count
-    const totalCount = backendTotalCount || allLogs.length;
+    // Use backend total count (total matching records in database with current filters)
+    const totalCount = backendTotalCount || 0;
     document.getElementById('totalCount').textContent = `Total: ${totalCount}`;
     
-    // Count filtered logs (client-side filtering on loaded logs)
-    const filteredCount = filteredLogs.length;
-    document.getElementById('filteredLogs').textContent = `Showing: ${filteredCount}`;
+    // Showing count is how many we've loaded so far
+    const loadedCount = filteredLogs.length;
+    document.getElementById('filteredLogs').textContent = `Loaded: ${loadedCount}`;
     
-    // Count errors and warnings in filtered logs
+    // Count errors and warnings in loaded logs only
     const errorCount = filteredLogs.filter(log => log.level && log.level.toLowerCase() === 'error').length;
     const warningCount = filteredLogs.filter(log => log.level && log.level.toLowerCase() === 'warning').length;
     
@@ -354,12 +306,12 @@ function reloadWithFilters() {
 // Setup event listeners
 function setupEventListeners() {
     // Search box
-    document.getElementById('searchBox').addEventListener('keyup', debounce(reloadWithFilters, 300));
+    document.getElementById('searchBox').addEventListener('keyup', debounce(applyFilters, 300));
     
     // Filter dropdowns - reload data from backend when filters change
-    document.getElementById('levelFilter').addEventListener('change', reloadWithFilters);
-    document.getElementById('moduleFilter').addEventListener('change', reloadWithFilters);
-    document.getElementById('timeFilter').addEventListener('change', reloadWithFilters);
+    document.getElementById('levelFilter').addEventListener('change', applyFilters);
+    document.getElementById('moduleFilter').addEventListener('change', applyFilters);
+    document.getElementById('timeFilter').addEventListener('change', applyFilters);
     
     // Column sorting
     document.querySelectorAll('.logs-table th[data-sort]').forEach(th => {
@@ -375,14 +327,7 @@ function setupEventListeners() {
             }
             
             updateSortIndicators();
-            
-            // Reset pagination and reload all logs with new sorting
-            currentOffset = 0;
-            allLogs = [];
-            filteredLogs = [];
-            hasMoreLogs = true;
-            document.getElementById('logsTableBody').innerHTML = '';
-            loadLogs();
+            applyFilters(); // Use consistent function for all reloads
         });
     });
     
@@ -498,8 +443,8 @@ function sortLogs(logs) {
 }
 
 function sortAndRenderLogs() {
-    filteredLogs = sortLogs(filteredLogs);
-    renderLogs();
+    // Backend handles sorting, so just reload with new sort parameters
+    reloadWithFilters();
 }
 
 // Initialize when DOM is ready
