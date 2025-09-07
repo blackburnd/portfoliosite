@@ -120,8 +120,12 @@
         <div class="config-actions">
             <button type="button" class="btn-test" id="test-profile-access">Test Profile Access</button>
             <button type="button" class="btn-test" id="check-permissions">Check Permissions</button>
-            <button type="button" class="btn-primary" id="initiate-google-oauth">Authorize Google Access</button>
+            <button type="button" class="btn-primary" id="initiate-google-oauth" title="Click to grant Google OAuth permissions">Authorize Google Access</button>
             <button type="button" class="btn-secondary" id="revoke-google-oauth">Revoke Access</button>
+        </div>
+        
+        <div class="authorization-info">
+            <small><strong>Note:</strong> The "Authorize Google Access" button will be hidden when all required permissions are already granted.</small>
         </div>
         
         <div class="test-results" id="google-test-results" style="display: none;"></div>

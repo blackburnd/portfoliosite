@@ -122,8 +122,22 @@ class GoogleOAuthAdmin {
             connectionText.textContent = 'Not connected to Google';
             connectionDetails.style.display = 'none';
             
-            // Reset permission status indicators
+            // Reset permission status indicators and show authorize button
             this.resetPermissionStatus();
+            this.updateAuthorizationButtonVisibility(false);
+        }
+    }
+
+    updateAuthorizationButtonVisibility(allPermissionsGranted) {
+        const authorizeBtn = document.getElementById('initiate-google-oauth');
+        if (authorizeBtn) {
+            if (allPermissionsGranted) {
+                authorizeBtn.style.display = 'none';
+                authorizeBtn.setAttribute('title', 'All required permissions already granted');
+            } else {
+                authorizeBtn.style.display = 'inline-block';
+                authorizeBtn.setAttribute('title', 'Click to grant Google OAuth permissions');
+            }
         }
     }
 
@@ -152,6 +166,8 @@ class GoogleOAuthAdmin {
             'profile-status': scopes.profile
         };
 
+        let allPermissionsGranted = true;
+
         Object.entries(scopeElements).forEach(([elementId, granted]) => {
             const element = document.getElementById(elementId);
             if (element) {
@@ -159,9 +175,13 @@ class GoogleOAuthAdmin {
                     element.innerHTML = '<span class="status-granted">✅ Granted</span>';
                 } else {
                     element.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                    allPermissionsGranted = false;
                 }
             }
         });
+
+        // Update authorization button visibility
+        this.updateAuthorizationButtonVisibility(allPermissionsGranted);
     }
 
     resetPermissionStatus() {
@@ -173,6 +193,9 @@ class GoogleOAuthAdmin {
                 element.innerHTML = '<span class="status-unknown">⚪ Unknown</span>';
             }
         });
+        
+        // Show authorize button when permissions are unknown
+        this.updateAuthorizationButtonVisibility(false);
     }
 
     updatePermissionStatus(profileData) {
@@ -273,7 +296,17 @@ class GoogleOAuthAdmin {
             const response = await fetch('/admin/google/oauth/authorize');
             if (response.ok) {
                 const data = await response.json();
-                window.location.href = data.auth_url;
+                
+                // Show permission details before redirecting
+                const permissionDetails = Object.entries(data.scope_descriptions)
+                    .map(([scope, description]) => `• ${scope}: ${description}`)
+                    .join('\n');
+                
+                const confirmMessage = `You will be asked to grant the following permissions:\n\n${permissionDetails}\n\nContinue to Google authorization?`;
+                
+                if (confirm(confirmMessage)) {
+                    window.location.href = data.auth_url;
+                }
             } else {
                 const error = await response.json();
                 this.showMessage(`Failed to initiate Google authorization: ${error.detail}`, 'error');

@@ -2285,7 +2285,7 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_ses
 
 @app.get("/admin/google/oauth/authorize")
 async def initiate_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
-    """Initiate Google OAuth authorization flow"""
+    """Initiate Google OAuth authorization flow with explicit scope permissions"""
     admin_email = admin.get("email")
     
     try:
@@ -2299,11 +2299,21 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
-        # Use existing OAuth flow with proper async/await
+        # Define explicit scopes that we're requesting
+        scopes = [
+            'openid',
+            'email', 
+            'profile'
+        ]
+        
+        # Use existing OAuth flow with explicit scopes
         auth_result = await oauth.google.authorize_redirect(
             request, 
             redirect_uri,
-            state=state
+            scope=' '.join(scopes),
+            state=state,
+            access_type='offline',  # Request refresh token
+            prompt='consent'        # Force consent screen to show permissions
         )
         
         # Extract the redirect URL from the response
@@ -2314,7 +2324,14 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
             auth_url = str(auth_result)
         
         return JSONResponse({
-            "auth_url": auth_url
+            "status": "success",
+            "auth_url": auth_url,
+            "requested_scopes": scopes,
+            "scope_descriptions": {
+                "openid": "Basic identity verification - allows the app to verify your identity",
+                "email": "Email address access - allows the app to read your primary email address", 
+                "profile": "Profile information access - allows the app to read your name and profile picture"
+            }
         })
         
     except Exception as e:
