@@ -8,6 +8,7 @@ import traceback
 import sys
 import uuid
 import base64
+import httpx
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -2718,8 +2719,15 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
     
     try:
         # Parse the request body to get the scope
-        body = await request.json()
-        scope_to_revoke = body.get("scope")
+        try:
+            body = await request.json()
+            scope_to_revoke = body.get("scope")
+        except Exception as json_error:
+            add_log("ERROR", "admin_google_oauth_scope_revoke_json_error", f"Failed to parse JSON request for {admin_email}: {str(json_error)}")
+            return JSONResponse({
+                "status": "error", 
+                "detail": "Invalid JSON in request body"
+            }, status_code=400)
         
         if not scope_to_revoke:
             return JSONResponse({
@@ -2750,8 +2758,12 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
         # Instead, we'll revoke the entire token and suggest re-authorization without that scope
         revoke_url = f"https://oauth2.googleapis.com/revoke?token={access_token}"
         
+        add_log("INFO", "admin_google_oauth_scope_revoke_request", f"Making revoke request to Google for {admin_email}, scope: {scope_to_revoke}")
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(revoke_url)
+            
+        add_log("INFO", "admin_google_oauth_scope_revoke_response", f"Google revoke response for {admin_email}: HTTP {response.status_code}")
             
         if response.status_code == 200:
             # Clear the session tokens since we revoked the entire token
@@ -2767,15 +2779,22 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
                 "message": f"Access revoked. Note: Google OAuth doesn't support individual scope revocation, so the entire token was revoked. Please re-authorize with only the scopes you want to grant."
             })
         else:
-            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", f"Failed to revoke Google OAuth scope {scope_to_revoke} for {admin_email}: HTTP {response.status_code}")
+            response_text = ""
+            try:
+                response_text = response.text
+            except:
+                response_text = "Could not read response text"
+            
+            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", f"Failed to revoke Google OAuth scope {scope_to_revoke} for {admin_email}: HTTP {response.status_code}, Response: {response_text}")
             return JSONResponse({
                 "status": "error",
                 "detail": f"Failed to revoke scope with Google (HTTP {response.status_code})"
             }, status_code=400)
         
     except Exception as e:
-        logger.error(f"Error revoking Google OAuth scope: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_scope_revoke_error", f"Error revoking Google OAuth scope for {admin_email}: {str(e)}")
+        error_traceback = traceback.format_exc()
+        logger.error(f"Error revoking Google OAuth scope: {str(e)}\n{error_traceback}")
+        add_log("ERROR", "admin_google_oauth_scope_revoke_error", f"Error revoking Google OAuth scope for {admin_email}: {str(e)} | Traceback: {error_traceback}")
         return JSONResponse({
             "status": "error",
             "detail": str(e)
