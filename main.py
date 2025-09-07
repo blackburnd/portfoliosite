@@ -834,9 +834,9 @@ async def auth_callback(request: Request):
                 if token.get('expires_at'):
                     expires_at = datetime.fromtimestamp(token.get('expires_at'), tz=timezone.utc)
                 
-                # Get the scopes from the token or use default
-                granted_scopes = token.get('scope', 'openid email profile https://www.googleapis.com/auth/gmail.send')
-                requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
+                # Get the scopes from the token or use default (only basic scopes for login)
+                granted_scopes = token.get('scope', 'openid email profile')
+                requested_scopes = 'openid email profile'
                 
                 await save_google_oauth_tokens(
                     email,
@@ -2488,19 +2488,20 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
     try:
         add_log("INFO", "admin_google_oauth_initiate", f"Admin {admin_email} initiating Google OAuth authorization")
         
-        # Get redirect URI from environment
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+        # Get redirect URI for Gmail OAuth (different from login)
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback").replace("/auth/callback", "/admin/google/oauth/callback")
         
         # Generate a new state parameter for CSRF protection
         import secrets
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
-        # Define explicit scopes that we're requesting
+        # Define explicit scopes that we're requesting (including Gmail for email sending)
         scopes = [
             'openid',
             'email', 
-            'profile'
+            'profile',
+            'https://www.googleapis.com/auth/gmail.send'
         ]
         
         # Use existing OAuth flow with explicit scopes
@@ -2572,6 +2573,92 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
             "status": "error",
             "error": str(e)
         }, status_code=500)
+
+
+@app.get("/admin/google/oauth/callback")
+async def gmail_oauth_callback(request: Request):
+    """Handle Gmail OAuth callback specifically for admin Gmail permissions"""
+    logger.info("=== Gmail OAuth Callback Received ===")
+    logger.info(f"Callback URL: {request.url}")
+    logger.info(f"Query params: {dict(request.query_params)}")
+    
+    try:
+        # Verify admin session exists
+        if not hasattr(request, 'session') or 'user' not in request.session:
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>Admin session not found. Please log in first.</p>
+                <p><a href="/auth/login">Login</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=401
+            )
+        
+        admin_user = request.session['user']
+        admin_email = admin_user.get('email')
+        
+        if not admin_email:
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Authentication Error</h1>
+                <p>Admin email not found in session.</p>
+                <p><a href="/auth/login">Login</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=401
+            )
+        
+        # Exchange code for token
+        google = oauth.google
+        token = await google.authorize_access_token(request)
+        logger.info(f"Gmail token received: {bool(token)}")
+        
+        # Save Gmail tokens to database
+        from database import save_google_oauth_tokens
+        if token.get('access_token'):
+            try:
+                from datetime import datetime, timezone
+                expires_at = None
+                if token.get('expires_at'):
+                    expires_at = datetime.fromtimestamp(token.get('expires_at'), tz=timezone.utc)
+                
+                # Get the actual scopes granted (should include Gmail)
+                granted_scopes = token.get('scope', 'openid email profile https://www.googleapis.com/auth/gmail.send')
+                requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
+                
+                await save_google_oauth_tokens(
+                    admin_email,
+                    token.get('access_token'),
+                    token.get('refresh_token', ''),
+                    expires_at,
+                    granted_scopes,
+                    requested_scopes
+                )
+                logger.info(f"Gmail OAuth tokens saved to database for {admin_email}")
+                add_log("INFO", "gmail_oauth_success", f"Gmail OAuth tokens saved for {admin_email}")
+            except Exception as db_error:
+                logger.error(f"Failed to save Gmail OAuth tokens to database: {str(db_error)}")
+                add_log("ERROR", "gmail_oauth_db_error", f"Failed to save Gmail tokens for {admin_email}: {str(db_error)}")
+        
+        # Redirect back to OAuth admin page
+        return RedirectResponse(url="/admin/google/oauth", status_code=303)
+        
+    except Exception as e:
+        logger.error(f"Gmail OAuth callback error: {str(e)}")
+        add_log("ERROR", "gmail_oauth_callback_error", f"Gmail OAuth callback error for {admin_email if 'admin_email' in locals() else 'unknown'}: {str(e)}")
+        return HTMLResponse(
+            content=f"""
+            <html><body>
+            <h1>Gmail Authorization Failed</h1>
+            <p>Error: {str(e)}</p>
+            <p><a href="/admin/google/oauth">Return to OAuth Admin</a> | <a href="/">Return to main site</a></p>
+            </body></html>
+            """, 
+            status_code=400
+        )
 
 
 @app.get("/admin/google/oauth/test")
