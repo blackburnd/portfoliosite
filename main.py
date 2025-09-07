@@ -2760,7 +2760,8 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
                 scope_status = {
                     'openid': 'openid' in granted_scopes,
                     'email': 'email' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.email' in granted_scopes,
-                    'profile': 'profile' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.profile' in granted_scopes
+                    'profile': 'profile' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.profile' in granted_scopes,
+                    'https://www.googleapis.com/auth/gmail.send': 'https://www.googleapis.com/auth/gmail.send' in granted_scopes
                 }
                 
                 add_log("INFO", "admin_google_scopes_success", 

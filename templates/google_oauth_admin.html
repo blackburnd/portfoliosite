@@ -116,17 +116,20 @@
                 <div class="scope-data-access">Provides: Name, profile picture, locale</div>
             </div>
             
-            <div class="scope-item required" id="scope-gmail-send">
+            <div class="scope-item optional" id="scope-gmail-send">
                 <div class="scope-header">
                     <strong>Gmail Send</strong>
                     <span class="scope-name">https://www.googleapis.com/auth/gmail.send</span>
-                    <span class="required-badge">Required</span>
+                    <span class="optional-badge">Optional</span>
                     <span class="permission-status" id="gmail-send-status">
                         <span class="status-unknown">⚪ Unknown</span>
                     </span>
                 </div>
-                <div class="scope-description">Send emails on behalf of the user</div>
+                <div class="scope-description">Send emails on behalf of the user (for contact form notifications)</div>
                 <div class="scope-data-access">Provides: Ability to send emails through Gmail API</div>
+                <div class="scope-note">
+                    <small><strong>Note:</strong> This permission requires separate authorization and is only needed for automatic email notifications from the contact form.</small>
+                </div>
             </div>
         </div>
         
