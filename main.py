@@ -59,6 +59,30 @@ from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 from google_auth_ticket_grid import router as google_oauth_router
 
+# Context-aware logging helper
+def log_with_context(level: str, module: str, message: str, 
+                    request: Optional[Request] = None, **kwargs):
+    """
+    Enhanced logging function that automatically captures IP address from request context.
+    Use this for all user-triggered logging to ensure IP addresses are captured.
+    """
+    ip_address = None
+    
+    if request:
+        try:
+            ip_address = get_client_ip(request)
+        except Exception:
+            ip_address = "unknown"
+    
+    # Call the original add_log with IP address
+    add_log(
+        level=level,
+        module=module, 
+        message=message,
+        ip_address=ip_address,
+        **kwargs
+    )
+
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):
     """Require admin authentication via session with fallback for OAuth testing"""
@@ -317,11 +341,13 @@ async def log_non_200_responses(request: Request, call_next):
             
             # Log to database with enhanced details
             try:
+                client_ip = get_client_ip(request)
                 add_log(
                     level=log_level,
                     module="middleware",
                     message=f"[{error_id}] {response.status_code} response for {request.url}",
                     function="log_non_200_responses",
+                    ip_address=client_ip,
                     extra={
                         "error_id": error_id,
                         "status_code": response.status_code,
@@ -330,7 +356,7 @@ async def log_non_200_responses(request: Request, call_next):
                         "headers": dict(request.headers),
                         "response_headers": dict(response.headers),
                         "response_body_preview": response_body,
-                        "client_ip": request.client.host if request.client else "unknown"
+                        "client_ip": client_ip
                     }
                 )
             except Exception as log_error:
@@ -347,17 +373,20 @@ async def log_non_200_responses(request: Request, call_next):
         logger.error(f"Middleware error traceback: {full_traceback}")
         
         try:
+            client_ip = get_client_ip(request)
             add_log(
                 level="ERROR",
                 module="middleware",
                 message=f"[{error_id}] Middleware error: {str(e)}",
                 function="log_non_200_responses",
+                ip_address=client_ip,
                 extra={
                     "error_id": error_id,
                     "url": str(request.url),
                     "method": request.method,
                     "error_type": type(e).__name__,
-                    "traceback": full_traceback
+                    "traceback": full_traceback,
+                    "client_ip": client_ip
                 }
             )
         except Exception as log_error:
@@ -391,9 +420,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     
     # Add to database log if possible
     try:
+        client_ip = get_client_ip(request)
+        
         # Format the traceback and error details for the database log
         detailed_message = f"""[{error_id}] {error_type}: {error_message}
 URL: {request.url} | Method: {request.method}
+Client IP: {client_ip}
 Headers: {dict(request.headers)}
 Full Traceback:
 {error_traceback}"""
@@ -404,7 +436,8 @@ Full Traceback:
             "error_type": error_type,
             "request_url": str(request.url),
             "request_method": request.method,
-            "request_headers": dict(request.headers)
+            "request_headers": dict(request.headers),
+            "client_ip": client_ip
         }
         
         add_log(
@@ -414,6 +447,7 @@ Full Traceback:
             function="global_exception_handler",
             line=0,
             user=None,
+            ip_address=client_ip,
             extra=extra_data
         )
     except Exception as log_error:
@@ -455,14 +489,20 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     
     # Add to database log
     try:
+        client_ip = get_client_ip(request)
         add_log(
             "WARNING",
-            "http_exception",
+            "http_exception_handler",
             f"[{error_id}] {exc.status_code}: {exc.detail} | URL: {request.url}",
-            error_id=error_id,
-            status_code=exc.status_code,
-            request_url=str(request.url),
-            request_method=request.method
+            function="http_exception_handler",
+            ip_address=client_ip,
+            extra={
+                "error_id": error_id,
+                "status_code": exc.status_code,
+                "request_url": str(request.url),
+                "request_method": request.method,
+                "client_ip": client_ip
+            }
         )
     except Exception as log_error:
         logger.error(f"Failed to log HTTP exception to database: {log_error}")
@@ -716,12 +756,12 @@ async def auth_login(request: Request):
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
-        add_log("INFO", "auth", "User initiated Google OAuth login process")
+        log_with_context("INFO", "auth", "User initiated Google OAuth login process", request)
         
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured - missing credentials")
-            add_log("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration")
+            log_with_context("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration", request)
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -925,7 +965,7 @@ async def auth_callback(request: Request):
                 if is_gmail_auth:
                     # Gmail authorization flow - save with Gmail scopes
                     requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
-                    add_log("INFO", "gmail_oauth_success", f"Gmail OAuth tokens saved for {email}")
+                    log_with_context("INFO", "gmail_oauth_success", f"Gmail OAuth tokens saved for {email}", request)
                 else:
                     # Regular login flow - only basic scopes
                     requested_scopes = 'openid email profile'
@@ -941,15 +981,15 @@ async def auth_callback(request: Request):
                 )
                 
                 logger.info(f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, save_result: {save_result}")
-                add_log("INFO", "oauth_tokens_saved", f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, database_save_success: {save_result}")
+                log_with_context("INFO", "oauth_tokens_saved", f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, database_save_success: {save_result}", request)
                 
             except Exception as db_error:
                 logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
-                add_log("ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}")
+                log_with_context("ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}", request)
                 # Don't fail the login if database save fails
         
         # Log successful login and session creation
-        add_log("INFO", "auth", f"Successful login by {email} - session auth created")
+        log_with_context("INFO", "auth", f"Successful login by {email} - session auth created", request)
         
         # Check if this was a Gmail authorization and redirect accordingly
         granted_scopes = token.get('scope', 'openid email profile')
