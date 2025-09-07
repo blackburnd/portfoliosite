@@ -1077,7 +1077,9 @@ async def get_logs_data(
             
             # Get total count with filters
             count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
-            total_count = await db.fetch_val(count_query, params)
+            # Only pass filter parameters to count query, not limit/offset
+            count_params = {k: v for k, v in params.items() if k not in ['limit', 'offset']}
+            total_count = await db.fetch_val(count_query, count_params)
             
             # Build dynamic ORDER BY clause
             order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
@@ -1092,8 +1094,7 @@ async def get_logs_data(
                 LIMIT :limit OFFSET :offset
             """
             
-            logs = await db.fetch_all(
-                logs_query, {"limit": limit, "offset": offset})
+            logs = await db.fetch_all(logs_query, params)
             
             # Debug: Log what we found
             add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
