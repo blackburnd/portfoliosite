@@ -7,6 +7,9 @@ import time
 import traceback
 import sys
 import uuid
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -28,6 +31,10 @@ import json
 from pathlib import Path
 import sqlite3
 import asyncio
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import hashlib
 from log_capture import add_log
 
@@ -122,6 +129,61 @@ async def require_admin_auth_session(request: Request):
             detail="Authentication error occurred."
         )
 
+async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int):
+    """Send email notification when contact form is submitted"""
+    try:
+        # Email configuration from environment variables
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        recipient_email = os.getenv("CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com")
+        
+        if not smtp_username or not smtp_password:
+            logger.warning("SMTP credentials not configured - contact email notification disabled")
+            add_log("WARNING", "SMTP credentials missing - contact email not sent", "contact_email_config_missing")
+            return False
+        
+        # Create email content
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = recipient_email
+        msg['Subject'] = f"New Contact Form Submission #{contact_id}: {subject or 'No Subject'}"
+        
+        # Email body
+        body = f"""
+New contact form submission received:
+
+Contact ID: {contact_id}
+Name: {name}
+Email: {email}
+Subject: {subject or 'No Subject'}
+
+Message:
+{message}
+
+---
+This email was automatically generated from your portfolio website contact form.
+        """.strip()
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls(context=context)
+            server.login(smtp_username, smtp_password)
+            server.sendmail(smtp_username, recipient_email, msg.as_string())
+        
+        logger.info(f"Contact notification email sent for submission #{contact_id}")
+        add_log("INFO", f"Contact notification email sent for submission #{contact_id}", "contact_email_sent")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send contact notification email: {str(e)}")
+        add_log("ERROR", f"Failed to send contact notification email: {str(e)}", "contact_email_error")
+        return False
+
 from app.resolvers import schema
 from database import init_database, close_database, database
 from databases import Database
@@ -185,32 +247,46 @@ app.add_middleware(
 
 # Add middleware to log all 500 responses
 @app.middleware("http")
-async def log_500_responses(request: Request, call_next):
-    """Middleware to ensure all 500 responses are logged"""
+async def log_non_200_responses(request: Request, call_next):
+    """Middleware to log all non-200 responses for monitoring"""
     try:
         response = await call_next(request)
         
-        # If response is 500, make sure it's logged
-        if response.status_code == 500:
+        # Log any response that is not 200 OK
+        if response.status_code != 200:
             error_id = secrets.token_urlsafe(8)
-            logger.warning(f"500 RESPONSE [{error_id}] detected for {request.url}")
+            
+            # Determine log level based on status code
+            if response.status_code >= 500:
+                log_level = "ERROR"
+                logger_level = "error"
+            elif response.status_code >= 400:
+                log_level = "WARNING" 
+                logger_level = "warning"
+            else:
+                log_level = "INFO"
+                logger_level = "info"
+                
+            getattr(logger, logger_level)(f"{response.status_code} RESPONSE [{error_id}] for {request.url}")
             
             # Log to database
             try:
                 add_log(
-                    level="ERROR",
+                    level=log_level,
                     module="middleware",
-                    message=f"[{error_id}] 500 Internal Server Error response",
-                    function="log_500_responses",
+                    message=f"[{error_id}] {response.status_code} response",
+                    function="log_non_200_responses",
                     extra={
                         "error_id": error_id,
+                        "status_code": response.status_code,
                         "url": str(request.url),
                         "method": request.method,
-                        "headers": dict(request.headers)
+                        "headers": dict(request.headers),
+                        "client_ip": request.client.host if request.client else "unknown"
                     }
                 )
             except Exception as log_error:
-                logger.error(f"Failed to log 500 response to database: {log_error}")
+                logger.error(f"Failed to log {response.status_code} response to database: {log_error}")
         
         return response
         
@@ -224,7 +300,7 @@ async def log_500_responses(request: Request, call_next):
                 level="ERROR",
                 module="middleware",
                 message=f"[{error_id}] Middleware error: {str(e)}",
-                function="log_500_responses",
+                function="log_non_200_responses",
                 extra={
                     "error_id": error_id,
                     "url": str(request.url),
@@ -860,6 +936,59 @@ async def home(request: Request):
         "user_info": {"email": user_email} if user_authenticated else None
     })
 
+async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int) -> bool:
+    """Send email notification when contact form is submitted"""
+    try:
+        # Get SMTP configuration from environment
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        to_email = os.getenv("CONTACT_EMAIL", "blackburnd@gmail.com")
+        
+        if not smtp_username or not smtp_password:
+            logger.error("SMTP credentials not configured")
+            return False
+        
+        # Create email content
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = to_email
+        msg['Subject'] = f"Contact Form: {subject or 'New Message'}"
+        
+        # Email body
+        body = f"""
+New contact form submission:
+
+ID: {contact_id}
+Name: {name}
+Email: {email}
+Subject: {subject or 'None specified'}
+
+Message:
+{message}
+
+---
+This message was sent from blackburnsystems.com contact form.
+"""
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        logger.info(f"Contact email sent successfully for submission {contact_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send contact email: {str(e)}")
+        add_log("ERROR", "email_send_failed", f"Failed to send contact email for ID {contact_id}: {str(e)}")
+        return False
+
 @app.get("/contact/", response_class=HTMLResponse)
 async def contact(request: Request):
     """Serve the contact page"""
@@ -981,6 +1110,9 @@ async def contact_submit(request: Request):
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
         
+        # Send email notification
+        email_sent = await send_contact_email(name, email, subject, message, contact_id)
+        
         # Log successful contact form submission to database
         add_log(
             level="INFO",
@@ -988,7 +1120,7 @@ async def contact_submit(request: Request):
             message=f"Contact form submitted successfully: ID {contact_id}",
             function="contact_submit",
             extra=f"Name: {name}, Email: {email}, Subject: {subject or 'None'}, "
-                   f"Message length: {len(message)} chars"
+                   f"Message length: {len(message)} chars, Email sent: {email_sent}"
         )
         
         # Redirect to thank you page instead of returning JSON
