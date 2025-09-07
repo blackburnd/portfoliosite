@@ -65,6 +65,9 @@ class GoogleOAuthAdmin {
 
         const testProfileBtn = document.getElementById('test-profile-access');
         if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
+        
+        const checkPermissionsBtn = document.getElementById('check-permissions');
+        if (checkPermissionsBtn) checkPermissionsBtn.addEventListener('click', () => this.checkGrantedScopes());
     }
 
     async loadGoogleStatus() {
@@ -111,6 +114,9 @@ class GoogleOAuthAdmin {
             document.getElementById('google-account-email').textContent = data.account_email;
             document.getElementById('google-last-sync').textContent = data.last_sync || 'Current session';
             document.getElementById('google-token-expiry').textContent = data.token_expiry || 'Unknown';
+            
+            // Automatically check scopes when connected
+            this.checkGrantedScopes();
         } else {
             connectionStatus.className = 'status-not-configured';
             connectionText.textContent = 'Not connected to Google';
@@ -119,6 +125,43 @@ class GoogleOAuthAdmin {
             // Reset permission status indicators
             this.resetPermissionStatus();
         }
+    }
+
+    async checkGrantedScopes() {
+        try {
+            const response = await fetch('/admin/google/oauth/scopes');
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                this.updatePermissionStatusFromScopes(result.scopes);
+            } else {
+                // If we can't get scopes, reset to unknown
+                this.resetPermissionStatus();
+            }
+        } catch (error) {
+            console.error('Error checking granted scopes:', error);
+            this.resetPermissionStatus();
+        }
+    }
+
+    updatePermissionStatusFromScopes(scopes) {
+        // Update permission status based on actual granted scopes from Google
+        const scopeElements = {
+            'openid-status': scopes.openid,
+            'email-status': scopes.email,
+            'profile-status': scopes.profile
+        };
+
+        Object.entries(scopeElements).forEach(([elementId, granted]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (granted) {
+                    element.innerHTML = '<span class="status-granted">✅ Granted</span>';
+                } else {
+                    element.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                }
+            }
+        });
     }
 
     resetPermissionStatus() {
@@ -301,12 +344,15 @@ class GoogleOAuthAdmin {
             if (response.ok && result.status === 'success') {
                 const data = result.data;
                 
-                // Update permission status indicators
+                // Update permission status indicators based on returned data
                 this.updatePermissionStatus(data);
+                
+                // Also check actual granted scopes from Google
+                this.checkGrantedScopes();
                 
                 resultsDiv.innerHTML = `
                     <div class="test-success">
-                        ✅ Profile Access test passed - All required permissions granted<br>
+                        ✅ Profile Access test passed - Required permissions working properly<br>
                         <strong>ID:</strong> ${data.id || 'N/A'}<br>
                         <strong>Name:</strong> ${data.name || 'N/A'}<br>
                         <strong>Email:</strong> ${data.email || 'N/A'}<br>
@@ -315,8 +361,9 @@ class GoogleOAuthAdmin {
                         <strong>Locale:</strong> ${data.locale || 'N/A'}
                     </div>`;
             } else {
-                // Reset permission status on failure
+                // Reset permission status on failure and check actual scopes
                 this.resetPermissionStatus();
+                this.checkGrantedScopes();
                 resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.message || result.detail}</div>`;
             }
         } catch (error) {

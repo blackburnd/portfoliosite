@@ -2483,6 +2483,106 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
         }, status_code=500)
 
 
+@app.get("/admin/google/oauth/scopes")
+async def get_google_granted_scopes(request: Request, admin: dict = Depends(require_admin_auth_session)):
+    """Check which Google OAuth scopes have been granted by querying Google's tokeninfo endpoint"""
+    import httpx
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_google_scopes_request", f"Admin {admin_email} checking granted Google scopes")
+        
+        # Check if user has an active Google session
+        if not hasattr(request, 'session') or 'user' not in request.session:
+            return JSONResponse({
+                "status": "error",
+                "message": "No active Google session. Please authorize Google access first.",
+                "scopes": {}
+            }, status_code=401)
+        
+        user_session = request.session.get('user', {})
+        access_token = user_session.get('access_token')
+        
+        if not access_token:
+            return JSONResponse({
+                "status": "error", 
+                "message": "No Google access token found. Please re-authorize Google access.",
+                "scopes": {}
+            }, status_code=401)
+        
+        # Use Google's tokeninfo endpoint to get granted scopes
+        tokeninfo_url = f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
+        
+        add_log("DEBUG", "admin_google_scopes_api_request", 
+               f"Admin {admin_email} - Making request to Google tokeninfo API")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(tokeninfo_url)
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                granted_scopes = token_data.get('scope', '').split(' ')
+                
+                # Map the scopes we care about
+                scope_status = {
+                    'openid': 'openid' in granted_scopes,
+                    'email': 'email' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.email' in granted_scopes,
+                    'profile': 'profile' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.profile' in granted_scopes
+                }
+                
+                add_log("INFO", "admin_google_scopes_success", 
+                       f"Admin {admin_email} - Successfully retrieved granted scopes: {granted_scopes}")
+                
+                return JSONResponse({
+                    "status": "success",
+                    "scopes": scope_status,
+                    "raw_scopes": granted_scopes,
+                    "token_info": {
+                        "audience": token_data.get('audience'),
+                        "expires_in": token_data.get('expires_in'),
+                        "issued_to": token_data.get('issued_to')
+                    }
+                })
+            
+            elif response.status_code == 400:
+                add_log("WARNING", "admin_google_scopes_invalid_token", 
+                       f"Admin {admin_email} - Invalid or expired access token")
+                return JSONResponse({
+                    "status": "error",
+                    "message": "Invalid or expired access token. Please re-authorize Google access.",
+                    "scopes": {}
+                }, status_code=401)
+            
+            else:
+                add_log("WARNING", "admin_google_scopes_api_error", 
+                       f"Admin {admin_email} - Google tokeninfo API error: {response.status_code}")
+                return JSONResponse({
+                    "status": "error",
+                    "message": f"Google API error: {response.status_code}",
+                    "scopes": {}
+                }, status_code=response.status_code)
+                
+    except httpx.RequestError as e:
+        logger.error(f"Network error contacting Google tokeninfo API: {str(e)}")
+        add_log("ERROR", "admin_google_scopes_network_error", 
+               f"Admin {admin_email} - Network error contacting Google tokeninfo API: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": "Network error contacting Google API",
+            "scopes": {}
+        }, status_code=500)
+        
+    except Exception as e:
+        logger.error(f"Error checking Google scopes: {str(e)}")
+        add_log("ERROR", "admin_google_scopes_error", 
+               f"Admin {admin_email} - Error checking Google scopes: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "message": f"Error checking Google scopes: {str(e)}",
+            "scopes": {}
+        }, status_code=500)
+
+
 # --- LinkedIn OAuth Admin Routes ---
 
 @app.get("/admin/linkedin/oauth", response_class=HTMLResponse)
