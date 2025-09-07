@@ -269,9 +269,10 @@ setup_database_logging()
 
 
 def log_with_context(level: str, message: str, module: str = "manual",
-                    function: str = "add_log", line: int = 0,
-                    user: str = None, extra: dict = None, request=None):
-    """Context-aware logging identical to add_log but captures IP address from request"""
+                     function: str = "add_log", line: int = 0,
+                     user: str = None, extra: dict = None,
+                     request=None):
+    """Context-aware logging identical to add_log but captures IP address"""
     # Get IP address if request is provided
     ip_address = None
     if request:
@@ -280,34 +281,57 @@ def log_with_context(level: str, message: str, module: str = "manual",
         except Exception:
             ip_address = "unknown"
     
-    # Use the same database logging as add_log but with IP address
-    try:
-        db = Database(DATABASE_URL)
-        await db.connect()
-        
-        query = """
-            INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra, ip_address)
-            VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra, :ip_address)
-        """
-        
-        values = {
-            'timestamp': datetime.now(),
-            'level': level.upper(),
-            'message': message,
-            'module': module,
-            'function': function,
-            'line': line,
-            'user': user,
-            'extra': json.dumps(extra) if extra else None,
-            'ip_address': ip_address
-        }
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found for manual log entry")
+        return
 
-        await db.execute(query, values)
-        await db.disconnect()
+    async def _add_log_async():
+        db = databases.Database(database_url)
 
-    except Exception as e:
-        print(f"Failed to add log entry with context: {e}")
         try:
+            await db.connect()
+
+            query = """
+                INSERT INTO app_log (timestamp, level, message, module,
+                                   function, line, "user", extra, ip_address)
+                VALUES (:timestamp, :level, :message, :module, :function,
+                       :line, :user, :extra, :ip_address)
+            """
+
+            values = {
+                'timestamp': datetime.now(),
+                'level': level.upper(),
+                'message': message,
+                'module': module,
+                'function': function,
+                'line': line,
+                'user': user,
+                'extra': json.dumps(extra) if extra else None,
+                'ip_address': ip_address
+            }
+
+            await db.execute(query, values)
             await db.disconnect()
-        except Exception:
-            pass
+
+        except Exception as e:
+            print(f"Failed to add manual log entry: {e}")
+            try:
+                await db.disconnect()
+            except Exception:
+                pass
+
+    # Run the async function synchronously
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If loop is already running, schedule the task
+            asyncio.create_task(_add_log_async())
+        else:
+            # If loop is not running, run it
+            loop.run_until_complete(_add_log_async())
+    except RuntimeError:
+        # Create new loop if none exists
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(_add_log_async())
