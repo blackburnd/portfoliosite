@@ -445,5 +445,5 @@ class GoogleOAuthAdmin {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new GoogleOAuthAdmin();
+    window.googleOAuthAdmin = new GoogleOAuthAdmin();
 });
