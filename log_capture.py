@@ -156,8 +156,7 @@ def setup_database_logging():
 
 def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
-            user: Optional[str] = None, extra: Optional[dict] = None,
-            ip_address: Optional[str] = None):
+            user: Optional[str] = None, extra: Optional[dict] = None):
     """Manually add a log entry to the database"""
     database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not database_url:
@@ -186,7 +185,7 @@ def add_log(level: str, message: str, module: str = "manual",
                 'line': line,
                 'user': user,
                 'extra': json.dumps(extra) if extra else None,
-                'ip_address': ip_address
+                'ip_address': None
             }
 
             await db.execute(query, values)
@@ -267,14 +266,48 @@ log_capture = LogCapture()
 setup_database_logging()
 
 
-def log_with_context(request, level: str, module: str, message: str, function: str = None, **kwargs):
-    """Log with IP address context for security monitoring"""
-    client_ip = get_client_ip(request)
-    add_log(
-        level=level,
-        module=module,
-        message=message,
-        function=function or "unknown",
-        ip_address=client_ip,
-        **kwargs
-    )
+
+
+def log_with_context(level: str, message: str, module: str = "manual",
+                    function: str = "add_log", line: int = 0,
+                    user: str = None, extra: dict = None, request=None):
+    """Context-aware logging identical to add_log but captures IP address from request"""
+    # Get IP address if request is provided
+    ip_address = None
+    if request:
+        try:
+            ip_address = get_client_ip(request)
+        except Exception:
+            ip_address = "unknown"
+    
+    # Use the same database logging as add_log but with IP address
+    try:
+        db = Database(DATABASE_URL)
+        await db.connect()
+        
+        query = """
+            INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra, ip_address)
+            VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra, :ip_address)
+        """
+        
+        values = {
+            'timestamp': datetime.now(),
+            'level': level.upper(),
+            'message': message,
+            'module': module,
+            'function': function,
+            'line': line,
+            'user': user,
+            'extra': json.dumps(extra) if extra else None,
+            'ip_address': ip_address
+        }
+
+        await db.execute(query, values)
+        await db.disconnect()
+
+    except Exception as e:
+        print(f"Failed to add log entry with context: {e}")
+        try:
+            await db.disconnect()
+        except Exception:
+            pass

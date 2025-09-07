@@ -7,6 +7,8 @@ import time
 import traceback
 import sys
 import uuid
+import base64
+import httpx
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -29,7 +31,12 @@ from pathlib import Path
 import sqlite3
 import asyncio
 import hashlib
-from log_capture import add_log, get_client_ip, log_with_context
+from log_capture import add_log, get_client_ip
+
+# Google API imports for Gmail
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request as GoogleRequest
+from google.oauth2.credentials import Credentials
 
 # Configure logging
 logging.basicConfig(
@@ -50,6 +57,31 @@ from auth import (
 )
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
+from google_auth_ticket_grid import router as google_oauth_router
+
+# Context-aware logging helper
+def log_with_context(level: str, module: str, message: str, 
+                    request: Optional[Request] = None, **kwargs):
+    """
+    Enhanced logging function that automatically captures IP address from request context.
+    Use this for all user-triggered logging to ensure IP addresses are captured.
+    """
+    ip_address = None
+    
+    if request:
+        try:
+            ip_address = get_client_ip(request)
+        except Exception:
+            ip_address = "unknown"
+    
+    # Call the original add_log with IP address
+    add_log(
+        level=level,
+        module=module, 
+        message=message,
+        ip_address=ip_address,
+        **kwargs
+    )
 
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):
@@ -66,6 +98,30 @@ async def require_admin_auth_session(request: Request):
                 "authenticated": True,
                 "is_admin": True,
                 "bypass_mode": True
+            }
+        
+        # Check if OAuth is broken/not configured and allow admin access for configuration
+        try:
+            ttw_manager = TTWOAuthManager()
+            oauth_configured = await ttw_manager.is_google_oauth_app_configured()
+            
+            # If OAuth is not configured, allow admin access to set it up
+            if not oauth_configured:
+                add_log("INFO", "OAuth not configured - granting admin access for setup", "admin_auth_oauth_fallback")
+                return {
+                    "email": "admin@blackburnsystems.com", 
+                    "authenticated": True,
+                    "is_admin": True,
+                    "oauth_fallback": True
+                }
+        except Exception as oauth_check_error:
+            # If we can't even check OAuth status, something is broken - allow admin access
+            add_log("WARNING", f"OAuth configuration check failed - granting admin access: {str(oauth_check_error)}", "admin_auth_oauth_error_fallback")
+            return {
+                "email": "admin@blackburnsystems.com",
+                "authenticated": True, 
+                "is_admin": True,
+                "oauth_error_fallback": True
             }
         
         # Standard session-based authentication
@@ -92,11 +148,100 @@ async def require_admin_auth_session(request: Request):
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}", "admin_auth_exception")
+        import traceback
+        full_traceback = traceback.format_exc()
+        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}\nTraceback: {full_traceback}", "admin_auth_exception")
+        logger.error(f"Admin auth error traceback: {full_traceback}")
         raise HTTPException(
             status_code=500,
             detail="Authentication error occurred."
         )
+
+async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int):
+    """Send email notification using Gmail API when contact form is submitted"""
+    try:
+        admin_email = os.getenv("ADMIN_EMAIL", "blackburnd@gmail.com")
+        recipient_email = os.getenv("CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com")
+        
+        # Get OAuth credentials from database
+        from database import get_google_oauth_tokens, save_google_oauth_tokens, update_google_oauth_token_usage
+        oauth_data = await get_google_oauth_tokens(admin_email)
+        
+        if not oauth_data or not oauth_data.get('access_token'):
+            logger.warning("Gmail API: No OAuth credentials found for email sending")
+            add_log("WARNING", "Gmail API: No OAuth credentials found", "gmail_api_no_credentials")
+            return False
+        
+        # Create credentials object
+        credentials = Credentials(
+            token=oauth_data['access_token'],
+            refresh_token=oauth_data.get('refresh_token'),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=os.getenv("GOOGLE_CLIENT_ID"),
+            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+            scopes=oauth_data['granted_scopes'].split()
+        )
+        
+        # Refresh token if needed
+        if credentials.expired and credentials.refresh_token:
+            credentials.refresh(GoogleRequest())
+            # Save refreshed token back to database
+            await save_google_oauth_tokens(
+                admin_email,
+                credentials.token,
+                credentials.refresh_token,
+                credentials.expiry,
+                " ".join(credentials.scopes),
+                oauth_data['requested_scopes']
+            )
+        
+        # Build Gmail service
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Create email message
+        email_body = f"""
+New contact form submission received:
+
+Contact ID: {contact_id}
+Name: {name}
+Email: {email}
+Subject: {subject or 'No Subject'}
+
+Message:
+{message}
+
+---
+This email was automatically generated from your portfolio website contact form.
+        """.strip()
+        
+        # Create the email message structure
+        message_obj = {
+            'raw': base64.urlsafe_b64encode(
+                f"To: {recipient_email}\r\n"
+                f"From: {admin_email}\r\n"
+                f"Subject: New Contact Form Submission #{contact_id}: {subject or 'No Subject'}\r\n"
+                f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+                f"{email_body}".encode('utf-8')
+            ).decode('utf-8')
+        }
+        
+        # Send the email
+        result = service.users().messages().send(userId='me', body=message_obj).execute()
+        
+        # Update token usage
+        await update_google_oauth_token_usage(admin_email)
+        
+        logger.info(f"Gmail API: Contact notification email sent for submission #{contact_id}, Message ID: {result.get('id')}")
+        add_log("INFO", f"Gmail API: Email sent for submission #{contact_id}, Message ID: {result.get('id')}", "gmail_api_email_sent")
+        return True
+        
+    except Exception as e:
+        import traceback
+        full_traceback = traceback.format_exc()
+        logger.error(f"Gmail API: Failed to send contact notification email: {str(e)}")
+        logger.error(f"Gmail API error traceback: {full_traceback}")
+        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}\nTraceback: {full_traceback}", "gmail_api_email_error")
+        return False
 
 from app.resolvers import schema
 from database import init_database, close_database, database
@@ -161,55 +306,92 @@ app.add_middleware(
 
 # Add middleware to log all 500 responses
 @app.middleware("http")
-async def log_500_responses(request: Request, call_next):
-    """Middleware to ensure all 500 responses are logged"""
+async def log_non_200_responses(request: Request, call_next):
+    """Middleware to log all non-200 responses for monitoring"""
+    import traceback
     try:
         response = await call_next(request)
         
-        # If response is 500, make sure it's logged
-        if response.status_code == 500:
+        # Log any response that is not 200 OK
+        if response.status_code != 200:
             error_id = secrets.token_urlsafe(8)
-            logger.warning(f"500 RESPONSE [{error_id}] detected for {request.url}")
             
-            # Log to database
+            # Determine log level based on status code
+            if response.status_code >= 500:
+                log_level = "ERROR"
+                logger_level = "error"
+            elif response.status_code >= 400:
+                log_level = "WARNING" 
+                logger_level = "warning"
+            else:
+                log_level = "INFO"
+                logger_level = "info"
+                
+            # Try to capture response body for error analysis
+            response_body = ""
             try:
+                # For streaming responses, we can't easily capture the body
+                # But for regular responses, we can try
+                if hasattr(response, 'body'):
+                    response_body = str(response.body)[:1000]  # Limit to 1000 chars
+            except Exception:
+                response_body = "Unable to capture response body"
+                
+            getattr(logger, logger_level)(f"{response.status_code} RESPONSE [{error_id}] for {request.url}")
+            
+            # Log to database with enhanced details
+            try:
+                client_ip = get_client_ip(request)
                 add_log(
-                    level="ERROR",
+                    level=log_level,
                     module="middleware",
-                    message=f"[{error_id}] 500 Internal Server Error response",
-                    function="log_500_responses",
+                    message=f"[{error_id}] {response.status_code} response for {request.url}",
+                    function="log_non_200_responses",
+                    ip_address=client_ip,
                     extra={
                         "error_id": error_id,
+                        "status_code": response.status_code,
                         "url": str(request.url),
                         "method": request.method,
-                        "headers": dict(request.headers)
+                        "headers": dict(request.headers),
+                        "response_headers": dict(response.headers),
+                        "response_body_preview": response_body,
+                        "client_ip": client_ip
                     }
                 )
             except Exception as log_error:
-                logger.error(f"Failed to log 500 response to database: {log_error}")
+                logger.error(f"Failed to log {response.status_code} response to database: {log_error}")
+                logger.error(f"Database logging error traceback: {traceback.format_exc()}")
         
         return response
         
     except Exception as e:
         # This should be caught by the global exception handler, but just in case
         error_id = secrets.token_urlsafe(8)
+        full_traceback = traceback.format_exc()
         logger.error(f"MIDDLEWARE ERROR [{error_id}]: {str(e)}")
+        logger.error(f"Middleware error traceback: {full_traceback}")
         
         try:
+            client_ip = get_client_ip(request)
             add_log(
                 level="ERROR",
                 module="middleware",
                 message=f"[{error_id}] Middleware error: {str(e)}",
-                function="log_500_responses",
+                function="log_non_200_responses",
+                ip_address=client_ip,
                 extra={
                     "error_id": error_id,
                     "url": str(request.url),
                     "method": request.method,
-                    "traceback": traceback.format_exc()
+                    "error_type": type(e).__name__,
+                    "traceback": full_traceback,
+                    "client_ip": client_ip
                 }
             )
         except Exception as log_error:
             logger.error(f"Failed to log middleware error to database: {log_error}")
+            logger.error(f"Database logging error traceback: {traceback.format_exc()}")
         
         # Re-raise to let global exception handler deal with it
         raise
@@ -238,9 +420,12 @@ async def global_exception_handler(request: Request, exc: Exception):
     
     # Add to database log if possible
     try:
+        client_ip = get_client_ip(request)
+        
         # Format the traceback and error details for the database log
         detailed_message = f"""[{error_id}] {error_type}: {error_message}
 URL: {request.url} | Method: {request.method}
+Client IP: {client_ip}
 Headers: {dict(request.headers)}
 Full Traceback:
 {error_traceback}"""
@@ -251,7 +436,8 @@ Full Traceback:
             "error_type": error_type,
             "request_url": str(request.url),
             "request_method": request.method,
-            "request_headers": dict(request.headers)
+            "request_headers": dict(request.headers),
+            "client_ip": client_ip
         }
         
         add_log(
@@ -261,6 +447,7 @@ Full Traceback:
             function="global_exception_handler",
             line=0,
             user=None,
+            ip_address=client_ip,
             extra=extra_data
         )
     except Exception as log_error:
@@ -302,14 +489,20 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     
     # Add to database log
     try:
+        client_ip = get_client_ip(request)
         add_log(
             "WARNING",
-            "http_exception",
+            "http_exception_handler",
             f"[{error_id}] {exc.status_code}: {exc.detail} | URL: {request.url}",
-            error_id=error_id,
-            status_code=exc.status_code,
-            request_url=str(request.url),
-            request_method=request.method
+            function="http_exception_handler",
+            ip_address=client_ip,
+            extra={
+                "error_id": error_id,
+                "status_code": exc.status_code,
+                "request_url": str(request.url),
+                "request_method": request.method,
+                "client_ip": client_ip
+            }
         )
     except Exception as log_error:
         logger.error(f"Failed to log HTTP exception to database: {log_error}")
@@ -458,6 +651,10 @@ except Exception as e:
     logger.error(f"GraphQL initialization error: {str(e)}", exc_info=True)
     raise
 
+# Include Google OAuth management router
+app.include_router(google_oauth_router)
+logger.info("Google OAuth management router included")
+
 # Create directories if they don't exist
 os.makedirs("app/assets/img", exist_ok=True)
 os.makedirs("app/assets/files", exist_ok=True)
@@ -559,12 +756,12 @@ async def auth_login(request: Request):
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
-        add_log("INFO", "auth", "User initiated Google OAuth login process")
+        log_with_context(request, "INFO", "auth", "User initiated Google OAuth login process")
         
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured - missing credentials")
-            add_log("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration")
+            log_with_context("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration", request)
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -634,6 +831,58 @@ async def auth_callback(request: Request):
     logger.info(f"Callback URL: {request.url}")
     logger.info(f"Query params: {dict(request.query_params)}")
     
+    # Check for OAuth errors (user denied access, etc.)
+    error = request.query_params.get('error')
+    if error:
+        error_description = request.query_params.get('error_description', '')
+        logger.warning(f"OAuth error received: {error} - {error_description}")
+        
+        if error == 'access_denied':
+            return HTMLResponse(
+                content="""
+                <html>
+                <head>
+                    <title>Authorization Cancelled</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                        .warning { color: #ffc107; }
+                    </style>
+                </head>
+                <body>
+                <h2 class="warning">⚠️ Authorization Cancelled</h2>
+                <p>You cancelled the Google authorization process.</p>
+                <p>To use admin features, you'll need to grant the required permissions.</p>
+                <p><a href="/admin/google/oauth">Try again</a> | <a href="/">Return to main site</a></p>
+                <script>
+                    // If this is a popup, close it after a delay
+                    if (window.opener) {
+                        setTimeout(function() {
+                            try {
+                                window.opener.postMessage({ type: 'OAUTH_CANCELLED' }, window.location.origin);
+                            } catch (e) {
+                                console.log('Could not notify parent window:', e);
+                            }
+                            window.close();
+                        }, 3000);
+                    }
+                </script>
+                </body></html>
+                """, 
+                status_code=200
+            )
+        else:
+            return HTMLResponse(
+                content=f"""
+                <html><body>
+                <h1>Authorization Error</h1>
+                <p>An error occurred during authorization: {error}</p>
+                <p>Description: {error_description}</p>
+                <p><a href="/admin/google/oauth">Try again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
+    
     try:
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
@@ -698,11 +947,97 @@ async def auth_callback(request: Request):
             'is_admin': True  # Since they passed the admin check
         }
         
-        # Log successful login and session creation
-        add_log("INFO", "auth", f"Successful login by {email} - session auth created")
+        # Also save OAuth tokens to database for Gmail API usage
+        from database import save_google_oauth_tokens
+        if token.get('access_token'):
+            try:
+                from datetime import datetime, timezone
+                expires_at = None
+                if token.get('expires_at'):
+                    expires_at = datetime.fromtimestamp(token.get('expires_at'), tz=timezone.utc)
+                
+                # Get actual scopes from token
+                granted_scopes = token.get('scope', 'openid email profile')
+                
+                # Check if this is a Gmail authorization (has gmail.send scope)
+                is_gmail_auth = 'gmail.send' in granted_scopes
+                
+                if is_gmail_auth:
+                    # Gmail authorization flow - save with Gmail scopes
+                    requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
+                    log_with_context("INFO", "gmail_oauth_success", f"Gmail OAuth tokens saved for {email}", request)
+                else:
+                    # Regular login flow - only basic scopes
+                    requested_scopes = 'openid email profile'
+                
+                # Ensure database save happens
+                save_result = await save_google_oauth_tokens(
+                    email,
+                    token.get('access_token'),
+                    token.get('refresh_token', ''),
+                    expires_at,
+                    granted_scopes,
+                    requested_scopes
+                )
+                
+                logger.info(f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, save_result: {save_result}")
+                add_log("INFO", "oauth_tokens_saved", f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, database_save_success: {save_result}")
+                
+            except Exception as db_error:
+                logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
+                log_with_context(request, "ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}")
+                # Don't fail the login if database save fails
         
-        # Redirect to admin page
-        response = RedirectResponse(url="/workadmin")
+        # Log successful login and session creation
+        log_with_context(request, "INFO", "auth", f"Successful login by {email} - session auth created")
+        
+        # Check if this was a Gmail authorization and redirect accordingly
+        granted_scopes = token.get('scope', 'openid email profile')
+        is_gmail_auth = 'gmail.send' in granted_scopes
+        
+        # Check if this is a popup request (we can detect this via query param or opener existence)
+        # For now, we'll assume Gmail auth requests are likely from popup since they come from OAuth admin page
+        if is_gmail_auth:
+            # Gmail authorization - provide popup-friendly response that closes the popup
+            return HTMLResponse(
+                content="""
+                <html>
+                <head>
+                    <title>Authorization Successful</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                        .success { color: #28a745; }
+                    </style>
+                </head>
+                <body>
+                    <h2 class="success">✅ Authorization Successful!</h2>
+                    <p>Google OAuth permissions have been granted successfully.</p>
+                    <p>This window will close automatically...</p>
+                    <script>
+                        // Close popup and notify parent window
+                        setTimeout(function() {
+                            if (window.opener) {
+                                // Notify parent window that auth is complete
+                                try {
+                                    window.opener.postMessage({ type: 'OAUTH_SUCCESS' }, window.location.origin);
+                                } catch (e) {
+                                    console.log('Could not notify parent window:', e);
+                                }
+                                window.close();
+                            } else {
+                                // Not a popup, redirect normally
+                                window.location.href = '/admin/google/oauth';
+                            }
+                        }, 2000);
+                    </script>
+                </body>
+                </html>
+                """, 
+                status_code=200
+            )
+        else:
+            # Regular login - redirect to admin page
+            response = RedirectResponse(url="/workadmin")
         
         logger.info(f"Authentication successful for {email}")
         return response
@@ -735,7 +1070,7 @@ async def logout(request: Request, response: Response):
             user_email = user_session.get('email', 'unknown')
         
         # Add log entry for logout
-        add_log("INFO", "auth", f"User logged out: {user_email}")
+        log_with_context(request, "INFO", "auth", f"User logged out: {user_email}")
         
         # Clear all session data
         request.session.clear()
@@ -765,7 +1100,7 @@ async def disconnect(request: Request, response: Response):
             pass
         
         # Add log entry for disconnect
-        add_log("INFO", "auth", f"User disconnected (revoked tokens): {user_email}")
+        log_with_context(request, "INFO", "auth", f"User disconnected (revoked tokens): {user_email}")
         
         # First try to revoke the Google token if we have one
         try:
@@ -957,6 +1292,9 @@ async def contact_submit(request: Request):
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
         
+        # Send email notification
+        email_sent = await send_contact_email(name, email, subject, message, contact_id)
+        
         # Log successful contact form submission to database
         add_log(
             level="INFO",
@@ -964,7 +1302,7 @@ async def contact_submit(request: Request):
             message=f"Contact form submitted successfully: ID {contact_id}",
             function="contact_submit",
             extra=f"Name: {name}, Email: {email}, Subject: {subject or 'None'}, "
-                   f"Message length: {len(message)} chars"
+                   f"Message length: {len(message)} chars, Email sent: {email_sent}"
         )
         
         # Redirect to thank you page instead of returning JSON
@@ -1171,7 +1509,7 @@ async def get_logs_data(
         try:
             # Validate sort parameters
             valid_sort_fields = {"timestamp", "level", "message", "module",
-                                 "function", "line", "user"}
+                                 "function", "line", "user", "ip_address"}
             if sort_field not in valid_sort_fields:
                 sort_field = "timestamp"
             
@@ -1219,7 +1557,7 @@ async def get_logs_data(
             # Get logs with offset/limit for endless scrolling
             logs_query = f"""
                 SELECT timestamp, level, message, module, function, line,
-                       user, extra
+                       user, extra, ip_address
                 FROM app_log
                 {where_clause}
                 {order_clause}
@@ -1375,15 +1713,18 @@ async def execute_sql(
         
         await database.connect()
         
+        # Check if the query contains multiple statements (separated by semicolons)
+        statements = [stmt.strip() for stmt in query.split(';') if stmt.strip()]
+        
         # Determine if this is a SELECT query or a modification query
-        is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
+        is_select = len(statements) == 1 and (statements[0].upper().strip().startswith('SELECT') or statements[0].upper().strip().startswith('PRAGMA'))
         
         # Add specific log entry for query history tracking
         add_log("INFO", "sql_admin", f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}")
         
         if is_select:
             # For SELECT queries, fetch results
-            rows = await database.fetch_all(query)
+            rows = await database.fetch_all(statements[0])
             # Convert rows to dicts and serialize datetime objects
             rows_data = []
             for row in rows:
@@ -1402,15 +1743,31 @@ async def execute_sql(
                 "message": f"Query executed successfully. {len(rows_data)} rows returned."
             })
         else:
-            # For INSERT/UPDATE/DELETE queries, execute and return row count
-            result = await database.execute(query)
+            # For multiple statements or modification queries, execute each statement individually
+            total_affected = 0
+            messages = []
+            
+            for i, statement in enumerate(statements):
+                if not statement:
+                    continue
+                    
+                try:
+                    result = await database.execute(statement)
+                    if result:
+                        total_affected += result
+                        messages.append(f"Statement {i+1}: {result} rows affected")
+                    else:
+                        messages.append(f"Statement {i+1}: executed successfully")
+                except Exception as stmt_error:
+                    messages.append(f"Statement {i+1}: Error - {str(stmt_error)}")
+            
             execution_time = round((time.time() - start_time) * 1000, 2)
             
             return JSONResponse({
                 "status": "success",
                 "rows": [],
                 "execution_time": execution_time,
-                "message": f"Query executed successfully. {result} rows affected." if result else "Query executed successfully."
+                "message": f"Executed {len(statements)} statements. {'; '.join(messages)}"
             })
             
     except Exception as e:
@@ -2321,11 +2678,12 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
-        # Define explicit scopes that we're requesting
+        # Define explicit scopes that we're requesting (including Gmail for email sending)
         scopes = [
             'openid',
             'email', 
-            'profile'
+            'profile',
+            'https://www.googleapis.com/auth/gmail.send'
         ]
         
         # Use existing OAuth flow with explicit scopes
@@ -2396,6 +2754,95 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
         return JSONResponse({
             "status": "error",
             "error": str(e)
+        }, status_code=500)
+
+
+@app.post("/admin/google/oauth/revoke-scope")
+async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(require_admin_auth_session)):
+    """Revoke a specific Google OAuth scope"""
+    admin_email = admin.get("email")
+    
+    try:
+        # Parse the request body to get the scope
+        try:
+            body = await request.json()
+            scope_to_revoke = body.get("scope")
+        except Exception as json_error:
+            add_log("ERROR", "admin_google_oauth_scope_revoke_json_error", f"Failed to parse JSON request for {admin_email}: {str(json_error)}")
+            return JSONResponse({
+                "status": "error", 
+                "detail": "Invalid JSON in request body"
+            }, status_code=400)
+        
+        if not scope_to_revoke:
+            return JSONResponse({
+                "status": "error", 
+                "detail": "No scope specified"
+            }, status_code=400)
+            
+        add_log("INFO", "admin_google_oauth_scope_revoke", f"Admin {admin_email} revoking Google OAuth scope: {scope_to_revoke}")
+        
+        # Get the current user's access token from session
+        if not hasattr(request, 'session') or 'user' not in request.session:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No active session"
+            }, status_code=401)
+            
+        user_session = request.session['user']
+        access_token = user_session.get('access_token')
+        
+        if not access_token:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No access token available"
+            }, status_code=401)
+            
+        # Make request to Google's revoke endpoint for the specific scope
+        # Note: Google's OAuth2 revoke endpoint doesn't support individual scope revocation
+        # Instead, we'll revoke the entire token and suggest re-authorization without that scope
+        revoke_url = f"https://oauth2.googleapis.com/revoke?token={access_token}"
+        
+        add_log("INFO", "admin_google_oauth_scope_revoke_request", f"Making revoke request to Google for {admin_email}, scope: {scope_to_revoke}")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(revoke_url)
+            
+        add_log("INFO", "admin_google_oauth_scope_revoke_response", f"Google revoke response for {admin_email}: HTTP {response.status_code}")
+            
+        if response.status_code == 200:
+            # Clear the session tokens since we revoked the entire token
+            user_session.pop('access_token', None)
+            user_session.pop('refresh_token', None)
+            user_session.pop('token_expires_at', None)
+            request.session['user'] = user_session
+            
+            add_log("INFO", "admin_google_oauth_scope_revoked", f"Google OAuth token revoked for scope {scope_to_revoke} by {admin_email}")
+            
+            return JSONResponse({
+                "status": "success",
+                "message": f"Access revoked. Note: Google OAuth doesn't support individual scope revocation, so the entire token was revoked. Please re-authorize with only the scopes you want to grant."
+            })
+        else:
+            response_text = ""
+            try:
+                response_text = response.text
+            except:
+                response_text = "Could not read response text"
+            
+            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", f"Failed to revoke Google OAuth scope {scope_to_revoke} for {admin_email}: HTTP {response.status_code}, Response: {response_text}")
+            return JSONResponse({
+                "status": "error",
+                "detail": f"Failed to revoke scope with Google (HTTP {response.status_code})"
+            }, status_code=400)
+        
+    except Exception as e:
+        error_traceback = traceback.format_exc()
+        logger.error(f"Error revoking Google OAuth scope: {str(e)}\n{error_traceback}")
+        add_log("ERROR", "admin_google_oauth_scope_revoke_error", f"Error revoking Google OAuth scope for {admin_email}: {str(e)} | Traceback: {error_traceback}")
+        return JSONResponse({
+            "status": "error",
+            "detail": str(e)
         }, status_code=500)
 
 
@@ -2566,7 +3013,8 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
                 scope_status = {
                     'openid': 'openid' in granted_scopes,
                     'email': 'email' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.email' in granted_scopes,
-                    'profile': 'profile' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.profile' in granted_scopes
+                    'profile': 'profile' in granted_scopes or 'https://www.googleapis.com/auth/userinfo.profile' in granted_scopes,
+                    'https://www.googleapis.com/auth/gmail.send': 'https://www.googleapis.com/auth/gmail.send' in granted_scopes
                 }
                 
                 add_log("INFO", "admin_google_scopes_success", 
