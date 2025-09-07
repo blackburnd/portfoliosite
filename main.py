@@ -56,7 +56,7 @@ from auth import (
 )
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
-from google_oauth_manager import router as google_oauth_router
+from google_auth_ticket_grid import router as google_oauth_router
 
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):

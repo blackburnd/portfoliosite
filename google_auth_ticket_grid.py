@@ -1,25 +1,18 @@
-"""
-Google OAuth Token Management Module
-Simple display of Google OAuth tokens from the database
-"""
-
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from auth import require_admin_auth_session
 from database import database
 
-# Create router for Google OAuth management
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/admin/google/oauth/tokens", response_class=HTMLResponse)
-async def view_google_oauth_tokens(request: Request, admin: dict = Depends(require_admin_auth_session)):
+async def view_google_oauth_tokens(request: Request):
     """Display Google OAuth tokens table"""
     try:
         query = """
-        SELECT 
+        SELECT
             id,
             admin_email,
             access_token,
@@ -32,7 +25,7 @@ async def view_google_oauth_tokens(request: Request, admin: dict = Depends(requi
             is_active,
             created_at,
             updated_at
-        FROM google_oauth_tokens 
+        FROM google_oauth_tokens
         ORDER BY created_at DESC
         """
         
@@ -40,13 +33,11 @@ async def view_google_oauth_tokens(request: Request, admin: dict = Depends(requi
         
         return templates.TemplateResponse("google_oauth_tokens_simple.html", {
             "request": request,
-            "tokens": rows,
-            "admin": admin
+            "tokens": rows
         })
         
     except Exception as e:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error_message": f"Error loading Google OAuth tokens: {str(e)}",
-            "admin": admin
+            "error_message": f"Error loading Google OAuth tokens: {str(e)}"
         })
