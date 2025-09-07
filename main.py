@@ -123,7 +123,10 @@ async def require_admin_auth_session(request: Request):
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}", "admin_auth_exception")
+        import traceback
+        full_traceback = traceback.format_exc()
+        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}\nTraceback: {full_traceback}", "admin_auth_exception")
+        logger.error(f"Admin auth error traceback: {full_traceback}")
         raise HTTPException(
             status_code=500,
             detail="Authentication error occurred."
@@ -208,8 +211,11 @@ This email was automatically generated from your portfolio website contact form.
         return True
         
     except Exception as e:
+        import traceback
+        full_traceback = traceback.format_exc()
         logger.error(f"Gmail API: Failed to send contact notification email: {str(e)}")
-        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}", "gmail_api_email_error")
+        logger.error(f"Gmail API error traceback: {full_traceback}")
+        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}\nTraceback: {full_traceback}", "gmail_api_email_error")
         return False
 
 from app.resolvers import schema
@@ -277,6 +283,7 @@ app.add_middleware(
 @app.middleware("http")
 async def log_non_200_responses(request: Request, call_next):
     """Middleware to log all non-200 responses for monitoring"""
+    import traceback
     try:
         response = await call_next(request)
         
@@ -295,14 +302,24 @@ async def log_non_200_responses(request: Request, call_next):
                 log_level = "INFO"
                 logger_level = "info"
                 
+            # Try to capture response body for error analysis
+            response_body = ""
+            try:
+                # For streaming responses, we can't easily capture the body
+                # But for regular responses, we can try
+                if hasattr(response, 'body'):
+                    response_body = str(response.body)[:1000]  # Limit to 1000 chars
+            except Exception:
+                response_body = "Unable to capture response body"
+                
             getattr(logger, logger_level)(f"{response.status_code} RESPONSE [{error_id}] for {request.url}")
             
-            # Log to database
+            # Log to database with enhanced details
             try:
                 add_log(
                     level=log_level,
                     module="middleware",
-                    message=f"[{error_id}] {response.status_code} response",
+                    message=f"[{error_id}] {response.status_code} response for {request.url}",
                     function="log_non_200_responses",
                     extra={
                         "error_id": error_id,
@@ -310,18 +327,23 @@ async def log_non_200_responses(request: Request, call_next):
                         "url": str(request.url),
                         "method": request.method,
                         "headers": dict(request.headers),
+                        "response_headers": dict(response.headers),
+                        "response_body_preview": response_body,
                         "client_ip": request.client.host if request.client else "unknown"
                     }
                 )
             except Exception as log_error:
                 logger.error(f"Failed to log {response.status_code} response to database: {log_error}")
+                logger.error(f"Database logging error traceback: {traceback.format_exc()}")
         
         return response
         
     except Exception as e:
         # This should be caught by the global exception handler, but just in case
         error_id = secrets.token_urlsafe(8)
+        full_traceback = traceback.format_exc()
         logger.error(f"MIDDLEWARE ERROR [{error_id}]: {str(e)}")
+        logger.error(f"Middleware error traceback: {full_traceback}")
         
         try:
             add_log(
@@ -333,11 +355,13 @@ async def log_non_200_responses(request: Request, call_next):
                     "error_id": error_id,
                     "url": str(request.url),
                     "method": request.method,
-                    "traceback": traceback.format_exc()
+                    "error_type": type(e).__name__,
+                    "traceback": full_traceback
                 }
             )
         except Exception as log_error:
             logger.error(f"Failed to log middleware error to database: {log_error}")
+            logger.error(f"Database logging error traceback: {traceback.format_exc()}")
         
         # Re-raise to let global exception handler deal with it
         raise
