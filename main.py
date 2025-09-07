@@ -118,15 +118,13 @@ class Project(BaseModel):
 # Pydantic model for contact message
 class ContactMessage(BaseModel):
     id: Optional[str] = None
+    portfolio_id: Optional[str] = None
     name: str
     email: str
     subject: Optional[str] = None
     message: str
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    submitted_at: Optional[str] = None
     is_read: Optional[bool] = False
-    admin_notes: Optional[str] = None
+    created_at: Optional[str] = None
 
 
 # Initialize FastAPI app
@@ -820,7 +818,7 @@ async def contact_submit(request: Request):
                 }
             )
         
-        # Get client IP and user agent
+        # Get client IP and user agent for logging
         client_ip = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent", "unknown")
         
@@ -830,9 +828,7 @@ async def contact_submit(request: Request):
             email=email,
             subject=subject if subject else None,
             message=message,
-            ip_address=client_ip,
-            user_agent=user_agent,
-            status="new"
+            is_read=False
         )
         
         # Save to database with dedicated connection like logs endpoint
@@ -841,24 +837,29 @@ async def contact_submit(request: Request):
         await db.connect()
         
         try:
+            # Get the default portfolio_id (assuming Daniel's portfolio)
+            portfolio_query = "SELECT id FROM portfolios LIMIT 1"
+            portfolio_result = await db.fetch_one(portfolio_query)
+            
+            if not portfolio_result:
+                raise Exception("No portfolio found in database")
+            
+            portfolio_id = portfolio_result['id']
+            
             query = """
                 INSERT INTO contact_messages 
-                (name, email, subject, message, created_at, ip_address, 
-                 user_agent, status)
-                VALUES (:name, :email, :subject, :message, NOW(), 
-                        :ip_address, :user_agent, :status)
+                (portfolio_id, name, email, subject, message, created_at, is_read)
+                VALUES (:portfolio_id, :name, :email, :subject, :message, NOW(), FALSE)
                 RETURNING id
             """
             result = await db.fetch_one(
                 query,
                 {
+                    "portfolio_id": portfolio_id,
                     "name": contact_data.name,
                     "email": contact_data.email,
                     "subject": contact_data.subject,
-                    "message": contact_data.message,
-                    "ip_address": contact_data.ip_address,
-                    "user_agent": contact_data.user_agent,
-                    "status": contact_data.status
+                    "message": contact_data.message
                 }
             )
             
