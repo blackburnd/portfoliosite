@@ -6,6 +6,7 @@ let pageSize = 50;
 let isLoading = false;
 let hasMoreLogs = true;
 let intersectionObserver;
+let backendTotalCount = 0; // Total count from backend including filters
 
 // Sorting variables
 let currentSortField = 'timestamp';
@@ -64,13 +65,24 @@ async function loadLogs(append = false) {
     console.log('Loading logs. Append:', append, 'Current offset:', currentOffset);
     
     try {
-        // Build URL with sorting parameters
+        // Build URL with sorting and filter parameters
         const params = new URLSearchParams({
             offset: append ? currentOffset : 0,
             limit: pageSize,
             sort_field: currentSortField,
             sort_order: currentSortOrder
         });
+        
+        // Add filter parameters
+        const searchValue = document.getElementById('searchBox').value.trim();
+        const levelFilter = document.getElementById('levelFilter').value;
+        const moduleFilter = document.getElementById('moduleFilter').value;
+        const timeFilter = document.getElementById('timeFilter').value;
+        
+        if (searchValue) params.append('search', searchValue);
+        if (levelFilter) params.append('level', levelFilter);
+        if (moduleFilter) params.append('module', moduleFilter);
+        if (timeFilter) params.append('time_filter', timeFilter);
         
         const cacheBust = Date.now() + Math.random();
         const response = await fetch(`/logs/data?${params}&v=${cacheBust}&cb=v2_1`, {
@@ -274,11 +286,11 @@ function renderLogs() {
 
 // Update stats display
 function updateStats() {
-    // Count total logs
-    const totalCount = allLogs.length;
+    // Use backend total count (with filters applied) instead of loaded logs count
+    const totalCount = backendTotalCount || allLogs.length;
     document.getElementById('totalCount').textContent = `Total: ${totalCount}`;
     
-    // Count filtered logs
+    // Count filtered logs (client-side filtering on loaded logs)
     const filteredCount = filteredLogs.length;
     document.getElementById('filteredLogs').textContent = `Showing: ${filteredCount}`;
     
@@ -293,6 +305,12 @@ function updateStats() {
 // Update pagination info
 function updatePagination(pagination) {
     console.log('Pagination info:', pagination);
+    
+    // Store backend total count for accurate totals
+    if (pagination.total !== undefined) {
+        backendTotalCount = pagination.total;
+    }
+    
     // Update the log count display
     if (pagination.total !== undefined) {
         document.getElementById('filteredLogs').textContent = `Showing: ${allLogs.length} of ${pagination.total}`;
@@ -321,15 +339,27 @@ function updateModuleFilter() {
     moduleFilter.value = currentValue;
 }
 
+// Reload logs from backend when filters change
+function reloadWithFilters() {
+    console.log('Reloading logs with new filters');
+    currentOffset = 0;
+    allLogs = [];
+    filteredLogs = [];
+    hasMoreLogs = true;
+    backendTotalCount = 0;
+    document.getElementById('logsTableBody').innerHTML = '';
+    loadLogs();
+}
+
 // Setup event listeners
 function setupEventListeners() {
     // Search box
-    document.getElementById('searchBox').addEventListener('keyup', debounce(applyFilters, 300));
+    document.getElementById('searchBox').addEventListener('keyup', debounce(reloadWithFilters, 300));
     
-    // Filter dropdowns
-    document.getElementById('levelFilter').addEventListener('change', applyFilters);
-    document.getElementById('moduleFilter').addEventListener('change', applyFilters);
-    document.getElementById('timeFilter').addEventListener('change', applyFilters);
+    // Filter dropdowns - reload data from backend when filters change
+    document.getElementById('levelFilter').addEventListener('change', reloadWithFilters);
+    document.getElementById('moduleFilter').addEventListener('change', reloadWithFilters);
+    document.getElementById('timeFilter').addEventListener('change', reloadWithFilters);
     
     // Column sorting
     document.querySelectorAll('.logs-table th[data-sort]').forEach(th => {
