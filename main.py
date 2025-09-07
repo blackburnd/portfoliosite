@@ -145,6 +145,53 @@ app.add_middleware(
     https_only=os.getenv("ENV") == "production",
 )
 
+# Add middleware to log all 500 responses
+@app.middleware("http")
+async def log_500_responses(request: Request, call_next):
+    """Middleware to ensure all 500 responses are logged"""
+    try:
+        response = await call_next(request)
+        
+        # If response is 500, make sure it's logged
+        if response.status_code == 500:
+            error_id = secrets.token_urlsafe(8)
+            logger.warning(f"500 RESPONSE [{error_id}] detected for {request.url}")
+            
+            # Log to database
+            try:
+                add_log(
+                    level="ERROR",
+                    module="middleware",
+                    message=f"[{error_id}] 500 Internal Server Error response",
+                    function="log_500_responses",
+                    details=f"URL: {request.url} | Method: {request.method} | "
+                           f"Headers: {dict(request.headers)}"
+                )
+            except Exception as log_error:
+                logger.error(f"Failed to log 500 response to database: {log_error}")
+        
+        return response
+        
+    except Exception as e:
+        # This should be caught by the global exception handler, but just in case
+        error_id = secrets.token_urlsafe(8)
+        logger.error(f"MIDDLEWARE ERROR [{error_id}]: {str(e)}")
+        
+        try:
+            add_log(
+                level="ERROR",
+                module="middleware",
+                message=f"[{error_id}] Middleware error: {str(e)}",
+                function="log_500_responses",
+                details=f"URL: {request.url} | Method: {request.method} | "
+                       f"Traceback: {traceback.format_exc()}"
+            )
+        except Exception as log_error:
+            logger.error(f"Failed to log middleware error to database: {log_error}")
+        
+        # Re-raise to let global exception handler deal with it
+        raise
+
 # Global Exception Handlers for Error Logging and Clean Error Pages
 
 @app.exception_handler(Exception)
@@ -810,6 +857,19 @@ async def contact_submit(request: Request):
         
         # Basic validation
         if not name or not email or not message:
+            # Log validation failure
+            add_log(
+                level="WARNING",
+                module="contact_form",
+                message="Contact form validation failed - missing required fields",
+                function="contact_submit",
+                details=f"Missing fields: "
+                       f"{'name ' if not name else ''}"
+                       f"{'email ' if not email else ''}"
+                       f"{'message ' if not message else ''}"
+                       f"| IP: {request.client.host if request.client else 'unknown'}"
+            )
+            
             return JSONResponse(
                 status_code=400,
                 content={
@@ -871,19 +931,35 @@ async def contact_submit(request: Request):
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
         
+        # Log successful contact form submission to database
+        add_log(
+            level="INFO",
+            module="contact_form",
+            message=f"Contact form submitted successfully: ID {contact_id}",
+            function="contact_submit",
+            details=f"Name: {name}, Email: {email}, Subject: {subject or 'None'}, "
+                   f"Message length: {len(message)} chars"
+        )
+        
         # Redirect to thank you page instead of returning JSON
         return RedirectResponse(url="/contact/thank-you", status_code=303)
         
     except Exception as e:
         error_id = str(uuid.uuid4())[:8]
-        logger.error(f"CONTACT FORM ERROR [{error_id}]: {str(e)}")
+        error_traceback = traceback.format_exc()
         
-        # Log to app_log table
+        logger.error(f"CONTACT FORM ERROR [{error_id}]: {str(e)}")
+        logger.error(f"Contact form traceback:\n{error_traceback}")
+        
+        # Log to app_log table with full traceback
         add_log(
             level="ERROR",
+            module="contact_form", 
             message=f"[{error_id}] Contact form submission failed: {str(e)}",
+            function="contact_submit",
             details=f"Form data: name={name if 'name' in locals() else 'unknown'}, "
-                   f"email={email if 'email' in locals() else 'unknown'}"
+                   f"email={email if 'email' in locals() else 'unknown'}\n"
+                   f"Full traceback:\n{error_traceback}"
         )
         
         return JSONResponse(
