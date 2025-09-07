@@ -184,7 +184,7 @@
             <tr>
                 <th>Admin Email</th>
                 <th>Status</th>
-                <th>Tokens</th>
+                <th>Token Values</th>
                 <th>Granted Scopes</th>
                 <th>Expires</th>
                 <th>Last Used</th>
@@ -206,8 +206,14 @@
                     {% endif %}
                 </td>
                 <td>
-                    <div>Access: {{ token.access_token_status or 'None' }}</div>
-                    <div>Refresh: {{ token.refresh_token_status or 'None' }}</div>
+                    <div style="font-family: monospace; font-size: 0.8rem; max-width: 300px; word-break: break-all;">
+                        <div><strong>Access:</strong><br>{{ token.access_token[:50] }}{% if token.access_token|length > 50 %}...{% endif %}</div>
+                        {% if token.refresh_token %}
+                        <div style="margin-top: 5px;"><strong>Refresh:</strong><br>{{ token.refresh_token[:50] }}{% if token.refresh_token|length > 50 %}...{% endif %}</div>
+                        {% else %}
+                        <div style="margin-top: 5px; color: #6c757d;"><strong>Refresh:</strong><br>None</div>
+                        {% endif %}
+                    </div>
                 </td>
                 <td>
                     <div class="scopes-list">
