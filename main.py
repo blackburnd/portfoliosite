@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
 from typing import Optional, List
+import databases
 
 # Load environment variables from .env file
 load_dotenv()
@@ -224,6 +225,17 @@ This email was automatically generated from your portfolio website contact form.
 from app.resolvers import schema
 from database import init_database, close_database, database
 from databases import Database
+
+# Centralized database connection function
+def get_database_connection():
+    """
+    Centralized function to create database connections.
+    This ensures consistent database URL handling across the entire application.
+    """
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No database URL found in environment variables")
+    return Database(database_url)
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -1230,9 +1242,8 @@ async def contact_submit(request: Request):
             is_read=False
         )
         
-        # Save to database with dedicated connection like logs endpoint
-        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        db = Database(DATABASE_URL)
+        # Save to database with centralized connection
+        db = get_database_connection()
         await db.connect()
         
         try:
@@ -1473,15 +1484,17 @@ async def get_logs_data(
         """Convert datetime objects to JSON-serializable strings"""
         if isinstance(obj, datetime):
             return obj.isoformat()
+        return str(obj)
+        if isinstance(obj, (IPv4Address, IPv6Address)):
+            return str(obj)
         return obj
     
     try:
         # Add a test log entry to ensure we have something to display
         add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
         
-        # Create our own database connection like add_log does
-        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        db = databases.Database(DATABASE_URL)
+        # Use centralized database connection
+        db = get_database_connection()
         await db.connect()
         
         try:
