@@ -1481,7 +1481,7 @@ async def get_logs_data(
         
         # Create our own database connection like add_log does
         DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        db = Database(DATABASE_URL)
+        db = databases.Database(DATABASE_URL)
         await db.connect()
         
         try:
