@@ -164,8 +164,12 @@ async def log_500_responses(request: Request, call_next):
                     module="middleware",
                     message=f"[{error_id}] 500 Internal Server Error response",
                     function="log_500_responses",
-                    details=f"URL: {request.url} | Method: {request.method} | "
-                           f"Headers: {dict(request.headers)}"
+                    extra={
+                        "error_id": error_id,
+                        "url": str(request.url),
+                        "method": request.method,
+                        "headers": dict(request.headers)
+                    }
                 )
             except Exception as log_error:
                 logger.error(f"Failed to log 500 response to database: {log_error}")
@@ -183,8 +187,12 @@ async def log_500_responses(request: Request, call_next):
                 module="middleware",
                 message=f"[{error_id}] Middleware error: {str(e)}",
                 function="log_500_responses",
-                details=f"URL: {request.url} | Method: {request.method} | "
-                       f"Traceback: {traceback.format_exc()}"
+                extra={
+                    "error_id": error_id,
+                    "url": str(request.url),
+                    "method": request.method,
+                    "traceback": traceback.format_exc()
+                }
             )
         except Exception as log_error:
             logger.error(f"Failed to log middleware error to database: {log_error}")
@@ -858,16 +866,20 @@ async def contact_submit(request: Request):
         # Basic validation
         if not name or not email or not message:
             # Log validation failure
+            missing_fields = []
+            if not name: missing_fields.append("name")
+            if not email: missing_fields.append("email")
+            if not message: missing_fields.append("message")
+            
             add_log(
                 level="WARNING",
                 module="contact_form",
                 message="Contact form validation failed - missing required fields",
                 function="contact_submit",
-                details=f"Missing fields: "
-                       f"{'name ' if not name else ''}"
-                       f"{'email ' if not email else ''}"
-                       f"{'message ' if not message else ''}"
-                       f"| IP: {request.client.host if request.client else 'unknown'}"
+                extra={
+                    "missing_fields": missing_fields,
+                    "ip": request.client.host if request.client else 'unknown'
+                }
             )
             
             return JSONResponse(
@@ -937,7 +949,7 @@ async def contact_submit(request: Request):
             module="contact_form",
             message=f"Contact form submitted successfully: ID {contact_id}",
             function="contact_submit",
-            details=f"Name: {name}, Email: {email}, Subject: {subject or 'None'}, "
+            extra=f"Name: {name}, Email: {email}, Subject: {subject or 'None'}, "
                    f"Message length: {len(message)} chars"
         )
         
@@ -957,9 +969,14 @@ async def contact_submit(request: Request):
             module="contact_form", 
             message=f"[{error_id}] Contact form submission failed: {str(e)}",
             function="contact_submit",
-            details=f"Form data: name={name if 'name' in locals() else 'unknown'}, "
-                   f"email={email if 'email' in locals() else 'unknown'}\n"
-                   f"Full traceback:\n{error_traceback}"
+            extra={
+                "error_id": error_id,
+                "form_data": {
+                    "name": name if 'name' in locals() else 'unknown',
+                    "email": email if 'email' in locals() else 'unknown'
+                },
+                "traceback": error_traceback
+            }
         )
         
         return JSONResponse(
