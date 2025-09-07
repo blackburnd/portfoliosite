@@ -2398,18 +2398,39 @@ td[style*="#abd6ff"] {
 .permission-status {
     float: right;
     font-weight: bold;
+    position: relative;
 }
 
 .status-granted {
     color: #28a745;
+    position: relative;
+    display: inline-block;
+    min-width: 100px;
 }
 
 .status-denied {
     color: #dc3545;
+    position: relative;
+    display: inline-block;
+    min-width: 100px;
 }
 
 .status-unknown {
     color: #6c757d;
+}
+
+.permission-timestamp {
+    position: absolute;
+    bottom: -18px;
+    right: 0;
+    font-size: 0.7em;
+    color: #6c757d;
+    font-weight: normal;
+    white-space: nowrap;
+    background-color: rgba(248, 249, 250, 0.9);
+    padding: 2px 4px;
+    border-radius: 2px;
+    border: 1px solid #dee2e6;
 }
 
 .scopes-status-info {
@@ -2459,6 +2480,12 @@ td[style*="#abd6ff"] {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 5px;
+    position: relative;
+    min-height: 30px; /* Extra space for timestamp */
+}
+
+.scope-item {
+    margin-bottom: 25px; /* Extra space for timestamp */
 }
 
 .scope-name {

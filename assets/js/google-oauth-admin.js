@@ -40,6 +40,17 @@ class GoogleOAuthAdmin {
         this.resetPermissionStatus();
     }
 
+    formatTimestamp() {
+        const now = new Date();
+        return now.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
     bindEvents() {
         // Google Configuration Form
         const googleForm = document.getElementById('google-config-form');
@@ -65,9 +76,6 @@ class GoogleOAuthAdmin {
 
         const testProfileBtn = document.getElementById('test-profile-access');
         if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
-        
-        const checkPermissionsBtn = document.getElementById('check-permissions');
-        if (checkPermissionsBtn) checkPermissionsBtn.addEventListener('click', () => this.checkGrantedScopes());
     }
 
     async loadGoogleStatus() {
@@ -167,14 +175,23 @@ class GoogleOAuthAdmin {
         };
 
         let allPermissionsGranted = true;
+        const currentTime = this.formatTimestamp();
 
         Object.entries(scopeElements).forEach(([elementId, granted]) => {
             const element = document.getElementById(elementId);
             if (element) {
                 if (granted) {
-                    element.innerHTML = '<span class="status-granted">✅ Granted</span>';
+                    element.innerHTML = `
+                        <span class="status-granted">
+                            ✅ Granted
+                            <span class="permission-timestamp">Last checked: ${currentTime}</span>
+                        </span>`;
                 } else {
-                    element.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                    element.innerHTML = `
+                        <span class="status-denied">
+                            ❌ Denied
+                            <span class="permission-timestamp">Last checked: ${currentTime}</span>
+                        </span>`;
                     allPermissionsGranted = false;
                 }
             }
@@ -206,13 +223,23 @@ class GoogleOAuthAdmin {
             'profile-status': (profileData.name || profileData.picture) ? 'granted' : 'denied'
         };
 
+        const currentTime = this.formatTimestamp();
+
         Object.entries(permissions).forEach(([elementId, status]) => {
             const element = document.getElementById(elementId);
             if (element) {
                 if (status === 'granted') {
-                    element.innerHTML = '<span class="status-granted">✅ Granted</span>';
+                    element.innerHTML = `
+                        <span class="status-granted">
+                            ✅ Granted
+                            <span class="permission-timestamp">Last checked: ${currentTime}</span>
+                        </span>`;
                 } else {
-                    element.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                    element.innerHTML = `
+                        <span class="status-denied">
+                            ❌ Denied
+                            <span class="permission-timestamp">Last checked: ${currentTime}</span>
+                        </span>`;
                 }
             }
         });
