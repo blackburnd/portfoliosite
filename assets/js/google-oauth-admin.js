@@ -345,7 +345,9 @@ class GoogleOAuthAdmin {
     }
 
     async revokeGoogleAuth() {
-        if (!confirm('Are you sure you want to revoke Google access?')) {
+        const revokeMessage = `Are you sure you want to revoke Google OAuth access?\n\nThis will:\n• Remove your Google authentication token\n• Clear your current Google session\n• Require re-authorization to access Google data\n\nNote: Your admin access to this site will remain intact.`;
+        
+        if (!confirm(revokeMessage)) {
             return;
         }
 
@@ -355,7 +357,7 @@ class GoogleOAuthAdmin {
             });
 
             if (response.ok) {
-                this.showMessage('Google access revoked successfully', 'success');
+                this.showMessage('Google access revoked successfully. Admin access remains active.', 'success');
                 this.loadGoogleStatus();
             } else {
                 const error = await response.json();
