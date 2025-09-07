@@ -265,3 +265,16 @@ log_capture = LogCapture()
 
 # Set up database logging when module is imported
 setup_database_logging()
+
+
+def log_with_context(request, level: str, module: str, message: str, function: str = None, **kwargs):
+    """Log with IP address context for security monitoring"""
+    client_ip = get_client_ip(request)
+    add_log(
+        level=level,
+        module=module,
+        message=message,
+        function=function or "unknown",
+        ip_address=client_ip,
+        **kwargs
+    )

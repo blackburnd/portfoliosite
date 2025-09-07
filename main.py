@@ -29,7 +29,7 @@ from pathlib import Path
 import sqlite3
 import asyncio
 import hashlib
-from log_capture import add_log
+from log_capture import add_log, get_client_ip, log_with_context
 
 # Configure logging
 logging.basicConfig(
