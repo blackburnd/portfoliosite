@@ -1056,7 +1056,7 @@ async def get_logs_data(
                 params["search"] = f"%{search}%"
             
             if level:
-                where_conditions.append("level = :level")
+                where_conditions.append("LOWER(level) = LOWER(:level)")
                 params["level"] = level
                 
             if module:
