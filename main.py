@@ -31,7 +31,7 @@ from pathlib import Path
 import sqlite3
 import asyncio
 import hashlib
-from log_capture import add_log, get_client_ip
+from log_capture import add_log, get_client_ip, log_with_context
 
 # Google API imports for Gmail
 from googleapiclient.discovery import build
@@ -59,29 +59,7 @@ from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
 from google_auth_ticket_grid import router as google_oauth_router
 
-# Context-aware logging helper
-def log_with_context(level: str, module: str, message: str, 
-                    request: Optional[Request] = None, **kwargs):
-    """
-    Enhanced logging function that automatically captures IP address from request context.
-    Use this for all user-triggered logging to ensure IP addresses are captured.
-    """
-    ip_address = None
-    
-    if request:
-        try:
-            ip_address = get_client_ip(request)
-        except Exception:
-            ip_address = "unknown"
-    
-    # Call the original add_log with IP address
-    add_log(
-        level=level,
-        module=module, 
-        message=message,
-        ip_address=ip_address,
-        **kwargs
-    )
+# Import the log_with_context function from log_capture instead of defining it here
 
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):
@@ -756,12 +734,12 @@ async def auth_login(request: Request):
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
-        log_with_context(request, "INFO", "auth", "User initiated Google OAuth login process")
+        add_log("INFO", "User initiated Google OAuth login process", "auth")
         
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured - missing credentials")
-            log_with_context("ERROR", "auth", "OAuth login failed - missing Google OAuth configuration", request)
+            add_log("ERROR", "OAuth login failed - missing Google OAuth configuration", "auth")
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -924,7 +902,7 @@ async def auth_callback(request: Request):
             )
         
         if not is_authorized_user(email):
-            add_log("WARNING", "auth", f"Unauthorized login attempt by {email}")
+            add_log("WARNING", f"Unauthorized login attempt by {email}", "auth")
             return HTMLResponse(
                 content=f"""
                 <html><body>
@@ -965,7 +943,7 @@ async def auth_callback(request: Request):
                 if is_gmail_auth:
                     # Gmail authorization flow - save with Gmail scopes
                     requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
-                    log_with_context("INFO", "gmail_oauth_success", f"Gmail OAuth tokens saved for {email}", request)
+                    add_log("INFO", f"Gmail OAuth tokens saved for {email}", "gmail_oauth_success")
                 else:
                     # Regular login flow - only basic scopes
                     requested_scopes = 'openid email profile'
@@ -985,11 +963,11 @@ async def auth_callback(request: Request):
                 
             except Exception as db_error:
                 logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
-                log_with_context(request, "ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}")
+                add_log("ERROR", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}", "oauth_database_save_error")
                 # Don't fail the login if database save fails
         
         # Log successful login and session creation
-        log_with_context(request, "INFO", "auth", f"Successful login by {email} - session auth created")
+        log_with_context("INFO", f"Successful login by {email} - session auth created", "auth", request=request)
         
         # Check if this was a Gmail authorization and redirect accordingly
         granted_scopes = token.get('scope', 'openid email profile')
@@ -1070,7 +1048,7 @@ async def logout(request: Request, response: Response):
             user_email = user_session.get('email', 'unknown')
         
         # Add log entry for logout
-        log_with_context(request, "INFO", "auth", f"User logged out: {user_email}")
+        log_with_context("INFO", f"User logged out: {user_email}", "auth", request=request)
         
         # Clear all session data
         request.session.clear()
@@ -1100,7 +1078,7 @@ async def disconnect(request: Request, response: Response):
             pass
         
         # Add log entry for disconnect
-        log_with_context(request, "INFO", "auth", f"User disconnected (revoked tokens): {user_email}")
+        add_log("INFO", f"User disconnected (revoked tokens): {user_email}", "auth")
         
         # First try to revoke the Google token if we have one
         try:
