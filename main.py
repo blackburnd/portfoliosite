@@ -31,7 +31,7 @@ from pathlib import Path
 import sqlite3
 import asyncio
 import hashlib
-from log_capture import add_log
+from log_capture import add_log, get_client_ip
 
 # Google API imports for Gmail
 from googleapiclient.discovery import build
@@ -930,7 +930,8 @@ async def auth_callback(request: Request):
                     # Regular login flow - only basic scopes
                     requested_scopes = 'openid email profile'
                 
-                await save_google_oauth_tokens(
+                # Ensure database save happens
+                save_result = await save_google_oauth_tokens(
                     email,
                     token.get('access_token'),
                     token.get('refresh_token', ''),
@@ -938,9 +939,13 @@ async def auth_callback(request: Request):
                     granted_scopes,
                     requested_scopes
                 )
-                logger.info(f"OAuth tokens saved to database for {email}")
+                
+                logger.info(f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, save_result: {save_result}")
+                add_log("INFO", "oauth_tokens_saved", f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, database_save_success: {save_result}")
+                
             except Exception as db_error:
                 logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
+                add_log("ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}")
                 # Don't fail the login if database save fails
         
         # Log successful login and session creation
@@ -1464,7 +1469,7 @@ async def get_logs_data(
         try:
             # Validate sort parameters
             valid_sort_fields = {"timestamp", "level", "message", "module",
-                                 "function", "line", "user"}
+                                 "function", "line", "user", "ip_address"}
             if sort_field not in valid_sort_fields:
                 sort_field = "timestamp"
             
@@ -1512,7 +1517,7 @@ async def get_logs_data(
             # Get logs with offset/limit for endless scrolling
             logs_query = f"""
                 SELECT timestamp, level, message, module, function, line,
-                       user, extra
+                       user, extra, ip_address
                 FROM app_log
                 {where_clause}
                 {order_clause}

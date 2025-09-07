@@ -10,6 +10,37 @@ from typing import Optional
 import json
 
 import databases
+from fastapi import Request
+
+
+def get_client_ip(request: Request) -> str:
+    """
+    Extract the real client IP address from the request, accounting for proxies and load balancers.
+    Checks headers commonly used by reverse proxies and load balancers.
+    """
+    # Check various proxy headers in order of preference
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # X-Forwarded-For can contain multiple IPs, the first one is usually the original client
+        return forwarded_for.split(",")[0].strip()
+    
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    
+    cf_connecting_ip = request.headers.get("CF-Connecting-IP")  # Cloudflare
+    if cf_connecting_ip:
+        return cf_connecting_ip.strip()
+    
+    x_forwarded = request.headers.get("X-Forwarded")
+    if x_forwarded:
+        return x_forwarded.split(",")[0].strip()
+    
+    # Fall back to the direct client IP
+    if request.client:
+        return request.client.host
+    
+    return "unknown"
 
 
 class DatabaseLogHandler(logging.Handler):
@@ -56,21 +87,27 @@ class DatabaseLogHandler(logging.Handler):
             
             # Get user info if available
             user = getattr(record, 'user', None)
+            # Get IP address if available
+            ip_address = getattr(record, 'ip_address', None)
             
             query = """
-                INSERT INTO app_log (timestamp, level, message, module, function, line, user, extra)
-                VALUES (:timestamp, :level, :message, :module, :function, :line, :user, :extra)
+                INSERT INTO app_log (timestamp, level, message, module,
+                                   function, line, user, extra, ip_address)
+                VALUES (:timestamp, :level, :message, :module,
+                       :function, :line, :user, :extra, :ip_address)
             """
             
             values = {
                 'timestamp': datetime.fromtimestamp(record.created),
                 'level': record.levelname,
                 'message': record.getMessage(),
-                'module': record.module if hasattr(record, 'module') else record.name,
+                'module': (record.module if hasattr(record, 'module')
+                           else record.name),
                 'function': record.funcName,
                 'line': record.lineno,
                 'user': user,
-                'extra': json.dumps(extra) if extra else None
+                'extra': json.dumps(extra) if extra else None,
+                'ip_address': ip_address
             }
             
             await self.db.execute(query, values)
@@ -80,7 +117,7 @@ class DatabaseLogHandler(logging.Handler):
             print(f"Database log insert failed: {e}")
             try:
                 await self.db.disconnect()
-            except:
+            except Exception:
                 pass
 
 
@@ -119,7 +156,8 @@ def setup_database_logging():
 
 def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
-            user: Optional[str] = None, extra: Optional[dict] = None):
+            user: Optional[str] = None, extra: Optional[dict] = None,
+            ip_address: Optional[str] = None):
     """Manually add a log entry to the database"""
     database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not database_url:
@@ -134,9 +172,9 @@ def add_log(level: str, message: str, module: str = "manual",
 
             query = """
                 INSERT INTO app_log (timestamp, level, message, module,
-                                   function, line, "user", extra)
+                                   function, line, "user", extra, ip_address)
                 VALUES (:timestamp, :level, :message, :module, :function,
-                       :line, :user, :extra)
+                       :line, :user, :extra, :ip_address)
             """
 
             values = {
@@ -147,7 +185,8 @@ def add_log(level: str, message: str, module: str = "manual",
                 'function': function,
                 'line': line,
                 'user': user,
-                'extra': json.dumps(extra) if extra else None
+                'extra': json.dumps(extra) if extra else None,
+                'ip_address': ip_address
             }
 
             await db.execute(query, values)

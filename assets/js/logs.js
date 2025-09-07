@@ -204,7 +204,7 @@ function updateDisplay() {
     if (filteredLogs.length === 0) {
         console.log('No filtered logs to display');
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="6" style="text-align: center; padding: 20px;">No logs found</td>';
+        row.innerHTML = '<td colspan="7" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
         return;
     }
@@ -226,6 +226,7 @@ function updateDisplay() {
             </td>
             <td class="log-function">${escapeHtml(log.function || '')}</td>
             <td class="log-line">${escapeHtml(log.line || '')}</td>
+            <td class="log-ip">${escapeHtml(log.ip_address || 'N/A')}</td>
         `;
         tbody.appendChild(row);
     });
@@ -252,6 +253,7 @@ function renderLogs() {
             </td>
             <td class="log-function">${escapeHtml(log.function || '')}</td>
             <td class="log-line">${escapeHtml(log.line || '')}</td>
+            <td class="log-ip">${escapeHtml(log.ip_address || 'N/A')}</td>
         `;
         tbody.appendChild(row);
     });
