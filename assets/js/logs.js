@@ -53,7 +53,28 @@ window.clearFilters = function() {
     document.getElementById('moduleFilter').value = '';
     document.getElementById('timeFilter').value = '';
     applyFilters();
+    updateClearFiltersButtonVisibility();
 };
+
+// Check if any filters are active
+function hasActiveFilters() {
+    const searchValue = document.getElementById('searchBox').value.trim();
+    const levelFilter = document.getElementById('levelFilter').value;
+    const moduleFilter = document.getElementById('moduleFilter').value;
+    const timeFilter = document.getElementById('timeFilter').value;
+    
+    return searchValue !== '' || levelFilter !== '' || moduleFilter !== '' || timeFilter !== '';
+}
+
+// Show or hide the clear filters button based on filter state
+function updateClearFiltersButtonVisibility() {
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (hasActiveFilters()) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+}
 
 // Load logs with pagination
 async function loadLogs(append = false) {
@@ -306,12 +327,24 @@ function reloadWithFilters() {
 // Setup event listeners
 function setupEventListeners() {
     // Search box
-    document.getElementById('searchBox').addEventListener('keyup', debounce(applyFilters, 300));
+    document.getElementById('searchBox').addEventListener('keyup', debounce(() => {
+        applyFilters();
+        updateClearFiltersButtonVisibility();
+    }, 300));
     
     // Filter dropdowns - reload data from backend when filters change
-    document.getElementById('levelFilter').addEventListener('change', applyFilters);
-    document.getElementById('moduleFilter').addEventListener('change', applyFilters);
-    document.getElementById('timeFilter').addEventListener('change', applyFilters);
+    document.getElementById('levelFilter').addEventListener('change', () => {
+        applyFilters();
+        updateClearFiltersButtonVisibility();
+    });
+    document.getElementById('moduleFilter').addEventListener('change', () => {
+        applyFilters();
+        updateClearFiltersButtonVisibility();
+    });
+    document.getElementById('timeFilter').addEventListener('change', () => {
+        applyFilters();
+        updateClearFiltersButtonVisibility();
+    });
     
     // Column sorting
     document.querySelectorAll('.logs-table th[data-sort]').forEach(th => {
@@ -477,6 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing logs interface');
     calculateAndSetTableHeight();
     setupEventListeners();
+    updateClearFiltersButtonVisibility(); // Check initial filter state
     loadLogs();
     
     // Recalculate on window resize
