@@ -1008,6 +1008,10 @@ async def get_logs_data(
     page: int = None,
     sort_field: str = "timestamp",
     sort_order: str = "desc",
+    search: str = None,
+    level: str = None,
+    module: str = None,
+    time_filter: str = None,
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Get log data for endless scrolling logs interface"""
@@ -1043,6 +1047,38 @@ async def get_logs_data(
             if sort_order.lower() not in valid_sort_orders:
                 sort_order = "desc"
             
+            # Build WHERE clause for filtering
+            where_conditions = []
+            params = {"limit": limit, "offset": offset}
+            
+            if search:
+                where_conditions.append("(message ILIKE :search OR module ILIKE :search OR function ILIKE :search)")
+                params["search"] = f"%{search}%"
+            
+            if level:
+                where_conditions.append("level = :level")
+                params["level"] = level
+                
+            if module:
+                where_conditions.append("module = :module")
+                params["module"] = module
+                
+            if time_filter:
+                if time_filter == "1h":
+                    where_conditions.append("timestamp >= NOW() - INTERVAL '1 hour'")
+                elif time_filter == "24h":
+                    where_conditions.append("timestamp >= NOW() - INTERVAL '24 hours'")
+                elif time_filter == "7d":
+                    where_conditions.append("timestamp >= NOW() - INTERVAL '7 days'")
+            
+            where_clause = ""
+            if where_conditions:
+                where_clause = "WHERE " + " AND ".join(where_conditions)
+            
+            # Get total count with filters
+            count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
+            total_count = await db.fetch_val(count_query, params)
+            
             # Build dynamic ORDER BY clause
             order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
             
@@ -1051,6 +1087,7 @@ async def get_logs_data(
                 SELECT timestamp, level, message, module, function, line,
                        user, extra
                 FROM app_log
+                {where_clause}
                 {order_clause}
                 LIMIT :limit OFFSET :offset
             """
@@ -1081,7 +1118,8 @@ async def get_logs_data(
                     "page": (offset // limit) + 1,
                     "limit": limit,
                     "offset": offset,
-                    "total": len(logs_data)
+                    "total": total_count,  # Actual total from database
+                    "showing": len(logs_data)  # Number of records in this response
                 }
             })
         finally:

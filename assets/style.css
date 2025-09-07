@@ -1973,15 +1973,15 @@ td[style*="#abd6ff"] {
 .logs-table-container {
     border: 1px solid #ddd;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: auto; /* Allow both horizontal and vertical scrolling */
     background: white;
     max-height: 600px;
-    overflow-y: auto;
 }
 
 .logs-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 800px; /* Ensure table has minimum width to show all columns */
 }
 
 .logs-table th {
@@ -2145,5 +2145,14 @@ td[style*="#abd6ff"] {
     
     .filter-group {
         min-width: 100px;
+    }
+    
+    /* Ensure table is horizontally scrollable on small screens */
+    .logs-table-container {
+        overflow-x: auto;
+    }
+    
+    .logs-table {
+        min-width: 900px; /* Force horizontal scroll on mobile */
     }
 }
