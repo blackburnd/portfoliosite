@@ -331,13 +331,12 @@ async def log_non_200_responses(request: Request, call_next):
             
             # Log to database with enhanced details
             try:
-                client_ip = get_client_ip(request)
-                add_log(
+                log_with_context(
                     level=log_level,
-                    module="middleware",
                     message=f"[{error_id}] {response.status_code} response for {request.url}",
+                    module="middleware",
                     function="log_non_200_responses",
-                    ip_address=client_ip,
+                    request=request,
                     extra={
                         "error_id": error_id,
                         "status_code": response.status_code,
@@ -345,8 +344,7 @@ async def log_non_200_responses(request: Request, call_next):
                         "method": request.method,
                         "headers": dict(request.headers),
                         "response_headers": dict(response.headers),
-                        "response_body_preview": response_body,
-                        "client_ip": client_ip
+                        "response_body_preview": response_body
                     }
                 )
             except Exception as log_error:
