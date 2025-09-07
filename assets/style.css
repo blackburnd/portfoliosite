@@ -2393,3 +2393,107 @@ td[style*="#abd6ff"] {
         min-width: 900px; /* Force horizontal scroll on mobile */
     }
 }
+
+/* Google OAuth Admin Styles */
+.oauth-admin-content .scope-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.oauth-admin-content .scope-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.oauth-admin-content .scope-name {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.oauth-admin-content .required-badge {
+    background: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.oauth-admin-content .permission-status {
+    font-weight: bold;
+}
+
+.oauth-admin-content .status-unknown {
+    color: #6c757d;
+}
+
+.oauth-admin-content .status-granted {
+    color: #28a745;
+}
+
+.oauth-admin-content .status-denied {
+    color: #dc3545;
+}
+
+.oauth-admin-content .scope-description {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.oauth-admin-content .scope-data-access {
+    font-size: 0.9em;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.oauth-admin-content .scopes-status-info {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.oauth-admin-content .scopes-status-info p {
+    margin: 0;
+    color: #155724;
+}
+
+.oauth-admin-content .connection-status-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.oauth-admin-content .connection-status-info p {
+    margin: 0;
+    color: #0c5460;
+}
+
+.oauth-admin-content .connection-detail {
+    margin-bottom: 10px;
+}
+
+.oauth-admin-content .connection-value {
+    font-weight: bold;
+    color: #495057;
+}
+
+.oauth-admin-content .connection-note {
+    display: block;
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-top: 2px;
+}

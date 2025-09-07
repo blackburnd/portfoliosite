@@ -35,6 +35,9 @@ class GoogleOAuthAdmin {
         
         this.bindEvents();
         this.loadGoogleStatus();
+        
+        // Initialize permission status on page load
+        this.resetPermissionStatus();
     }
 
     bindEvents() {
@@ -84,6 +87,7 @@ class GoogleOAuthAdmin {
         const statusText = document.getElementById('google-status-text');
         const connectionStatus = document.getElementById('google-connection-status');
         const connectionText = document.getElementById('google-connection-text');
+        const connectionDetails = document.getElementById('google-connection-details');
 
         if (data.configured) {
             statusDisplay.className = 'status-configured';
@@ -98,20 +102,54 @@ class GoogleOAuthAdmin {
             statusText.textContent = 'Google OAuth not configured';
         }
 
-        if (data.connected) {
+        // Update connection status
+        if (data.connected && data.account_email) {
             connectionStatus.className = 'status-configured';
             connectionText.textContent = 'Connected to Google';
+            connectionDetails.style.display = 'block';
             
-            const details = document.getElementById('google-connection-details');
-            details.style.display = 'block';
-            document.getElementById('google-account-email').textContent = data.account_email || 'Unknown';
-            document.getElementById('google-last-sync').textContent = data.last_sync || 'Never';
+            document.getElementById('google-account-email').textContent = data.account_email;
+            document.getElementById('google-last-sync').textContent = data.last_sync || 'Current session';
             document.getElementById('google-token-expiry').textContent = data.token_expiry || 'Unknown';
         } else {
             connectionStatus.className = 'status-not-configured';
             connectionText.textContent = 'Not connected to Google';
-            document.getElementById('google-connection-details').style.display = 'none';
+            connectionDetails.style.display = 'none';
+            
+            // Reset permission status indicators
+            this.resetPermissionStatus();
         }
+    }
+
+    resetPermissionStatus() {
+        // Reset all permission status indicators to unknown
+        const permissionElements = ['openid-status', 'email-status', 'profile-status'];
+        permissionElements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = '<span class="status-unknown">⚪ Unknown</span>';
+            }
+        });
+    }
+
+    updatePermissionStatus(profileData) {
+        // Update permission status based on successful profile data retrieval
+        const permissions = {
+            'openid-status': profileData.id ? 'granted' : 'denied',
+            'email-status': profileData.email ? 'granted' : 'denied', 
+            'profile-status': (profileData.name || profileData.picture) ? 'granted' : 'denied'
+        };
+
+        Object.entries(permissions).forEach(([elementId, status]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (status === 'granted') {
+                    element.innerHTML = '<span class="status-granted">✅ Granted</span>';
+                } else {
+                    element.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                }
+            }
+        });
     }
 
     async saveGoogleConfig(e) {
@@ -262,9 +300,13 @@ class GoogleOAuthAdmin {
 
             if (response.ok && result.status === 'success') {
                 const data = result.data;
+                
+                // Update permission status indicators
+                this.updatePermissionStatus(data);
+                
                 resultsDiv.innerHTML = `
                     <div class="test-success">
-                        ✅ Profile Access test passed<br>
+                        ✅ Profile Access test passed - All required permissions granted<br>
                         <strong>ID:</strong> ${data.id || 'N/A'}<br>
                         <strong>Name:</strong> ${data.name || 'N/A'}<br>
                         <strong>Email:</strong> ${data.email || 'N/A'}<br>
@@ -273,10 +315,13 @@ class GoogleOAuthAdmin {
                         <strong>Locale:</strong> ${data.locale || 'N/A'}
                     </div>`;
             } else {
+                // Reset permission status on failure
+                this.resetPermissionStatus();
                 resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.message || result.detail}</div>`;
             }
         } catch (error) {
             console.error('Error testing profile access:', error);
+            this.resetPermissionStatus();
             resultsDiv.innerHTML = '<div class="test-error">❌ Profile Access test failed: Network error</div>';
         }
     }
