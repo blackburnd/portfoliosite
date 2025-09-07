@@ -39,3 +39,7 @@ uvloop==0.21.0
 watchfiles==1.1.0
 websockets==15.0.1
 linkedin-api==2.3.1
+google-api-python-client==2.181.0
+google-auth==2.40.3
+google-auth-oauthlib==1.2.2
+google-auth-httplib2==0.2.0

@@ -171,7 +171,8 @@ class GoogleOAuthAdmin {
         const scopeElements = {
             'openid-status': scopes.openid,
             'email-status': scopes.email,
-            'profile-status': scopes.profile
+            'profile-status': scopes.profile,
+            'gmail-send-status': scopes['https://www.googleapis.com/auth/gmail.send']
         };
 
         let allPermissionsGranted = true;
@@ -203,7 +204,7 @@ class GoogleOAuthAdmin {
 
     resetPermissionStatus() {
         // Reset all permission status indicators to unknown
-        const permissionElements = ['openid-status', 'email-status', 'profile-status'];
+        const permissionElements = ['openid-status', 'email-status', 'profile-status', 'gmail-send-status'];
         permissionElements.forEach(elementId => {
             const element = document.getElementById(elementId);
             if (element) {

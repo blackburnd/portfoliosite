@@ -7,9 +7,7 @@ import time
 import traceback
 import sys
 import uuid
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import base64
 from datetime import datetime
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, status
@@ -31,12 +29,13 @@ import json
 from pathlib import Path
 import sqlite3
 import asyncio
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import hashlib
 from log_capture import add_log
+
+# Google API imports for Gmail
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request as GoogleRequest
+from google.oauth2.credentials import Credentials
 
 # Configure logging
 logging.basicConfig(
@@ -130,28 +129,48 @@ async def require_admin_auth_session(request: Request):
         )
 
 async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int):
-    """Send email notification when contact form is submitted"""
+    """Send email notification using Gmail API when contact form is submitted"""
     try:
-        # Email configuration from environment variables
-        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        smtp_username = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
+        admin_email = os.getenv("ADMIN_EMAIL", "blackburnd@gmail.com")
         recipient_email = os.getenv("CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com")
         
-        if not smtp_username or not smtp_password:
-            logger.warning("SMTP credentials not configured - contact email notification disabled")
-            add_log("WARNING", "SMTP credentials missing - contact email not sent", "contact_email_config_missing")
+        # Get OAuth credentials from database
+        from database import get_google_oauth_tokens, save_google_oauth_tokens, update_google_oauth_token_usage
+        oauth_data = await get_google_oauth_tokens(admin_email)
+        
+        if not oauth_data or not oauth_data.get('access_token'):
+            logger.warning("Gmail API: No OAuth credentials found for email sending")
+            add_log("WARNING", "Gmail API: No OAuth credentials found", "gmail_api_no_credentials")
             return False
         
-        # Create email content
-        msg = MIMEMultipart()
-        msg['From'] = smtp_username
-        msg['To'] = recipient_email
-        msg['Subject'] = f"New Contact Form Submission #{contact_id}: {subject or 'No Subject'}"
+        # Create credentials object
+        credentials = Credentials(
+            token=oauth_data['access_token'],
+            refresh_token=oauth_data.get('refresh_token'),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=os.getenv("GOOGLE_CLIENT_ID"),
+            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+            scopes=oauth_data['granted_scopes'].split()
+        )
         
-        # Email body
-        body = f"""
+        # Refresh token if needed
+        if credentials.expired and credentials.refresh_token:
+            credentials.refresh(GoogleRequest())
+            # Save refreshed token back to database
+            await save_google_oauth_tokens(
+                admin_email,
+                credentials.token,
+                credentials.refresh_token,
+                credentials.expiry,
+                " ".join(credentials.scopes),
+                oauth_data['requested_scopes']
+            )
+        
+        # Build Gmail service
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Create email message
+        email_body = f"""
 New contact form submission received:
 
 Contact ID: {contact_id}
@@ -166,22 +185,30 @@ Message:
 This email was automatically generated from your portfolio website contact form.
         """.strip()
         
-        msg.attach(MIMEText(body, 'plain'))
+        # Create the email message structure
+        message_obj = {
+            'raw': base64.urlsafe_b64encode(
+                f"To: {recipient_email}\r\n"
+                f"From: {admin_email}\r\n"
+                f"Subject: New Contact Form Submission #{contact_id}: {subject or 'No Subject'}\r\n"
+                f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+                f"{email_body}".encode('utf-8')
+            ).decode('utf-8')
+        }
         
-        # Send email
-        context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls(context=context)
-            server.login(smtp_username, smtp_password)
-            server.sendmail(smtp_username, recipient_email, msg.as_string())
+        # Send the email
+        result = service.users().messages().send(userId='me', body=message_obj).execute()
         
-        logger.info(f"Contact notification email sent for submission #{contact_id}")
-        add_log("INFO", f"Contact notification email sent for submission #{contact_id}", "contact_email_sent")
+        # Update token usage
+        await update_google_oauth_token_usage(admin_email)
+        
+        logger.info(f"Gmail API: Contact notification email sent for submission #{contact_id}, Message ID: {result.get('id')}")
+        add_log("INFO", f"Gmail API: Email sent for submission #{contact_id}, Message ID: {result.get('id')}", "gmail_api_email_sent")
         return True
         
     except Exception as e:
-        logger.error(f"Failed to send contact notification email: {str(e)}")
-        add_log("ERROR", f"Failed to send contact notification email: {str(e)}", "contact_email_error")
+        logger.error(f"Gmail API: Failed to send contact notification email: {str(e)}")
+        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}", "gmail_api_email_error")
         return False
 
 from app.resolvers import schema
@@ -798,6 +825,32 @@ async def auth_callback(request: Request):
             'is_admin': True  # Since they passed the admin check
         }
         
+        # Also save OAuth tokens to database for Gmail API usage
+        from database import save_google_oauth_tokens
+        if token.get('access_token'):
+            try:
+                from datetime import datetime, timezone
+                expires_at = None
+                if token.get('expires_at'):
+                    expires_at = datetime.fromtimestamp(token.get('expires_at'), tz=timezone.utc)
+                
+                # Get the scopes from the token or use default
+                granted_scopes = token.get('scope', 'openid email profile https://www.googleapis.com/auth/gmail.send')
+                requested_scopes = 'openid email profile https://www.googleapis.com/auth/gmail.send'
+                
+                await save_google_oauth_tokens(
+                    email,
+                    token.get('access_token'),
+                    token.get('refresh_token', ''),
+                    expires_at,
+                    granted_scopes,
+                    requested_scopes
+                )
+                logger.info(f"OAuth tokens saved to database for {email}")
+            except Exception as db_error:
+                logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
+                # Don't fail the login if database save fails
+        
         # Log successful login and session creation
         add_log("INFO", "auth", f"Successful login by {email} - session auth created")
         
@@ -935,59 +988,6 @@ async def home(request: Request):
         "user_email": user_email,
         "user_info": {"email": user_email} if user_authenticated else None
     })
-
-async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int) -> bool:
-    """Send email notification when contact form is submitted"""
-    try:
-        # Get SMTP configuration from environment
-        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        smtp_username = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
-        to_email = os.getenv("CONTACT_EMAIL", "blackburnd@gmail.com")
-        
-        if not smtp_username or not smtp_password:
-            logger.error("SMTP credentials not configured")
-            return False
-        
-        # Create email content
-        msg = MIMEMultipart()
-        msg['From'] = smtp_username
-        msg['To'] = to_email
-        msg['Subject'] = f"Contact Form: {subject or 'New Message'}"
-        
-        # Email body
-        body = f"""
-New contact form submission:
-
-ID: {contact_id}
-Name: {name}
-Email: {email}
-Subject: {subject or 'None specified'}
-
-Message:
-{message}
-
----
-This message was sent from blackburnsystems.com contact form.
-"""
-        
-        msg.attach(MIMEText(body, 'plain'))
-        
-        # Send email
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.send_message(msg)
-        server.quit()
-        
-        logger.info(f"Contact email sent successfully for submission {contact_id}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to send contact email: {str(e)}")
-        add_log("ERROR", "email_send_failed", f"Failed to send contact email for ID {contact_id}: {str(e)}")
-        return False
 
 @app.get("/contact/", response_class=HTMLResponse)
 async def contact(request: Request):
@@ -1531,15 +1531,18 @@ async def execute_sql(
         
         await database.connect()
         
+        # Check if the query contains multiple statements (separated by semicolons)
+        statements = [stmt.strip() for stmt in query.split(';') if stmt.strip()]
+        
         # Determine if this is a SELECT query or a modification query
-        is_select = query.upper().strip().startswith('SELECT') or query.upper().strip().startswith('PRAGMA')
+        is_select = len(statements) == 1 and (statements[0].upper().strip().startswith('SELECT') or statements[0].upper().strip().startswith('PRAGMA'))
         
         # Add specific log entry for query history tracking
         add_log("INFO", "sql_admin", f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}")
         
         if is_select:
             # For SELECT queries, fetch results
-            rows = await database.fetch_all(query)
+            rows = await database.fetch_all(statements[0])
             # Convert rows to dicts and serialize datetime objects
             rows_data = []
             for row in rows:
@@ -1558,15 +1561,31 @@ async def execute_sql(
                 "message": f"Query executed successfully. {len(rows_data)} rows returned."
             })
         else:
-            # For INSERT/UPDATE/DELETE queries, execute and return row count
-            result = await database.execute(query)
+            # For multiple statements or modification queries, execute each statement individually
+            total_affected = 0
+            messages = []
+            
+            for i, statement in enumerate(statements):
+                if not statement:
+                    continue
+                    
+                try:
+                    result = await database.execute(statement)
+                    if result:
+                        total_affected += result
+                        messages.append(f"Statement {i+1}: {result} rows affected")
+                    else:
+                        messages.append(f"Statement {i+1}: executed successfully")
+                except Exception as stmt_error:
+                    messages.append(f"Statement {i+1}: Error - {str(stmt_error)}")
+            
             execution_time = round((time.time() - start_time) * 1000, 2)
             
             return JSONResponse({
                 "status": "success",
                 "rows": [],
                 "execution_time": execution_time,
-                "message": f"Query executed successfully. {result} rows affected." if result else "Query executed successfully."
+                "message": f"Executed {len(statements)} statements. {'; '.join(messages)}"
             })
             
     except Exception as e:
