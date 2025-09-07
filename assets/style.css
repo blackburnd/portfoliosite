@@ -2034,7 +2034,7 @@ td[style*="#abd6ff"] {
     border-radius: 8px;
     overflow: auto; /* Allow both horizontal and vertical scrolling */
     background: white;
-    height: calc(95vh - var(--header-height, 280px)); /* Dynamic height calculation */
+    height: calc(85vh - var(--header-height, 280px)); /* Reduced from 95% to 85% to prevent page scrollbar */
     min-height: 400px; /* Minimum height fallback */
 }
 
