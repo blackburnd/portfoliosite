@@ -321,8 +321,8 @@ async def save_google_oauth_tokens(admin_email: str, access_token: str, refresh_
         
         return True
     except Exception as e:
-        print(f"Error saving Google OAuth tokens: {e}")
-        return False
+        logger.error(f"Error saving Google OAuth tokens: {e}")
+        raise  # Re-raise the exception so calling code can handle it
 
 
 async def get_google_oauth_tokens(admin_email: str) -> Optional[Dict[str, Any]]:

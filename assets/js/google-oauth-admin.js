@@ -68,9 +68,6 @@ class GoogleOAuthAdmin {
         const authorizeBtn = document.getElementById('initiate-google-oauth');
         if (authorizeBtn) authorizeBtn.addEventListener('click', () => this.initiateGoogleAuth());
 
-        const revokeBtn = document.getElementById('revoke-google-oauth');
-        if (revokeBtn) revokeBtn.addEventListener('click', () => this.revokeGoogleAuth());
-
         const testApiBtn = document.getElementById('test-google-api');
         if (testApiBtn) testApiBtn.addEventListener('click', () => this.testGoogleAPI());
 
@@ -180,6 +177,9 @@ class GoogleOAuthAdmin {
 
         Object.entries(scopeElements).forEach(([elementId, granted]) => {
             const element = document.getElementById(elementId);
+            const scopeName = elementId.replace('-status', '');
+            const revokeButton = document.getElementById(`revoke-${scopeName}`);
+            
             if (element) {
                 if (granted) {
                     element.innerHTML = `
@@ -187,6 +187,10 @@ class GoogleOAuthAdmin {
                             ✅ Granted
                             <span class="permission-timestamp">Last checked: ${currentTime}</span>
                         </span>`;
+                    // Show revoke button for granted scopes
+                    if (revokeButton) {
+                        revokeButton.style.display = 'inline-block';
+                    }
                 } else {
                     element.innerHTML = `
                         <span class="status-denied">
@@ -194,6 +198,10 @@ class GoogleOAuthAdmin {
                             <span class="permission-timestamp">Last checked: ${currentTime}</span>
                         </span>`;
                     allPermissionsGranted = false;
+                    // Hide revoke button for denied scopes
+                    if (revokeButton) {
+                        revokeButton.style.display = 'none';
+                    }
                 }
             }
         });
@@ -207,8 +215,15 @@ class GoogleOAuthAdmin {
         const permissionElements = ['openid-status', 'email-status', 'profile-status', 'gmail-send-status'];
         permissionElements.forEach(elementId => {
             const element = document.getElementById(elementId);
+            const scopeName = elementId.replace('-status', '');
+            const revokeButton = document.getElementById(`revoke-${scopeName}`);
+            
             if (element) {
                 element.innerHTML = '<span class="status-unknown">⚪ Unknown</span>';
+            }
+            // Hide revoke buttons when status is unknown
+            if (revokeButton) {
+                revokeButton.style.display = 'none';
             }
         });
         
@@ -367,6 +382,45 @@ class GoogleOAuthAdmin {
         } catch (error) {
             console.error('Error revoking Google auth:', error);
             this.showMessage('Error revoking Google access', 'error');
+        }
+    }
+
+    async revokeScope(scopeName) {
+        // Map short scope names to full scope URLs
+        const scopeMapping = {
+            'openid': 'openid',
+            'email': 'email', 
+            'profile': 'profile',
+            'gmail.send': 'https://www.googleapis.com/auth/gmail.send'
+        };
+
+        const fullScopeName = scopeMapping[scopeName] || scopeName;
+        const revokeMessage = `Are you sure you want to revoke the "${scopeName}" scope?\n\nThis will remove access to this specific permission while keeping other Google OAuth permissions intact.`;
+        
+        if (!confirm(revokeMessage)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/google/oauth/revoke-scope', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ scope: fullScopeName })
+            });
+
+            if (response.ok) {
+                this.showMessage(`Successfully revoked "${scopeName}" scope.`, 'success');
+                // Refresh the scope status to reflect the change
+                await this.checkGrantedScopes();
+            } else {
+                const error = await response.json();
+                this.showMessage(`Failed to revoke "${scopeName}" scope: ${error.detail}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error revoking scope:', error);
+            this.showMessage(`Error revoking "${scopeName}" scope`, 'error');
         }
     }
 

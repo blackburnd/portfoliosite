@@ -2653,6 +2653,77 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
         }, status_code=500)
 
 
+@app.post("/admin/google/oauth/revoke-scope")
+async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(require_admin_auth_session)):
+    """Revoke a specific Google OAuth scope"""
+    admin_email = admin.get("email")
+    
+    try:
+        # Parse the request body to get the scope
+        body = await request.json()
+        scope_to_revoke = body.get("scope")
+        
+        if not scope_to_revoke:
+            return JSONResponse({
+                "status": "error", 
+                "detail": "No scope specified"
+            }, status_code=400)
+            
+        add_log("INFO", "admin_google_oauth_scope_revoke", f"Admin {admin_email} revoking Google OAuth scope: {scope_to_revoke}")
+        
+        # Get the current user's access token from session
+        if not hasattr(request, 'session') or 'user' not in request.session:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No active session"
+            }, status_code=401)
+            
+        user_session = request.session['user']
+        access_token = user_session.get('access_token')
+        
+        if not access_token:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No access token available"
+            }, status_code=401)
+            
+        # Make request to Google's revoke endpoint for the specific scope
+        # Note: Google's OAuth2 revoke endpoint doesn't support individual scope revocation
+        # Instead, we'll revoke the entire token and suggest re-authorization without that scope
+        revoke_url = f"https://oauth2.googleapis.com/revoke?token={access_token}"
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(revoke_url)
+            
+        if response.status_code == 200:
+            # Clear the session tokens since we revoked the entire token
+            user_session.pop('access_token', None)
+            user_session.pop('refresh_token', None)
+            user_session.pop('token_expires_at', None)
+            request.session['user'] = user_session
+            
+            add_log("INFO", "admin_google_oauth_scope_revoked", f"Google OAuth token revoked for scope {scope_to_revoke} by {admin_email}")
+            
+            return JSONResponse({
+                "status": "success",
+                "message": f"Access revoked. Note: Google OAuth doesn't support individual scope revocation, so the entire token was revoked. Please re-authorize with only the scopes you want to grant."
+            })
+        else:
+            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", f"Failed to revoke Google OAuth scope {scope_to_revoke} for {admin_email}: HTTP {response.status_code}")
+            return JSONResponse({
+                "status": "error",
+                "detail": f"Failed to revoke scope with Google (HTTP {response.status_code})"
+            }, status_code=400)
+        
+    except Exception as e:
+        logger.error(f"Error revoking Google OAuth scope: {str(e)}")
+        add_log("ERROR", "admin_google_oauth_scope_revoke_error", f"Error revoking Google OAuth scope for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "detail": str(e)
+        }, status_code=500)
+
+
 @app.get("/admin/google/oauth/test")
 async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_session)):
     """Test Google OAuth connection"""

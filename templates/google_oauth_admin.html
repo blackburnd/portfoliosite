@@ -91,6 +91,7 @@
                     <span class="permission-status" id="openid-status">
                         <span class="status-unknown">⚪ Unknown</span>
                     </span>
+                    <button id="revoke-openid" class="btn btn-sm btn-outline-danger revoke-scope-btn" style="display: none;" onclick="googleOAuthAdmin.revokeScope('openid')">Revoke</button>
                 </div>
                 <div class="scope-description">Access to basic profile information</div>
                 <div class="scope-data-access">Provides: User ID, basic profile</div>
@@ -104,6 +105,7 @@
                     <span class="permission-status" id="email-status">
                         <span class="status-unknown">⚪ Unknown</span>
                     </span>
+                    <button id="revoke-email" class="btn btn-sm btn-outline-danger revoke-scope-btn" style="display: none;" onclick="googleOAuthAdmin.revokeScope('email')">Revoke</button>
                 </div>
                 <div class="scope-description">Access to email address</div>
                 <div class="scope-data-access">Provides: Primary email address</div>
@@ -117,6 +119,7 @@
                     <span class="permission-status" id="profile-status">
                         <span class="status-unknown">⚪ Unknown</span>
                     </span>
+                    <button id="revoke-profile" class="btn btn-sm btn-outline-danger revoke-scope-btn" style="display: none;" onclick="googleOAuthAdmin.revokeScope('profile')">Revoke</button>
                 </div>
                 <div class="scope-description">Access to detailed profile information</div>
                 <div class="scope-data-access">Provides: Name, profile picture, locale</div>
@@ -130,6 +133,7 @@
                     <span class="permission-status" id="gmail-send-status">
                         <span class="status-unknown">⚪ Unknown</span>
                     </span>
+                    <button id="revoke-gmail-send" class="btn btn-sm btn-outline-danger revoke-scope-btn" style="display: none;" onclick="googleOAuthAdmin.revokeScope('gmail.send')">Revoke</button>
                 </div>
                 <div class="scope-description">Send emails on behalf of the user (for contact form notifications)</div>
                 <div class="scope-data-access">Provides: Ability to send emails through Gmail API</div>
@@ -142,7 +146,6 @@
         <div class="config-actions">
             <button type="button" class="btn-test" id="test-profile-access">Fetch Google Data</button>
             <button type="button" class="btn-primary" id="initiate-google-oauth" title="Click to grant Google OAuth permissions">Authorize Google Access</button>
-            <button type="button" class="btn-secondary" id="revoke-google-oauth">Revoke Access</button>
         </div>
         
         <div class="authorization-info">

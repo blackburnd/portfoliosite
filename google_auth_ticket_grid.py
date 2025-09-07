@@ -28,14 +28,14 @@ async def view_google_oauth_tokens(request: Request):
         FROM google_oauth_tokens
         ORDER BY created_at DESC
         """
-        
+
         rows = await database.fetch_all(query)
-        
+
         return templates.TemplateResponse("google_oauth_tokens_simple.html", {
             "request": request,
             "tokens": rows
         })
-        
+
     except Exception as e:
         return templates.TemplateResponse("error.html", {
             "request": request,
