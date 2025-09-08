@@ -361,13 +361,14 @@ async def save_google_oauth_tokens(admin_email: str, access_token: str, refresh_
         if result == 0:
             insert_query = """
             INSERT INTO google_oauth_tokens 
-            (admin_email, access_token, refresh_token, token_expires_at, 
-             granted_scopes, requested_scopes, last_used_at)
-            VALUES (:admin_email, :access_token, :refresh_token, :expires_at,
-                    :granted_scopes, :requested_scopes, NOW())
+            (portfolio_id, admin_email, access_token, refresh_token, 
+             token_expires_at, granted_scopes, requested_scopes, last_used_at)
+            VALUES (:portfolio_id, :admin_email, :access_token, :refresh_token,
+                    :expires_at, :granted_scopes, :requested_scopes, NOW())
             """
             
             await database.execute(insert_query, {
+                "portfolio_id": PORTFOLIO_ID,
                 "admin_email": admin_email,
                 "access_token": access_token,
                 "refresh_token": refresh_token,

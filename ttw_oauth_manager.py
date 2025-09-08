@@ -88,12 +88,17 @@ class TTWOAuthManager:
             await database.execute(deactivate_query)
             
             # Insert new LinkedIn OAuth configuration
+            from database import PORTFOLIO_ID
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
+                INSERT INTO oauth_apps (portfolio_id, provider, app_name, 
+                                      client_id, client_secret, redirect_uri, 
+                                      scopes, created_by)
+                VALUES (:portfolio_id, :provider, :app_name, :client_id, 
+                       :client_secret, :redirect_uri, :scopes, :created_by)
             """
             
             await database.execute(query, {
+                "portfolio_id": PORTFOLIO_ID,
                 "provider": "linkedin",
                 "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
@@ -367,13 +372,16 @@ class TTWOAuthManager:
             granted_scopes = token_data.get("scope", " ".join(requested_scopes))
             
             # Store connection
+            from database import PORTFOLIO_ID
             query = """
                 INSERT INTO linkedin_oauth_connections 
-                (admin_email, linkedin_profile_id, linkedin_profile_name, access_token, refresh_token, 
+                (portfolio_id, admin_email, linkedin_profile_id, 
+                 linkedin_profile_name, access_token, refresh_token, 
                  token_expires_at, granted_scopes, requested_scopes)
-                VALUES (:admin_email, :profile_id, :profile_name, :access_token, :refresh_token, 
-                        :expires_at, :granted_scopes, :requested_scopes)
-                ON CONFLICT (admin_email) 
+                VALUES (:portfolio_id, :admin_email, :profile_id, :profile_name, 
+                       :access_token, :refresh_token, :expires_at, 
+                       :granted_scopes, :requested_scopes)
+                ON CONFLICT (portfolio_id, admin_email) 
                 DO UPDATE SET 
                     linkedin_profile_id = EXCLUDED.linkedin_profile_id,
                     linkedin_profile_name = EXCLUDED.linkedin_profile_name,
@@ -387,6 +395,7 @@ class TTWOAuthManager:
             """
             
             await database.execute(query, {
+                "portfolio_id": PORTFOLIO_ID,
                 "admin_email": admin_email,
                 "profile_id": linkedin_profile_id,
                 "profile_name": profile_name,
@@ -755,10 +764,14 @@ class TTWOAuthManager:
             client_secret = app_config["client_secret"]
             
             # Insert or update LinkedIn OAuth configuration
+            from database import PORTFOLIO_ID
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
-                ON CONFLICT (provider, app_name) 
+                INSERT INTO oauth_apps (portfolio_id, provider, app_name, 
+                                      client_id, client_secret, redirect_uri, 
+                                      scopes, created_by)
+                VALUES (:portfolio_id, :provider, :app_name, :client_id, 
+                       :client_secret, :redirect_uri, :scopes, :created_by)
+                ON CONFLICT (portfolio_id, provider, app_name) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
@@ -769,12 +782,14 @@ class TTWOAuthManager:
             """
             
             await database.execute(query, {
+                "portfolio_id": PORTFOLIO_ID,
                 "provider": "linkedin",
                 "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
                 "client_secret": client_secret,
-                "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
-                "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
+                "redirect_uri": app_config.get("redirect_uri", 
+                    f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
+                "scopes": ["r_liteprofile", "r_emailaddress"],
                 "created_by": admin_email
             })
             
