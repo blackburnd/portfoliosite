@@ -54,11 +54,8 @@ class DatabaseLogHandler(logging.Handler):
     
     def _get_default_portfolio_id(self):
         """Get the default portfolio ID for logs"""
-        if self._portfolio_id is None:
-            # Use a hardcoded default portfolio ID for logs
-            # This should match the main portfolio in your database
-            self._portfolio_id = "daniel-blackburn"
-        return self._portfolio_id
+        from database import get_portfolio_id
+        return get_portfolio_id()
         
     def emit(self, record: logging.LogRecord):
         """Emit a log record to the database"""

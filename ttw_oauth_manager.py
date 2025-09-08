@@ -582,11 +582,15 @@ class TTWOAuthManager:
             # Store client secret in plain text
             client_secret = app_config["client_secret"]
             
+            # Get default portfolio ID
+            from database import get_portfolio_id
+            portfolio_id = get_portfolio_id()
+            
             # Insert or update Google OAuth configuration
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
-                ON CONFLICT (provider, app_name) 
+                INSERT INTO oauth_apps (portfolio_id, provider, client_id, client_secret, redirect_uri, scopes)
+                VALUES (:portfolio_id, :provider, :client_id, :client_secret, :redirect_uri, :scopes)
+                ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
@@ -596,14 +600,12 @@ class TTWOAuthManager:
             """
             
             await database.execute(query, {
+                "portfolio_id": portfolio_id,
                 "provider": "google",
-                "app_name": app_config.get("app_name", "Google OAuth App"),
                 "client_id": app_config["client_id"],
                 "client_secret": client_secret,
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
-                "scopes": ",".join(["email", "profile"]),  # Default Google scopes
-                "encryption_key": "none",  # Placeholder since encryption_key is NOT NULL
-                "created_by": admin_email
+                "scopes": ",".join(["email", "profile"])  # Default Google scopes
             })
             
             # Log successful configuration

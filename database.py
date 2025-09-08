@@ -17,10 +17,51 @@ def get_database_url() -> str:
 # Single database instance
 database = Database(get_database_url())
 
+# Global portfolio ID - set during startup
+PORTFOLIO_ID = None
+
 async def init_database():
-    """Initialize database connection"""
+    """Initialize database connection and ensure portfolio exists"""
+    global PORTFOLIO_ID
     await database.connect()
+    
+    # Get repo name from environment variable
+    repo_name = os.getenv("_REPO_NAME", "default-portfolio")
+    
+    # Check if portfolio exists with portfolio_id matching repo name
+    portfolio_query = """SELECT id FROM portfolios 
+                         WHERE portfolio_id = :repo_name"""
+    existing_portfolio = await database.fetch_one(
+        portfolio_query, {"repo_name": repo_name}
+    )
+    
+    if existing_portfolio:
+        PORTFOLIO_ID = existing_portfolio["id"]
+        print(f"Found portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
+    else:
+        # Create new portfolio record
+        new_uuid = str(uuid.uuid4())
+        insert_query = """
+            INSERT INTO portfolios (id, portfolio_id, name, description,
+                                  created_at)
+            VALUES (:id, :portfolio_id, :name, :description, NOW())
+        """
+        await database.execute(insert_query, {
+            "id": new_uuid,
+            "portfolio_id": repo_name,
+            "name": f"Portfolio for {repo_name}",
+            "description": f"Auto-generated portfolio for {repo_name}"
+        })
+        PORTFOLIO_ID = new_uuid
+        print(f"Created portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
+    
     print(f"Connected to PostgreSQL database: {get_database_url()}")
+    print(f"Using portfolio ID: {PORTFOLIO_ID}")
+
+def get_portfolio_id():
+    """Get the current portfolio ID"""
+    return PORTFOLIO_ID
+
 
 async def close_database():
     """Close database connection"""
