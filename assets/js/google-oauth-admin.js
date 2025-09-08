@@ -45,6 +45,7 @@ class GoogleOAuthAdmin {
         
         this.bindEvents();
         this.loadGoogleStatus();
+        this.loadGoogleConfig();
         
         // Initialize permission status on page load
         this.resetPermissionStatus();
@@ -120,6 +121,34 @@ class GoogleOAuthAdmin {
             this.resetPermissionStatus();
             this.updateAuthorizationButtonVisibility(false);
         }
+    }
+
+    async loadGoogleConfig() {
+        try {
+            const response = await fetch('/admin/google/oauth/config');
+            if (response.ok) {
+                const data = await response.json();
+                this.updateGoogleConfigForm(data);
+            } else {
+                console.log('No existing Google OAuth configuration found');
+            }
+        } catch (error) {
+            console.error('Error loading Google config:', error);
+            // Don't show error message for this - it's expected when no config exists
+        }
+    }
+
+    updateGoogleConfigForm(data) {
+        // Populate Google OAuth configuration form with data including client_secret
+        const appNameField = document.getElementById('google-app-name');
+        const clientIdField = document.getElementById('google-client-id');
+        const clientSecretField = document.getElementById('google-client-secret');
+        const redirectUriField = document.getElementById('google-redirect-uri');
+        
+        if (appNameField) appNameField.value = data.app_name || '';
+        if (clientIdField) clientIdField.value = data.client_id || '';
+        if (clientSecretField) clientSecretField.value = data.client_secret || '';
+        if (redirectUriField) redirectUriField.value = data.redirect_uri || '';
     }
 
     updateAuthorizationButtonVisibility(allPermissionsGranted) {

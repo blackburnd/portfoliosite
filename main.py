@@ -2558,6 +2558,54 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         }, status_code=500)
 
 
+@app.get("/admin/google/oauth/config")
+async def get_google_oauth_config_for_form(admin: dict = Depends(require_admin_auth_session)):
+    """Get Google OAuth configuration for admin form"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_google_config_form_load", f"Admin {admin_email} loading Google OAuth config form")
+        
+        # Get current Google OAuth config from oauth_apps table (including actual client_secret for admin viewing)
+        query = """
+            SELECT app_name, client_id, client_secret, redirect_uri, scopes, is_active, created_by, created_at
+            FROM oauth_apps 
+            WHERE provider = 'google'
+            ORDER BY created_at DESC
+            LIMIT 1
+        """
+        result = await database.fetch_one(query)
+        
+        if result:
+            # For Google OAuth, client_secret is encrypted, so we need to decrypt it
+            ttw_manager = TTWOAuthManager()
+            google_credentials = await ttw_manager.get_google_oauth_credentials()
+            
+            return JSONResponse({
+                "app_name": result["app_name"] or "",
+                "client_id": result["client_id"] or "",
+                "client_secret": google_credentials.get("client_secret", "") if google_credentials else "",  # Return actual decrypted client_secret for admin viewing
+                "redirect_uri": result["redirect_uri"] or "",
+                "scopes": result["scopes"] or "openid,email,profile",
+                "configured": True
+            })
+        else:
+            return JSONResponse({
+                "app_name": "blackburnsystems profile site",
+                "client_id": "",
+                "client_secret": "",
+                "redirect_uri": "https://www.blackburnsystems.com/auth/callback",
+                "scopes": "openid,email,profile",
+                "configured": False
+            })
+        
+    except Exception as e:
+        logger.error(f"Error getting Google OAuth config for form: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
 @app.post("/admin/google/oauth/config")
 async def save_google_oauth_config(
     request: Request,
@@ -3108,9 +3156,9 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
     try:
         add_log("INFO", "admin_linkedin_config_form_load", f"Admin {admin_email} loading LinkedIn OAuth config form")
         
-        # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
+        # Get current LinkedIn OAuth config from oauth_apps table (including actual client_secret for admin viewing)
         query = """
-            SELECT app_name, client_id, redirect_uri, scopes, is_active, created_by, created_at
+            SELECT app_name, client_id, client_secret, redirect_uri, scopes, is_active, created_by, created_at
             FROM oauth_apps 
             WHERE provider = 'linkedin'
             ORDER BY created_at DESC
@@ -3122,7 +3170,7 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
             return JSONResponse({
                 "app_name": result["app_name"] or "",
                 "client_id": result["client_id"] or "",
-                "client_secret": "",  # Never return the actual secret for security
+                "client_secret": result["client_secret"] or "",  # Return actual client_secret for admin viewing
                 "redirect_uri": result["redirect_uri"] or "",
                 "scopes": result["scopes"] or "r_liteprofile,r_emailaddress",
                 "configured": True
