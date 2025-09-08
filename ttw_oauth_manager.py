@@ -603,13 +603,11 @@ class TTWOAuthManager:
             # Prepare new values
             new_client_id = app_config.get("client_id", "")
             new_client_secret = app_config.get("client_secret", "")
-            new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback")
+            new_redirect_uri = app_config.get("redirect_uri", "")
             new_scopes = ",".join(["email", "profile"])
             
             # Log the configuration attempt
-            add_log("INFO", "google_oauth_config_start", 
-                   f"Admin {admin_email} configuring Google OAuth app",
-                   admin_email, "configure_google_oauth_app")
+            add_log("INFO", f"Admin {admin_email} configuring Google OAuth app", "google_oauth_config_start")
             
             # Log field changes
             new_values = {
@@ -662,18 +660,14 @@ class TTWOAuthManager:
             })
             
             # Log successful configuration
-            add_log("INFO", "google_oauth_config_success", 
-                   f"Google OAuth app successfully configured by {admin_email}",
-                   admin_email, "configure_google_oauth_app")
+            add_log("INFO", f"Google OAuth app successfully configured by {admin_email}", "google_oauth_config_success")
             
             logger.info(f"Google OAuth app configured by {admin_email}")
             return True
             
         except Exception as e:
             # Log configuration failure
-            add_log("ERROR", "google_oauth_config_failed", 
-                   f"Failed to configure Google OAuth app for {admin_email}: {str(e)}",
-                   admin_email, "configure_google_oauth_app")
+            add_log("ERROR", f"Failed to configure Google OAuth app for {admin_email}: {str(e)}", "google_oauth_config_failed")
             
             logger.error(f"Failed to configure Google OAuth app: {e}")
             return False
