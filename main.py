@@ -2582,29 +2582,22 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
     admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_status", f"Admin {admin_email} checking Google OAuth status")
-        
-        # Check if database is connected before proceeding
-        if not database.is_connected:
-            logger.warning("Database not connected, attempting to connect...")
-            await database.connect()
+        # Import PORTFOLIO_ID and log it
+        from database import PORTFOLIO_ID
+        add_log("DEBUG", "oauth_status_check", f"PORTFOLIO_ID: {PORTFOLIO_ID}, admin: {admin_email}")
         
         # Check if Google OAuth is configured in database
         ttw_manager = TTWOAuthManager()
         google_configured = await ttw_manager.is_google_oauth_app_configured()
         
-        # Debug logging for production troubleshooting
-        add_log("DEBUG", "google_oauth_status_check", f"Google OAuth configured: {google_configured}")
+        add_log("DEBUG", "oauth_configured_result", f"Google configured: {google_configured}")
         
         config = None
         credentials = None
         if google_configured:
             config = await ttw_manager.get_google_oauth_app_config()
             credentials = await ttw_manager.get_google_oauth_credentials()
-            
-            # Debug log the actual values retrieved
-            add_log("DEBUG", "google_oauth_config_values", f"Config: {config}")
-            add_log("DEBUG", "google_oauth_credentials_values", f"Credentials: {credentials}")
+            add_log("DEBUG", "oauth_config_loaded", f"Config loaded: {config is not None}, Credentials loaded: {credentials is not None}")
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
@@ -2622,6 +2615,7 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         })
         
     except Exception as e:
+        add_log("ERROR", "oauth_status_error", f"Error getting Google OAuth status: {str(e)}")
         logger.error(f"Error getting Google OAuth status: {str(e)}")
         return JSONResponse({
             "status": "error",
