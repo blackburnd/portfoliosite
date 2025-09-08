@@ -163,18 +163,19 @@ def add_log(level: str, message: str, module: str = "manual",
     """Manually add a log entry to the database"""
     
     async def _add_log_async():
-        from database import database as db
+        from database import database as db, get_portfolio_id
 
         try:
-
             query = """
-                INSERT INTO app_log (timestamp, level, message, module,
-                                   function, line, "user", extra, ip_address)
-                VALUES (:timestamp, :level, :message, :module, :function,
-                       :line, :user, :extra, :ip_address)
+                INSERT INTO app_log (portfolio_id, timestamp, level, message,
+                                   module, function, line, "user", extra,
+                                   ip_address)
+                VALUES (:portfolio_id, :timestamp, :level, :message, :module,
+                       :function, :line, :user, :extra, :ip_address)
             """
 
             values = {
+                'portfolio_id': get_portfolio_id(),
                 'timestamp': datetime.now(),
                 'level': level.upper(),
                 'message': message,
