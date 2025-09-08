@@ -167,6 +167,10 @@ def add_log(level: str, message: str, module: str = "manual",
         from database import database as db, PORTFOLIO_ID
 
         try:
+            # Ensure database is connected
+            if not db.is_connected:
+                await db.connect()
+                
             query = """
                 INSERT INTO app_log (portfolio_id, timestamp, level, message,
                                    module, function, line, "user", extra,
@@ -189,14 +193,11 @@ def add_log(level: str, message: str, module: str = "manual",
             }
 
             await db.execute(query, values)
-            await db.disconnect()
+            # Don't disconnect - leave the connection open for reuse
 
         except Exception as e:
             print(f"Failed to add manual log entry: {e}")
-            try:
-                await db.disconnect()
-            except Exception:
-                pass
+            # Don't disconnect on error either - let the connection pool handle it
 
     # Run the async function synchronously
     try:

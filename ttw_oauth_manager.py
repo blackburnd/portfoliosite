@@ -581,6 +581,9 @@ class TTWOAuthManager:
     async def configure_google_oauth_app(self, app_config: Dict[str, str]) -> bool:
         """Configure Google OAuth application settings"""
         try:
+            # Test log entry to verify logging is working
+            add_log("INFO", "Starting Google OAuth configuration", "google_oauth_test")
+            
             # Get default portfolio ID
             from database import PORTFOLIO_ID
             portfolio_id = PORTFOLIO_ID
