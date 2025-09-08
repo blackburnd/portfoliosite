@@ -86,13 +86,13 @@ class DatabaseLoggingHandler(logging.Handler):
                 pass
 
 
-# Add the database handler to the root logger
-db_handler = DatabaseLoggingHandler()
-formatter = logging.Formatter(
-    '%(name)s - %(funcName)s:%(lineno)d - %(message)s'
-)
-db_handler.setFormatter(formatter)
-logging.getLogger().addHandler(db_handler)
+# Add the database handler to the root logger - DISABLED DUE TO POOL CONFLICTS
+# db_handler = DatabaseLoggingHandler()
+# formatter = logging.Formatter(
+#     '%(name)s - %(funcName)s:%(lineno)d - %(message)s'
+# )
+# db_handler.setFormatter(formatter)
+# logging.getLogger().addHandler(db_handler)
 
 # Import our Google OAuth authentication module
 from auth import (
@@ -900,11 +900,16 @@ async def auth_login(request: Request):
         # Use the OAuth client to redirect
         google = oauth.google
         try:
+            # Generate and store state parameter for CSRF protection
+            import secrets
+            state = secrets.token_urlsafe(32)
+            
             result = await google.authorize_redirect(
                 request, 
-                redirect_uri
+                redirect_uri,
+                state=state
             )
-            logger.info("OAuth redirect created successfully")
+            logger.info(f"OAuth redirect created successfully with state: {state[:8]}...")
         except Exception as redirect_error:
             logger.error(f"OAuth redirect error: {str(redirect_error)}")
             raise
