@@ -9,6 +9,7 @@ from typing import Optional
 import json
 
 from fastapi import Request
+from database import database
 
 
 def get_client_ip(request: Request) -> str:
@@ -46,10 +47,7 @@ class DatabaseLogHandler(logging.Handler):
     
     def __init__(self, database_url: str = None):
         super().__init__()
-        # Use centralized database instance
-        from database import database
-        self.db = database
-        self._loop = None
+        # Use the shared database instance instead of creating our own
         self._portfolio_id = None
     
     def _get_default_portfolio_id(self):
@@ -120,12 +118,15 @@ class DatabaseLogHandler(logging.Handler):
                 'ip_address': ip_address
             }
             
-            await self.db.execute(query, values)
+            await database.execute(query, values)
             
         except Exception as e:
-            print(f"Database log insert failed: {e}")
-            print(f"Log record values: {values}")
-            print(f"Exception: {traceback.format_exc()}")
+            # Silently fail if database isn't available - don't spam logs
+            # Only print during startup/shutdown issues
+            if "pool is closing" not in str(e) and "DatabaseBackend is not running" not in str(e):
+                print(f"Database log insert failed: {e}")
+                print(f"Log record values: {values}")
+                print(f"Exception: {traceback.format_exc()}")
 
 
 # Global log handler instance
