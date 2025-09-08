@@ -2721,7 +2721,7 @@ async def save_google_oauth_config(
     admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_config_update", f"Admin {admin_email} updating Google OAuth configuration")
+        add_log("INFO", f"Admin {admin_email} updating Google OAuth configuration", "admin_google_oauth_config_update")
         
         # Validate required fields
         required_fields = ["client_id", "client_secret", "redirect_uri"]
@@ -2737,7 +2737,7 @@ async def save_google_oauth_config(
         result = await ttw_manager.configure_google_oauth_app(admin_email, config)
         
         if result:
-            add_log("INFO", "admin_google_oauth_config_saved", f"Google OAuth config saved by {admin_email}")
+            add_log("INFO", f"Google OAuth config saved by {admin_email}", "admin_google_oauth_config_saved")
             return JSONResponse({
                 "status": "success",
                 "message": "Google OAuth configuration saved successfully"
@@ -2768,13 +2768,13 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_ses
     admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_config_clear", f"Admin {admin_email} clearing Google OAuth configuration")
+        add_log("INFO", f"Admin {admin_email} clearing Google OAuth configuration", "admin_google_oauth_config_clear")
         
         ttw_manager = TTWOAuthManager()
         result = await ttw_manager.remove_google_oauth_app(admin_email)
         
         if result:
-            add_log("INFO", "admin_google_oauth_config_cleared", f"Google OAuth config cleared by {admin_email}")
+            add_log("INFO", f"Google OAuth config cleared by {admin_email}", "admin_google_oauth_config_cleared")
             return JSONResponse({
                 "status": "success",
                 "message": "Google OAuth configuration cleared successfully"
@@ -2787,7 +2787,7 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_ses
         
     except Exception as e:
         logger.error(f"Error clearing Google OAuth config: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_config_clear_error", f"Error clearing Google OAuth config by {admin_email}: {str(e)}")
+        add_log("ERROR", f"Error clearing Google OAuth config by {admin_email}: {str(e)}", "admin_google_oauth_config_clear_error")
         return JSONResponse({
             "status": "error",
             "error": str(e)
