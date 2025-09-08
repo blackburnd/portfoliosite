@@ -3203,12 +3203,13 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
 
 @app.post("/admin/linkedin/config")
 async def save_linkedin_config_shortcut(
+    request: Request,
     config: dict,
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Save LinkedIn OAuth configuration (shortcut route for JavaScript)"""
     # Forward to the main OAuth config route
-    return await save_linkedin_oauth_config(config, admin)
+    return await save_linkedin_oauth_config(request, config, admin)
 
 
 @app.post("/admin/linkedin/oauth/config")
