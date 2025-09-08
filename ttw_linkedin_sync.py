@@ -17,7 +17,7 @@ class TTWLinkedInSync:
     Uses TTW OAuth manager for complete self-contained LinkedIn integration
     """
     
-        self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
+    self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
         
     async def get_oauth_app_status(self) -> Dict[str, Any]:
         """Get LinkedIn OAuth app configuration status"""
