@@ -27,18 +27,19 @@ async def init_database():
     
     # Get repo name from environment variable
     repo_name = os.getenv("_REPO_NAME", "default-portfolio")
-    print(f"🔍 Looking for portfolio with portfolio_id: {repo_name}")
+    print(f"🔍 Looking for portfolio with id: {repo_name}")
     
     try:
-        # Check if portfolio exists with portfolio_id matching repo name
-        portfolio_query = """SELECT id FROM portfolios 
-                             WHERE portfolio_id = :portfolio_id"""
+        # Check if portfolio exists with id matching repo name
+        # Note: 'id' is the string field, 'portfolio_id' is the UUID primary key
+        portfolio_query = """SELECT portfolio_id FROM portfolios 
+                             WHERE id = :repo_name"""
         existing_portfolio = await database.fetch_one(
-            portfolio_query, {"portfolio_id": repo_name}
+            portfolio_query, {"repo_name": repo_name}
         )
         
         if existing_portfolio:
-            PORTFOLIO_ID = existing_portfolio["id"]
+            PORTFOLIO_ID = existing_portfolio["portfolio_id"]
             print(f"✅ Found portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
         else:
             # Create new portfolio record
@@ -46,18 +47,20 @@ async def init_database():
             print(f"🔨 Creating new portfolio with UUID: {new_uuid}")
             
             insert_query = """
-                INSERT INTO portfolios (id, portfolio_id, name, description,
-                                      created_at)
-                VALUES (:id, :portfolio_id, :name, :description, NOW())
-                RETURNING id
+                INSERT INTO portfolios (portfolio_id, id, name, title, bio, 
+                                      email, created_at)
+                VALUES (:portfolio_id, :id, :name, :title, :bio, :email, NOW())
+                RETURNING portfolio_id
             """
             result = await database.fetch_one(insert_query, {
-                "id": new_uuid,
-                "portfolio_id": repo_name,
+                "portfolio_id": new_uuid,
+                "id": repo_name,
                 "name": f"Portfolio for {repo_name}",
-                "description": f"Auto-generated portfolio for {repo_name}"
+                "title": "Software Engineer", 
+                "bio": f"Auto-generated portfolio for {repo_name}",
+                "email": "admin@example.com"
             })
-            PORTFOLIO_ID = result["id"] if result else new_uuid
+            PORTFOLIO_ID = result["portfolio_id"] if result else new_uuid
             print(f"✅ Created portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
         
         print(f"🔗 Connected to PostgreSQL: {get_database_url()}")
