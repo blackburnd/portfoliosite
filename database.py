@@ -66,13 +66,31 @@ async def init_database():
         print(f"🔗 Connected to PostgreSQL: {get_database_url()}")
         print(f"🎯 Using portfolio ID: {PORTFOLIO_ID}")
         
+        # Now that we have portfolio_id, log the initialization success
+        try:
+            from log_capture import add_log
+            add_log("INFO", f"Portfolio initialized: {PORTFOLIO_ID} for {repo_name}",
+                    "database", "init_database")
+        except Exception as log_error:
+            print(f"Could not log success: {log_error}")
+        
     except Exception as e:
         print(f"❌ Error during portfolio initialization: {e}")
         import traceback
-        traceback.print_exc()
+        error_traceback = traceback.format_exc()
+        print(f"Full traceback: {error_traceback}")
+        
         # Set a fallback portfolio ID to prevent crashes
         PORTFOLIO_ID = str(uuid.uuid4())
         print(f"⚠️  Using fallback portfolio ID: {PORTFOLIO_ID}")
+        
+        # Try to log the error (if possible)
+        try:
+            from log_capture import add_log
+            add_log("ERROR", f"Portfolio init failed: {e}", "database", 
+                   "init_database", extra={"traceback": error_traceback})
+        except Exception as log_error:
+            print(f"Could not log error: {log_error}")
 
 def get_portfolio_id():
     """Get the current portfolio ID"""

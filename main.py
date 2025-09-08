@@ -726,6 +726,8 @@ async def startup_event():
             logger.info(f"✅ Database test query successful: {test_result}")
         except Exception as db_test_error:
             logger.error(f"❌ Database test query failed: {db_test_error}")
+            import traceback
+            logger.error(f"Database test traceback: {traceback.format_exc()}")
             raise
         
         # Database logging is now handled directly by add_log function
