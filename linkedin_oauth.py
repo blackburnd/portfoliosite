@@ -158,7 +158,7 @@ class LinkedInOAuthService:
         """Decrypt a token from storage"""
         return self.cipher.decrypt(encrypted_token.encode()).decode()
     
-    async def store_credentials(self, admin_email: str, token_data: Dict[str, Any], 
+    async def store_credentials(self, portfolio_id: str, token_data: Dict[str, Any], 
                                linkedin_profile_id: str = None) -> Dict[str, Any]:
         """Store LinkedIn OAuth credentials securely in database"""
         try:
@@ -175,9 +175,9 @@ class LinkedInOAuthService:
             # Store in database (upsert)
             query = """
                 INSERT INTO linkedin_oauth_credentials 
-                (admin_email, access_token, refresh_token, token_expires_at, linkedin_profile_id, scope)
-                VALUES (:admin_email, :access_token, :refresh_token, :expires_at, :profile_id, :scope)
-                ON CONFLICT (admin_email) 
+                (portfolio_id, access_token, refresh_token, token_expires_at, linkedin_profile_id, scope)
+                VALUES (:portfolio_id, :access_token, :refresh_token, :expires_at, :profile_id, :scope)
+                ON CONFLICT (portfolio_id) 
                 DO UPDATE SET
                     access_token = EXCLUDED.access_token,
                     refresh_token = EXCLUDED.refresh_token,
@@ -189,7 +189,7 @@ class LinkedInOAuthService:
             """
             
             result = await database.fetch_one(query, {
-                "admin_email": admin_email,
+                "portfolio_id": portfolio_id,
                 "access_token": encrypted_access_token,
                 "refresh_token": encrypted_refresh_token,
                 "expires_at": expires_at,
@@ -197,10 +197,10 @@ class LinkedInOAuthService:
                 "scope": token_data.get("scope", "r_liteprofile r_emailaddress")
             })
             
-            logger.info(f"Stored LinkedIn credentials for admin: {admin_email}")
+            logger.info(f"Stored LinkedIn credentials for admin: {portfolio_id}")
             return {
                 "status": "success",
-                "admin_email": admin_email,
+                "portfolio_id": portfolio_id,
                 "expires_at": expires_at.isoformat(),
                 "linkedin_profile_id": linkedin_profile_id
             }
@@ -209,16 +209,16 @@ class LinkedInOAuthService:
             logger.error(f"Failed to store LinkedIn credentials: {e}")
             raise LinkedInOAuthError(f"Failed to store credentials: {e}")
     
-    async def get_credentials(self, admin_email: str) -> Optional[Dict[str, Any]]:
+    async def get_credentials(self, portfolio_id: str) -> Optional[Dict[str, Any]]:
         """Get LinkedIn credentials for an admin user"""
         try:
             query = """
                 SELECT access_token, refresh_token, token_expires_at, linkedin_profile_id, scope, updated_at
                 FROM linkedin_oauth_credentials 
-                WHERE admin_email = :admin_email
+                WHERE portfolio_id = :portfolio_id
             """
             
-            result = await database.fetch_one(query, {"admin_email": admin_email})
+            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
             if not result:
                 return None
             
@@ -238,23 +238,23 @@ class LinkedInOAuthService:
             }
             
         except Exception as e:
-            logger.error(f"Failed to get LinkedIn credentials for {admin_email}: {e}")
+            logger.error(f"Failed to get LinkedIn credentials for {portfolio_id}: {e}")
             return None
     
-    async def delete_credentials(self, admin_email: str) -> bool:
+    async def delete_credentials(self, portfolio_id: str) -> bool:
         """Delete LinkedIn credentials for an admin user"""
         try:
-            query = "DELETE FROM linkedin_oauth_credentials WHERE admin_email = :admin_email"
-            await database.execute(query, {"admin_email": admin_email})
-            logger.info(f"Deleted LinkedIn credentials for admin: {admin_email}")
+            query = "DELETE FROM linkedin_oauth_credentials WHERE portfolio_id = :portfolio_id"
+            await database.execute(query, {"portfolio_id": portfolio_id})
+            logger.info(f"Deleted LinkedIn credentials for admin: {portfolio_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete LinkedIn credentials for {admin_email}: {e}")
+            logger.error(f"Failed to delete LinkedIn credentials for {portfolio_id}: {e}")
             return False
     
-    async def is_token_valid(self, admin_email: str) -> bool:
+    async def is_token_valid(self, portfolio_id: str) -> bool:
         """Check if stored token is still valid"""
-        credentials = await self.get_credentials(admin_email)
+        credentials = await self.get_credentials(portfolio_id)
         if not credentials:
             return False
         
@@ -264,10 +264,10 @@ class LinkedInOAuthService:
         
         return True
     
-    async def get_oauth_status(self, admin_email: str) -> Dict[str, Any]:
+    async def get_oauth_status(self, portfolio_id: str) -> Dict[str, Any]:
         """Get LinkedIn OAuth status for an admin user"""
-        credentials = await self.get_credentials(admin_email)
-        is_valid = await self.is_token_valid(admin_email) if credentials else False
+        credentials = await self.get_credentials(portfolio_id)
+        is_valid = await self.is_token_valid(portfolio_id) if credentials else False
         
         return {
             "configured": self.is_configured(),

@@ -4,7 +4,7 @@ from typing import Optional, Dict, List, Any
 from datetime import datetime
 import asyncio
 from database import database
-from oauth_manager import oauth_manager, OAuthManagerError
+from ttw_oauth_manager import ttw_oauth_manager, TTWOAuthManagerError
 
 logger = logging.getLogger(__name__)
 

@@ -54,14 +54,14 @@ class OAuthManager:
         """Check if LinkedIn OAuth is properly configured"""
         return bool(self.linkedin_client_id and self.linkedin_client_secret)
     
-    def get_linkedin_authorization_url(self, admin_email: str) -> Tuple[str, str]:
+    def get_linkedin_authorization_url(self, portfolio_id: str) -> Tuple[str, str]:
         """Generate LinkedIn OAuth authorization URL with state parameter"""
         if not self.is_linkedin_configured():
             raise OAuthManagerError("LinkedIn OAuth not configured. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.")
         
         # Generate secure state parameter containing admin email
         state_data = {
-            "admin_email": admin_email,
+            "portfolio_id": portfolio_id,
             "timestamp": datetime.utcnow().isoformat(),
             "nonce": secrets.token_urlsafe(16)
         }
@@ -90,12 +90,12 @@ class OAuthManager:
             if datetime.utcnow() - timestamp > timedelta(minutes=10):
                 raise OAuthManagerError("OAuth state expired")
             
-            return state_data["admin_email"]
+            return state_data["portfolio_id"]
         except Exception as e:
             logger.error(f"Failed to verify LinkedIn state: {e}")
             raise OAuthManagerError("Invalid OAuth state parameter")
     
-    async def exchange_linkedin_code_for_tokens(self, code: str, admin_email: str) -> Dict[str, Any]:
+    async def exchange_linkedin_code_for_tokens(self, code: str, portfolio_id: str) -> Dict[str, Any]:
         """Exchange LinkedIn authorization code for access and refresh tokens"""
         if not self.is_linkedin_configured():
             raise OAuthManagerError("LinkedIn OAuth not configured")
@@ -119,7 +119,7 @@ class OAuthManager:
                 token_response = response.json()
                 
                 # Store tokens in database
-                await self._store_linkedin_tokens(admin_email, token_response)
+                await self._store_linkedin_tokens(portfolio_id, token_response)
                 
                 return token_response
                 
@@ -130,7 +130,7 @@ class OAuthManager:
                 logger.error(f"LinkedIn token exchange HTTP error: {e.response.status_code} - {e.response.text}")
                 raise OAuthManagerError(f"LinkedIn token exchange failed: {e.response.status_code}")
     
-    async def _store_linkedin_tokens(self, admin_email: str, token_data: Dict[str, Any]):
+    async def _store_linkedin_tokens(self, portfolio_id: str, token_data: Dict[str, Any]):
         """Store LinkedIn tokens securely in database"""
         access_token = self._encrypt_token(token_data["access_token"])
         refresh_token = self._encrypt_token(token_data.get("refresh_token", "")) if token_data.get("refresh_token") else None
@@ -144,9 +144,9 @@ class OAuthManager:
         
         query = """
             INSERT INTO linkedin_oauth_credentials 
-            (admin_email, access_token, refresh_token, token_expires_at, linkedin_profile_id, scope, updated_at)
-            VALUES (:admin_email, :access_token, :refresh_token, :expires_at, :profile_id, :scope, NOW())
-            ON CONFLICT (admin_email) 
+            (portfolio_id, access_token, refresh_token, token_expires_at, linkedin_profile_id, scope, updated_at)
+            VALUES (:portfolio_id, :access_token, :refresh_token, :expires_at, :profile_id, :scope, NOW())
+            ON CONFLICT (portfolio_id) 
             DO UPDATE SET 
                 access_token = EXCLUDED.access_token,
                 refresh_token = EXCLUDED.refresh_token,
@@ -157,7 +157,7 @@ class OAuthManager:
         """
         
         await database.execute(query, {
-            "admin_email": admin_email,
+            "portfolio_id": portfolio_id,
             "access_token": access_token,
             "refresh_token": refresh_token,
             "expires_at": expires_at,
@@ -165,7 +165,7 @@ class OAuthManager:
             "scope": token_data.get("scope", "r_liteprofile r_emailaddress")
         })
         
-        logger.info(f"LinkedIn tokens stored for admin: {admin_email}")
+        logger.info(f"LinkedIn tokens stored for admin: {portfolio_id}")
     
     async def _get_linkedin_profile_id(self, access_token: str) -> Optional[str]:
         """Get LinkedIn profile ID from access token"""
@@ -184,15 +184,15 @@ class OAuthManager:
                 logger.warning(f"Failed to get LinkedIn profile ID: {e}")
                 return None
     
-    async def get_linkedin_credentials(self, admin_email: str) -> Optional[Dict[str, Any]]:
+    async def get_linkedin_credentials(self, portfolio_id: str) -> Optional[Dict[str, Any]]:
         """Get LinkedIn credentials for an admin user"""
         query = """
             SELECT access_token, refresh_token, token_expires_at, linkedin_profile_id, scope
             FROM linkedin_oauth_credentials 
-            WHERE admin_email = :admin_email
+            WHERE portfolio_id = :portfolio_id
         """
         
-        result = await database.fetch_one(query, {"admin_email": admin_email})
+        result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
         if not result:
             return None
         
@@ -208,19 +208,19 @@ class OAuthManager:
             # Check if token needs refresh
             if credentials["expires_at"] and datetime.utcnow() >= credentials["expires_at"]:
                 if credentials["refresh_token"]:
-                    logger.info(f"Refreshing LinkedIn token for {admin_email}")
-                    await self._refresh_linkedin_token(admin_email, credentials["refresh_token"])
-                    return await self.get_linkedin_credentials(admin_email)
+                    logger.info(f"Refreshing LinkedIn token for {portfolio_id}")
+                    await self._refresh_linkedin_token(portfolio_id, credentials["refresh_token"])
+                    return await self.get_linkedin_credentials(portfolio_id)
                 else:
-                    logger.warning(f"LinkedIn token expired for {admin_email} and no refresh token available")
+                    logger.warning(f"LinkedIn token expired for {portfolio_id} and no refresh token available")
                     return None
             
             return credentials
         except Exception as e:
-            logger.error(f"Failed to decrypt LinkedIn credentials for {admin_email}: {e}")
+            logger.error(f"Failed to decrypt LinkedIn credentials for {portfolio_id}: {e}")
             return None
     
-    async def _refresh_linkedin_token(self, admin_email: str, refresh_token: str):
+    async def _refresh_linkedin_token(self, portfolio_id: str, refresh_token: str):
         """Refresh LinkedIn access token using refresh token"""
         if not self.is_linkedin_configured():
             raise OAuthManagerError("LinkedIn OAuth not configured")
@@ -243,30 +243,30 @@ class OAuthManager:
                 token_response = response.json()
                 
                 # Store refreshed tokens
-                await self._store_linkedin_tokens(admin_email, token_response)
+                await self._store_linkedin_tokens(portfolio_id, token_response)
                 
-                logger.info(f"LinkedIn token refreshed for {admin_email}")
+                logger.info(f"LinkedIn token refreshed for {portfolio_id}")
                 
             except Exception as e:
-                logger.error(f"Failed to refresh LinkedIn token for {admin_email}: {e}")
+                logger.error(f"Failed to refresh LinkedIn token for {portfolio_id}: {e}")
                 # Remove invalid credentials
-                await self.remove_linkedin_credentials(admin_email)
+                await self.remove_linkedin_credentials(portfolio_id)
                 raise OAuthManagerError(f"Failed to refresh LinkedIn token: {e}")
     
-    async def remove_linkedin_credentials(self, admin_email: str):
+    async def remove_linkedin_credentials(self, portfolio_id: str):
         """Remove LinkedIn credentials for an admin user"""
-        query = "DELETE FROM linkedin_oauth_credentials WHERE admin_email = :admin_email"
-        await database.execute(query, {"admin_email": admin_email})
-        logger.info(f"LinkedIn credentials removed for {admin_email}")
+        query = "DELETE FROM linkedin_oauth_credentials WHERE portfolio_id = :portfolio_id"
+        await database.execute(query, {"portfolio_id": portfolio_id})
+        logger.info(f"LinkedIn credentials removed for {portfolio_id}")
     
-    async def is_linkedin_connected(self, admin_email: str) -> bool:
+    async def is_linkedin_connected(self, portfolio_id: str) -> bool:
         """Check if admin user has valid LinkedIn credentials"""
-        credentials = await self.get_linkedin_credentials(admin_email)
+        credentials = await self.get_linkedin_credentials(portfolio_id)
         return credentials is not None
     
-    async def get_linkedin_profile_data(self, admin_email: str) -> Optional[Dict[str, Any]]:
+    async def get_linkedin_profile_data(self, portfolio_id: str) -> Optional[Dict[str, Any]]:
         """Get LinkedIn profile data for admin user"""
-        credentials = await self.get_linkedin_credentials(admin_email)
+        credentials = await self.get_linkedin_credentials(portfolio_id)
         if not credentials:
             return None
         
@@ -302,7 +302,7 @@ class OAuthManager:
                 }
                 
             except Exception as e:
-                logger.error(f"Failed to get LinkedIn profile data for {admin_email}: {e}")
+                logger.error(f"Failed to get LinkedIn profile data for {portfolio_id}: {e}")
                 return None
 
 # Global instance

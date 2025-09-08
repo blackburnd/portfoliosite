@@ -14,7 +14,7 @@ async def view_google_oauth_tokens(request: Request):
         query = """
         SELECT
             id,
-            admin_email,
+            portfolio_id,
             access_token,
             refresh_token,
             token_expires_at,
