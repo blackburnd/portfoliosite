@@ -3819,6 +3819,193 @@ async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_se
         }, status_code=500)
 
 
+@app.get("/admin/linkedin/oauth/test-all-scopes")
+async def test_all_linkedin_scopes(admin: dict = Depends(require_admin_auth_session)):
+    """Test all LinkedIn scopes and return data + scope status"""
+    admin_email = admin.get("email")
+    
+    try:
+        add_log("INFO", "admin_linkedin_test_all_scopes", f"Admin {admin_email} testing all LinkedIn scopes")
+        
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
+            }, status_code=400)
+        
+        # Test all scopes and collect data
+        results = {
+            "profile": {"status": "error", "data": None, "error": None},
+            "email": {"status": "error", "data": None, "error": None},
+            "positions": {"status": "error", "data": None, "error": None}
+        }
+        
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        
+        # Test profile scope
+        try:
+            profile_data = await ttw_manager._get_linkedin_profile(access_token)
+            if profile_data:
+                results["profile"]["status"] = "success"
+                results["profile"]["data"] = {
+                    "name": f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip(),
+                    "headline": profile_data.get('headline', 'Not available'),
+                    "profile_id": profile_data.get('id', 'Not available')
+                }
+            else:
+                results["profile"]["error"] = "Failed to retrieve profile data"
+        except Exception as e:
+            results["profile"]["error"] = str(e)
+        
+        # Test email scope
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bearer {access_token}"}
+                email_response = await client.get(
+                    "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+                    headers=headers
+                )
+                if email_response.status_code == 200:
+                    email_data = email_response.json()
+                    elements = email_data.get("elements", [])
+                    if elements and len(elements) > 0:
+                        email_address = elements[0].get("handle~", {}).get("emailAddress")
+                        if email_address:
+                            results["email"]["status"] = "success"
+                            results["email"]["data"] = {"email": email_address}
+                        else:
+                            results["email"]["error"] = "No email address found in response"
+                    else:
+                        results["email"]["error"] = "No email elements found"
+                else:
+                    results["email"]["error"] = f"API returned status {email_response.status_code}"
+        except Exception as e:
+            results["email"]["error"] = str(e)
+        
+        # Test positions scope
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bearer {access_token}"}
+                positions_response = await client.get(
+                    "https://api.linkedin.com/v2/positions?q=members&projection=(elements*(id,title,companyName,summary,startDate,endDate,isCurrent))",
+                    headers=headers
+                )
+                if positions_response.status_code == 200:
+                    positions_data = positions_response.json()
+                    elements = positions_data.get("elements", [])
+                    results["positions"]["status"] = "success"
+                    results["positions"]["data"] = {"positions": elements, "count": len(elements)}
+                else:
+                    results["positions"]["error"] = f"API returned status {positions_response.status_code}"
+        except Exception as e:
+            results["positions"]["error"] = str(e)
+        
+        # Count successful scopes
+        successful_scopes = sum(1 for scope_data in results.values() if scope_data["status"] == "success")
+        total_scopes = len(results)
+        
+        add_log("INFO", "admin_linkedin_test_all_scopes_complete", 
+                f"LinkedIn scope testing completed for {admin_email}: {successful_scopes}/{total_scopes} scopes working")
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Tested all LinkedIn scopes: {successful_scopes}/{total_scopes} working",
+            "scope_results": results,
+            "summary": {
+                "successful_scopes": successful_scopes,
+                "total_scopes": total_scopes,
+                "connection_status": "active"
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error testing all LinkedIn scopes: {str(e)}")
+        add_log("ERROR", "admin_linkedin_test_all_scopes_error", 
+                f"Error testing all LinkedIn scopes for {admin_email}: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
+@app.get("/admin/linkedin/oauth/check-scopes")
+async def check_linkedin_scopes_status(admin: dict = Depends(require_admin_auth_session)):
+    """Check LinkedIn scope statuses (lightweight version for background checks)"""
+    admin_email = admin.get("email")
+    
+    try:
+        ttw_manager = TTWOAuthManager()
+        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        
+        if not connection:
+            return JSONResponse({
+                "status": "error",
+                "detail": "No LinkedIn connection found"
+            }, status_code=400)
+        
+        # Quick scope status check
+        scope_status = {
+            "profile": "unknown",
+            "email": "unknown", 
+            "positions": "unknown"
+        }
+        
+        access_token = ttw_manager._decrypt_token(connection["access_token"])
+        
+        # Quick test of each scope
+        async with httpx.AsyncClient() as client:
+            headers = {"Authorization": f"Bearer {access_token}"}
+            
+            # Test profile
+            try:
+                profile_response = await client.get("https://api.linkedin.com/v2/me", headers=headers)
+                scope_status["profile"] = "success" if profile_response.status_code == 200 else "error"
+            except:
+                scope_status["profile"] = "error"
+            
+            # Test email
+            try:
+                email_response = await client.get(
+                    "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+                    headers=headers
+                )
+                scope_status["email"] = "success" if email_response.status_code == 200 else "error"
+            except:
+                scope_status["email"] = "error"
+            
+            # Test positions
+            try:
+                positions_response = await client.get(
+                    "https://api.linkedin.com/v2/positions?q=members",
+                    headers=headers
+                )
+                scope_status["positions"] = "success" if positions_response.status_code == 200 else "error"
+            except:
+                scope_status["positions"] = "error"
+        
+        successful_scopes = sum(1 for status in scope_status.values() if status == "success")
+        
+        return JSONResponse({
+            "status": "success",
+            "scope_status": scope_status,
+            "summary": {
+                "successful_scopes": successful_scopes,
+                "total_scopes": len(scope_status),
+                "all_working": successful_scopes == len(scope_status)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error checking LinkedIn scope status: {str(e)}")
+        return JSONResponse({
+            "status": "error",
+            "error": str(e)
+        }, status_code=500)
+
+
 # --- OAuth Callback Routes (renamed for clarity) ---
 
 @app.get("/admin/linkedin/oauth/callback")

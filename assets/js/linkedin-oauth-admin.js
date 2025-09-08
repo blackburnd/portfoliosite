@@ -28,26 +28,9 @@ class LinkedInOAuthAdmin {
         const authorizeBtn = document.getElementById('initiate-linkedin-oauth');
         if (authorizeBtn) authorizeBtn.addEventListener('click', () => this.initiateLinkedInAuth());
 
-        const revokeBtn = document.getElementById('revoke-linkedin-oauth');
-        if (revokeBtn) revokeBtn.addEventListener('click', () => this.revokeLinkedInAuth());
-
-        const testApiBtn = document.getElementById('test-linkedin-api');
-        if (testApiBtn) testApiBtn.addEventListener('click', () => this.testLinkedInAPI());
-
+        // Main "Fetch LinkedIn Data" button (replaces individual test buttons)
         const testProfileBtn = document.getElementById('test-profile-access');
-        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
-
-        const testEmailBtn = document.getElementById('test-email-access');
-        if (testEmailBtn) testEmailBtn.addEventListener('click', () => this.testEmailAccess());
-
-        const testPositionsBtn = document.getElementById('test-positions-access');
-        if (testPositionsBtn) testPositionsBtn.addEventListener('click', () => this.testPositionsAccess());
-
-        const testMemberDataPortabilityBtn = document.getElementById('test-member-data-portability');
-        if (testMemberDataPortabilityBtn) testMemberDataPortabilityBtn.addEventListener('click', () => this.testMemberDataPortabilityAPI());
-
-        const syncBtn = document.getElementById('sync-linkedin-data');
-        if (syncBtn) syncBtn.addEventListener('click', () => this.syncLinkedInData());
+        if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.fetchLinkedInData());
     }
 
     async loadLinkedInStatus() {
@@ -56,12 +39,39 @@ class LinkedInOAuthAdmin {
             if (response.ok) {
                 const data = await response.json();
                 this.updateLinkedInStatus(data);
+                
+                // Also check scope statuses if connected
+                if (data.has_connection) {
+                    this.checkScopeStatuses();
+                }
             } else {
                 this.showMessage('Failed to load LinkedIn OAuth status', 'error');
             }
         } catch (error) {
             console.error('Error loading LinkedIn status:', error);
             this.showMessage('Error loading LinkedIn OAuth status', 'error');
+        }
+    }
+
+    async checkScopeStatuses() {
+        try {
+            const response = await fetch('/admin/linkedin/oauth/check-scopes');
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Update scope statuses
+                if (result.scopes) {
+                    Object.keys(result.scopes).forEach(scope => {
+                        this.updateScopeStatus(scope, result.scopes[scope]);
+                    });
+                }
+                
+                // Update authorization button visibility
+                this.updateAuthorizationButtonVisibility();
+            }
+        } catch (error) {
+            console.error('Error checking scope statuses:', error);
+            // Don't show error message for this - it's a background check
         }
     }
 
@@ -295,30 +305,108 @@ class LinkedInOAuthAdmin {
         }
     }
 
-    async testProfileAccess() {
+    async fetchLinkedInData() {
         const resultsDiv = document.getElementById('linkedin-test-results');
+        const button = document.getElementById('test-profile-access');
+        
+        // Update button state
+        button.disabled = true;
+        button.textContent = 'Fetching LinkedIn Data...';
+        
         resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div class="test-results">Testing LinkedIn Profile Access...</div>';
+        resultsDiv.innerHTML = '<div class="test-results">Fetching LinkedIn data and checking permissions...</div>';
 
         try {
-            const response = await fetch('/admin/linkedin/oauth/test-profile');
+            // Test all scopes and get data
+            const response = await fetch('/admin/linkedin/oauth/test-all-scopes');
             const result = await response.json();
 
             if (response.ok) {
-                const data = result.data;
-                resultsDiv.innerHTML = `
-                    <div class="test-success">
-                        ✅ Profile Access test passed<br>
-                        <strong>Name:</strong> ${data.name}<br>
-                        <strong>Headline:</strong> ${data.headline}<br>
-                        <strong>Profile ID:</strong> ${data.profile_id}
-                    </div>`;
+                // Update scope statuses based on test results
+                this.updateScopeStatus('r_liteprofile', result.scopes?.r_liteprofile || false);
+                this.updateScopeStatus('r_emailaddress', result.scopes?.r_emailaddress || false);
+                this.updateScopeStatus('r_fullprofile', result.scopes?.r_fullprofile || false);
+                
+                // Display successful data
+                let dataDisplay = '<div class="test-success">✅ LinkedIn data fetched successfully</div>';
+                
+                if (result.profile_data) {
+                    dataDisplay += '<div class="scope-data"><h4>Profile Data:</h4>';
+                    dataDisplay += `<strong>Name:</strong> ${result.profile_data.name}<br>`;
+                    dataDisplay += `<strong>Headline:</strong> ${result.profile_data.headline}<br>`;
+                    dataDisplay += `<strong>Profile ID:</strong> ${result.profile_data.profile_id}</div>`;
+                }
+                
+                if (result.email_data) {
+                    dataDisplay += '<div class="scope-data"><h4>Email Data:</h4>';
+                    dataDisplay += `<strong>Email:</strong> ${result.email_data.email}</div>`;
+                }
+                
+                if (result.position_data) {
+                    dataDisplay += '<div class="scope-data"><h4>Position Data:</h4>';
+                    dataDisplay += `<strong>Positions:</strong> ${result.position_data.positions?.length || 0} found</div>`;
+                }
+                
+                resultsDiv.innerHTML = dataDisplay;
+                
+                // Update authorization button visibility
+                this.updateAuthorizationButtonVisibility();
+                
             } else {
-                resultsDiv.innerHTML = `<div class="test-error">❌ Profile Access test failed: ${result.detail}</div>`;
+                // Handle specific scope failures
+                if (result.scope_errors) {
+                    Object.keys(result.scope_errors).forEach(scope => {
+                        this.updateScopeStatus(scope, false);
+                    });
+                }
+                
+                resultsDiv.innerHTML = `<div class="test-error">❌ LinkedIn data fetch failed: ${result.detail}</div>`;
             }
         } catch (error) {
-            console.error('Error testing profile access:', error);
-            resultsDiv.innerHTML = '<div class="test-error">❌ Profile Access test failed: Network error</div>';
+            console.error('LinkedIn data fetch error:', error);
+            resultsDiv.innerHTML = `<div class="test-error">❌ Error fetching LinkedIn data: ${error.message}</div>`;
+        } finally {
+            // Reset button state
+            button.disabled = false;
+            button.textContent = 'Fetch LinkedIn Data';
+        }
+    }
+
+    updateScopeStatus(scopeName, granted) {
+        const statusElement = document.getElementById(`${scopeName}-status`);
+        const revokeButton = document.getElementById(`revoke-${scopeName}`);
+        
+        if (statusElement) {
+            if (granted) {
+                statusElement.innerHTML = '<span class="status-granted">✅ Granted</span>';
+                if (revokeButton) revokeButton.style.display = 'inline-block';
+            } else {
+                statusElement.innerHTML = '<span class="status-denied">❌ Denied</span>';
+                if (revokeButton) revokeButton.style.display = 'none';
+            }
+        }
+    }
+
+    updateAuthorizationButtonVisibility() {
+        const authorizeBtn = document.getElementById('initiate-linkedin-oauth');
+        const requiredScopes = ['r_liteprofile', 'r_emailaddress'];
+        
+        // Check if all required scopes are granted
+        const allRequiredGranted = requiredScopes.every(scope => {
+            const statusElement = document.getElementById(`${scope}-status`);
+            return statusElement && statusElement.innerHTML.includes('✅ Granted');
+        });
+        
+        if (authorizeBtn) {
+            authorizeBtn.style.display = allRequiredGranted ? 'none' : 'inline-block';
+        }
+    }
+
+    revokeScope(scopeName) {
+        if (confirm(`Are you sure you want to revoke the ${scopeName} permission?`)) {
+            // Implementation for scope revocation
+            console.log(`Revoking scope: ${scopeName}`);
+            // This would call an API endpoint to revoke specific scope
         }
     }
 

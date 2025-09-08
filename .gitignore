@@ -10,3 +10,6 @@ __pycache__/
 *.py~
 test.db
 .vscode/settings.json
+templates/#index.html#
+.*#
+#.*#
