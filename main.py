@@ -2642,11 +2642,16 @@ async def save_google_oauth_config(
             }, status_code=500)
         
     except Exception as e:
-        logger.error(f"Error saving Google OAuth config: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_config_error", f"Error saving Google OAuth config by {admin_email}: {str(e)}")
+        import traceback
+        full_traceback = traceback.format_exc()
+        logger.error(f"Error saving Google OAuth config: {str(e)}\nTraceback: {full_traceback}")
+        log_with_context("ERROR", "admin_google_oauth_config_error", 
+                         f"Error saving Google OAuth config by {admin_email}: {str(e)}\nTraceback: {full_traceback}", 
+                         request)
         return JSONResponse({
             "status": "error",
-            "error": str(e)
+            "error": str(e),
+            "traceback": full_traceback
         }, status_code=500)
 
 

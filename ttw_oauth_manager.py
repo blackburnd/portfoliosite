@@ -583,8 +583,8 @@ class TTWOAuthManager:
             
             # Insert or update Google OAuth configuration
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
                 ON CONFLICT (provider, app_name) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
@@ -601,6 +601,7 @@ class TTWOAuthManager:
                 "client_secret": client_secret,
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
                 "scopes": ",".join(["email", "profile"]),  # Default Google scopes
+                "encryption_key": "none",  # Placeholder since encryption_key is NOT NULL
                 "created_by": admin_email
             })
             
