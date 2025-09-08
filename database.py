@@ -88,7 +88,10 @@ async def init_database():
         try:
             from log_capture import add_log
             add_log("ERROR", f"Portfolio init failed: {e}", "database", 
-                   "init_database", extra={"traceback": error_traceback})
+                   "init_database")
+            # Log traceback separately
+            add_log("ERROR", f"Portfolio init traceback: {error_traceback}", "database",
+                   "init_database_traceback")
         except Exception as log_error:
             print(f"Could not log error: {log_error}")
 

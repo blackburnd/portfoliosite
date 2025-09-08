@@ -159,7 +159,8 @@ async def require_admin_auth_session(request: Request):
     except Exception as e:
         import traceback
         full_traceback = traceback.format_exc()
-        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}\nTraceback: {full_traceback}", "admin_auth_exception")
+        add_log("ERROR", f"Unexpected error in admin auth: {str(e)}", "admin_auth_exception")
+        add_log("ERROR", f"Admin auth traceback: {full_traceback}", "admin_auth_traceback")
         logger.error(f"Admin auth error traceback: {full_traceback}")
         raise HTTPException(
             status_code=500,
@@ -249,7 +250,8 @@ This email was automatically generated from your portfolio website contact form.
         full_traceback = traceback.format_exc()
         logger.error(f"Gmail API: Failed to send contact notification email: {str(e)}")
         logger.error(f"Gmail API error traceback: {full_traceback}")
-        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}\nTraceback: {full_traceback}", "gmail_api_email_error")
+        add_log("ERROR", f"Gmail API: Failed to send email: {str(e)}", "gmail_api_email_error")
+        add_log("ERROR", f"Gmail API traceback: {full_traceback}", "gmail_api_traceback")
         return False
 
 from app.resolvers import schema
@@ -430,13 +432,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     try:
         client_ip = get_client_ip(request)
         
-        # Format the traceback and error details for the database log
+        # Format the message without traceback for the database log
         detailed_message = f"""[{error_id}] {error_type}: {error_message}
 URL: {request.url} | Method: {request.method}
 Client IP: {client_ip}
-Headers: {dict(request.headers)}
-Full Traceback:
-{error_traceback}"""
+Headers: {dict(request.headers)}"""
         
         # Build extra data for the log entry
         extra_data = {
@@ -450,13 +450,24 @@ Full Traceback:
         
         add_log(
             "ERROR",
-            "global_exception_handler",
             detailed_message,
+            "global_exception_handler",
             function="global_exception_handler",
             line=0,
             user=None,
             ip_address=client_ip,
             extra=extra_data
+        )
+        
+        # Log the traceback separately
+        add_log(
+            "ERROR", 
+            f"Traceback for [{error_id}]:\n{error_traceback}",
+            "global_exception_traceback",
+            function="global_exception_handler",
+            line=0,
+            user=None,
+            ip_address=client_ip
         )
     except Exception as log_error:
         logger.error(f"Failed to log exception to database: {log_error}")
@@ -2582,11 +2593,18 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         ttw_manager = TTWOAuthManager()
         google_configured = await ttw_manager.is_google_oauth_app_configured()
         
+        # Debug logging for production troubleshooting
+        add_log("DEBUG", "google_oauth_status_check", f"Google OAuth configured: {google_configured}")
+        
         config = None
         credentials = None
         if google_configured:
             config = await ttw_manager.get_google_oauth_app_config()
             credentials = await ttw_manager.get_google_oauth_credentials()
+            
+            # Debug log the actual values retrieved
+            add_log("DEBUG", "google_oauth_config_values", f"Config: {config}")
+            add_log("DEBUG", "google_oauth_credentials_values", f"Credentials: {credentials}")
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
