@@ -34,6 +34,14 @@ import asyncio
 import hashlib
 from log_capture import add_log, get_client_ip, log_with_context
 
+# Centralized database connection function
+def get_database_connection():
+    """Get a database connection using environment variables"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No database URL found in environment variables")
+    return databases.Database(database_url)
+
 # Google API imports for Gmail
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
@@ -228,14 +236,11 @@ from databases import Database
 
 # Centralized database connection function
 def get_database_connection():
-    """
-    Centralized function to create database connections.
-    This ensures consistent database URL handling across the entire application.
-    """
+    """Get a database connection using environment variables"""
     database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not database_url:
         raise ValueError("No database URL found in environment variables")
-    return Database(database_url)
+    return databases.Database(database_url)
 
 # Pydantic model for work item
 class WorkItem(BaseModel):

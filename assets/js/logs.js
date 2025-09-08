@@ -14,7 +14,6 @@ let currentSortOrder = 'desc'; // Default to newest first
 
 // Global functions - defined immediately so buttons work
 window.refreshLogs = function() {
-    console.log('Refresh button clicked');
     currentOffset = 0;
     allLogs = [];
     filteredLogs = [];
@@ -24,7 +23,6 @@ window.refreshLogs = function() {
 };
 
 window.clearLogs = async function() {
-    console.log('Clear button clicked');
     if (confirm('Are you sure you want to clear all logs?')) {
         try {
             const cacheBust = Date.now() + Math.random();
@@ -83,8 +81,6 @@ async function loadLogs(append = false) {
     isLoading = true;
     document.getElementById('loadingIndicator').style.display = 'block';
     
-    console.log('Loading logs. Append:', append, 'Current offset:', currentOffset);
-    
     try {
         // Build URL with sorting and filter parameters
         const params = new URLSearchParams({
@@ -114,14 +110,6 @@ async function loadLogs(append = false) {
         });
         const data = await response.json();
         
-        console.log('Received data:', data);
-        console.log('Data keys:', Object.keys(data));
-        console.log('Data type:', typeof data);
-        console.log('Has has_more?', 'has_more' in data);
-        console.log('Has has_next?', 'has_next' in data);
-        console.log('has_more value:', data.has_more);
-        console.log('has_next value:', data.has_next);
-        console.log('Logs count:', data.logs ? data.logs.length : 0);
         
         // Extra validation for the data structure
         if (typeof data !== 'object' || data === null) {
@@ -168,7 +156,6 @@ async function loadLogs(append = false) {
             updateStats();
         }
         
-        console.log('Logs loaded successfully. Total logs:', allLogs.length);
     } catch (error) {
         console.error('Failed to load logs:', error);
         alert('Failed to load logs: ' + error.message);
@@ -180,7 +167,6 @@ async function loadLogs(append = false) {
 
 // Reload logs with current filters (called when filters change)
 function reloadWithFilters() {
-    console.log('Reloading logs with new filters');
     currentOffset = 0;
     allLogs = [];
     filteredLogs = [];
@@ -197,12 +183,10 @@ function applyFilters() {
 
 // Update the table display
 function updateDisplay() {
-    console.log('updateDisplay called with', filteredLogs.length, 'filtered logs');
     const tbody = document.getElementById('logsTableBody');
     tbody.innerHTML = '';
     
     if (filteredLogs.length === 0) {
-        console.log('No filtered logs to display');
         const row = document.createElement('tr');
         row.innerHTML = '<td colspan="7" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
@@ -210,7 +194,6 @@ function updateDisplay() {
     }
     
     filteredLogs.forEach((log, index) => {
-        console.log('Processing log', index, ':', log);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</td>
@@ -279,8 +262,6 @@ function updateStats() {
 
 // Update pagination info
 function updatePagination(pagination) {
-    console.log('Pagination info:', pagination);
-    
     // Store backend total count for accurate totals
     if (pagination.total !== undefined) {
         backendTotalCount = pagination.total;
@@ -316,7 +297,6 @@ function updateModuleFilter() {
 
 // Reload logs from backend when filters change
 function reloadWithFilters() {
-    console.log('Reloading logs with new filters');
     currentOffset = 0;
     allLogs = [];
     filteredLogs = [];
@@ -372,7 +352,6 @@ function setupEventListeners() {
     // Intersection Observer for infinite scroll
     intersectionObserver = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMoreLogs && !isLoading) {
-            console.log('Loading more logs due to scroll');
             loadLogs(true);
         }
     }, {
@@ -503,13 +482,11 @@ function calculateAndSetTableHeight() {
     
     // Set the CSS custom property
     document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
-    
-    console.log('Calculated header height:', headerHeight + 'px');
+
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing logs interface');
     calculateAndSetTableHeight();
     setupEventListeners();
     updateClearFiltersButtonVisibility(); // Check initial filter state

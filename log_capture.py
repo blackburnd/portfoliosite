@@ -13,6 +13,17 @@ import databases
 from fastapi import Request
 
 
+def get_database_connection():
+    """
+    Centralized function to create database connections for logging.
+    This ensures consistent database URL handling across logging functions.
+    """
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No database URL found in environment variables")
+    return databases.Database(database_url)
+
+
 def get_client_ip(request: Request) -> str:
     """
     Extract the real client IP address from the request, accounting for proxies and load balancers.
@@ -46,10 +57,10 @@ def get_client_ip(request: Request) -> str:
 class DatabaseLogHandler(logging.Handler):
     """Custom logging handler that writes logs to the database"""
     
-    def __init__(self, database_url: str):
+    def __init__(self, database_url: str = None):
         super().__init__()
         self.database_url = database_url
-        self.db = databases.Database(database_url)
+        self.db = get_database_connection()
         self._loop = None
         
     def emit(self, record: logging.LogRecord):
@@ -158,13 +169,8 @@ def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
             user: Optional[str] = None, extra: Optional[dict] = None):
     """Manually add a log entry to the database"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found for manual log entry")
-        return
-
     async def _add_log_async():
-        db = databases.Database(database_url)
+        db = get_database_connection()
 
         try:
             await db.connect()
@@ -216,12 +222,7 @@ def add_log(level: str, message: str, module: str = "manual",
 
 async def clear_logs():
     """Clear all logs from the database"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found for clearing logs")
-        return
-    
-    db = databases.Database(database_url)
+    db = get_database_connection()
     
     try:
         await db.connect()
@@ -281,13 +282,8 @@ def log_with_context(level: str, message: str, module: str = "manual",
         except Exception:
             ip_address = "unknown"
     
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found for manual log entry")
-        return
-
     async def _add_log_async():
-        db = databases.Database(database_url)
+        db = get_database_connection()
 
         try:
             await db.connect()

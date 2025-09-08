@@ -11,9 +11,16 @@ import os
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# Database URL
-DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-db = databases.Database(DATABASE_URL)
+# Centralized database connection function
+def get_database_connection():
+    """Get a database connection using environment variables"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No database URL found in environment variables")
+    return databases.Database(database_url)
+
+# Database connection
+db = get_database_connection()
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -83,8 +90,7 @@ async def work_page():
 @app.get("/schema", response_class=JSONResponse)
 async def schema_page():
     # Connect to DB
-    DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    db = databases.Database(DATABASE_URL)
+    db = get_database_connection()
     await db.connect()
     # Get tables
     tables = await db.fetch_all("""

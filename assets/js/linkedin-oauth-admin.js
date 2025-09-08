@@ -215,14 +215,11 @@ class LinkedInOAuthAdmin {
 
     async initiateLinkedInAuth() {
         try {
-            console.log('LinkedIn OAuth: Starting authorization request...');
             
             const response = await fetch('/admin/linkedin/oauth/authorize');
-            console.log('LinkedIn OAuth: Response received, status:', response.status);
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('LinkedIn OAuth: Authorization URL received, redirecting...');
                 window.location.href = data.auth_url;
             } else {
                 const error = await response.json();
