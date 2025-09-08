@@ -33,14 +33,7 @@ import sqlite3
 import asyncio
 import hashlib
 from log_capture import add_log, get_client_ip, log_with_context
-
-# Centralized database connection function
-def get_database_connection():
-    """Get a database connection using environment variables"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError("No database URL found in environment variables")
-    return databases.Database(database_url)
+from database import database
 
 # Google API imports for Gmail
 from googleapiclient.discovery import build
@@ -233,14 +226,6 @@ This email was automatically generated from your portfolio website contact form.
 from app.resolvers import schema
 from database import init_database, close_database, database
 from databases import Database
-
-# Centralized database connection function
-def get_database_connection():
-    """Get a database connection using environment variables"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError("No database URL found in environment variables")
-    return databases.Database(database_url)
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -1246,13 +1231,12 @@ async def contact_submit(request: Request):
         )
         
         # Save to database with centralized connection
-        db = get_database_connection()
-        await db.connect()
+        await database.connect()
         
         try:
             # Get the default portfolio_id (assuming Daniel's portfolio)
             portfolio_query = "SELECT id FROM portfolios LIMIT 1"
-            portfolio_result = await db.fetch_one(portfolio_query)
+            portfolio_result = await database.fetch_one(portfolio_query)
             
             if not portfolio_result:
                 raise Exception("No portfolio found in database")
@@ -1265,7 +1249,7 @@ async def contact_submit(request: Request):
                 VALUES (:portfolio_id, :name, :email, :subject, :message, NOW(), FALSE)
                 RETURNING id
             """
-            result = await db.fetch_one(
+            result = await database.fetch_one(
                 query,
                 {
                     "portfolio_id": portfolio_id,
@@ -1279,7 +1263,7 @@ async def contact_submit(request: Request):
             contact_id = result['id'] if result else None
             
         finally:
-            await db.disconnect()
+            await database.disconnect()
         
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
@@ -1497,98 +1481,94 @@ async def get_logs_data(
         add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
         
         # Use centralized database connection
-        db = get_database_connection()
-        await db.connect()
+        await database.connect()
         
-        try:
-            # Validate sort parameters
-            valid_sort_fields = {"timestamp", "level", "message", "module",
-                                 "function", "line", "user", "ip_address"}
-            if sort_field not in valid_sort_fields:
-                sort_field = "timestamp"
+        # Validate sort parameters
+        valid_sort_fields = {"timestamp", "level", "message", "module",
+                             "function", "line", "user", "ip_address"}
+        if sort_field not in valid_sort_fields:
+            sort_field = "timestamp"
+        
+        valid_sort_orders = {"asc", "desc"}
+        if sort_order.lower() not in valid_sort_orders:
+            sort_order = "desc"
+        
+        # Build WHERE clause for filtering
+        where_conditions = []
+        params = {"limit": limit, "offset": offset}
+        
+        if search:
+            where_conditions.append("(message ILIKE :search OR module ILIKE :search OR function ILIKE :search)")
+            params["search"] = f"%{search}%"
+        
+        if level:
+            where_conditions.append("LOWER(level) = LOWER(:level)")
+            params["level"] = level
             
-            valid_sort_orders = {"asc", "desc"}
-            if sort_order.lower() not in valid_sort_orders:
-                sort_order = "desc"
+        if module:
+            where_conditions.append("module = :module")
+            params["module"] = module
             
-            # Build WHERE clause for filtering
-            where_conditions = []
-            params = {"limit": limit, "offset": offset}
-            
-            if search:
-                where_conditions.append("(message ILIKE :search OR module ILIKE :search OR function ILIKE :search)")
-                params["search"] = f"%{search}%"
-            
-            if level:
-                where_conditions.append("LOWER(level) = LOWER(:level)")
-                params["level"] = level
-                
-            if module:
-                where_conditions.append("module = :module")
-                params["module"] = module
-                
-            if time_filter:
-                if time_filter == "1h":
-                    where_conditions.append("timestamp >= NOW() - INTERVAL '1 hour'")
-                elif time_filter == "24h":
-                    where_conditions.append("timestamp >= NOW() - INTERVAL '24 hours'")
-                elif time_filter == "7d":
-                    where_conditions.append("timestamp >= NOW() - INTERVAL '7 days'")
-            
-            where_clause = ""
-            if where_conditions:
-                where_clause = "WHERE " + " AND ".join(where_conditions)
-            
-            # Get total count with filters
-            count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
-            # Only pass filter parameters to count query, not limit/offset
-            count_params = {k: v for k, v in params.items() if k not in ['limit', 'offset']}
-            total_count = await db.fetch_val(count_query, count_params)
-            
-            # Build dynamic ORDER BY clause
-            order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
-            
-            # Get logs with offset/limit for endless scrolling
-            logs_query = f"""
-                SELECT timestamp, level, message, module, function, line,
-                       user, extra, ip_address
-                FROM app_log
-                {where_clause}
-                {order_clause}
-                LIMIT :limit OFFSET :offset
-            """
-            
-            logs = await db.fetch_all(logs_query, params)
-            
-            # Debug: Log what we found
-            add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
-            
-            # Convert logs to dict and serialize datetime objects
-            logs_data = []
-            for log in logs:
-                log_dict = {}
-                for key, value in dict(log).items():
-                    log_dict[key] = serialize_datetime(value)
-                logs_data.append(log_dict)
-            
-            # Check if there are more logs
-            has_more = len(logs_data) == limit
-            
-            return JSONResponse({
-                "status": "success",
-                "logs": logs_data,
-                "has_more": has_more,
-                "has_next": has_more,  # Backward compatibility
-                "pagination": {
-                    "page": (offset // limit) + 1,
-                    "limit": limit,
-                    "offset": offset,
-                    "total": total_count,  # Actual total from database
-                    "showing": len(logs_data)  # Number of records in this response
-                }
-            })
-        finally:
-            await db.disconnect()
+        if time_filter:
+            if time_filter == "1h":
+                where_conditions.append("timestamp >= NOW() - INTERVAL '1 hour'")
+            elif time_filter == "24h":
+                where_conditions.append("timestamp >= NOW() - INTERVAL '24 hours'")
+            elif time_filter == "7d":
+                where_conditions.append("timestamp >= NOW() - INTERVAL '7 days'")
+        
+        where_clause = ""
+        if where_conditions:
+            where_clause = "WHERE " + " AND ".join(where_conditions)
+        
+        # Get total count with filters
+        count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
+        # Only pass filter parameters to count query, not limit/offset
+        count_params = {k: v for k, v in params.items() if k not in ['limit', 'offset']}
+        total_count = await database.fetch_val(count_query, count_params)
+        
+        # Build dynamic ORDER BY clause
+        order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
+        
+        # Get logs with offset/limit for endless scrolling
+        logs_query = f"""
+            SELECT timestamp, level, message, module, function, line,
+                   user, extra, ip_address
+            FROM app_log
+            {where_clause}
+            {order_clause}
+            LIMIT :limit OFFSET :offset
+        """
+        
+        logs = await database.fetch_all(logs_query, params)
+        
+        # Debug: Log what we found
+        add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
+        
+        # Convert logs to dict and serialize datetime objects
+        logs_data = []
+        for log in logs:
+            log_dict = {}
+            for key, value in dict(log).items():
+                log_dict[key] = serialize_datetime(value)
+            logs_data.append(log_dict)
+        
+        # Check if there are more logs
+        has_more = len(logs_data) == limit
+        
+        return JSONResponse({
+            "status": "success",
+            "logs": logs_data,
+            "has_more": has_more,
+            "has_next": has_more,  # Backward compatibility
+            "pagination": {
+                "page": (offset // limit) + 1,
+                "limit": limit,
+                "offset": offset,
+                "total": total_count,  # Actual total from database
+                "showing": len(logs_data)  # Number of records in this response
+            }
+        })
         
     except Exception as e:
         logger.error(f"Error fetching logs: {str(e)}")
