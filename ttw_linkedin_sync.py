@@ -320,6 +320,3 @@ class TTWLinkedInSync:
         
         return sorted(history, key=lambda x: x["timestamp"], reverse=True)[:limit]
 
-# Convenience function for backward compatibility
-    """TTW LinkedIn sync function"""
-    return await sync_service.sync_profile_data(sync_options)
