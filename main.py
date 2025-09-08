@@ -236,12 +236,11 @@ async def require_admin_auth_session(request: Request):
 async def send_contact_email(name: str, email: str, subject: str, message: str, contact_id: int):
     """Send email notification using Gmail API when contact form is submitted"""
     try:
-        admin_email = os.getenv("ADMIN_EMAIL", "blackburnd@gmail.com")
         recipient_email = os.getenv("CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com")
         
         # Get OAuth credentials from database
         from database import get_google_oauth_tokens, save_google_oauth_tokens, update_google_oauth_token_usage
-        oauth_data = await get_google_oauth_tokens(admin_email)
+        oauth_data = await get_google_oauth_tokens()
         
         if not oauth_data or not oauth_data.get('access_token'):
             logger.warning("Gmail API: No OAuth credentials found for email sending")
@@ -263,7 +262,6 @@ async def send_contact_email(name: str, email: str, subject: str, message: str, 
             credentials.refresh(GoogleRequest())
             # Save refreshed token back to database
             await save_google_oauth_tokens(
-                admin_email,
                 credentials.token,
                 credentials.refresh_token,
                 credentials.expiry,
@@ -294,7 +292,7 @@ This email was automatically generated from your portfolio website contact form.
         message_obj = {
             'raw': base64.urlsafe_b64encode(
                 f"To: {recipient_email}\r\n"
-                f"From: {admin_email}\r\n"
+                f"From: {recipient_email}\r\n"
                 f"Subject: New Contact Form Submission #{contact_id}: {subject or 'No Subject'}\r\n"
                 f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
                 f"{email_body}".encode('utf-8')
@@ -305,7 +303,7 @@ This email was automatically generated from your portfolio website contact form.
         result = service.users().messages().send(userId='me', body=message_obj).execute()
         
         # Update token usage
-        await update_google_oauth_token_usage(admin_email)
+        await update_google_oauth_token_usage()
         
         logger.info(f"Gmail API: Contact notification email sent for submission #{contact_id}, Message ID: {result.get('id')}")
         add_log("INFO", f"Gmail API: Email sent for submission #{contact_id}, Message ID: {result.get('id')}", "gmail_api_email_sent")
@@ -1731,17 +1729,16 @@ async def clear_logs(
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Clear all application logs"""
-    admin_email = admin.get("email")
     
     try:
         # Log the clear action before clearing
         add_log(
             "INFO",
             "logs_admin",
-            f"Admin {admin_email} cleared all application logs",
+            "Admin cleared all application logs",
             function="clear_logs",
             line=0,
-            user=admin_email,
+            user="system",
             extra={}
         )
         
@@ -1898,10 +1895,8 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
     from datetime import datetime
     from schema_dump import generate_schema_dump
     
-    admin_email = admin.get("email")
-    
     try:
-        log_with_context("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema", request)
+        log_with_context("INFO", "sql_admin_schema_download", "Admin downloading database schema", request)
         
         # Use the new schema dump module
         schema_content = await generate_schema_dump()
@@ -1910,7 +1905,7 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"database_schema_{timestamp}.sql"
         
-        log_with_context("INFO", "sql_admin_schema_downloaded", f"Schema successfully downloaded by {admin_email}", request)
+        log_with_context("INFO", "sql_admin_schema_downloaded", "Schema successfully downloaded", request)
         
         # Return the schema as a downloadable file
         return Response(
@@ -1924,7 +1919,7 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
         
     except Exception as e:
         logger.error(f"Error downloading schema: {str(e)}")
-        log_with_context("ERROR", "sql_admin_schema_error", f"Schema download error for {admin_email}: {str(e)}", request)
+        log_with_context("ERROR", "sql_admin_schema_error", f"Schema download error: {str(e)}", request)
         return JSONResponse({
             "status": "error",
             "message": f"Schema download failed: {str(e)}"
@@ -2395,10 +2390,9 @@ async def get_database_schema():
 @app.get("/admin/oauth/google/status")
 async def google_oauth_status(admin: dict = Depends(require_admin_auth_session)):
     """Get Google OAuth configuration status"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "oauth_google_status", f"Admin {admin_email} checked Google OAuth status")
+        add_log("INFO", "oauth_google_status", "Admin checked Google OAuth status")
         
         # Placeholder for Google OAuth implementation
         return JSONResponse({
@@ -2410,7 +2404,7 @@ async def google_oauth_status(admin: dict = Depends(require_admin_auth_session))
         
     except Exception as e:
         logger.error(f"Error getting Google OAuth status: {str(e)}")
-        add_log("ERROR", "oauth_google_error", f"Failed to get Google OAuth status for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_google_error", f"Failed to get Google OAuth status: {str(e)}")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2420,11 +2414,10 @@ async def google_oauth_status(admin: dict = Depends(require_admin_auth_session))
 @app.post("/admin/oauth/google/configure")
 async def configure_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Configure Google OAuth application"""
-    admin_email = admin.get("email")
     
     try:
         data = await request.json()
-        add_log("INFO", "oauth_google_configure_attempt", f"Admin {admin_email} attempted to configure Google OAuth")
+        add_log("INFO", "oauth_google_configure_attempt", "Admin attempted to configure Google OAuth")
         
         # Placeholder for Google OAuth configuration
         return JSONResponse({
@@ -2434,7 +2427,7 @@ async def configure_google_oauth(request: Request, admin: dict = Depends(require
         
     except Exception as e:
         logger.error(f"Error configuring Google OAuth: {str(e)}")
-        add_log("ERROR", "oauth_google_configure_error", f"Failed to configure Google OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_google_configure_error", f"Failed to configure Google OAuth: {str(e)}")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2446,10 +2439,9 @@ async def configure_google_oauth(request: Request, admin: dict = Depends(require
 @app.get("/admin/oauth/linkedin/status")
 async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration and connection status"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "oauth_linkedin_status", f"Admin {admin_email} checked LinkedIn OAuth status")
+        add_log("INFO", "oauth_linkedin_status", "Admin checked LinkedIn OAuth status")
         
         ttw_oauth_manager = TTWOAuthManager()
         
@@ -2469,7 +2461,7 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_session
         
     except Exception as e:
         logger.error(f"Error getting LinkedIn OAuth status: {str(e)}")
-        add_log("ERROR", "oauth_linkedin_status_error", f"Failed to get LinkedIn OAuth status for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_linkedin_status_error", f"Failed to get LinkedIn OAuth status: {str(e)}")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2718,10 +2710,10 @@ async def save_google_oauth_config(
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Save Google OAuth configuration to database"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", f"Admin {admin_email} updating Google OAuth configuration", "admin_google_oauth_config_update")
+        add_log("INFO", "Updating Google OAuth configuration", 
+                "main", "save_google_oauth_config")
         
         # Validate required fields
         required_fields = ["client_id", "client_secret", "redirect_uri"]
@@ -2737,7 +2729,8 @@ async def save_google_oauth_config(
         result = await ttw_manager.configure_google_oauth_app(config)
         
         if result:
-            add_log("INFO", f"Google OAuth config saved by {admin_email}", "admin_google_oauth_config_saved")
+            add_log("INFO", "Google OAuth config saved successfully", 
+                    "main", "save_google_oauth_config")
             return JSONResponse({
                 "status": "success",
                 "message": "Google OAuth configuration saved successfully"
@@ -2753,7 +2746,7 @@ async def save_google_oauth_config(
         full_traceback = traceback.format_exc()
         logger.error(f"Error saving Google OAuth config: {str(e)}\nTraceback: {full_traceback}")
         log_with_context("ERROR", "admin_google_oauth_config_error", 
-                         f"Error saving Google OAuth config by {admin_email}: {str(e)}\nTraceback: {full_traceback}", 
+                         f"Error saving Google OAuth config: {str(e)}\nTraceback: {full_traceback}", 
                          request)
         return JSONResponse({
             "status": "error",
@@ -2765,16 +2758,15 @@ async def save_google_oauth_config(
 @app.delete("/admin/google/oauth/config")
 async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Clear Google OAuth configuration"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", f"Admin {admin_email} clearing Google OAuth configuration", "admin_google_oauth_config_clear")
+        add_log("INFO", "Clearing Google OAuth configuration", "main")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.remove_google_oauth_app(admin_email)
+        result = await ttw_manager.remove_google_oauth_app()
         
         if result:
-            add_log("INFO", f"Google OAuth config cleared by {admin_email}", "admin_google_oauth_config_cleared")
+            add_log("INFO", "Google OAuth config cleared successfully", "main")
             return JSONResponse({
                 "status": "success",
                 "message": "Google OAuth configuration cleared successfully"
@@ -2787,7 +2779,7 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_ses
         
     except Exception as e:
         logger.error(f"Error clearing Google OAuth config: {str(e)}")
-        add_log("ERROR", f"Error clearing Google OAuth config by {admin_email}: {str(e)}", "admin_google_oauth_config_clear_error")
+        add_log("ERROR", f"Error clearing Google OAuth config: {str(e)}", "main")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2797,10 +2789,9 @@ async def clear_google_oauth_config(admin: dict = Depends(require_admin_auth_ses
 @app.get("/admin/google/oauth/authorize")
 async def initiate_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Initiate Google OAuth authorization flow with explicit scope permissions"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_initiate", f"Admin {admin_email} initiating Google OAuth authorization")
+        add_log("INFO", "Initiating Google OAuth authorization", "main")
         
         # Get redirect URI from environment
         redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
