@@ -2471,33 +2471,32 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_session
 @app.post("/admin/oauth/linkedin/configure")
 async def configure_linkedin_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Configure LinkedIn OAuth application settings"""
-    admin_email = admin.get("email")
     
     try:
         data = await request.json()
-        add_log("INFO", "oauth_linkedin_configure_attempt", f"Admin {admin_email} attempting to configure LinkedIn OAuth app")
+        add_log("INFO", "oauth_linkedin_configure_attempt", "System")
         
         required_fields = ["client_id", "client_secret", "redirect_uri"]
         missing_fields = [field for field in required_fields if not data.get(field)]
         
         if missing_fields:
-            add_log("ERROR", "oauth_linkedin_configure_validation_error", f"Missing required fields for {admin_email}: {missing_fields}")
+            add_log("ERROR", "oauth_linkedin_configure_validation_error", "System")
             return JSONResponse({
                 "status": "error",
                 "message": f"Missing required fields: {', '.join(missing_fields)}"
             }, status_code=400)
         
         ttw_oauth_manager = TTWOAuthManager()
-        success = await ttw_oauth_manager.configure_oauth_app(admin_email, data)
+        success = await ttw_oauth_manager.configure_oauth_app( data)
         
         if success:
-            add_log("INFO", "oauth_linkedin_configure_success", f"Admin {admin_email} successfully configured LinkedIn OAuth app")
+            add_log("INFO", "oauth_linkedin_configure_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth application configured successfully"
             })
         else:
-            add_log("ERROR", "oauth_linkedin_configure_failure", f"Failed to configure LinkedIn OAuth app for {admin_email}")
+            add_log("ERROR", "oauth_linkedin_configure_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "message": "Failed to configure LinkedIn OAuth application"
@@ -2505,7 +2504,7 @@ async def configure_linkedin_oauth(request: Request, admin: dict = Depends(requi
         
     except Exception as e:
         logger.error(f"Error configuring LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "oauth_linkedin_configure_error", f"Error configuring LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_linkedin_configure_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2515,27 +2514,26 @@ async def configure_linkedin_oauth(request: Request, admin: dict = Depends(requi
 @app.post("/admin/oauth/linkedin/connect")
 async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Initiate LinkedIn OAuth connection flow"""
-    admin_email = admin.get("email")
     
     try:
         data = await request.json()
         requested_scopes = data.get("scopes", [])
         
-        add_log("INFO", "oauth_linkedin_connect_attempt", f"Admin {admin_email} initiating LinkedIn OAuth connection with scopes: {requested_scopes}")
+        add_log("INFO", "oauth_linkedin_connect_attempt", "System")
         
         ttw_oauth_manager = TTWOAuthManager()
         
         # Check if OAuth app is configured first
         if not await ttw_oauth_manager.is_oauth_app_configured():
-            add_log("INFO", "oauth_linkedin_connect_not_configured", f"LinkedIn OAuth app not configured for {admin_email}")
+            add_log("INFO", "oauth_linkedin_connect_not_configured", "System")
             return JSONResponse({
                 "status": "error",
                 "message": "LinkedIn OAuth application must be configured before connecting"
             }, status_code=400)
         
-        auth_url, state = await ttw_oauth_manager.get_linkedin_authorization_url(admin_email, requested_scopes)
+        auth_url, state = await ttw_oauth_manager.get_linkedin_authorization_url( requested_scopes)
         
-        add_log("INFO", "oauth_linkedin_auth_url_generated", f"Generated LinkedIn auth URL for {admin_email}")
+        add_log("INFO", "oauth_linkedin_auth_url_generated", "System")
         
         return JSONResponse({
             "status": "success",
@@ -2545,7 +2543,7 @@ async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require
         
     except Exception as e:
         logger.error(f"Error initiating LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "oauth_linkedin_connect_error", f"Error initiating LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_linkedin_connect_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2555,22 +2553,21 @@ async def linkedin_oauth_connect(request: Request, admin: dict = Depends(require
 @app.post("/admin/oauth/linkedin/disconnect")
 async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_auth_session)):
     """Disconnect LinkedIn OAuth connection"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "oauth_linkedin_disconnect_attempt", f"Admin {admin_email} attempting to disconnect LinkedIn OAuth")
+        add_log("INFO", "oauth_linkedin_disconnect_attempt", "System")
         
         ttw_oauth_manager = TTWOAuthManager()
         success = await ttw_oauth_manager.remove_linkedin_connection()
         
         if success:
-            add_log("INFO", "oauth_linkedin_disconnect_success", f"Admin {admin_email} successfully disconnected LinkedIn OAuth")
+            add_log("INFO", "oauth_linkedin_disconnect_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth connection removed successfully"
             })
         else:
-            add_log("ERROR", "oauth_linkedin_disconnect_failure", f"Failed to disconnect LinkedIn OAuth for {admin_email}")
+            add_log("ERROR", "oauth_linkedin_disconnect_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "message": "Failed to remove LinkedIn OAuth connection"
@@ -2578,7 +2575,7 @@ async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_au
         
     except Exception as e:
         logger.error(f"Error disconnecting LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "oauth_linkedin_disconnect_error", f"Error disconnecting LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_linkedin_disconnect_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2588,19 +2585,18 @@ async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_au
 @app.post("/admin/oauth/linkedin/test")
 async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth connection by making an API call"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "oauth_linkedin_test_attempt", f"Admin {admin_email} testing LinkedIn OAuth connection")
+        add_log("INFO", "oauth_linkedin_test_attempt", "System")
         
         from ttw_linkedin_sync import TTWLinkedInSync
-        sync_service = TTWLinkedInSync(admin_email)
+        sync_service = TTWLinkedInSync()
         
         # Test connection by getting profile info
         profile_data = await sync_service.get_linkedin_profile()
         
         if profile_data:
-            add_log("INFO", "oauth_linkedin_test_success", f"LinkedIn OAuth test successful for {admin_email}")
+            add_log("INFO", "oauth_linkedin_test_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth connection test successful",
@@ -2611,7 +2607,7 @@ async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_aut
                 }
             })
         else:
-            add_log("ERROR", "oauth_linkedin_test_failure", f"LinkedIn OAuth test failed for {admin_email} - no profile data")
+            add_log("ERROR", "oauth_linkedin_test_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "message": "Failed to retrieve LinkedIn profile data"
@@ -2619,7 +2615,7 @@ async def test_linkedin_oauth_connection(admin: dict = Depends(require_admin_aut
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "oauth_linkedin_test_error", f"Error testing LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "oauth_linkedin_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2654,12 +2650,11 @@ async def google_oauth_admin_page(request: Request):
 @app.get("/admin/google/oauth/status")
 async def google_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Get Google OAuth configuration and connection status"""
-    admin_email = admin.get("email")
     
     try:
         # Import PORTFOLIO_ID and log it
         from database import PORTFOLIO_ID
-        add_log("DEBUG", "oauth_status_check", f"PORTFOLIO_ID: {PORTFOLIO_ID}, admin: {admin_email}")
+        add_log("DEBUG", "oauth_status_check", "System")
         
         # Check if Google OAuth is configured in database
         ttw_manager = TTWOAuthManager()
@@ -2839,7 +2834,7 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         
     except Exception as e:
         logger.error(f"Error initiating Google OAuth: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_initiate_error", f"Error initiating Google OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_google_oauth_initiate_error", "System")
         return JSONResponse({
             "status": "error",
             "detail": str(e)
@@ -2849,10 +2844,9 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
 @app.post("/admin/google/oauth/revoke")
 async def revoke_google_oauth(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Revoke Google OAuth access"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_revoke", f"Admin {admin_email} revoking Google OAuth access")
+        add_log("INFO", "admin_google_oauth_revoke", "System")
         
         # Only clear Google OAuth data from session, keep admin authentication
         if hasattr(request, 'session') and 'user' in request.session:
@@ -2864,7 +2858,7 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
             # Keep authenticated and is_admin flags
             request.session['user'] = user_session
         
-        add_log("INFO", "admin_google_oauth_revoked", f"Google OAuth access revoked for {admin_email}")
+        add_log("INFO", "admin_google_oauth_revoked", "System")
         
         return JSONResponse({
             "status": "success",
@@ -2873,7 +2867,7 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
         
     except Exception as e:
         logger.error(f"Error revoking Google OAuth: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_revoke_error", f"Error revoking Google OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_google_oauth_revoke_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -2883,7 +2877,6 @@ async def revoke_google_oauth(request: Request, admin: dict = Depends(require_ad
 @app.post("/admin/google/oauth/revoke-scope")
 async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Revoke a specific Google OAuth scope"""
-    admin_email = admin.get("email")
     
     try:
         # Parse the request body to get the scope
@@ -2891,7 +2884,7 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
             body = await request.json()
             scope_to_revoke = body.get("scope")
         except Exception as json_error:
-            add_log("ERROR", "admin_google_oauth_scope_revoke_json_error", f"Failed to parse JSON request for {admin_email}: {str(json_error)}")
+            add_log("ERROR", "admin_google_oauth_scope_revoke_json_error", "System")
             return JSONResponse({
                 "status": "error", 
                 "detail": "Invalid JSON in request body"
@@ -2903,7 +2896,7 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
                 "detail": "No scope specified"
             }, status_code=400)
             
-        add_log("INFO", "admin_google_oauth_scope_revoke", f"Admin {admin_email} revoking Google OAuth scope: {scope_to_revoke}")
+        add_log("INFO", "admin_google_oauth_scope_revoke", "System")
         
         # Get the current user's access token from session
         if not hasattr(request, 'session') or 'user' not in request.session:
@@ -2926,12 +2919,12 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
         # Instead, we'll revoke the entire token and suggest re-authorization without that scope
         revoke_url = f"https://oauth2.googleapis.com/revoke?token={access_token}"
         
-        add_log("INFO", "admin_google_oauth_scope_revoke_request", f"Making revoke request to Google for {admin_email}, scope: {scope_to_revoke}")
+        add_log("INFO", "admin_google_oauth_scope_revoke_request", "System")
         
         async with httpx.AsyncClient() as client:
             response = await client.post(revoke_url)
             
-        add_log("INFO", "admin_google_oauth_scope_revoke_response", f"Google revoke response for {admin_email}: HTTP {response.status_code}")
+        add_log("INFO", "admin_google_oauth_scope_revoke_response", "System")
             
         if response.status_code == 200:
             # Clear the session tokens since we revoked the entire token
@@ -2940,7 +2933,7 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
             user_session.pop('token_expires_at', None)
             request.session['user'] = user_session
             
-            add_log("INFO", "admin_google_oauth_scope_revoked", f"Google OAuth token revoked for scope {scope_to_revoke} by {admin_email}")
+            add_log("INFO", "admin_google_oauth_scope_revoked", "System")
             
             return JSONResponse({
                 "status": "success",
@@ -2953,7 +2946,7 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
             except:
                 response_text = "Could not read response text"
             
-            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", f"Failed to revoke Google OAuth scope {scope_to_revoke} for {admin_email}: HTTP {response.status_code}, Response: {response_text}")
+            add_log("ERROR", "admin_google_oauth_scope_revoke_failed", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": f"Failed to revoke scope with Google (HTTP {response.status_code})"
@@ -2962,7 +2955,7 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
     except Exception as e:
         error_traceback = traceback.format_exc()
         logger.error(f"Error revoking Google OAuth scope: {str(e)}\n{error_traceback}")
-        add_log("ERROR", "admin_google_oauth_scope_revoke_error", f"Error revoking Google OAuth scope for {admin_email}: {str(e)} | Traceback: {error_traceback}")
+        add_log("ERROR", "admin_google_oauth_scope_revoke_error", "System")
         return JSONResponse({
             "status": "error",
             "detail": str(e)
@@ -2972,10 +2965,9 @@ async def revoke_google_oauth_scope(request: Request, admin: dict = Depends(requ
 @app.get("/admin/google/oauth/test")
 async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_session)):
     """Test Google OAuth connection"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_oauth_test", f"Admin {admin_email} testing Google OAuth connection")
+        add_log("INFO", "admin_google_oauth_test", "System")
         
         google_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
         
@@ -2986,7 +2978,7 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
             }, status_code=400)
         
         # Test configuration validity
-        add_log("INFO", "admin_google_oauth_test_success", f"Google OAuth test successful for {admin_email}")
+        add_log("INFO", "admin_google_oauth_test_success", "System")
         
         return JSONResponse({
             "status": "success",
@@ -2995,7 +2987,7 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
         
     except Exception as e:
         logger.error(f"Error testing Google OAuth: {str(e)}")
-        add_log("ERROR", "admin_google_oauth_test_error", f"Error testing Google OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_google_oauth_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3006,17 +2998,16 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
 async def get_google_profile(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Retrieve Google profile information using current session token"""
     import httpx
-    admin_email = admin.get("email")
     
     # Prominent log entry to ensure we see this endpoint being called
-    add_log("INFO", "google_profile_endpoint_accessed", f"Google profile endpoint accessed by {admin_email}")
+    add_log("INFO", "google_profile_endpoint_accessed", "System")
     
     try:
-        add_log("INFO", "admin_google_profile_request", f"Admin {admin_email} requesting Google profile data")
+        add_log("INFO", "admin_google_profile_request", "System")
         
         # Check if user has an active Google session
         if not hasattr(request, 'session') or 'user' not in request.session:
-            add_log("WARNING", "admin_google_profile_no_session", f"Admin {admin_email} has no active Google session")
+            add_log("WARNING", "admin_google_profile_no_session", "System")
             return JSONResponse({
                 "status": "error",
                 "message": "No active Google session. Please authorize Google access first."
@@ -3026,7 +3017,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
         access_token = user_session.get('access_token')
         
         if not access_token:
-            add_log("WARNING", "admin_google_profile_no_token", f"Admin {admin_email} session missing access token")
+            add_log("WARNING", "admin_google_profile_no_token", "System")
             return JSONResponse({
                 "status": "error", 
                 "message": "No Google access token found. Please re-authorize Google access."
@@ -3040,7 +3031,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
         }
         
         add_log("DEBUG", "admin_google_profile_api_request", 
-               f"Admin {admin_email} - Making request to Google userinfo API")
+               "System")
         
         async with httpx.AsyncClient() as client:
             response = await client.get(profile_url, headers=headers)
@@ -3049,7 +3040,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
                 profile_data = response.json()
                 
                 add_log("INFO", "admin_google_profile_success", 
-                       f"Admin {admin_email} - Successfully retrieved Google profile")
+                       "System")
                 
                 return JSONResponse({
                     "status": "success",
@@ -3058,7 +3049,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
             
             elif response.status_code == 401:
                 add_log("WARNING", "admin_google_profile_token_expired", 
-                       f"Admin {admin_email} - Google access token expired or invalid")
+                       "System")
                 return JSONResponse({
                     "status": "error",
                     "message": "Google access token expired or invalid. Please re-authorize Google access."
@@ -3067,7 +3058,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
             else:
                 error_text = response.text
                 add_log("ERROR", "admin_google_profile_api_error", 
-                       f"Admin {admin_email} - Google API error: {response.status_code}")
+                       "System")
                 return JSONResponse({
                     "status": "error",
                     "message": f"Google API error: {response.status_code}",
@@ -3076,7 +3067,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
                 
     except httpx.RequestError as e:
         add_log("ERROR", "admin_google_profile_network_error", 
-               f"Admin {admin_email} - Network error contacting Google API: {str(e)}")
+               "System")
         return JSONResponse({
             "status": "error",
             "message": "Network error contacting Google API"
@@ -3085,7 +3076,7 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
     except Exception as e:
         logger.error(f"Error retrieving Google profile: {str(e)}")
         add_log("ERROR", "admin_google_profile_error", 
-               f"Admin {admin_email} - Error retrieving Google profile: {str(e)}")
+               "System")
         return JSONResponse({
             "status": "error",
             "message": f"Error retrieving Google profile: {str(e)}"
@@ -3096,10 +3087,9 @@ async def get_google_profile(request: Request, admin: dict = Depends(require_adm
 async def get_google_granted_scopes(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Check which Google OAuth scopes have been granted by querying Google's tokeninfo endpoint"""
     import httpx
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_google_scopes_request", f"Admin {admin_email} checking granted Google scopes")
+        add_log("INFO", "admin_google_scopes_request", "System")
         
         # Check if user has an active Google session
         if not hasattr(request, 'session') or 'user' not in request.session:
@@ -3123,7 +3113,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
         tokeninfo_url = f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
         
         add_log("DEBUG", "admin_google_scopes_api_request", 
-               f"Admin {admin_email} - Making request to Google tokeninfo API")
+               "System")
         
         async with httpx.AsyncClient() as client:
             response = await client.get(tokeninfo_url)
@@ -3141,7 +3131,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
                 }
                 
                 add_log("INFO", "admin_google_scopes_success", 
-                       f"Admin {admin_email} - Successfully retrieved granted scopes: {granted_scopes}")
+                       "System")
                 
                 return JSONResponse({
                     "status": "success",
@@ -3156,7 +3146,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
             
             elif response.status_code == 400:
                 add_log("WARNING", "admin_google_scopes_invalid_token", 
-                       f"Admin {admin_email} - Invalid or expired access token")
+                       "System")
                 return JSONResponse({
                     "status": "error",
                     "message": "Invalid or expired access token. Please re-authorize Google access.",
@@ -3165,7 +3155,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
             
             else:
                 add_log("WARNING", "admin_google_scopes_api_error", 
-                       f"Admin {admin_email} - Google tokeninfo API error: {response.status_code}")
+                       "System")
                 return JSONResponse({
                     "status": "error",
                     "message": f"Google API error: {response.status_code}",
@@ -3175,7 +3165,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
     except httpx.RequestError as e:
         logger.error(f"Network error contacting Google tokeninfo API: {str(e)}")
         add_log("ERROR", "admin_google_scopes_network_error", 
-               f"Admin {admin_email} - Network error contacting Google tokeninfo API: {str(e)}")
+               "System")
         return JSONResponse({
             "status": "error",
             "message": "Network error contacting Google API",
@@ -3185,7 +3175,7 @@ async def get_google_granted_scopes(request: Request, admin: dict = Depends(requ
     except Exception as e:
         logger.error(f"Error checking Google scopes: {str(e)}")
         add_log("ERROR", "admin_google_scopes_error", 
-               f"Admin {admin_email} - Error checking Google scopes: {str(e)}")
+               "System")
         return JSONResponse({
             "status": "error",
             "message": f"Error checking Google scopes: {str(e)}",
@@ -3213,10 +3203,9 @@ async def linkedin_oauth_admin_page(request: Request, admin: dict = Depends(requ
 @app.get("/admin/linkedin/oauth/status")
 async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration and connection status"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_status", f"Admin {admin_email} checking LinkedIn OAuth status")
+        add_log("INFO", "admin_linkedin_oauth_status", "System")
         
         # Check if LinkedIn OAuth is configured in database
         ttw_manager = TTWOAuthManager()
@@ -3251,10 +3240,9 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
 @app.get("/admin/linkedin/config")
 async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin_auth_session)):
     """Get LinkedIn OAuth configuration for admin form"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_config_form_load", f"Admin {admin_email} loading LinkedIn OAuth config form")
+        add_log("INFO", "admin_linkedin_config_form_load", "System")
         
         # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
         query = """
@@ -3310,10 +3298,9 @@ async def save_linkedin_oauth_config(
     admin: dict = Depends(require_admin_auth_session)
 ):
     """Save LinkedIn OAuth configuration to database"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_config_update", f"Admin {admin_email} updating LinkedIn OAuth configuration")
+        add_log("INFO", "admin_linkedin_oauth_config_update", "System")
         
         # Validate required fields
         required_fields = ["client_id", "client_secret", "redirect_uri"]
@@ -3326,10 +3313,10 @@ async def save_linkedin_oauth_config(
         
         # Save configuration to database
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.configure_linkedin_oauth_app(admin_email, config)
+        result = await ttw_manager.configure_linkedin_oauth_app( config)
         
         if result:
-            add_log("INFO", "admin_linkedin_oauth_config_saved", f"LinkedIn OAuth config saved by {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_config_saved", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth configuration saved successfully"
@@ -3342,7 +3329,7 @@ async def save_linkedin_oauth_config(
         
     except Exception as e:
         logger.error(f"Error saving LinkedIn OAuth config: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_config_save_error", f"Error saving LinkedIn OAuth config by {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_config_save_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3359,16 +3346,15 @@ async def test_linkedin_config_shortcut(admin: dict = Depends(require_admin_auth
 @app.delete("/admin/linkedin/oauth/config")
 async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Clear LinkedIn OAuth configuration"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_config_clear", f"Admin {admin_email} clearing LinkedIn OAuth configuration")
+        add_log("INFO", "admin_linkedin_oauth_config_clear", "System")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.remove_linkedin_oauth_app(admin_email)
+        result = await ttw_manager.remove_linkedin_oauth_app()
         
         if result:
-            add_log("INFO", "admin_linkedin_oauth_config_cleared", f"LinkedIn OAuth config cleared by {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_config_cleared", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth configuration cleared successfully"
@@ -3381,7 +3367,7 @@ async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_s
         
     except Exception as e:
         logger.error(f"Error clearing LinkedIn OAuth config: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_config_clear_error", f"Error clearing LinkedIn OAuth config by {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_config_clear_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3391,16 +3377,15 @@ async def clear_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_s
 @app.get("/admin/linkedin/oauth/authorize")
 async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_session)):
     """Initiate LinkedIn OAuth authorization flow"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_initiate", f"Admin {admin_email} initiating LinkedIn OAuth authorization")
+        add_log("INFO", "admin_linkedin_oauth_initiate", "System")
         
         ttw_manager = TTWOAuthManager()
         
         # First check if OAuth app is configured
         if not await ttw_manager.is_oauth_app_configured():
-            add_log("ERROR", "admin_linkedin_oauth_not_configured", f"LinkedIn OAuth app not configured for {admin_email}")
+            add_log("ERROR", "admin_linkedin_oauth_not_configured", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": "LinkedIn OAuth application must be configured first. Please configure the app in the admin panel."
@@ -3409,16 +3394,16 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_sessi
         # Get configuration to verify client_id exists
         config = await ttw_manager.get_oauth_app_config()
         if not config or not config.get("client_id"):
-            add_log("ERROR", "admin_linkedin_oauth_missing_client_id", f"LinkedIn OAuth missing client_id for {admin_email}")
+            add_log("ERROR", "admin_linkedin_oauth_missing_client_id", "System")
             return JSONResponse({
                 "status": "error", 
                 "detail": "LinkedIn OAuth configuration is incomplete. Please reconfigure the application."
             }, status_code=400)
         
-        auth_url, state = await ttw_manager.get_linkedin_authorization_url(admin_email)
+        auth_url, state = await ttw_manager.get_linkedin_authorization_url()
         
         if auth_url:
-            add_log("INFO", "admin_linkedin_oauth_url_generated", f"LinkedIn OAuth URL generated for {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_url_generated", "System")
             return JSONResponse({
                 "auth_url": auth_url
             })
@@ -3430,7 +3415,7 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_sessi
         
     except Exception as e:
         logger.error(f"Error initiating LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_initiate_error", f"Error initiating LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_initiate_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3440,11 +3425,10 @@ async def initiate_linkedin_oauth(admin: dict = Depends(require_admin_auth_sessi
 @app.get("/admin/linkedin/oauth/debug-config")
 async def debug_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Debug LinkedIn OAuth configuration"""
-    admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_linkedin_oauth_debug", 
-                f"Admin {admin_email} checking LinkedIn OAuth config")
+                "System")
         
         ttw_manager = TTWOAuthManager()
         
@@ -3490,16 +3474,15 @@ async def debug_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_s
 
 async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session)):
     """Revoke LinkedIn OAuth access"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_revoke", f"Admin {admin_email} revoking LinkedIn OAuth access")
+        add_log("INFO", "admin_linkedin_oauth_revoke", "System")
         
         ttw_manager = TTWOAuthManager()
         result = await ttw_manager.remove_linkedin_connection()
         
         if result:
-            add_log("INFO", "admin_linkedin_oauth_revoked", f"LinkedIn OAuth access revoked for {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_revoked", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn OAuth access revoked successfully"
@@ -3512,7 +3495,7 @@ async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session
         
     except Exception as e:
         logger.error(f"Error revoking LinkedIn OAuth: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_revoke_error", f"Error revoking LinkedIn OAuth for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_revoke_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3522,10 +3505,9 @@ async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session
 @app.get("/admin/linkedin/oauth/test")
 async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth configuration"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_config_test", f"Admin {admin_email} testing LinkedIn OAuth configuration")
+        add_log("INFO", "admin_linkedin_oauth_config_test", "System")
         
         ttw_manager = TTWOAuthManager()
         
@@ -3535,19 +3517,19 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_se
         if is_configured:
             config = await ttw_manager.get_oauth_app_config()
             if config:
-                add_log("INFO", "admin_linkedin_oauth_config_test_success", f"LinkedIn OAuth config test successful for {admin_email}")
+                add_log("INFO", "admin_linkedin_oauth_config_test_success", "System")
                 return JSONResponse({
                     "status": "success",
                     "message": "LinkedIn OAuth configuration is valid."
                 })
             else:
-                add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Config not found")
+                add_log("ERROR", "admin_linkedin_oauth_config_test_failure", "System")
                 return JSONResponse({
                     "status": "error",
                     "detail": "LinkedIn OAuth configuration not found in database"
                 }, status_code=400)
         else:
-            add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Not configured")
+            add_log("ERROR", "admin_linkedin_oauth_config_test_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": "LinkedIn OAuth application is not configured"
@@ -3555,7 +3537,7 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_se
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn OAuth config: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_config_test_error", f"Error testing LinkedIn OAuth config for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_config_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3565,16 +3547,15 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_se
 @app.get("/admin/linkedin/oauth/test-api")
 async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn OAuth API access"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_oauth_api_test", f"Admin {admin_email} testing LinkedIn OAuth API access")
+        add_log("INFO", "admin_linkedin_oauth_api_test", "System")
         
         ttw_manager = TTWOAuthManager()
-        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        connection = await ttw_manager.get_linkedin_connection()
         
         if not connection:
-            add_log("ERROR", "admin_linkedin_oauth_api_test_failure", f"LinkedIn OAuth API test failed for {admin_email} - no connection")
+            add_log("ERROR", "admin_linkedin_oauth_api_test_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": "No LinkedIn connection found. Please authorize LinkedIn access first."
@@ -3585,14 +3566,14 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_sessi
         profile_data = await ttw_manager._get_linkedin_profile(access_token)
         
         if profile_data:
-            add_log("INFO", "admin_linkedin_oauth_api_test_success", f"LinkedIn OAuth API test successful for {admin_email}")
+            add_log("INFO", "admin_linkedin_oauth_api_test_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn API access test successful",
                 "profile_name": profile_data.get("localizedFirstName", "") + " " + profile_data.get("localizedLastName", "")
             })
         else:
-            add_log("ERROR", "admin_linkedin_oauth_api_test_failure", f"LinkedIn OAuth API test failed for {admin_email} - no profile data")
+            add_log("ERROR", "admin_linkedin_oauth_api_test_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": "Failed to retrieve LinkedIn profile data. Check token validity."
@@ -3600,7 +3581,7 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_sessi
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn OAuth API: {str(e)}")
-        add_log("ERROR", "admin_linkedin_oauth_api_test_error", f"Error testing LinkedIn OAuth API for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_oauth_api_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3610,13 +3591,12 @@ async def test_linkedin_oauth_api(admin: dict = Depends(require_admin_auth_sessi
 @app.get("/admin/linkedin/oauth/test-profile")
 async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn Profile Access (r_liteprofile)"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_profile_test", f"Admin {admin_email} testing LinkedIn profile access")
+        add_log("INFO", "admin_linkedin_profile_test", "System")
         
         ttw_manager = TTWOAuthManager()
-        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        connection = await ttw_manager.get_linkedin_connection()
         
         if not connection:
             return JSONResponse({
@@ -3632,7 +3612,7 @@ async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_
             profile_name = f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
             headline = profile_data.get('headline', 'Not available')
             
-            add_log("INFO", "admin_linkedin_profile_test_success", f"LinkedIn profile test successful for {admin_email}")
+            add_log("INFO", "admin_linkedin_profile_test_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": "LinkedIn Profile Access test successful",
@@ -3643,7 +3623,7 @@ async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_
                 }
             })
         else:
-            add_log("ERROR", "admin_linkedin_profile_test_failure", f"LinkedIn profile test failed for {admin_email}")
+            add_log("ERROR", "admin_linkedin_profile_test_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": "Failed to retrieve profile data. Token may be expired."
@@ -3651,7 +3631,7 @@ async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn profile access: {str(e)}")
-        add_log("ERROR", "admin_linkedin_profile_test_error", f"Error testing LinkedIn profile access for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_profile_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3661,13 +3641,12 @@ async def test_linkedin_profile_access(admin: dict = Depends(require_admin_auth_
 @app.get("/admin/linkedin/oauth/test-email")
 async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn Email Access (r_emailaddress)"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_email_test", f"Admin {admin_email} testing LinkedIn email access")
+        add_log("INFO", "admin_linkedin_email_test", "System")
         
         ttw_manager = TTWOAuthManager()
-        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        connection = await ttw_manager.get_linkedin_connection()
         
         if not connection:
             return JSONResponse({
@@ -3691,7 +3670,7 @@ async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_se
                 if email_data.get("elements") and len(email_data["elements"]) > 0:
                     email_address = email_data["elements"][0].get("handle~", {}).get("emailAddress")
                     
-                    add_log("INFO", "admin_linkedin_email_test_success", f"LinkedIn email test successful for {admin_email}")
+                    add_log("INFO", "admin_linkedin_email_test_success", "System")
                     return JSONResponse({
                         "status": "success",
                         "message": "LinkedIn Email Access test successful",
@@ -3700,13 +3679,13 @@ async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_se
                         }
                     })
                 else:
-                    add_log("ERROR", "admin_linkedin_email_test_failure", f"LinkedIn email test failed for {admin_email} - no email data")
+                    add_log("ERROR", "admin_linkedin_email_test_failure", "System")
                     return JSONResponse({
                         "status": "error",
                         "detail": "No email data available. Check if r_emailaddress scope is granted."
                     }, status_code=400)
             else:
-                add_log("ERROR", "admin_linkedin_email_test_failure", f"LinkedIn email test failed for {admin_email} - API error {response.status_code}")
+                add_log("ERROR", "admin_linkedin_email_test_failure", "System")
                 return JSONResponse({
                     "status": "error",
                     "detail": f"LinkedIn API error: {response.status_code}. Token may be expired."
@@ -3714,7 +3693,7 @@ async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_se
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn email access: {str(e)}")
-        add_log("ERROR", "admin_linkedin_email_test_error", f"Error testing LinkedIn email access for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_email_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3724,13 +3703,12 @@ async def test_linkedin_email_access(admin: dict = Depends(require_admin_auth_se
 @app.get("/admin/linkedin/oauth/test-positions")
 async def test_linkedin_positions_access(admin: dict = Depends(require_admin_auth_session)):
     """Test LinkedIn Position Data Access (r_fullprofile)"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_positions_test", f"Admin {admin_email} testing LinkedIn positions access")
+        add_log("INFO", "admin_linkedin_positions_test", "System")
         
         ttw_manager = TTWOAuthManager()
-        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        connection = await ttw_manager.get_linkedin_connection()
         
         if not connection:
             return JSONResponse({
@@ -3753,7 +3731,7 @@ async def test_linkedin_positions_access(admin: dict = Depends(require_admin_aut
                 positions_data = response.json()
                 positions_count = len(positions_data.get("elements", []))
                 
-                add_log("INFO", "admin_linkedin_positions_test_success", f"LinkedIn positions test successful for {admin_email}")
+                add_log("INFO", "admin_linkedin_positions_test_success", "System")
                 return JSONResponse({
                     "status": "success", 
                     "message": "LinkedIn Position Data Access test successful",
@@ -3763,13 +3741,13 @@ async def test_linkedin_positions_access(admin: dict = Depends(require_admin_aut
                     }
                 })
             elif response.status_code == 403:
-                add_log("ERROR", "admin_linkedin_positions_test_failure", f"LinkedIn positions test failed for {admin_email} - insufficient permissions")
+                add_log("ERROR", "admin_linkedin_positions_test_failure", "System")
                 return JSONResponse({
                     "status": "error",
                     "detail": "Access denied. r_fullprofile scope may not be granted or available."
                 }, status_code=400)
             else:
-                add_log("ERROR", "admin_linkedin_positions_test_failure", f"LinkedIn positions test failed for {admin_email} - API error {response.status_code}")
+                add_log("ERROR", "admin_linkedin_positions_test_failure", "System")
                 return JSONResponse({
                     "status": "error",
                     "detail": f"LinkedIn API error: {response.status_code}. Check scope permissions."
@@ -3777,7 +3755,7 @@ async def test_linkedin_positions_access(admin: dict = Depends(require_admin_aut
         
     except Exception as e:
         logger.error(f"Error testing LinkedIn positions access: {str(e)}")
-        add_log("ERROR", "admin_linkedin_positions_test_error", f"Error testing LinkedIn positions access for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_positions_test_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3790,14 +3768,13 @@ async def get_linkedin_profile_data(
 ):
     """Retrieve comprehensive LinkedIn profile data using Member Data
     Portability API"""
-    admin_email = admin.get("email")
     
     try:
         add_log("INFO", "admin_linkedin_profile_data",
-                f"Admin {admin_email} retrieving LinkedIn profile data")
+                "System")
         
         ttw_manager = TTWOAuthManager()
-        connection = await ttw_manager.get_linkedin_connection(admin_email)
+        connection = await ttw_manager.get_linkedin_connection()
         
         if not connection:
             return JSONResponse({
@@ -3887,7 +3864,7 @@ async def get_linkedin_profile_data(
         
         # Return comprehensive profile data
         add_log("INFO", "admin_linkedin_profile_data_success",
-                f"LinkedIn profile data retrieved for {admin_email}")
+                "System")
         return JSONResponse({
             "status": "success",
             "message": "LinkedIn profile data retrieved",
@@ -3904,7 +3881,7 @@ async def get_linkedin_profile_data(
     except Exception as e:
         logger.error(f"Error retrieving LinkedIn profile data: {str(e)}")
         add_log("ERROR", "admin_linkedin_profile_data_error",
-                f"Error retrieving LinkedIn profile data for {admin_email}: "
+                "System"
                 f"{str(e)}")
         return JSONResponse({
             "status": "error",
@@ -3915,23 +3892,22 @@ async def get_linkedin_profile_data(
 @app.post("/admin/linkedin/sync")
 async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_session)):
     """Sync LinkedIn profile data to portfolio database"""
-    admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "admin_linkedin_sync_initiate", f"Admin {admin_email} initiating LinkedIn profile data sync")
+        add_log("INFO", "admin_linkedin_sync_initiate", "System")
         
-        sync_service = TTWLinkedInSync(admin_email)
+        sync_service = TTWLinkedInSync()
         result = await sync_service.sync_profile_data()
         
         if result.get("success"):
-            add_log("INFO", "admin_linkedin_sync_success", f"LinkedIn profile sync successful for {admin_email}: {result.get('message')}")
+            add_log("INFO", "admin_linkedin_sync_success", "System")
             return JSONResponse({
                 "status": "success",
                 "message": result.get("message", "LinkedIn profile data synced successfully"),
                 "synced_data": result.get("synced_data", {})
             })
         else:
-            add_log("ERROR", "admin_linkedin_sync_failure", f"LinkedIn profile sync failed for {admin_email}: {result.get('error')}")
+            add_log("ERROR", "admin_linkedin_sync_failure", "System")
             return JSONResponse({
                 "status": "error",
                 "detail": result.get("error", "LinkedIn profile sync failed")
@@ -3939,7 +3915,7 @@ async def sync_linkedin_profile_data(admin: dict = Depends(require_admin_auth_se
         
     except Exception as e:
         logger.error(f"Error syncing LinkedIn profile: {str(e)}")
-        add_log("ERROR", "admin_linkedin_sync_error", f"Error syncing LinkedIn profile for {admin_email}: {str(e)}")
+        add_log("ERROR", "admin_linkedin_sync_error", "System")
         return JSONResponse({
             "status": "error",
             "error": str(e)
@@ -3968,13 +3944,11 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
             })
         
         # Extract admin email from state if available
-        admin_email = None
         if state:
             try:
                 # Use TTW OAuth Manager to verify and decode encrypted state
                 ttw_manager = TTWOAuthManager()
                 state_data = ttw_manager.verify_linkedin_state(state)
-                admin_email = state_data.get("admin_email")
             except Exception as e:
                 add_log("ERROR", "linkedin_oauth_callback_state_error",
                         f"Failed to verify state: {str(e)}")
@@ -3984,14 +3958,7 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
                         "error": "Invalid state parameter"
                     })
         
-        if not admin_email:
-            add_log("linkedin_oauth_callback_no_admin", "LinkedIn OAuth callback missing admin email in state")
-            return templates.TemplateResponse("linkedin_oauth_error.html", {
-                "request": request,
-                "error": "Invalid state parameter"
-            })
-        
-        add_log("INFO", "linkedin_oauth_callback_processing", f"Processing LinkedIn OAuth callback for admin {admin_email}")
+        add_log("INFO", "linkedin_oauth_callback_processing", "System")
         
         # Use TTW OAuth Manager to handle the callback
         ttw_manager = TTWOAuthManager()
@@ -4002,14 +3969,14 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
             # Exchange code for tokens
             token_result = await ttw_manager.exchange_linkedin_code_for_tokens(code, state_data)
             
-            add_log("INFO", "linkedin_oauth_callback_success", f"LinkedIn OAuth callback successful for admin {admin_email}")
+            add_log("INFO", "linkedin_oauth_callback_success", "System")
             return templates.TemplateResponse("linkedin_oauth_success.html", {
                 "request": request,
                 "message": "LinkedIn OAuth authorization successful!"
             })
         except Exception as oauth_error:
             logger.error(f"OAuth exchange failed: {str(oauth_error)}")
-            add_log("ERROR", "linkedin_oauth_callback_failure", f"LinkedIn OAuth callback failed for admin {admin_email}: {str(oauth_error)}")
+            add_log("ERROR", "linkedin_oauth_callback_failure", "System")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
                 "request": request,
                 "error": f"OAuth exchange failed: {str(oauth_error)}"

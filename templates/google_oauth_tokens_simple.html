@@ -22,7 +22,6 @@
         <tbody>
             {% for token in tokens %}
             <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">{{ token.admin_email }}</td>
                 <td style="padding: 10px; border: 1px solid #ddd; font-family: monospace; font-size: 12px; max-width: 200px; word-break: break-all;">
                     {{ token.access_token[:50] }}...
                 </td>

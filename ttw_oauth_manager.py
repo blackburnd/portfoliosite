@@ -380,10 +380,10 @@ class TTWOAuthManager:
             from database import PORTFOLIO_ID
             query = """
                 INSERT INTO linkedin_oauth_connections 
-                (portfolio_id, admin_email, linkedin_profile_id, 
+                (portfolio_id,  linkedin_profile_id, 
                  linkedin_profile_name, access_token, refresh_token, 
                  token_expires_at, granted_scopes, requested_scopes)
-                VALUES (:portfolio_id, :admin_email, :profile_id, :profile_name, 
+                VALUES (:portfolio_id, : :profile_id, :profile_name, 
                        :access_token, :refresh_token, :expires_at, 
                        :granted_scopes, :requested_scopes)
                 ON CONFLICT (portfolio_id, admin_email) 
@@ -401,7 +401,7 @@ class TTWOAuthManager:
             
             await database.execute(query, {
                 "portfolio_id": PORTFOLIO_ID,
-                "admin_email": "system",  # Placeholder until schema updated
+                "system": "system",  # Placeholder until schema updated
                 "profile_id": linkedin_profile_id,
                 "profile_name": profile_name,
                 "access_token": access_token,
@@ -768,13 +768,13 @@ class TTWOAuthManager:
             add_log("ERROR", "database_error_oauth_credentials", f"Database error getting OAuth credentials: {str(e)}")
             return None
 
-    async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
+    async def remove_linkedin_oauth_app(self) -> bool:
         """Remove LinkedIn OAuth app configuration"""
         try:
             # Log the removal attempt
             add_log("INFO", "linkedin_oauth_remove",
-                    f"Admin {admin_email} removing LinkedIn OAuth app config",
-                    admin_email, "remove_linkedin_oauth_app")
+                    "System",
+                     "remove_linkedin_oauth_app")
 
             query = """
                 DELETE FROM oauth_apps
@@ -784,17 +784,17 @@ class TTWOAuthManager:
 
             # Log successful removal
             add_log("INFO", "linkedin_oauth_remove_success",
-                    f"LinkedIn OAuth app successfully removed by {admin_email}",
-                    admin_email, "remove_linkedin_oauth_app")
+                    "System",
+                     "remove_linkedin_oauth_app")
 
-            logger.info(f"LinkedIn OAuth app removed by {admin_email}")
+            logger.info("System")
             return True
 
         except Exception as e:
             # Log removal failure
             add_log("ERROR", "linkedin_oauth_remove_failed",
                     f"Failed to remove LinkedIn OAuth app: {str(e)}",
-                    admin_email, "remove_linkedin_oauth_app")
+                     "remove_linkedin_oauth_app")
 
             logger.error(f"Failed to remove LinkedIn OAuth app: {e}")
             return False
@@ -827,7 +827,7 @@ class TTWOAuthManager:
 
     # LinkedIn OAuth methods (mirror Google implementation)
     
-    async def configure_linkedin_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
+    async def configure_linkedin_oauth_app(self, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth application settings"""
         try:
             # Get default portfolio ID
@@ -851,8 +851,8 @@ class TTWOAuthManager:
             
             # Log the configuration attempt
             add_log("INFO", "linkedin_oauth_config_start", 
-                   f"Admin {admin_email} configuring LinkedIn OAuth app",
-                   admin_email, "configure_linkedin_oauth_app")
+                   "System",
+                    "configure_linkedin_oauth_app")
             
             # Log field changes
             new_values = {
@@ -870,13 +870,13 @@ class TTWOAuthManager:
                     # Handle empty strings and NULL values consistently
                     if (old_val or "") != (new_val or ""):
                         add_log("INFO", "linkedin_oauth_field_change", 
-                               f"{field}: '{old_val}' -> '{new_val}' by {admin_email}",
-                               admin_email, "configure_linkedin_oauth_app")
+                               "System",
+                                "configure_linkedin_oauth_app")
             else:
                 for field, value in new_values.items():
                     add_log("INFO", "linkedin_oauth_field_new", 
-                           f"{field} set to '{value}' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
+                           "System",
+                            "configure_linkedin_oauth_app")
             
             # Insert or update LinkedIn OAuth configuration
             query = """
@@ -903,16 +903,16 @@ class TTWOAuthManager:
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
                 "scopes": new_scopes_str,
-                "created_by": admin_email,
+                "created_by": "system",
                 "is_active": True
             })
             
             # Log successful configuration
             add_log("INFO", "linkedin_oauth_config_success", 
-                   f"LinkedIn OAuth app successfully configured by {admin_email}",
-                   admin_email, "configure_linkedin_oauth_app")
+                   "System",
+                    "configure_linkedin_oauth_app")
             
-            logger.info(f"LinkedIn OAuth app configured by {admin_email}")
+            logger.info("System")
             return True
             
         except Exception as e:

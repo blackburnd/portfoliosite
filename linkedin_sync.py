@@ -21,9 +21,7 @@ class LinkedInSync:
     Fetches profile data from LinkedIn and syncs to portfolio database using OAuth
     """
     
-    def __init__(self, admin_email: str = None):
         # OAuth-based authentication
-        self.admin_email = admin_email
         self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
         
         # Legacy environment variable support (deprecated)
@@ -34,9 +32,6 @@ class LinkedInSync:
     async def _get_linkedin_client(self) -> Linkedin:
         """Create authenticated LinkedIn API client using OAuth or legacy credentials"""
         # Try OAuth first (preferred method)
-        if self.admin_email:
-            credentials = await linkedin_oauth.get_credentials(self.admin_email)
-            if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
                 try:
                     logger.info(f"Using OAuth authentication for LinkedIn client")
                     # LinkedIn API library doesn't directly support OAuth tokens
@@ -68,9 +63,6 @@ class LinkedInSync:
         """Fetch profile data from LinkedIn using OAuth or legacy method"""
         try:
             # Try OAuth first (preferred method)
-            if self.admin_email:
-                credentials = await linkedin_oauth.get_credentials(self.admin_email)
-                if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
                     return await self._fetch_profile_data_oauth(credentials)
             
             # Fallback to legacy method
@@ -137,9 +129,6 @@ class LinkedInSync:
         """Fetch work experience data from LinkedIn using OAuth or legacy method"""
         try:
             # Try OAuth first (preferred method)
-            if self.admin_email:
-                credentials = await linkedin_oauth.get_credentials(self.admin_email)
-                if credentials and await linkedin_oauth.is_token_valid(self.admin_email):
                     return await self._fetch_experience_data_oauth(credentials)
             
             # Fallback to legacy method
@@ -383,12 +372,9 @@ class LinkedInSync:
         logger.info(f"Full LinkedIn sync completed with status: {results['status']}")
         return results
     
-    async def get_sync_status(self, admin_email: str = None) -> Dict[str, Any]:
         """Get current sync configuration status"""
         # Get OAuth status if admin email provided
         oauth_status = {}
-        if admin_email:
-            oauth_status = await linkedin_oauth.get_oauth_status(admin_email)
         
         # Legacy environment variable status (deprecated)
         legacy_configured = bool(self.linkedin_username and self.linkedin_password)
@@ -402,5 +388,4 @@ class LinkedInSync:
             "preferred_method": "oauth" if oauth_status.get("connected") else "legacy" if legacy_configured else "none"
         }
 
-# Create global instance (will be updated in endpoints to include admin_email)
 linkedin_sync = LinkedInSync()

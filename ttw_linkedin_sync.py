@@ -17,8 +17,6 @@ class TTWLinkedInSync:
     Uses TTW OAuth manager for complete self-contained LinkedIn integration
     """
     
-    def __init__(self, admin_email: str):
-        self.admin_email = admin_email
         self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
         
     async def get_oauth_app_status(self) -> Dict[str, Any]:
@@ -62,7 +60,6 @@ class TTWLinkedInSync:
             }
         
         try:
-            connection = await ttw_oauth_manager.get_linkedin_connection(self.admin_email)
             
             if not connection:
                 return {
@@ -117,7 +114,6 @@ class TTWLinkedInSync:
     
     async def sync_profile_data(self, sync_options: Dict[str, bool] = None) -> Dict[str, Any]:
         """Sync LinkedIn profile data using granted permissions"""
-        connection = await ttw_oauth_manager.get_linkedin_connection(self.admin_email)
         if not connection:
             raise TTWLinkedInSyncError("LinkedIn not connected. Please connect your LinkedIn account first.")
         
@@ -186,17 +182,14 @@ class TTWLinkedInSync:
                     results["skipped"].append("skills (missing r_basicprofile permission)")
             
             # Update last sync timestamp
-            await ttw_oauth_manager.update_last_sync(self.admin_email)
             
             results["success"] = len(results["synced"]) > 0
             results["timestamp"] = datetime.utcnow().isoformat()
             results["permissions_used"] = list(set(results["permissions_used"]))  # Remove duplicates
             
-            logger.info(f"LinkedIn sync completed for {self.admin_email}: {results}")
             return results
             
         except Exception as e:
-            logger.error(f"LinkedIn sync failed for {self.admin_email}: {e}")
             results["errors"].append(f"Sync failed: {str(e)}")
             return results
     
@@ -290,12 +283,10 @@ class TTWLinkedInSync:
     
     async def disconnect_linkedin(self) -> bool:
         """Disconnect LinkedIn account for this admin"""
-        return await ttw_oauth_manager.remove_linkedin_connection(self.admin_email)
     
     async def get_sync_history(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get history of LinkedIn sync operations"""
         # Get connection info for last sync time
-        connection = await ttw_oauth_manager.get_linkedin_connection(self.admin_email)
         
         history = []
         if connection and connection["last_sync_at"]:
@@ -330,7 +321,5 @@ class TTWLinkedInSync:
         return sorted(history, key=lambda x: x["timestamp"], reverse=True)[:limit]
 
 # Convenience function for backward compatibility
-async def ttw_linkedin_sync(admin_email: str, sync_options: Dict[str, bool] = None) -> Dict[str, Any]:
     """TTW LinkedIn sync function"""
-    sync_service = TTWLinkedInSync(admin_email)
     return await sync_service.sync_profile_data(sync_options)
