@@ -115,8 +115,10 @@ async def work_admin_page(request: Request):
 # List all work items
 @app.get("/workitems", response_model=List[WorkItem])
 async def list_workitems():
-    query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
-    rows = await db.fetch_all(query)
+    from database import PORTFOLIO_ID
+    portfolio_id = PORTFOLIO_ID
+    query = "SELECT * FROM work_experience WHERE portfolio_id = :portfolio_id ORDER BY sort_order, start_date DESC"
+    rows = await db.fetch_all(query, {"portfolio_id": portfolio_id})
     return [WorkItem(**dict(row)) for row in rows]
 
 # Create a new work item

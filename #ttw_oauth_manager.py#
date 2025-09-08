@@ -29,10 +29,8 @@ class TTWOAuthManager:
     
     async def is_oauth_app_configured(self) -> bool:
         """Check if LinkedIn OAuth app is configured"""
-        from database import PORTFOLIO_ID
-        portfolio_id = PORTFOLIO_ID
-        query = "SELECT COUNT(*) FROM oauth_apps WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'"
-        result = await database.fetch_val(query, {"portfolio_id": portfolio_id})
+        query = "SELECT COUNT(*) FROM oauth_apps WHERE provider = 'linkedin'"
+        result = await database.fetch_val(query)
         return result > 0
     
     async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
@@ -40,17 +38,14 @@ class TTWOAuthManager:
         try:
             #add_log("DEBUG", "oauth_config_lookup", "Looking up LinkedIn OAuth configuration")
             
-            from database import PORTFOLIO_ID
-            portfolio_id = PORTFOLIO_ID
-            
             query = """
                 SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
                 FROM oauth_apps 
-                WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
+                WHERE provider = 'linkedin'
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+            result = await database.fetch_one(query)
             
             if not result:
                 add_log("ERROR", "oauth_config_not_found", "No LinkedIn OAuth configuration found in database")
@@ -74,10 +69,6 @@ class TTWOAuthManager:
     async def configure_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth app through admin interface"""
         try:
-                        # Log the configuration attempt
-            add_log("INFO", "linkedin_oauth_config", 
-                    f"Admin {admin_email} configuring LinkedIn OAuth app")
-            
             # Store client secret in plain text
             client_secret = app_config["client_secret"]
             
@@ -634,7 +625,7 @@ class TTWOAuthManager:
             # Insert or update Google OAuth configuration
             query = """
                 INSERT INTO oauth_apps (portfolio_id, provider, client_id, client_secret, redirect_uri, scopes, created_by, is_active)
-                VALUES (:portfolio_id, :provider, :client_id, :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
+                VALUES (:portfolio_id, :provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
@@ -820,7 +811,7 @@ class TTWOAuthManager:
             
             # Get existing configuration for comparison
             existing_query = """
-                SELECT client_id, client_secret, redirect_uri, scopes, updated_at
+                SELECT app_name, client_id, client_secret, redirect_uri, scopes, updated_at
                 FROM oauth_apps 
                 WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
                 ORDER BY updated_at DESC LIMIT 1
@@ -828,6 +819,7 @@ class TTWOAuthManager:
             existing_config = await database.fetch_one(existing_query, {"portfolio_id": PORTFOLIO_ID})
             
             # Prepare new values
+            new_app_name = app_config.get("app_name", "LinkedIn OAuth App")
             new_client_id = app_config.get("client_id", "")
             new_client_secret = app_config.get("client_secret", "")
             new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback")
@@ -841,6 +833,7 @@ class TTWOAuthManager:
             
             # Log field changes
             new_values = {
+                "app_name": new_app_name,
                 "client_id": new_client_id,
                 "client_secret": "[REDACTED]",
                 "redirect_uri": new_redirect_uri,
@@ -865,13 +858,14 @@ class TTWOAuthManager:
             
             # Insert or update LinkedIn OAuth configuration
             query = """
-                INSERT INTO oauth_apps (portfolio_id, provider, 
+                INSERT INTO oauth_apps (portfolio_id, provider, app_name, 
                                       client_id, client_secret, redirect_uri, 
                                       scopes, created_by, is_active)
-                VALUES (:portfolio_id, :provider, :client_id, 
+                VALUES (:portfolio_id, :provider, :app_name, :client_id, 
                        :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
+                    app_name = EXCLUDED.app_name,
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
@@ -884,6 +878,7 @@ class TTWOAuthManager:
             await database.execute(query, {
                 "portfolio_id": PORTFOLIO_ID,
                 "provider": "linkedin",
+                "app_name": new_app_name,
                 "client_id": new_client_id,
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
@@ -916,19 +911,18 @@ class TTWOAuthManager:
 
     async def get_linkedin_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get LinkedIn OAuth app configuration (without secrets)"""
-        from database import PORTFOLIO_ID
-        portfolio_id = PORTFOLIO_ID
         query = """
-            SELECT client_id, redirect_uri, scopes, created_at, updated_at
+            SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
             FROM oauth_apps 
-            WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
+            WHERE provider = 'linkedin'
             ORDER BY updated_at DESC
             LIMIT 1
         """
-        result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+        result = await database.fetch_one(query)
         
         if result:
             return {
+                "app_name": result["app_name"],
                 "client_id": result["client_id"],
                 "redirect_uri": result["redirect_uri"],
                 "scopes": result["scopes"],

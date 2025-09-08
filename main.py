@@ -1550,6 +1550,12 @@ async def get_logs_data(
             where_conditions = []
             params = {"limit": limit, "offset": offset}
             
+            # Always filter by portfolio_id for data isolation
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            where_conditions.append("portfolio_id = :portfolio_id")
+            params["portfolio_id"] = portfolio_id
+            
             if search:
                 where_conditions.append("(message ILIKE :search OR module ILIKE :search OR function ILIKE :search)")
                 params["search"] = f"%{search}%"
@@ -1882,12 +1888,15 @@ async def get_oauth_status():
     try:
         # Check oauth_apps table for all providers
         oauth_apps_query = """
-            SELECT id, provider, app_name, client_id, redirect_uri, is_active, created_by, created_at
+            SELECT id, provider, client_id, redirect_uri, is_active, created_by, created_at
             FROM oauth_apps 
+            WHERE portfolio_id = :portfolio_id
             ORDER BY provider, created_at DESC
         """
         try:
-            oauth_apps = await database.fetch_all(oauth_apps_query)
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            oauth_apps = await database.fetch_all(oauth_apps_query, {"portfolio_id": portfolio_id})
         except:
             oauth_apps = []
         
@@ -1925,8 +1934,10 @@ async def get_oauth_status():
 async def list_workitems():
     try:
         # Query work experience directly
-        query = "SELECT * FROM work_experience ORDER BY sort_order, start_date DESC"
-        rows = await database.fetch_all(query)
+        from database import PORTFOLIO_ID
+        portfolio_id = PORTFOLIO_ID
+        query = "SELECT * FROM work_experience WHERE portfolio_id = :portfolio_id ORDER BY sort_order, start_date DESC"
+        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
         
         # Convert rows to WorkItem objects, handling any missing fields
         work_items = []
@@ -1958,8 +1969,10 @@ async def list_workitems():
 # Get a single work item
 @app.get("/workitems/{id}", response_model=WorkItem)
 async def get_workitem(id: str, admin: dict = Depends(require_admin_auth_session)):
-    query = "SELECT * FROM work_experience WHERE id=:id"
-    row = await database.fetch_one(query, {"id": id})
+    from database import PORTFOLIO_ID
+    portfolio_id = PORTFOLIO_ID
+    query = "SELECT * FROM work_experience WHERE id=:id AND portfolio_id=:portfolio_id"
+    row = await database.fetch_one(query, {"id": id, "portfolio_id": portfolio_id})
     if not row:
         raise HTTPException(status_code=404, detail="Work item not found")
     # Convert UUID to string for Pydantic model
@@ -2025,8 +2038,10 @@ async def list_projects():
             # Return empty list if table doesn't exist
             return []
             
-        query = "SELECT * FROM projects ORDER BY sort_order, title"
-        rows = await database.fetch_all(query)
+        from database import PORTFOLIO_ID
+        portfolio_id = PORTFOLIO_ID
+        query = "SELECT * FROM projects WHERE portfolio_id = :portfolio_id ORDER BY sort_order, title"
+        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
         
         # Convert rows to Project objects, handling any missing fields
         projects = []
@@ -2061,8 +2076,10 @@ async def list_projects():
 # Get a single project by ID
 @app.get("/projects/{id}", response_model=Project)
 async def get_project(id: str, admin: dict = Depends(require_admin_auth_session)):
-    query = "SELECT * FROM projects WHERE id = :id"
-    row = await database.fetch_one(query, {"id": id})
+    from database import PORTFOLIO_ID
+    portfolio_id = PORTFOLIO_ID
+    query = "SELECT * FROM projects WHERE id = :id AND portfolio_id = :portfolio_id"
+    row = await database.fetch_one(query, {"id": id, "portfolio_id": portfolio_id})
     
     if not row:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -2605,7 +2622,6 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         return JSONResponse({
             "configured": google_configured,
             "connected": google_connected,
-            "app_name": config.get("app_name", "") if config else "",
             "client_id": config.get("client_id", "") if config else "",
             "client_secret": credentials.get("client_secret", "") if credentials else "",
             "redirect_uri": config.get("redirect_uri", "") if config else "",
@@ -3153,7 +3169,6 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
         return JSONResponse({
             "configured": linkedin_configured,
             "connected": linkedin_connected,
-            "app_name": config.get("app_name", "") if config else "",
             "client_id": config.get("client_id", "") if config else "",
             "client_secret": config.get("client_secret", "") if config else "",
             "redirect_uri": config.get("redirect_uri", "") if config else "",
@@ -3180,17 +3195,18 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
         
         # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
         query = """
-            SELECT app_name, client_id, redirect_uri, scopes, is_active, created_by, created_at
+            SELECT client_id, redirect_uri, scopes, is_active, created_by, created_at
             FROM oauth_apps 
-            WHERE provider = 'linkedin'
+            WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
             ORDER BY created_at DESC
             LIMIT 1
         """
-        result = await database.fetch_one(query)
+        from database import PORTFOLIO_ID
+        portfolio_id = PORTFOLIO_ID
+        result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
         
         if result:
             return JSONResponse({
-                "app_name": result["app_name"] or "",
                 "client_id": result["client_id"] or "",
                 "client_secret": "",  # Never return the actual secret for security
                 "redirect_uri": result["redirect_uri"] or "",
@@ -3199,7 +3215,6 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
             })
         else:
             return JSONResponse({
-                "app_name": "blackburnsystems profile site",
                 "client_id": "",
                 "client_secret": "",
                 "redirect_uri": "https://www.blackburnsystems.com/admin/linkedin/callback",
@@ -3385,7 +3400,6 @@ async def debug_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_s
                 if config:
                     # Don't expose sensitive data, just check if fields exist
                     debug_info["config_data"] = {
-                        "app_name": config.get("app_name"),
                         "client_id_exists": bool(config.get("client_id")),
                         "client_secret_exists": bool(config.get("client_secret")),
                         "redirect_uri": config.get("redirect_uri"),
@@ -3461,7 +3475,7 @@ async def test_linkedin_oauth_config(admin: dict = Depends(require_admin_auth_se
                 add_log("INFO", "admin_linkedin_oauth_config_test_success", f"LinkedIn OAuth config test successful for {admin_email}")
                 return JSONResponse({
                     "status": "success",
-                    "message": f"LinkedIn OAuth configuration is valid. App: {config.get('app_name', 'Unknown')}"
+                    "message": "LinkedIn OAuth configuration is valid."
                 })
             else:
                 add_log("ERROR", "admin_linkedin_oauth_config_test_failure", f"LinkedIn OAuth config test failed for {admin_email}: Config not found")
