@@ -583,17 +583,65 @@ class TTWOAuthManager:
     async def configure_google_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure Google OAuth application settings"""
         try:
-            # Log the configuration attempt
-            add_log("INFO", "google_oauth_config", 
-                   f"Admin {admin_email} configuring Google OAuth app: {app_config.get('app_name', 'Google OAuth App')}",
-                   admin_email, "configure_google_oauth_app")
-            
-            # Store client secret in plain text
-            client_secret = app_config["client_secret"]
-            
             # Get default portfolio ID
             from database import PORTFOLIO_ID
             portfolio_id = PORTFOLIO_ID
+            
+            # Get existing configuration for comparison
+            existing_query = """
+                SELECT client_id, client_secret, redirect_uri, scopes, updated_at
+                FROM oauth_apps 
+                WHERE portfolio_id = :portfolio_id AND provider = 'google'
+            """
+            existing_config = await database.fetch_one(existing_query, {"portfolio_id": portfolio_id})
+            
+            # Prepare new values
+            new_client_id = app_config["client_id"]
+            new_client_secret = app_config["client_secret"]
+            new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback")
+            new_scopes = ",".join(["email", "profile"])
+            
+            # Log the configuration attempt
+            add_log("INFO", "google_oauth_config_start", 
+                   f"Admin {admin_email} configuring Google OAuth app",
+                   admin_email, "configure_google_oauth_app")
+            
+            # Log detailed field changes
+            if existing_config:
+                # Update scenario - log what changed
+                if existing_config["client_id"] != new_client_id:
+                    add_log("INFO", "google_oauth_field_change", 
+                           f"client_id changed from '{existing_config['client_id']}' to '{new_client_id}' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
+                
+                if existing_config["client_secret"] != new_client_secret:
+                    add_log("INFO", "google_oauth_field_change", 
+                           f"client_secret changed from '[REDACTED]' to '[REDACTED]' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
+                
+                if existing_config["redirect_uri"] != new_redirect_uri:
+                    add_log("INFO", "google_oauth_field_change", 
+                           f"redirect_uri changed from '{existing_config['redirect_uri']}' to '{new_redirect_uri}' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
+                
+                if existing_config["scopes"] != new_scopes:
+                    add_log("INFO", "google_oauth_field_change", 
+                           f"scopes changed from '{existing_config['scopes']}' to '{new_scopes}' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
+            else:
+                # New configuration - log all values
+                add_log("INFO", "google_oauth_field_new", 
+                       f"client_id set to '{new_client_id}' by {admin_email}",
+                       admin_email, "configure_google_oauth_app")
+                add_log("INFO", "google_oauth_field_new", 
+                       f"client_secret set to '[REDACTED]' by {admin_email}",
+                       admin_email, "configure_google_oauth_app")
+                add_log("INFO", "google_oauth_field_new", 
+                       f"redirect_uri set to '{new_redirect_uri}' by {admin_email}",
+                       admin_email, "configure_google_oauth_app")
+                add_log("INFO", "google_oauth_field_new", 
+                       f"scopes set to '{new_scopes}' by {admin_email}",
+                       admin_email, "configure_google_oauth_app")
             
             # Insert or update Google OAuth configuration
             query = """
@@ -611,10 +659,10 @@ class TTWOAuthManager:
             await database.execute(query, {
                 "portfolio_id": portfolio_id,
                 "provider": "google",
-                "client_id": app_config["client_id"],
-                "client_secret": client_secret,
-                "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
-                "scopes": ",".join(["email", "profile"])  # Default Google scopes
+                "client_id": new_client_id,
+                "client_secret": new_client_secret,
+                "redirect_uri": new_redirect_uri,
+                "scopes": new_scopes
             })
             
             # Log successful configuration
@@ -767,12 +815,77 @@ class TTWOAuthManager:
     async def configure_linkedin_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth application settings"""
         try:
-            # Encrypt the client secret
-            # Store client secret in plain text
-            client_secret = app_config["client_secret"]
+            # Get default portfolio ID
+            from database import PORTFOLIO_ID
+            
+            # Get existing configuration for comparison
+            existing_query = """
+                SELECT app_name, client_id, client_secret, redirect_uri, scopes, updated_at
+                FROM oauth_apps 
+                WHERE portfolio_id = :portfolio_id AND provider = 'linkedin' AND is_active = true
+                ORDER BY updated_at DESC LIMIT 1
+            """
+            existing_config = await database.fetch_one(existing_query, {"portfolio_id": PORTFOLIO_ID})
+            
+            # Prepare new values
+            new_app_name = app_config.get("app_name", "LinkedIn OAuth App")
+            new_client_id = app_config["client_id"]
+            new_client_secret = app_config["client_secret"]
+            new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback")
+            new_scopes = ["r_liteprofile", "r_emailaddress"]
+            new_scopes_str = ",".join(new_scopes)
+            
+            # Log the configuration attempt
+            add_log("INFO", "linkedin_oauth_config_start", 
+                   f"Admin {admin_email} configuring LinkedIn OAuth app",
+                   admin_email, "configure_linkedin_oauth_app")
+            
+            # Log detailed field changes
+            if existing_config:
+                # Update scenario - log what changed
+                if existing_config["app_name"] != new_app_name:
+                    add_log("INFO", "linkedin_oauth_field_change", 
+                           f"app_name changed from '{existing_config['app_name']}' to '{new_app_name}' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
+                
+                if existing_config["client_id"] != new_client_id:
+                    add_log("INFO", "linkedin_oauth_field_change", 
+                           f"client_id changed from '{existing_config['client_id']}' to '{new_client_id}' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
+                
+                if existing_config["client_secret"] != new_client_secret:
+                    add_log("INFO", "linkedin_oauth_field_change", 
+                           f"client_secret changed from '[REDACTED]' to '[REDACTED]' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
+                
+                if existing_config["redirect_uri"] != new_redirect_uri:
+                    add_log("INFO", "linkedin_oauth_field_change", 
+                           f"redirect_uri changed from '{existing_config['redirect_uri']}' to '{new_redirect_uri}' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
+                
+                if existing_config["scopes"] != new_scopes_str:
+                    add_log("INFO", "linkedin_oauth_field_change", 
+                           f"scopes changed from '{existing_config['scopes']}' to '{new_scopes_str}' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
+            else:
+                # New configuration - log all values
+                add_log("INFO", "linkedin_oauth_field_new", 
+                       f"app_name set to '{new_app_name}' by {admin_email}",
+                       admin_email, "configure_linkedin_oauth_app")
+                add_log("INFO", "linkedin_oauth_field_new", 
+                       f"client_id set to '{new_client_id}' by {admin_email}",
+                       admin_email, "configure_linkedin_oauth_app")
+                add_log("INFO", "linkedin_oauth_field_new", 
+                       f"client_secret set to '[REDACTED]' by {admin_email}",
+                       admin_email, "configure_linkedin_oauth_app")
+                add_log("INFO", "linkedin_oauth_field_new", 
+                       f"redirect_uri set to '{new_redirect_uri}' by {admin_email}",
+                       admin_email, "configure_linkedin_oauth_app")
+                add_log("INFO", "linkedin_oauth_field_new", 
+                       f"scopes set to '{new_scopes_str}' by {admin_email}",
+                       admin_email, "configure_linkedin_oauth_app")
             
             # Insert or update LinkedIn OAuth configuration
-            from database import PORTFOLIO_ID
             query = """
                 INSERT INTO oauth_apps (portfolio_id, provider, app_name, 
                                       client_id, client_secret, redirect_uri, 
@@ -792,14 +905,18 @@ class TTWOAuthManager:
             await database.execute(query, {
                 "portfolio_id": PORTFOLIO_ID,
                 "provider": "linkedin",
-                "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
-                "client_id": app_config["client_id"],
-                "client_secret": client_secret,
-                "redirect_uri": app_config.get("redirect_uri", 
-                    f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
-                "scopes": ["r_liteprofile", "r_emailaddress"],
+                "app_name": new_app_name,
+                "client_id": new_client_id,
+                "client_secret": new_client_secret,
+                "redirect_uri": new_redirect_uri,
+                "scopes": new_scopes_str,
                 "created_by": admin_email
             })
+            
+            # Log successful configuration
+            add_log("INFO", "linkedin_oauth_config_success", 
+                   f"LinkedIn OAuth app successfully configured by {admin_email}",
+                   admin_email, "configure_linkedin_oauth_app")
             
             logger.info(f"LinkedIn OAuth app configured by {admin_email}")
             return True

@@ -1523,9 +1523,6 @@ async def get_logs_data(
         return obj
     
     try:
-        # Add a test log entry to ensure we have something to display
-        add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
-        
         # Create our own database connection like add_log does
         try:
             # Validate sort parameters
@@ -1587,9 +1584,6 @@ async def get_logs_data(
             """
             
             logs = await database.fetch_all(logs_query, params)
-            
-            # Debug: Log what we found
-            add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
             
             # Convert logs to dict and serialize datetime objects
             logs_data = []
