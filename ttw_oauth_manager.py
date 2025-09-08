@@ -50,7 +50,11 @@ class TTWOAuthManager:
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+            params = {"portfolio_id": portfolio_id}
+            logger.debug(f"Executing LinkedIn OAuth config query: {query}")
+            logger.debug(f"Query parameters: {params}")
+            logger.debug(f"Substituted query: SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin' ORDER BY updated_at DESC LIMIT 1")
+            result = await database.fetch_one(query, params)
             
             if not result:
                 add_log("ERROR", "oauth_config_not_found", "No LinkedIn OAuth configuration found in database")
@@ -688,7 +692,11 @@ class TTWOAuthManager:
                 FROM oauth_apps 
                 WHERE portfolio_id = :portfolio_id AND provider = 'google'
             """
-            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+            params = {"portfolio_id": portfolio_id}
+            logger.debug(f"Checking if Google OAuth is configured - query: {query}")
+            logger.debug(f"Query parameters: {params}")
+            logger.debug(f"Substituted query: SELECT COUNT(*) as count FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
+            result = await database.fetch_one(query, params)
             return result["count"] > 0
         except Exception as e:
             logger.error(f"Database error checking OAuth config: {e}")
@@ -707,10 +715,14 @@ class TTWOAuthManager:
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+            params = {"portfolio_id": portfolio_id}
+            logger.debug(f"Executing Google OAuth config query: {query}")
+            logger.debug(f"Query parameters: {params}")
+            logger.debug(f"Substituted query: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google' ORDER BY updated_at DESC LIMIT 1")
+            result = await database.fetch_one(query, params)
             
             if result:
-            logger.debug(str(result.items()))
+                logger.debug(str(result.items()))
                 return {
                     "client_id": result.get("client_id") or "",
                     "redirect_uri": result.get("redirect_uri") or "",
@@ -927,7 +939,11 @@ class TTWOAuthManager:
             ORDER BY updated_at DESC
             LIMIT 1
         """
-        result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+        params = {"portfolio_id": portfolio_id}
+        logger.debug(f"Executing LinkedIn OAuth app config query: {query}")
+        logger.debug(f"Query parameters: {params}")
+        logger.debug(f"Substituted query: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin' ORDER BY updated_at DESC LIMIT 1")
+        result = await database.fetch_one(query, params)
         
         if result:
             return {
