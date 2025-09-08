@@ -887,15 +887,49 @@ async def auth_login(request: Request):
                     status_code=503
                 )
         
-        # Get redirect URI from database configuration or fallback
+        # Get fresh OAuth credentials from database before authorization
         try:
             ttw_manager = TTWOAuthManager()
             google_config = await ttw_manager.get_google_oauth_app_config()
-            redirect_uri = google_config['redirect_uri'] if google_config else request.url_for('auth_callback')
-        except:
+            
+            if not google_config:
+                logger.error("No Google OAuth configuration found in database")
+                return HTMLResponse(
+                    content="""
+                    <html><body>
+                    <h1>OAuth Configuration Error</h1>
+                    <p>Google OAuth is not configured. Please configure it first.</p>
+                    <p><a href="/admin/google/oauth">Configure OAuth</a></p>
+                    <p><a href="/">Return to main site</a></p>
+                    </body></html>
+                    """,
+                    status_code=503
+                )
+            
+            # Re-register OAuth client with fresh credentials
+            oauth.register(
+                name='google',
+                client_id=google_config['client_id'],
+                client_secret=google_config['client_secret'],
+                server_metadata_url=(
+                    'https://accounts.google.com/.well-known/'
+                    'openid-configuration'
+                ),
+                client_kwargs={
+                    'scope': 'openid email profile'
+                }
+            )
+            
+            redirect_uri = google_config['redirect_uri']
+            logger.info(
+                f"Using fresh OAuth config - Client ID: "
+                f"{google_config['client_id'][:10]}..., "
+                f"Redirect URI: {redirect_uri}"
+            )
+            
+        except Exception as config_error:
+            logger.error(f"Failed to get fresh OAuth config: {config_error}")
             redirect_uri = str(request.url_for('auth_callback'))
-        
-        logger.info(f"Using redirect URI: {redirect_uri}")
         
         # Use the OAuth client to redirect
         google = oauth.google
@@ -990,6 +1024,34 @@ async def auth_callback(request: Request):
                 """, 
                 status_code=400
             )
+    
+    # Get fresh OAuth credentials from database for callback
+    try:
+        ttw_manager = TTWOAuthManager()
+        google_config = await ttw_manager.get_google_oauth_app_config()
+        
+        if google_config:
+            # Re-register OAuth client with fresh credentials for callback
+            oauth.register(
+                name='google',
+                client_id=google_config['client_id'],
+                client_secret=google_config['client_secret'],
+                server_metadata_url=(
+                    'https://accounts.google.com/.well-known/'
+                    'openid-configuration'
+                ),
+                client_kwargs={
+                    'scope': 'openid email profile'
+                }
+            )
+            logger.info(
+                f"Refreshed OAuth config for callback - "
+                f"Client ID: {google_config['client_id'][:10]}..."
+            )
+        else:
+            logger.warning("No OAuth config found during callback")
+    except Exception as config_error:
+        logger.error(f"Failed to refresh OAuth config in callback: {config_error}")
     
     try:
         # Check if OAuth is properly configured
