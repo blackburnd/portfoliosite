@@ -45,6 +45,42 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+class DatabaseLoggingHandler(logging.Handler):
+    """Custom logging handler that writes logs to the database via add_log"""
+    
+    def __init__(self):
+        super().__init__()
+        # Capture ERROR and WARNING level logs to database
+        self.setLevel(logging.ERROR)
+        
+    def emit(self, record):
+        try:
+            # Import here to avoid circular imports
+            from log_capture import add_log
+            
+            # Format the log message
+            message = self.format(record)
+            
+            # Get the module name from the logger
+            module = record.name if record.name != '__main__' else 'main'
+            
+            # Add to database - use the log level as the level parameter
+            add_log(record.levelname, f"{module}_logging", message)
+            
+        except Exception:
+            # Don't let logging errors break the application
+            pass
+
+
+# Add the database handler to the root logger
+db_handler = DatabaseLoggingHandler()
+formatter = logging.Formatter(
+    '%(name)s - %(funcName)s:%(lineno)d - %(message)s'
+)
+db_handler.setFormatter(formatter)
+logging.getLogger().addHandler(db_handler)
+
 # Import our Google OAuth authentication module
 from auth import (
     oauth, 

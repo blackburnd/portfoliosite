@@ -51,9 +51,9 @@ class TTWOAuthManager:
                 LIMIT 1
             """
             params = {"portfolio_id": portfolio_id}
-            logger.debug(f"Executing LinkedIn OAuth config query: {query}")
-            logger.debug(f"Query parameters: {params}")
-            logger.debug(f"Substituted query: SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin' ORDER BY updated_at DESC LIMIT 1")
+            add_log("DEBUG", "linkedin_oauth_config_query", f"Executing LinkedIn OAuth config query")
+            add_log("DEBUG", "linkedin_oauth_config_params", f"Portfolio ID: {portfolio_id}")
+            add_log("DEBUG", "linkedin_oauth_config_sql", f"SQL: SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin'")
             result = await database.fetch_one(query, params)
             
             if not result:
@@ -716,9 +716,9 @@ class TTWOAuthManager:
                 LIMIT 1
             """
             params = {"portfolio_id": portfolio_id}
-            logger.debug(f"Executing Google OAuth config query: {query}")
-            logger.debug(f"Query parameters: {params}")
-            logger.debug(f"Substituted query: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google' ORDER BY updated_at DESC LIMIT 1")
+            add_log("DEBUG", "google_oauth_config_query", f"Executing Google OAuth config query")
+            add_log("DEBUG", "google_oauth_config_params", f"Portfolio ID: {portfolio_id}")
+            add_log("DEBUG", "google_oauth_config_sql", f"SQL: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
             result = await database.fetch_one(query, params)
             
             if result:
@@ -750,23 +750,23 @@ class TTWOAuthManager:
                 LIMIT 1
             """
             params = {"portfolio_id": portfolio_id}
-            logger.debug(f"Executing Google OAuth credentials query (startup): {query}")
-            logger.debug(f"Query parameters: {params}")
-            logger.debug(f"Substituted query: SELECT client_id, client_secret, redirect_uri FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google' ORDER BY updated_at DESC LIMIT 1")
+            add_log("DEBUG", "google_oauth_credentials_query", f"Executing Google OAuth credentials query during startup")
+            add_log("DEBUG", "google_oauth_credentials_params", f"Portfolio ID: {portfolio_id}")
+            add_log("DEBUG", "google_oauth_credentials_sql", f"SQL: SELECT client_id, client_secret, redirect_uri FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
             result = await database.fetch_one(query, params)
             
             if result:
-                logger.info(f"✅ Found Google OAuth credentials for portfolio_id: {portfolio_id}")
+                add_log("INFO", "google_oauth_credentials_found", f"Found Google OAuth credentials for portfolio_id: {portfolio_id}")
                 return {
                     "client_id": result.get("client_id") or "",
                     "client_secret": result.get("client_secret") or "",
                     "redirect_uri": result.get("redirect_uri") or ""
                 }
             else:
-                logger.warning(f"❌ No Google OAuth credentials found for portfolio_id: {portfolio_id}")
+                add_log("WARNING", "google_oauth_credentials_missing", f"No Google OAuth credentials found for portfolio_id: {portfolio_id}")
             return None
         except Exception as e:
-            logger.error(f"Database error getting OAuth credentials: {e}")
+            add_log("ERROR", "database_error_oauth_credentials", f"Database error getting OAuth credentials: {str(e)}")
             return None
 
     async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
