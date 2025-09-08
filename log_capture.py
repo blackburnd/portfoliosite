@@ -3,13 +3,11 @@ Log capture module for writing application logs to the database
 """
 import asyncio
 import logging
-import os
 import traceback
 from datetime import datetime
 from typing import Optional
 import json
 
-import databases
 from fastapi import Request
 
 
@@ -46,11 +44,21 @@ def get_client_ip(request: Request) -> str:
 class DatabaseLogHandler(logging.Handler):
     """Custom logging handler that writes logs to the database"""
     
-    def __init__(self, database_url: str):
+    def __init__(self, database_url: str = None):
         super().__init__()
-        self.database_url = database_url
-        self.db = databases.Database(database_url)
+        # Use centralized database instance
+        from database import database
+        self.db = database
         self._loop = None
+        self._portfolio_id = None
+    
+    def _get_default_portfolio_id(self):
+        """Get the default portfolio ID for logs"""
+        if self._portfolio_id is None:
+            # Use a hardcoded default portfolio ID for logs
+            # This should match the main portfolio in your database
+            self._portfolio_id = "daniel-blackburn"
+        return self._portfolio_id
         
     def emit(self, record: logging.LogRecord):
         """Emit a log record to the database"""
@@ -78,12 +86,15 @@ class DatabaseLogHandler(logging.Handler):
     async def _insert_log(self, record: logging.LogRecord):
         """Insert log record into database"""
         try:
-            await self.db.connect()
+            # Database is already connected, no need to connect/disconnect
             
             # Extract extra information
             extra = {}
             if hasattr(record, 'exc_info') and record.exc_info:
-                extra['traceback'] = ''.join(traceback.format_exception(*record.exc_info))
+                exc_info = record.exc_info
+                extra['traceback'] = ''.join(
+                    traceback.format_exception(*exc_info)
+                )
             
             # Get user info if available
             user = getattr(record, 'user', None)
@@ -91,13 +102,15 @@ class DatabaseLogHandler(logging.Handler):
             ip_address = getattr(record, 'ip_address', None)
             
             query = """
-                INSERT INTO app_log (timestamp, level, message, module,
-                                   function, line, user, extra, ip_address)
-                VALUES (:timestamp, :level, :message, :module,
+                INSERT INTO app_log (portfolio_id, timestamp, level, message,
+                                   module, function, line, "user", extra,
+                                   ip_address)
+                VALUES (:portfolio_id, :timestamp, :level, :message, :module,
                        :function, :line, :user, :extra, :ip_address)
             """
             
             values = {
+                'portfolio_id': self._get_default_portfolio_id(),
                 'timestamp': datetime.fromtimestamp(record.created),
                 'level': record.levelname,
                 'message': record.getMessage(),
@@ -111,14 +124,11 @@ class DatabaseLogHandler(logging.Handler):
             }
             
             await self.db.execute(query, values)
-            await self.db.disconnect()
             
         except Exception as e:
             print(f"Database log insert failed: {e}")
-            try:
-                await self.db.disconnect()
-            except Exception:
-                pass
+            print(f"Log record values: {values}")
+            print(f"Exception: {traceback.format_exc()}")
 
 
 # Global log handler instance
@@ -130,9 +140,7 @@ def setup_database_logging():
     global _db_log_handler
     
     try:
-        from database import get_database_url
-        database_url = get_database_url()
-        _db_log_handler = DatabaseLogHandler(database_url)
+        _db_log_handler = DatabaseLogHandler()
         _db_log_handler.setLevel(logging.INFO)
         
         # Add to root logger
@@ -220,7 +228,7 @@ async def clear_logs():
         print(f"Failed to clear logs: {e}")
         try:
             await db.disconnect()
-        except:
+        except Exception:
             pass
 
 

@@ -714,11 +714,19 @@ async def favicon():
 # Database initialization
 @app.on_event("startup")
 async def startup_event():
-    logger.info("=== Database Startup ===")
+    logger.info("=== Application Startup ===")
     try:
         logger.info("Initializing database connection...")
         await init_database()
-        logger.info("Database initialized successfully")
+        logger.info("✅ Database initialized successfully")
+        
+        # Test database connection
+        try:
+            test_result = await database.fetch_one("SELECT 1 as test")
+            logger.info(f"✅ Database test query successful: {test_result}")
+        except Exception as db_test_error:
+            logger.error(f"❌ Database test query failed: {db_test_error}")
+            raise
         
         # Database logging is now handled directly by add_log function
         logger.info("Database logging ready via add_log function")
@@ -733,8 +741,9 @@ async def startup_event():
             logger.warning("⚠️ OAuth configuration not found in database")
             
     except Exception as e:
-        logger.error(f"Startup error: {str(e)}", exc_info=True)
-        raise
+        logger.error(f"❌ Startup error: {str(e)}", exc_info=True)
+        # Don't raise to allow app to start even with database issues
+        logger.warning("⚠️ Starting app despite database issues")
 
 
 @app.on_event("shutdown")
@@ -1556,10 +1565,11 @@ async def get_logs_data(
                 where_clause = "WHERE " + " AND ".join(where_conditions)
             
             # Get total count with filters
-            count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
+            count_query = f"SELECT COUNT(*) as count FROM app_log {where_clause}"
             # Only pass filter parameters to count query, not limit/offset
             count_params = {k: v for k, v in params.items() if k not in ['limit', 'offset']}
-            total_count = await database.fetch_val(count_query, count_params)
+            count_result = await database.fetch_one(count_query, count_params)
+            total_count = count_result['count'] if count_result else 0
             
             # Build dynamic ORDER BY clause
             order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
