@@ -653,44 +653,52 @@ class TTWOAuthManager:
 
     async def get_google_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get Google OAuth app configuration (without secrets)"""
-        query = """
-            SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
-            FROM oauth_apps 
-            WHERE provider = 'google' AND is_active = true
-            ORDER BY updated_at DESC
-            LIMIT 1
-        """
-        result = await database.fetch_one(query)
-        
-        if result:
-            return {
-                "app_name": result["app_name"],
-                "client_id": result["client_id"],
-                "redirect_uri": result["redirect_uri"],
-                "scopes": result["scopes"],
-                "configured_at": result["created_at"],
-                "updated_at": result["updated_at"]
-            }
-        return None
+        try:
+            query = """
+                SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
+                FROM oauth_apps 
+                WHERE provider = 'google' AND is_active = true
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """
+            result = await database.fetch_one(query)
+            
+            if result:
+                return {
+                    "app_name": result["app_name"],
+                    "client_id": result["client_id"],
+                    "redirect_uri": result["redirect_uri"],
+                    "scopes": result["scopes"],
+                    "configured_at": result["created_at"],
+                    "updated_at": result["updated_at"]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Database error getting OAuth config: {e}")
+            return None
 
     async def get_google_oauth_credentials(self) -> Optional[Dict[str, str]]:
         """Get Google OAuth credentials including client secret"""
-        query = """
-            SELECT client_id, client_secret, redirect_uri
-            FROM oauth_apps 
-            WHERE provider = 'google' AND is_active = true
-            ORDER BY updated_at DESC
-            LIMIT 1
-        """
-        result = await database.fetch_one(query)
-        
-        if result:
-            return {
-                "client_id": result["client_id"],
-                "client_secret": result["client_secret"],
-                "redirect_uri": result["redirect_uri"]
-            }
-        return None
+        try:
+            query = """
+                SELECT client_id, client_secret, redirect_uri
+                FROM oauth_apps 
+                WHERE provider = 'google' AND is_active = true
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """
+            result = await database.fetch_one(query)
+            
+            if result:
+                return {
+                    "client_id": result["client_id"],
+                    "client_secret": result["client_secret"],
+                    "redirect_uri": result["redirect_uri"]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Database error getting OAuth credentials: {e}")
+            return None
 
     async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
         """Remove LinkedIn OAuth app configuration"""

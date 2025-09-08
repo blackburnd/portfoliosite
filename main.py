@@ -2579,6 +2579,11 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
     try:
         add_log("INFO", "admin_google_oauth_status", f"Admin {admin_email} checking Google OAuth status")
         
+        # Check if database is connected before proceeding
+        if not database.is_connected:
+            logger.warning("Database not connected, attempting to connect...")
+            await database.connect()
+        
         # Check if Google OAuth is configured in database
         ttw_manager = TTWOAuthManager()
         google_configured = await ttw_manager.is_google_oauth_app_configured()
