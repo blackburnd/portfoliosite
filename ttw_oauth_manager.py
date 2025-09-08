@@ -883,8 +883,8 @@ class TTWOAuthManager:
     async def configure_linkedin_oauth_app(self, admin_email: str, app_config: Dict[str, str]) -> bool:
         """Configure LinkedIn OAuth application settings"""
         try:
-            # Encrypt the client secret
-            encrypted_secret = self._encrypt_token(app_config["client_secret"])
+            # Store client secret as plain text (not encrypted)
+            client_secret = app_config["client_secret"]
             
             # Insert or update LinkedIn OAuth configuration
             query = """
@@ -904,7 +904,7 @@ class TTWOAuthManager:
                 "provider": "linkedin",
                 "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
-                "client_secret": encrypted_secret,
+                "client_secret": client_secret,  # Store as plain text
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
                 "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
                 "encryption_key": "oauth_key",  # Using same key pattern as Google
@@ -951,7 +951,7 @@ class TTWOAuthManager:
         return None
 
     async def get_linkedin_oauth_credentials(self) -> Optional[Dict[str, str]]:
-        """Get LinkedIn OAuth credentials including decrypted client secret"""
+        """Get LinkedIn OAuth credentials (client_secret is stored as plain text)"""
         query = """
             SELECT client_id, client_secret, redirect_uri
             FROM oauth_apps 
@@ -962,16 +962,12 @@ class TTWOAuthManager:
         result = await database.fetch_one(query)
         
         if result:
-            try:
-                decrypted_secret = self._decrypt_token(result["client_secret"])
-                return {
-                    "client_id": result["client_id"],
-                    "client_secret": decrypted_secret,
-                    "redirect_uri": result["redirect_uri"]
-                }
-            except Exception as e:
-                logger.error(f"Failed to decrypt LinkedIn client secret: {e}")
-                return None
+            # Client secret is now stored as plain text, no decryption needed
+            return {
+                "client_id": result["client_id"],
+                "client_secret": result["client_secret"],  # Already plain text
+                "redirect_uri": result["redirect_uri"]
+            }
         return None
 
 # Global instance
