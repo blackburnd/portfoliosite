@@ -749,14 +749,21 @@ class TTWOAuthManager:
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
+            params = {"portfolio_id": portfolio_id}
+            logger.debug(f"Executing Google OAuth credentials query (startup): {query}")
+            logger.debug(f"Query parameters: {params}")
+            logger.debug(f"Substituted query: SELECT client_id, client_secret, redirect_uri FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google' ORDER BY updated_at DESC LIMIT 1")
+            result = await database.fetch_one(query, params)
             
             if result:
+                logger.info(f"✅ Found Google OAuth credentials for portfolio_id: {portfolio_id}")
                 return {
                     "client_id": result.get("client_id") or "",
                     "client_secret": result.get("client_secret") or "",
                     "redirect_uri": result.get("redirect_uri") or ""
                 }
+            else:
+                logger.warning(f"❌ No Google OAuth credentials found for portfolio_id: {portfolio_id}")
             return None
         except Exception as e:
             logger.error(f"Database error getting OAuth credentials: {e}")
