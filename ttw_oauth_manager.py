@@ -44,7 +44,7 @@ class TTWOAuthManager:
             portfolio_id = PORTFOLIO_ID
             
             query = """
-                SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at
+                SELECT client_id, client_secret, redirect_uri, scopes, created_at, updated_at
                 FROM oauth_apps 
                 WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
                 ORDER BY updated_at DESC
@@ -53,7 +53,7 @@ class TTWOAuthManager:
             params = {"portfolio_id": portfolio_id}
             add_log("DEBUG", "linkedin_oauth_config_query", f"Executing LinkedIn OAuth config query")
             add_log("DEBUG", "linkedin_oauth_config_params", f"Portfolio ID: {portfolio_id}")
-            add_log("DEBUG", "linkedin_oauth_config_sql", f"SQL: SELECT client_id, client_secret, redirect_uri, scopes, created_by, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin'")
+            add_log("DEBUG", "linkedin_oauth_config_sql", f"SQL: SELECT client_id, client_secret, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin'")
             result = await database.fetch_one(query, params)
             
             if not result:
@@ -65,7 +65,6 @@ class TTWOAuthManager:
                 "client_secret": result["client_secret"],
                 "redirect_uri": result["redirect_uri"],
                 "scopes": result["scopes"],  # Include scopes field
-                "configured_by_email": result["created_by"],
                 "created_at": result["created_at"],
                 "updated_at": result["updated_at"]
             }
@@ -98,9 +97,9 @@ class TTWOAuthManager:
             query = """
                 INSERT INTO oauth_apps (portfolio_id, provider, 
                                       client_id, client_secret, redirect_uri, 
-                                      scopes, created_by)
+                                      scopes)
                 VALUES (:portfolio_id, :provider, :client_id, 
-                       :client_secret, :redirect_uri, :scopes, :created_by)
+                       :client_secret, :redirect_uri, :scopes)
             """
             
             await database.execute(query, {
@@ -109,8 +108,7 @@ class TTWOAuthManager:
                 "client_id": app_config["client_id"],
                 "client_secret": client_secret,
                 "redirect_uri": app_config["redirect_uri"],
-                "scopes": ",".join(app_config.get("scopes", ["r_liteprofile", "r_emailaddress"])),
-                "created_by": "system"
+                "scopes": ",".join(app_config.get("scopes", ["r_liteprofile", "r_emailaddress"]))
             })
             
             # Log successful configuration
@@ -626,15 +624,14 @@ class TTWOAuthManager:
             
             # Insert or update Google OAuth configuration
             query = """
-                INSERT INTO oauth_apps (portfolio_id, provider, client_id, client_secret, redirect_uri, scopes, created_by, is_active)
-                VALUES (:portfolio_id, :provider, :client_id, :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
+                INSERT INTO oauth_apps (portfolio_id, provider, client_id, client_secret, redirect_uri, scopes, is_active)
+                VALUES (:portfolio_id, :provider, :client_id, :client_secret, :redirect_uri, :scopes, ::is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
-                    created_by = EXCLUDED.created_by,
                     is_active = EXCLUDED.is_active,
                     updated_at = CURRENT_TIMESTAMP
             """
@@ -646,7 +643,6 @@ class TTWOAuthManager:
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
                 "scopes": new_scopes,
-                "created_by": "admin",
                 "is_active": True
             })
             
@@ -882,16 +878,15 @@ class TTWOAuthManager:
             query = """
                 INSERT INTO oauth_apps (portfolio_id, provider, 
                                       client_id, client_secret, redirect_uri, 
-                                      scopes, created_by, is_active)
+                                      scopes, is_active)
                 VALUES (:portfolio_id, :provider, :client_id, 
-                       :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
+                       :client_secret, :redirect_uri, :scopes, ::is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
-                    created_by = EXCLUDED.created_by,
                     is_active = EXCLUDED.is_active,
                     updated_at = CURRENT_TIMESTAMP
             """
@@ -903,7 +898,6 @@ class TTWOAuthManager:
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
                 "scopes": new_scopes_str,
-                "created_by": "system",
                 "is_active": True
             })
             

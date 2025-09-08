@@ -1949,7 +1949,7 @@ async def get_oauth_status():
     try:
         # Check oauth_apps table for all providers
         oauth_apps_query = """
-            SELECT id, provider, client_id, redirect_uri, is_active, created_by, created_at
+            SELECT id, provider, client_id, redirect_uri, is_active, created_at
             FROM oauth_apps 
             WHERE portfolio_id = :portfolio_id
             ORDER BY provider, created_at DESC
@@ -1963,7 +1963,7 @@ async def get_oauth_status():
         
         # Check oauth_system_settings table
         system_settings_query = """
-            SELECT setting_key, setting_value, description, created_by, created_at
+            SELECT setting_key, setting_value, description, created_at
             FROM oauth_system_settings 
             ORDER BY created_at DESC
         """
@@ -3246,7 +3246,7 @@ async def get_linkedin_oauth_config_for_form(admin: dict = Depends(require_admin
         
         # Get current LinkedIn OAuth config from oauth_apps table (consistent with status route)
         query = """
-            SELECT client_id, redirect_uri, scopes, is_active, created_by, created_at
+            SELECT client_id, redirect_uri, scopes, is_active, created_at
             FROM oauth_apps 
             WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
             ORDER BY created_at DESC
