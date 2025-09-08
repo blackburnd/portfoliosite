@@ -97,6 +97,7 @@ class GoogleOAuthAdmin {
     updateGoogleStatus(data) {
         const statusDisplay = document.getElementById('google-status-display');
         const statusText = document.getElementById('google-status-text');
+        const clientSecretField = document.getElementById('google-client-secret');
 
         if (data.configured) {
             statusDisplay.className = 'status-configured';
@@ -104,7 +105,15 @@ class GoogleOAuthAdmin {
             
             // Populate form with existing config
             document.getElementById('google-client-id').value = data.client_id || '';
-            document.getElementById('google-client-secret').value = data.client_secret || '';
+            
+            // Preserve existing client_secret if new data is empty but field has value
+            const currentSecret = clientSecretField.value;
+            const newSecret = data.client_secret || '';
+            if (newSecret || !currentSecret) {
+                clientSecretField.value = newSecret;
+            }
+            // If newSecret is empty but currentSecret exists, keep the current value
+            
             document.getElementById('google-redirect-uri').value = data.redirect_uri || '';
         } else {
             statusDisplay.className = 'status-not-configured';

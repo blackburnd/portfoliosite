@@ -77,7 +77,13 @@ class DatabaseLoggingHandler(logging.Handler):
         except Exception as e:
             # Don't let logging errors break the application, but print for debugging
             print(f"Database logging error: {e}")
-            pass
+            # Try to also log this error through standard logging
+            try:
+                import logging
+                fallback_logger = logging.getLogger('database_handler_error')
+                fallback_logger.error(f"Database handler failed: {e}")
+            except Exception:
+                pass
 
 
 # Add the database handler to the root logger
@@ -118,13 +124,30 @@ def log_with_context(level: str, module: str, message: str,
             ip_address = "unknown"
     
     # Call the original add_log with IP address
-    add_log(
-        level=level,
-        module=module, 
-        message=message,
-        ip_address=ip_address,
-        **kwargs
-    )
+    try:
+        add_log(
+            level=level,
+            module=module, 
+            message=message,
+            ip_address=ip_address,
+            **kwargs
+        )
+    except Exception as e:
+        print(f"CRITICAL: add_log failed: {e}")
+        # Try to log through standard logging as fallback
+        try:
+            logger.error(f"add_log failed, fallback logging: [{module}] {message}")
+        except Exception:
+            pass
+    
+    # ALSO log through Python logging system to ensure database handler captures it
+    try:
+        logger_obj = logging.getLogger(module)
+        log_level = getattr(logging, level.upper(), logging.INFO)
+        logger_obj.log(log_level, f"[{ip_address}] {message}")
+    except Exception as e:
+        print(f"Error in dual logging: {e}")
+
 
 # Session-based authentication dependency
 async def require_admin_auth_session(request: Request):
