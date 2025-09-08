@@ -23,7 +23,15 @@ class TTWOAuthManager:
     
     def __init__(self):
         # Default redirect URI pattern (will be configurable)
-        self.default_redirect_uri_pattern = "/admin/linkedin/callback"
+        self.default_redirec            if result:
+                return {
+                    "app_name": result.get("app_name") or "",
+                    "client_id": result.get("client_id") or "",
+                    "redirect_uri": result.get("redirect_uri") or "",
+                    "scopes": result.get("scopes") or "",
+                    "configured_at": result.get("created_at"),
+                    "updated_at": result.get("updated_at")
+                }tern = "/admin/linkedin/callback"
     
     # OAuth App Configuration Methods
     
@@ -607,50 +615,28 @@ class TTWOAuthManager:
                    f"Admin {admin_email} configuring Google OAuth app",
                    admin_email, "configure_google_oauth_app")
             
-            # Log detailed field changes
+            # Log field changes
+            new_values = {
+                "app_name": new_app_name,
+                "client_id": new_client_id,
+                "client_secret": "[REDACTED]",
+                "redirect_uri": new_redirect_uri,
+                "scopes": new_scopes
+            }
+            
             if existing_config:
-                # Update scenario - log what changed
-                if existing_config.get("app_name") != new_app_name:
-                    add_log("INFO", "google_oauth_field_change", 
-                           f"app_name changed from '{existing_config.get('app_name', 'NULL')}' to '{new_app_name}' by {admin_email}",
-                           admin_email, "configure_google_oauth_app")
-                
-                if existing_config["client_id"] != new_client_id:
-                    add_log("INFO", "google_oauth_field_change", 
-                           f"client_id changed from '{existing_config['client_id']}' to '{new_client_id}' by {admin_email}",
-                           admin_email, "configure_google_oauth_app")
-                
-                if existing_config["client_secret"] != new_client_secret:
-                    add_log("INFO", "google_oauth_field_change", 
-                           f"client_secret changed from '[REDACTED]' to '[REDACTED]' by {admin_email}",
-                           admin_email, "configure_google_oauth_app")
-                
-                if existing_config["redirect_uri"] != new_redirect_uri:
-                    add_log("INFO", "google_oauth_field_change", 
-                           f"redirect_uri changed from '{existing_config['redirect_uri']}' to '{new_redirect_uri}' by {admin_email}",
-                           admin_email, "configure_google_oauth_app")
-                
-                if existing_config["scopes"] != new_scopes:
-                    add_log("INFO", "google_oauth_field_change", 
-                           f"scopes changed from '{existing_config['scopes']}' to '{new_scopes}' by {admin_email}",
-                           admin_email, "configure_google_oauth_app")
+                old_values = {k: existing_config.get(k, "NULL") for k in new_values.keys()}
+                old_values["client_secret"] = "[REDACTED]"
+                for field, new_val in new_values.items():
+                    if old_values[field] != new_val:
+                        add_log("INFO", "google_oauth_field_change", 
+                               f"{field}: '{old_values[field]}' -> '{new_val}' by {admin_email}",
+                               admin_email, "configure_google_oauth_app")
             else:
-                # New configuration - log all values
-                add_log("INFO", "google_oauth_field_new", 
-                       f"app_name set to '{new_app_name}' by {admin_email}",
-                       admin_email, "configure_google_oauth_app")
-                add_log("INFO", "google_oauth_field_new", 
-                       f"client_id set to '{new_client_id}' by {admin_email}",
-                       admin_email, "configure_google_oauth_app")
-                add_log("INFO", "google_oauth_field_new", 
-                       f"client_secret set to '[REDACTED]' by {admin_email}",
-                       admin_email, "configure_google_oauth_app")
-                add_log("INFO", "google_oauth_field_new", 
-                       f"redirect_uri set to '{new_redirect_uri}' by {admin_email}",
-                       admin_email, "configure_google_oauth_app")
-                add_log("INFO", "google_oauth_field_new", 
-                       f"scopes set to '{new_scopes}' by {admin_email}",
-                       admin_email, "configure_google_oauth_app")
+                for field, value in new_values.items():
+                    add_log("INFO", "google_oauth_field_new", 
+                           f"{field} set to '{value}' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
             
             # Insert or update Google OAuth configuration
             query = """
@@ -720,7 +706,7 @@ class TTWOAuthManager:
             query = """
                 SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
                 FROM oauth_apps 
-                WHERE provider = 'google' AND is_active = true
+                WHERE provider = 'google'
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
@@ -728,12 +714,12 @@ class TTWOAuthManager:
             
             if result:
                 return {
-                    "app_name": result["app_name"],
-                    "client_id": result["client_id"],
-                    "redirect_uri": result["redirect_uri"],
-                    "scopes": result["scopes"],
-                    "configured_at": result["created_at"],
-                    "updated_at": result["updated_at"]
+                    "app_name": result.get("app_name") or "",
+                    "client_id": result.get("client_id") or "",
+                    "redirect_uri": result.get("redirect_uri") or "",
+                    "scopes": result.get("scopes") or "",
+                    "configured_at": result.get("created_at"),
+                    "updated_at": result.get("updated_at")
                 }
             return None
         except Exception as e:
@@ -746,7 +732,7 @@ class TTWOAuthManager:
             query = """
                 SELECT client_id, client_secret, redirect_uri
                 FROM oauth_apps 
-                WHERE provider = 'google' AND is_active = true
+                WHERE provider = 'google'
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
@@ -754,9 +740,9 @@ class TTWOAuthManager:
             
             if result:
                 return {
-                    "client_id": result["client_id"],
-                    "client_secret": result["client_secret"],
-                    "redirect_uri": result["redirect_uri"]
+                    "client_id": result.get("client_id") or "",
+                    "client_secret": result.get("client_secret") or "",
+                    "redirect_uri": result.get("redirect_uri") or ""
                 }
             return None
         except Exception as e:
@@ -855,66 +841,46 @@ class TTWOAuthManager:
                    f"Admin {admin_email} configuring LinkedIn OAuth app",
                    admin_email, "configure_linkedin_oauth_app")
             
-            # Log detailed field changes
+            # Log field changes
+            new_values = {
+                "app_name": new_app_name,
+                "client_id": new_client_id,
+                "client_secret": "[REDACTED]",
+                "redirect_uri": new_redirect_uri,
+                "scopes": new_scopes_str
+            }
+            
             if existing_config:
-                # Update scenario - log what changed
-                if existing_config["app_name"] != new_app_name:
-                    add_log("INFO", "linkedin_oauth_field_change", 
-                           f"app_name changed from '{existing_config['app_name']}' to '{new_app_name}' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
-                
-                if existing_config["client_id"] != new_client_id:
-                    add_log("INFO", "linkedin_oauth_field_change", 
-                           f"client_id changed from '{existing_config['client_id']}' to '{new_client_id}' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
-                
-                if existing_config["client_secret"] != new_client_secret:
-                    add_log("INFO", "linkedin_oauth_field_change", 
-                           f"client_secret changed from '[REDACTED]' to '[REDACTED]' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
-                
-                if existing_config["redirect_uri"] != new_redirect_uri:
-                    add_log("INFO", "linkedin_oauth_field_change", 
-                           f"redirect_uri changed from '{existing_config['redirect_uri']}' to '{new_redirect_uri}' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
-                
-                if existing_config["scopes"] != new_scopes_str:
-                    add_log("INFO", "linkedin_oauth_field_change", 
-                           f"scopes changed from '{existing_config['scopes']}' to '{new_scopes_str}' by {admin_email}",
-                           admin_email, "configure_linkedin_oauth_app")
+                old_values = {k: existing_config.get(k, "NULL") for k in new_values.keys()}
+                old_values["client_secret"] = "[REDACTED]"
+                for field, new_val in new_values.items():
+                    if old_values[field] != new_val:
+                        add_log("INFO", "linkedin_oauth_field_change", 
+                               f"{field}: '{old_values[field]}' -> '{new_val}' by {admin_email}",
+                               admin_email, "configure_linkedin_oauth_app")
             else:
-                # New configuration - log all values
-                add_log("INFO", "linkedin_oauth_field_new", 
-                       f"app_name set to '{new_app_name}' by {admin_email}",
-                       admin_email, "configure_linkedin_oauth_app")
-                add_log("INFO", "linkedin_oauth_field_new", 
-                       f"client_id set to '{new_client_id}' by {admin_email}",
-                       admin_email, "configure_linkedin_oauth_app")
-                add_log("INFO", "linkedin_oauth_field_new", 
-                       f"client_secret set to '[REDACTED]' by {admin_email}",
-                       admin_email, "configure_linkedin_oauth_app")
-                add_log("INFO", "linkedin_oauth_field_new", 
-                       f"redirect_uri set to '{new_redirect_uri}' by {admin_email}",
-                       admin_email, "configure_linkedin_oauth_app")
-                add_log("INFO", "linkedin_oauth_field_new", 
-                       f"scopes set to '{new_scopes_str}' by {admin_email}",
-                       admin_email, "configure_linkedin_oauth_app")
+                for field, value in new_values.items():
+                    add_log("INFO", "linkedin_oauth_field_new", 
+                           f"{field} set to '{value}' by {admin_email}",
+                           admin_email, "configure_linkedin_oauth_app")
             
             # Insert or update LinkedIn OAuth configuration
             query = """
                 INSERT INTO oauth_apps (portfolio_id, provider, app_name, 
                                       client_id, client_secret, redirect_uri, 
-                                      scopes, created_by)
+                                      scopes, created_by, is_active)
                 VALUES (:portfolio_id, :provider, :app_name, :client_id, 
-                       :client_secret, :redirect_uri, :scopes, :created_by)
-                ON CONFLICT (portfolio_id, provider, app_name) 
+                       :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
+                ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
+                    app_name = EXCLUDED.app_name,
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
-                    updated_at = CURRENT_TIMESTAMP,
-                    is_active = true
+                    created_by = EXCLUDED.created_by,
+                    is_active = EXCLUDED.is_active,
+                    updated_at = CURRENT_TIMESTAMP
             """
             
             await database.execute(query, {
