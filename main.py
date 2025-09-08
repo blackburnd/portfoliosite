@@ -254,7 +254,6 @@ This email was automatically generated from your portfolio website contact form.
 
 from app.resolvers import schema
 from database import init_database, close_database, database
-from databases import Database
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -1270,15 +1269,11 @@ async def contact_submit(request: Request):
             is_read=False
         )
         
-        # Save to database with dedicated connection like logs endpoint
-        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        db = Database(DATABASE_URL)
-        await db.connect()
-        
+        # Save to database using centralized database connection
         try:
             # Get the default portfolio_id (assuming Daniel's portfolio)
             portfolio_query = "SELECT id FROM portfolios LIMIT 1"
-            portfolio_result = await db.fetch_one(portfolio_query)
+            portfolio_result = await database.fetch_one(portfolio_query)
             
             if not portfolio_result:
                 raise Exception("No portfolio found in database")
@@ -1291,7 +1286,7 @@ async def contact_submit(request: Request):
                 VALUES (:portfolio_id, :name, :email, :subject, :message, NOW(), FALSE)
                 RETURNING id
             """
-            result = await db.fetch_one(
+            result = await database.fetch_one(
                 query,
                 {
                     "portfolio_id": portfolio_id,
@@ -1304,8 +1299,9 @@ async def contact_submit(request: Request):
             
             contact_id = result['id'] if result else None
             
-        finally:
-            await db.disconnect()
+        except Exception as e:
+            logger.error(f"Error saving contact message: {e}")
+            contact_id = None
         
         logger.info(f"Contact form submitted: ID {contact_id}, "
                    f"from {name} ({email})")
@@ -1520,10 +1516,6 @@ async def get_logs_data(
         add_log("INFO", "logs_endpoint", "Logs endpoint accessed for debugging")
         
         # Create our own database connection like add_log does
-        DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        db = Database(DATABASE_URL)
-        await db.connect()
-        
         try:
             # Validate sort parameters
             valid_sort_fields = {"timestamp", "level", "message", "module",
@@ -1567,7 +1559,7 @@ async def get_logs_data(
             count_query = f"SELECT COUNT(*) FROM app_log {where_clause}"
             # Only pass filter parameters to count query, not limit/offset
             count_params = {k: v for k, v in params.items() if k not in ['limit', 'offset']}
-            total_count = await db.fetch_val(count_query, count_params)
+            total_count = await database.fetch_val(count_query, count_params)
             
             # Build dynamic ORDER BY clause
             order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
@@ -1582,7 +1574,7 @@ async def get_logs_data(
                 LIMIT :limit OFFSET :offset
             """
             
-            logs = await db.fetch_all(logs_query, params)
+            logs = await database.fetch_all(logs_query, params)
             
             # Debug: Log what we found
             add_log("DEBUG", "logs_endpoint", f"Found {len(logs)} logs")
@@ -1611,8 +1603,12 @@ async def get_logs_data(
                     "showing": len(logs_data)  # Number of records in this response
                 }
             })
-        finally:
-            await db.disconnect()
+        except Exception as e:
+            logger.error(f"Error fetching logs: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Failed to fetch logs"}
+            )
         
     except Exception as e:
         logger.error(f"Error fetching logs: {str(e)}")

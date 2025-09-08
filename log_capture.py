@@ -129,12 +129,9 @@ def setup_database_logging():
     """Set up database logging handler"""
     global _db_log_handler
     
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found, skipping database logging setup")
-        return
-    
     try:
+        from database import get_database_url
+        database_url = get_database_url()
         _db_log_handler = DatabaseLogHandler(database_url)
         _db_log_handler.setLevel(logging.INFO)
         
@@ -159,16 +156,11 @@ def add_log(level: str, message: str, module: str = "manual",
             user: Optional[str] = None, extra: Optional[dict] = None,
             ip_address: Optional[str] = None):
     """Manually add a log entry to the database"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found for manual log entry")
-        return
-
+    
     async def _add_log_async():
-        db = databases.Database(database_url)
+        from database import database as db
 
         try:
-            await db.connect()
 
             query = """
                 INSERT INTO app_log (timestamp, level, message, module,
@@ -217,15 +209,9 @@ def add_log(level: str, message: str, module: str = "manual",
 
 async def clear_logs():
     """Clear all logs from the database"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        print("No database URL found for clearing logs")
-        return
-    
-    db = databases.Database(database_url)
+    from database import database as db
     
     try:
-        await db.connect()
         await db.execute("DELETE FROM app_log")
         await db.disconnect()
         print("All logs cleared from database")

@@ -1,16 +1,6 @@
 import strawberry
 from typing import List, Optional
 from database import PortfolioDatabase
-import os
-import databases
-
-# Centralized database connection function
-def get_database_connection():
-    """Get a database connection using environment variables"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError("No database URL found in environment variables")
-    return databases.Database(database_url)
 
 # Portfolio types for GraphQL
 @strawberry.type
@@ -133,10 +123,13 @@ class Query:
 
     @strawberry.field
     async def workExperience(self) -> List[WorkExperience]:
-        db = get_database_connection()
-        await db.connect()
+        import sys
+        import os
+        # Add parent directory to path for imports
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from database import database as db
+        
         rows = await db.fetch_all("SELECT id, company, position, location, start_date, end_date, description, is_current, company_url FROM work_experience ORDER BY sort_order, start_date DESC")
-        await db.disconnect()
         return [
             WorkExperience(
                 id=str(row["id"]),

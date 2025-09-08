@@ -6,18 +6,21 @@ import json
 import os
 import uuid
 
-# Database configuration - check both possible environment variable names
-DATABASE_URL = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+# Centralized database configuration - SINGLE SOURCE OF TRUTH
+def get_database_url() -> str:
+    """Get database URL from environment variables."""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        raise ValueError("No _DATABASE_URL or DATABASE_URL environment variable set")
+    return database_url
 
-if not DATABASE_URL:
-    raise ValueError("No _DATABASE_URL or DATABASE_URL environment variable set")
-
-database = Database(DATABASE_URL)
+# Single database instance
+database = Database(get_database_url())
 
 async def init_database():
     """Initialize database connection"""
     await database.connect()
-    print(f"Connected to PostgreSQL database: {DATABASE_URL}")
+    print(f"Connected to PostgreSQL database: {get_database_url()}")
 
 async def close_database():
     """Close database connection"""

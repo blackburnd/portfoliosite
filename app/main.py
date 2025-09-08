@@ -5,22 +5,15 @@ from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
 from typing import Optional, List
 import app.resolvers as resolvers
-import databases
+import sys
 import os
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database import database as db
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-
-# Centralized database connection function
-def get_database_connection():
-    """Get a database connection using environment variables"""
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError("No database URL found in environment variables")
-    return databases.Database(database_url)
-
-# Database connection
-db = get_database_connection()
 
 # Pydantic model for work item
 class WorkItem(BaseModel):
@@ -89,9 +82,6 @@ async def work_page():
 # /schema page returns DB schema info
 @app.get("/schema", response_class=JSONResponse)
 async def schema_page():
-    # Connect to DB
-    db = get_database_connection()
-    await db.connect()
     # Get tables
     tables = await db.fetch_all("""
         SELECT table_name FROM information_schema.tables WHERE table_schema='public'

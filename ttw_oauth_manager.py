@@ -79,17 +79,18 @@ class TTWOAuthManager:
             # Store client secret in plain text
             client_secret = app_config["client_secret"]
             
-            # Insert or update LinkedIn OAuth configuration in oauth_apps table
+            # First, deactivate any existing LinkedIn OAuth configs
+            deactivate_query = """
+                UPDATE oauth_apps 
+                SET is_active = false 
+                WHERE provider = 'linkedin'
+            """
+            await database.execute(deactivate_query)
+            
+            # Insert new LinkedIn OAuth configuration
             query = """
                 INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
                 VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
-                ON CONFLICT (provider, app_name) 
-                DO UPDATE SET 
-                    client_id = EXCLUDED.client_id,
-                    client_secret = EXCLUDED.client_secret,
-                    redirect_uri = EXCLUDED.redirect_uri,
-                    scopes = EXCLUDED.scopes,
-                    updated_at = CURRENT_TIMESTAMP
             """
             
             await database.execute(query, {

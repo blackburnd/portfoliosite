@@ -16,10 +16,12 @@ class SchemaDumper:
     """Database schema dumper that extracts schema using SQL queries"""
     
     def __init__(self, database_url: str = None):
-        """Initialize with database URL"""
-        self.database_url = database_url or os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-        if not self.database_url:
-            raise ValueError("Database URL not provided and not found in environment variables")
+        """Initialize the schema dumper with database connection"""
+        if database_url:
+            self.database_url = database_url
+        else:
+            from database import get_database_url
+            self.database_url = get_database_url()
     
     async def generate_schema_sql(self) -> str:
         """Generate complete schema SQL dump"""
