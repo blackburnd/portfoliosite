@@ -2455,8 +2455,8 @@ async def linkedin_oauth_status(admin: dict = Depends(require_admin_auth_session
         
         app_configured = await ttw_oauth_manager.is_oauth_app_configured()
         app_config = await ttw_oauth_manager.get_oauth_app_config() if app_configured else None
-        connected = await ttw_oauth_manager.is_linkedin_connected(admin_email)
-        connection_data = await ttw_oauth_manager.get_linkedin_connection(admin_email) if connected else None
+        connected = await ttw_oauth_manager.is_linkedin_connected()
+        connection_data = await ttw_oauth_manager.get_linkedin_connection() if connected else None
         available_scopes = await ttw_oauth_manager.get_available_scopes()
         
         return JSONResponse({
@@ -2569,7 +2569,7 @@ async def linkedin_oauth_disconnect_admin(admin: dict = Depends(require_admin_au
         add_log("INFO", "oauth_linkedin_disconnect_attempt", f"Admin {admin_email} attempting to disconnect LinkedIn OAuth")
         
         ttw_oauth_manager = TTWOAuthManager()
-        success = await ttw_oauth_manager.remove_linkedin_connection(admin_email)
+        success = await ttw_oauth_manager.remove_linkedin_connection()
         
         if success:
             add_log("INFO", "oauth_linkedin_disconnect_success", f"Admin {admin_email} successfully disconnected LinkedIn OAuth")
@@ -2734,7 +2734,7 @@ async def save_google_oauth_config(
         
         # Save configuration to database
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.configure_google_oauth_app(admin_email, config)
+        result = await ttw_manager.configure_google_oauth_app(config)
         
         if result:
             add_log("INFO", f"Google OAuth config saved by {admin_email}", "admin_google_oauth_config_saved")
@@ -3505,7 +3505,7 @@ async def revoke_linkedin_oauth(admin: dict = Depends(require_admin_auth_session
         add_log("INFO", "admin_linkedin_oauth_revoke", f"Admin {admin_email} revoking LinkedIn OAuth access")
         
         ttw_manager = TTWOAuthManager()
-        result = await ttw_manager.remove_linkedin_connection(admin_email)
+        result = await ttw_manager.remove_linkedin_connection()
         
         if result:
             add_log("INFO", "admin_linkedin_oauth_revoked", f"LinkedIn OAuth access revoked for {admin_email}")
