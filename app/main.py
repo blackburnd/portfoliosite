@@ -33,15 +33,6 @@ class WorkItem(BaseModel):
 graphql_app = GraphQLRouter(resolvers.schema)
 app.include_router(graphql_app, prefix="/graphql")
 
-# Database connection events
-@app.on_event("startup")
-async def startup():
-    await db.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await db.disconnect()
-
 @app.get("/profile")
 def get_profile():
     return {"name": "Your Name", "bio": "Short bio here."}
