@@ -589,13 +589,14 @@ class TTWOAuthManager:
             
             # Get existing configuration for comparison
             existing_query = """
-                SELECT client_id, client_secret, redirect_uri, scopes, updated_at
+                SELECT app_name, client_id, client_secret, redirect_uri, scopes, updated_at
                 FROM oauth_apps 
                 WHERE portfolio_id = :portfolio_id AND provider = 'google'
             """
             existing_config = await database.fetch_one(existing_query, {"portfolio_id": portfolio_id})
             
             # Prepare new values
+            new_app_name = app_config.get("app_name", "Google OAuth App")
             new_client_id = app_config["client_id"]
             new_client_secret = app_config["client_secret"]
             new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback")
@@ -609,6 +610,11 @@ class TTWOAuthManager:
             # Log detailed field changes
             if existing_config:
                 # Update scenario - log what changed
+                if existing_config.get("app_name") != new_app_name:
+                    add_log("INFO", "google_oauth_field_change", 
+                           f"app_name changed from '{existing_config.get('app_name', 'NULL')}' to '{new_app_name}' by {admin_email}",
+                           admin_email, "configure_google_oauth_app")
+                
                 if existing_config["client_id"] != new_client_id:
                     add_log("INFO", "google_oauth_field_change", 
                            f"client_id changed from '{existing_config['client_id']}' to '{new_client_id}' by {admin_email}",
@@ -631,6 +637,9 @@ class TTWOAuthManager:
             else:
                 # New configuration - log all values
                 add_log("INFO", "google_oauth_field_new", 
+                       f"app_name set to '{new_app_name}' by {admin_email}",
+                       admin_email, "configure_google_oauth_app")
+                add_log("INFO", "google_oauth_field_new", 
                        f"client_id set to '{new_client_id}' by {admin_email}",
                        admin_email, "configure_google_oauth_app")
                 add_log("INFO", "google_oauth_field_new", 
@@ -645,24 +654,30 @@ class TTWOAuthManager:
             
             # Insert or update Google OAuth configuration
             query = """
-                INSERT INTO oauth_apps (portfolio_id, provider, client_id, client_secret, redirect_uri, scopes)
-                VALUES (:portfolio_id, :provider, :client_id, :client_secret, :redirect_uri, :scopes)
+                INSERT INTO oauth_apps (portfolio_id, provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by, is_active)
+                VALUES (:portfolio_id, :provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by, :is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
+                    app_name = EXCLUDED.app_name,
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
+                    created_by = EXCLUDED.created_by,
+                    is_active = EXCLUDED.is_active,
                     updated_at = CURRENT_TIMESTAMP
             """
             
             await database.execute(query, {
                 "portfolio_id": portfolio_id,
                 "provider": "google",
+                "app_name": new_app_name,
                 "client_id": new_client_id,
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
-                "scopes": new_scopes
+                "scopes": new_scopes,
+                "created_by": admin_email,
+                "is_active": True
             })
             
             # Log successful configuration
