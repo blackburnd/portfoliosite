@@ -384,7 +384,7 @@ class TTWOAuthManager:
                 VALUES (:portfolio_id, : :profile_id, :profile_name, 
                        :access_token, :refresh_token, :expires_at, 
                        :granted_scopes, :requested_scopes)
-                ON CONFLICT (portfolio_id, admin_email) 
+                ON CONFLICT (portfolio_id) 
                 DO UPDATE SET 
                     linkedin_profile_id = EXCLUDED.linkedin_profile_id,
                     linkedin_profile_name = EXCLUDED.linkedin_profile_name,
