@@ -710,6 +710,7 @@ class TTWOAuthManager:
             result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
             
             if result:
+            logger.debug(str(result.items()))
                 return {
                     "client_id": result.get("client_id") or "",
                     "redirect_uri": result.get("redirect_uri") or "",
