@@ -13,3 +13,4 @@ test.db
 templates/#index.html#
 .*#
 #.*#
+templates/.#index.html
