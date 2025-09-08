@@ -27,36 +27,49 @@ async def init_database():
     
     # Get repo name from environment variable
     repo_name = os.getenv("_REPO_NAME", "default-portfolio")
+    print(f"🔍 Looking for portfolio with portfolio_id: {repo_name}")
     
-    # Check if portfolio exists with portfolio_id matching repo name
-    portfolio_query = """SELECT id FROM portfolios 
-                         WHERE portfolio_id = :repo_name"""
-    existing_portfolio = await database.fetch_one(
-        portfolio_query, {"repo_name": repo_name}
-    )
-    
-    if existing_portfolio:
-        PORTFOLIO_ID = existing_portfolio["id"]
-        print(f"Found portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
-    else:
-        # Create new portfolio record
-        new_uuid = str(uuid.uuid4())
-        insert_query = """
-            INSERT INTO portfolios (id, portfolio_id, name, description,
-                                  created_at)
-            VALUES (:id, :portfolio_id, :name, :description, NOW())
-        """
-        await database.execute(insert_query, {
-            "id": new_uuid,
-            "portfolio_id": repo_name,
-            "name": f"Portfolio for {repo_name}",
-            "description": f"Auto-generated portfolio for {repo_name}"
-        })
-        PORTFOLIO_ID = new_uuid
-        print(f"Created portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
-    
-    print(f"Connected to PostgreSQL database: {get_database_url()}")
-    print(f"Using portfolio ID: {PORTFOLIO_ID}")
+    try:
+        # Check if portfolio exists with portfolio_id matching repo name
+        portfolio_query = """SELECT id FROM portfolios 
+                             WHERE portfolio_id = :portfolio_id"""
+        existing_portfolio = await database.fetch_one(
+            portfolio_query, {"portfolio_id": repo_name}
+        )
+        
+        if existing_portfolio:
+            PORTFOLIO_ID = existing_portfolio["id"]
+            print(f"✅ Found portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
+        else:
+            # Create new portfolio record
+            new_uuid = str(uuid.uuid4())
+            print(f"🔨 Creating new portfolio with UUID: {new_uuid}")
+            
+            insert_query = """
+                INSERT INTO portfolios (id, portfolio_id, name, description,
+                                      created_at)
+                VALUES (:id, :portfolio_id, :name, :description, NOW())
+                RETURNING id
+            """
+            result = await database.fetch_one(insert_query, {
+                "id": new_uuid,
+                "portfolio_id": repo_name,
+                "name": f"Portfolio for {repo_name}",
+                "description": f"Auto-generated portfolio for {repo_name}"
+            })
+            PORTFOLIO_ID = result["id"] if result else new_uuid
+            print(f"✅ Created portfolio: {PORTFOLIO_ID} for repo: {repo_name}")
+        
+        print(f"🔗 Connected to PostgreSQL: {get_database_url()}")
+        print(f"🎯 Using portfolio ID: {PORTFOLIO_ID}")
+        
+    except Exception as e:
+        print(f"❌ Error during portfolio initialization: {e}")
+        import traceback
+        traceback.print_exc()
+        # Set a fallback portfolio ID to prevent crashes
+        PORTFOLIO_ID = str(uuid.uuid4())
+        print(f"⚠️  Using fallback portfolio ID: {PORTFOLIO_ID}")
 
 def get_portfolio_id():
     """Get the current portfolio ID"""
