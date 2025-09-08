@@ -683,12 +683,15 @@ class TTWOAuthManager:
             if not database.is_connected:
                 await database.connect()
             
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            
             query = """
                 SELECT COUNT(*) as count
                 FROM oauth_apps 
-                WHERE provider = 'google'
+                WHERE portfolio_id = :portfolio_id AND provider = 'google'
             """
-            result = await database.fetch_one(query)
+            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
             return result["count"] > 0
         except Exception as e:
             logger.error(f"Database error checking OAuth config: {e}")
@@ -697,14 +700,17 @@ class TTWOAuthManager:
     async def get_google_oauth_app_config(self) -> Optional[Dict[str, Any]]:
         """Get Google OAuth app configuration (without secrets)"""
         try:
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            
             query = """
                 SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
                 FROM oauth_apps 
-                WHERE provider = 'google'
+                WHERE portfolio_id = :portfolio_id AND provider = 'google'
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query)
+            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
             
             if result:
                 return {
@@ -723,14 +729,17 @@ class TTWOAuthManager:
     async def get_google_oauth_credentials(self) -> Optional[Dict[str, str]]:
         """Get Google OAuth credentials including client secret"""
         try:
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            
             query = """
                 SELECT client_id, client_secret, redirect_uri
                 FROM oauth_apps 
-                WHERE provider = 'google'
+                WHERE portfolio_id = :portfolio_id AND provider = 'google'
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            result = await database.fetch_one(query)
+            result = await database.fetch_one(query, {"portfolio_id": portfolio_id})
             
             if result:
                 return {
