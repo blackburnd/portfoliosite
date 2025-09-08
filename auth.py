@@ -10,39 +10,67 @@ from authlib.integrations.starlette_client import OAuthError
 from jose import jwt, JWTError
 import secrets
 
-# Configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET") 
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://www.blackburnsystems.com/auth/callback")
+# Import OAuth manager to get credentials from database
+from ttw_oauth_manager import TTWOAuthManager
+
+# Configuration - only non-OAuth secrets from environment
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
 # Authorized emails - load from environment
 AUTHORIZED_EMAILS = os.getenv("AUTHORIZED_EMAILS", "").split(",")
-AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS if email.strip()]
+AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS 
+                    if email.strip()]
 
-# OAuth setup
+# Global OAuth instance - will be configured from database
 oauth = OAuth()
 
-if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+
+async def configure_google_oauth():
+    """Configure Google OAuth from database credentials"""
+    global oauth
     try:
-        oauth.register(
-            name='google',
-            client_id=GOOGLE_CLIENT_ID,
-            client_secret=GOOGLE_CLIENT_SECRET,
-            server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-            client_kwargs={
-                'scope': 'openid email profile'
-            }
-        )
-        print(f"✅ OAuth registered successfully with client ID: {GOOGLE_CLIENT_ID[:10]}...")
+        ttw_manager = TTWOAuthManager()
+        google_creds = await ttw_manager.get_google_oauth_credentials()
+        
+        if (google_creds and google_creds.get('client_id') and 
+                google_creds.get('client_secret')):
+            oauth.register(
+                name='google',
+                client_id=google_creds['client_id'],
+                client_secret=google_creds['client_secret'],
+                server_metadata_url=('https://accounts.google.com/'
+                                   '.well-known/openid-configuration'),
+                client_kwargs={
+                    'scope': 'openid email profile'
+                }
+            )
+            print(f"✅ OAuth registered successfully from database with "
+                  f"client ID: {google_creds['client_id'][:10]}...")
+            return True
+        else:
+            print("❌ Missing Google OAuth credentials in database")
+            return False
     except Exception as e:
         print(f"❌ OAuth registration failed: {e}")
-        oauth = None
-else:
-    print("❌ Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET")
-    oauth = None
+        return False
+
+
+# Initialize OAuth configuration (will be called by FastAPI on startup)
+_oauth_configured = False
+
+
+def get_oauth_configured():
+    return _oauth_configured
+
+
+async def ensure_oauth_configured():
+    """Ensure OAuth is configured, configure it if not already done"""
+    global _oauth_configured
+    if not _oauth_configured:
+        _oauth_configured = await configure_google_oauth()
+    return _oauth_configured
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
@@ -144,9 +172,10 @@ async def require_admin_auth(user: dict = Depends(get_current_user)) -> dict:
     return user
 
 
-def get_oauth_client():
+async def get_oauth_client():
     """Get configured OAuth client"""
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    await ensure_oauth_configured()
+    if not _oauth_configured:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Google OAuth not configured"
@@ -154,32 +183,42 @@ def get_oauth_client():
     return oauth.google
 
 
-def get_login_url(request: Request) -> str:
+async def get_login_url(request: Request) -> str:
     """Get Google OAuth login URL"""
-    google = get_oauth_client()
-    redirect_uri = GOOGLE_REDIRECT_URI
+    google = await get_oauth_client()
     # Handle both direct and reverse proxy scenarios
     base_url = str(request.base_url)
     return f"{base_url}auth/login"
 
 
-def create_user_session(user_info: dict) -> dict:
+async def create_user_session(user_info: dict) -> dict:
     """Create user session data from Google user info"""
+    # Get client_id from database
+    ttw_manager = TTWOAuthManager()
+    google_creds = await ttw_manager.get_google_oauth_credentials()
+    client_id = google_creds.get('client_id') if google_creds else None
+    
     return {
         "sub": user_info.get("email"),
         "name": user_info.get("name"),
         "email": user_info.get("email"),
         "picture": user_info.get("picture"),
         "iss": "google",
-        "aud": GOOGLE_CLIENT_ID,
+        "aud": client_id,
         "iat": datetime.utcnow().timestamp(),
     }
 
 
-def get_auth_status():
+async def get_auth_status():
     """Get authentication configuration status"""
+    ttw_manager = TTWOAuthManager()
+    google_creds = await ttw_manager.get_google_oauth_credentials()
+    google_configured = bool(google_creds and google_creds.get('client_id') 
+                           and google_creds.get('client_secret'))
+    
     return {
-        "google_oauth_configured": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET),
+        "google_oauth_configured": google_configured,
         "authorized_emails_count": len(AUTHORIZED_EMAILS),
-        "redirect_uri": GOOGLE_REDIRECT_URI
+        "redirect_uri": (google_creds.get('redirect_uri') 
+                        if google_creds else None)
     }

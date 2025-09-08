@@ -55,7 +55,8 @@ from auth import (
     is_authorized_user,
     create_user_session,
     create_access_token,
-    get_auth_status
+    get_auth_status,
+    ensure_oauth_configured
 )
 from ttw_oauth_manager import TTWOAuthManager, TTWOAuthManagerError
 from ttw_linkedin_sync import TTWLinkedInSync, TTWLinkedInSyncError
@@ -152,13 +153,18 @@ async def send_contact_email(name: str, email: str, subject: str, message: str, 
             add_log("WARNING", "Gmail API: No OAuth credentials found", "gmail_api_no_credentials")
             return False
         
-        # Create credentials object
+        # Create credentials object using database credentials
+        ttw_manager = TTWOAuthManager()
+        google_creds = await ttw_manager.get_google_oauth_credentials()
+        if not google_creds:
+            raise Exception("Google OAuth credentials not found in database")
+            
         credentials = Credentials(
             token=oauth_data['access_token'],
             refresh_token=oauth_data.get('refresh_token'),
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=os.getenv("GOOGLE_CLIENT_ID"),
-            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+            client_id=google_creds['client_id'],
+            client_secret=google_creds['client_secret'],
             scopes=oauth_data['granted_scopes'].split()
         )
         
@@ -531,10 +537,10 @@ logger.info(f"Admin username: {ADMIN_USERNAME}")
 logger.info(f"Admin password: {'SET' if ADMIN_PASSWORD and ADMIN_PASSWORD != 'admin' else 'DEFAULT'}")
 logger.info(f"Environment: {os.getenv('ENV', 'development')}")
 
-# Log OAuth configuration from database
+# Log OAuth configuration from database and configure OAuth client
 @app.on_event("startup")
 async def check_oauth_configuration():
-    """Check OAuth configuration from database on startup"""
+    """Check OAuth configuration from database on startup and configure OAuth client"""
     try:
         ttw_manager = TTWOAuthManager()
         google_configured = await ttw_manager.is_google_oauth_app_configured()
@@ -542,6 +548,13 @@ async def check_oauth_configuration():
         
         logger.info(f"Google OAuth configured: {google_configured}")
         logger.info(f"LinkedIn OAuth configured: {linkedin_configured}")
+        
+        # Configure OAuth client with database credentials
+        if google_configured:
+            await ensure_oauth_configured()
+            logger.info("Google OAuth client configured from database")
+        else:
+            logger.warning("Google OAuth not configured in database - OAuth client not available")
         
         if google_configured:
             config = await ttw_manager.get_google_oauth_app_config()
@@ -736,40 +749,42 @@ async def auth_login(request: Request):
         # Add log entry for login attempt
         add_log("INFO", "User initiated Google OAuth login process", "auth")
         
-        # Check if OAuth is properly configured
-        if not oauth or not oauth.google:
-            logger.error("OAuth not configured - missing credentials")
-            add_log("ERROR", "OAuth login failed - missing Google OAuth configuration", "auth")
+        # Check if OAuth is properly configured by checking database
+        ttw_manager = TTWOAuthManager()
+        google_creds = await ttw_manager.get_google_oauth_credentials()
+        
+        if not google_creds or not google_creds.get('client_id') or not google_creds.get('client_secret'):
+            logger.error("OAuth not configured - missing Google credentials in database")
+            add_log("ERROR", "OAuth login failed - missing Google OAuth configuration in database", "auth")
             return HTMLResponse(
                 content="""
                 <html><body>
                 <h1>Authentication Not Available</h1>
                 <p>Google OAuth is not configured on this server.</p>
-                <p>Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables.</p>
+                <p>Missing Google OAuth credentials in database.</p>
                 <p><a href="/">Return to main site</a></p>
                 </body></html>
                 """, 
                 status_code=503
             )
         
-        # Check environment variables at runtime
-        client_id = os.getenv("GOOGLE_CLIENT_ID")
-        client_secret = os.getenv("GOOGLE_CLIENT_SECRET") 
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
-        
-        if not client_id or not client_secret:
-            logger.error("Missing OAuth environment variables")
+        # Configure OAuth with database credentials if not already done
+        await ensure_oauth_configured()
+        if not oauth or not oauth.google:
+            logger.error("Failed to configure OAuth with database credentials")
+            add_log("ERROR", "OAuth login failed - could not configure OAuth client", "auth")
             return HTMLResponse(
                 content="""
                 <html><body>
                 <h1>OAuth Configuration Error</h1>
-                <p>Missing required environment variables for Google OAuth.</p>
+                <p>Failed to configure OAuth client with database credentials.</p>
                 <p><a href="/">Return to main site</a></p>
                 </body></html>
                 """, 
                 status_code=503
             )
         
+        redirect_uri = google_creds.get('redirect_uri', "http://localhost:8000/auth/callback")
         logger.info(f"Using redirect URI: {redirect_uri}")
         
         # Use the OAuth client to redirect
@@ -2581,14 +2596,10 @@ async def get_google_oauth_config_for_form(admin: dict = Depends(require_admin_a
         result = await database.fetch_one(query)
         
         if result:
-            # For Google OAuth, client_secret is encrypted, so we need to decrypt it
-            ttw_manager = TTWOAuthManager()
-            google_credentials = await ttw_manager.get_google_oauth_credentials()
-            
             return JSONResponse({
                 "app_name": result["app_name"] or "",
                 "client_id": result["client_id"] or "",
-                "client_secret": google_credentials.get("client_secret", "") if google_credentials else "",  # Return actual decrypted client_secret for admin viewing
+                "client_secret": result["client_secret"] or "",  # Return actual client_secret for admin viewing (stored as plain text)
                 "redirect_uri": result["redirect_uri"] or "",
                 "scopes": result["scopes"] or "openid,email,profile",
                 "configured": True
@@ -2696,8 +2707,10 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
     try:
         add_log("INFO", "admin_google_oauth_initiate", f"Admin {admin_email} initiating Google OAuth authorization")
         
-        # Get redirect URI from environment
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+        # Get redirect URI from database credentials
+        ttw_manager = TTWOAuthManager()
+        google_creds = await ttw_manager.get_google_oauth_credentials()
+        redirect_uri = google_creds.get('redirect_uri', "http://localhost:8000/auth/callback") if google_creds else "http://localhost:8000/auth/callback"
         
         # Generate a new state parameter for CSRF protection
         import secrets
@@ -2880,7 +2893,10 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
     try:
         add_log("INFO", "admin_google_oauth_test", f"Admin {admin_email} testing Google OAuth connection")
         
-        google_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+        # Check Google OAuth configuration from database
+        ttw_manager = TTWOAuthManager()
+        google_creds = await ttw_manager.get_google_oauth_credentials()
+        google_configured = bool(google_creds and google_creds.get('client_id') and google_creds.get('client_secret'))
         
         if not google_configured:
             return JSONResponse({
