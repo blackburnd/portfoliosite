@@ -721,15 +721,26 @@ class TTWOAuthManager:
             add_log("DEBUG", "google_oauth_config_sql", f"SQL: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
             result = await database.fetch_one(query, params)
             
+            add_log("DEBUG", "google_oauth_config_result", f"Raw result: {result}")
+            add_log("DEBUG", "google_oauth_config_result_type", f"Result type: {type(result)}")
+            
             if result:
-                logger.debug(str(result.items()))
-                return {
+                add_log("DEBUG", "google_oauth_config_found", f"Found Google OAuth config")
+                # Try different ways to access the data
+                add_log("DEBUG", "google_oauth_config_items", f"Result items: {dict(result) if hasattr(result, 'items') else 'No items method'}")
+                add_log("DEBUG", "google_oauth_config_keys", f"Result keys: {list(result.keys()) if hasattr(result, 'keys') else 'No keys method'}")
+                
+                config = {
                     "client_id": result.get("client_id") or "",
                     "redirect_uri": result.get("redirect_uri") or "",
                     "scopes": result.get("scopes") or "",
                     "configured_at": result.get("created_at"),
                     "updated_at": result.get("updated_at")
                 }
+                add_log("DEBUG", "google_oauth_config_final", f"Final config: {config}")
+                return config
+            
+            add_log("DEBUG", "google_oauth_config_none", "No Google OAuth config found")
             return None
         except Exception as e:
             logger.error(f"Database error getting OAuth config: {e}")
@@ -753,16 +764,20 @@ class TTWOAuthManager:
             add_log("DEBUG", "google_oauth_credentials_params", f"Portfolio ID: {portfolio_id}")
             add_log("DEBUG", "google_oauth_credentials_sql", f"SQL: SELECT client_id, client_secret, redirect_uri FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
             result = await database.fetch_one(query, params)
+
+            add_log("DEBUG", "google_oauth_creds_result", f"Credentials raw result: {result}")
             
             if result:
-                add_log("INFO", "google_oauth_credentials_found", f"Found Google OAuth credentials for portfolio_id: {portfolio_id}")
-                return {
+                add_log("INFO", "google_oauth_credentials_found", f"Found Google OAuth credentials")
+                credentials = {
                     "client_id": result.get("client_id") or "",
                     "client_secret": result.get("client_secret") or "",
                     "redirect_uri": result.get("redirect_uri") or ""
                 }
+                add_log("DEBUG", "google_oauth_creds_final", f"Final credentials: {credentials}")
+                return credentials
             else:
-                add_log("WARNING", "google_oauth_credentials_missing", f"No Google OAuth credentials found for portfolio_id: {portfolio_id}")
+                add_log("WARNING", "google_oauth_credentials_missing", f"No Google OAuth credentials found")
             return None
         except Exception as e:
             add_log("ERROR", "database_error_oauth_credentials", f"Database error getting OAuth credentials: {str(e)}")
