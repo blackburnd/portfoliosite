@@ -182,13 +182,18 @@ class TTWOAuthManager:
                 raise TTWOAuthManagerError("LinkedIn OAuth app not configured. Please configure it first.")
 
             # Debug: Log config details (without secrets)
-            add_log("DEBUG", "linkedin_auth_url_config_check",
-                    f"OAuth config found - client_id present: "
-                    f"{bool(config.get('client_id'))}, "
+            client_id_partial = config.get('client_id', '')[:8] + '...' if config.get('client_id') else 'None'
+            add_log("INFO", "linkedin_auth_url_config_check",
+                    f"OAuth config found - client_id: {client_id_partial}, "
                     f"redirect_uri: {config.get('redirect_uri', 'None')}")
 
             if not requested_scopes:
                 requested_scopes = await self.get_default_scopes()
+                add_log("INFO", "linkedin_auth_url_default_scopes",
+                        f"Using default scopes: {requested_scopes}")
+            else:
+                add_log("INFO", "linkedin_auth_url_requested_scopes",
+                        f"Using requested scopes: {requested_scopes}")
 
             # Generate secure state parameter
             state_data = {
@@ -198,6 +203,9 @@ class TTWOAuthManager:
                 "nonce": secrets.token_urlsafe(16)
             }
             state = self._encrypt_token(json.dumps(state_data))
+            
+            add_log("INFO", "linkedin_auth_url_state_generated",
+                    f"State parameter generated for {admin_email}")
 
             # Build authorization URL
             import urllib.parse
@@ -209,6 +217,12 @@ class TTWOAuthManager:
                 "scope": " ".join(requested_scopes)
             }
 
+            # Log OAuth parameters (excluding client_id for security)
+            safe_params = {k: v for k, v in params.items() if k != "client_id"}
+            safe_params["client_id"] = client_id_partial
+            add_log("INFO", "linkedin_auth_url_params",
+                    f"OAuth parameters: {safe_params}")
+
             # URL encode parameters properly
             encoded_params = [f"{k}={urllib.parse.quote_plus(str(v))}"
                               for k, v in params.items()]
@@ -217,8 +231,12 @@ class TTWOAuthManager:
                         f"{param_string}")
 
             # Log successful URL generation
-            add_log("DEBUG", "linkedin_auth_url_success",
+            add_log("INFO", "linkedin_auth_url_success",
                     f"LinkedIn auth URL generated for {admin_email}, scopes: {requested_scopes}")
+            
+            # Log the full URL structure (but not the actual URL to avoid state exposure)
+            add_log("INFO", "linkedin_auth_url_structure",
+                    f"Generated URL length: {len(auth_url)}, parameter count: {len(params)}")
 
             logger.info(f"Generated LinkedIn auth URL for {admin_email} with scopes: {requested_scopes}")
             return auth_url, state
@@ -259,7 +277,18 @@ class TTWOAuthManager:
                         f"LinkedIn OAuth not configured for token exchange: {admin_email}")
                 raise TTWOAuthManagerError("LinkedIn OAuth app not configured")
 
+            # Log config verification (without secrets)
+            client_id_partial = config.get('client_id', '')[:8] + '...' if config.get('client_id') else 'None'
+            add_log("INFO", "linkedin_token_exchange_config",
+                    f"Token exchange config - client_id: {client_id_partial}, "
+                    f"redirect_uri: {config.get('redirect_uri', 'None')}")
+
             requested_scopes = state_data["requested_scopes"]
+            
+            # Log code format for debugging (but not actual code)
+            add_log("INFO", "linkedin_token_exchange_params",
+                    f"Exchange parameters - code length: {len(code)}, "
+                    f"requested_scopes: {requested_scopes}")
             
             token_data = {
                 "grant_type": "authorization_code",
@@ -269,8 +298,19 @@ class TTWOAuthManager:
                 "client_secret": config["client_secret"],
             }
 
-            async with httpx.AsyncClient() as client:
+            # Log token request data (excluding sensitive fields)
+            safe_token_data = {k: v for k, v in token_data.items() 
+                             if k not in ["client_secret", "code"]}
+            safe_token_data["client_secret"] = "***"
+            safe_token_data["code"] = f"***{code[-4:]}" if len(code) > 4 else "***"
+            add_log("INFO", "linkedin_token_exchange_request_data",
+                    f"Token request data: {safe_token_data}")
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 try:
+                    add_log("INFO", "linkedin_token_exchange_sending",
+                            f"Sending token exchange request to LinkedIn for {admin_email}")
+                    
                     response = await client.post(
                         "https://www.linkedin.com/oauth/v2/accessToken",
                         data=token_data,
@@ -281,23 +321,42 @@ class TTWOAuthManager:
                     add_log("INFO", "linkedin_token_exchange_response",
                             f"LinkedIn token exchange response: status {response.status_code}")
                     
+                    # Log response headers for debugging
+                    response_headers = dict(response.headers)
+                    add_log("INFO", "linkedin_token_exchange_headers",
+                            f"Response headers: {response_headers}")
+                    
+                    if response.status_code != 200:
+                        # Log error response body for debugging
+                        error_text = response.text[:500]  # First 500 chars
+                        add_log("ERROR", "linkedin_token_exchange_error_response",
+                                f"LinkedIn error response ({response.status_code}): {error_text}")
+                    
                     response.raise_for_status()
                     token_response = response.json()
                     
                     # Log token response details (without sensitive data)
                     expires_in = token_response.get('expires_in', 'unknown')
                     scope = token_response.get('scope', 'none')
+                    token_type = token_response.get('token_type', 'unknown')
                     add_log("INFO", "linkedin_token_response_details",
-                            f"LinkedIn token response: expires_in={expires_in}, scope={scope}")
+                            f"LinkedIn token response: expires_in={expires_in}, "
+                            f"scope={scope}, token_type={token_type}")
 
                     # Log successful token exchange
                     add_log("INFO", "linkedin_token_exchange_success",
                             f"LinkedIn tokens obtained for {admin_email}")
 
                     # Get user profile to extract granted scopes and profile info
+                    add_log("INFO", "linkedin_profile_fetch_start",
+                            f"Fetching LinkedIn profile for {admin_email}")
+                    
                     profile_data = await self._get_linkedin_profile(token_response["access_token"])
 
                     # Store connection with granted permissions
+                    add_log("INFO", "linkedin_connection_store_start",
+                            f"Storing LinkedIn connection for {admin_email}")
+                    
                     await self._store_linkedin_connection(
                         admin_email,
                         token_response,
@@ -336,34 +395,80 @@ class TTWOAuthManager:
         """Get LinkedIn profile information"""
         headers = {"Authorization": f"Bearer {access_token}"}
         
-        async with httpx.AsyncClient() as client:
+        add_log("INFO", "linkedin_profile_fetch",
+                "Starting LinkedIn profile fetch")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
             try:
                 # Get basic profile
+                add_log("INFO", "linkedin_profile_basic_request",
+                        "Requesting basic LinkedIn profile")
+                
                 profile_response = await client.get(
                     "https://api.linkedin.com/v2/people/~",
                     headers=headers
                 )
+                
+                add_log("INFO", "linkedin_profile_basic_response",
+                        f"Basic profile response: {profile_response.status_code}")
+                
                 profile_response.raise_for_status()
                 profile_data = profile_response.json()
                 
+                # Log successful profile fetch (without personal data)
+                profile_id = profile_data.get('id', 'unknown')
+                add_log("INFO", "linkedin_profile_basic_success",
+                        f"Basic profile fetched, ID: {profile_id}")
+                
                 # Try to get email if scope permits
                 try:
+                    add_log("INFO", "linkedin_profile_email_request",
+                            "Requesting LinkedIn email address")
+                    
                     email_response = await client.get(
                         "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
                         headers=headers
                     )
+                    
+                    add_log("INFO", "linkedin_profile_email_response",
+                            f"Email response: {email_response.status_code}")
+                    
                     if email_response.status_code == 200:
                         email_data = email_response.json()
-                        if email_data.get("elements") and len(email_data["elements"]) > 0:
-                            profile_data["email"] = email_data["elements"][0].get("handle~", {}).get("emailAddress")
-                except:
-                    pass  # Email scope may not be granted
+                        if 'elements' in email_data and email_data['elements']:
+                            email = email_data['elements'][0]['handle~']['emailAddress']
+                            profile_data['email'] = email
+                            add_log("INFO", "linkedin_profile_email_success",
+                                    "Email address retrieved successfully")
+                        else:
+                            add_log("WARNING", "linkedin_profile_email_empty",
+                                    "Email response was empty")
+                    else:
+                        add_log("WARNING", "linkedin_profile_email_failed",
+                                f"Email request failed: {email_response.status_code}")
+                        
+                except Exception as email_error:
+                    add_log("WARNING", "linkedin_profile_email_error",
+                            f"Could not fetch email: {str(email_error)}")
+                    # Email is optional, continue without it
+                
+                add_log("INFO", "linkedin_profile_fetch_complete",
+                        "LinkedIn profile fetch completed successfully")
                 
                 return profile_data
                 
-            except Exception as e:
-                logger.error(f"Failed to get LinkedIn profile: {e}")
-                return {}
+            except httpx.RequestError as e:
+                add_log("ERROR", "linkedin_profile_request_failed",
+                        f"LinkedIn profile request failed: {str(e)}")
+                logger.error(f"LinkedIn profile request failed: {e}")
+                raise TTWOAuthManagerError(f"Failed to get LinkedIn profile: {e}")
+                
+            except httpx.HTTPStatusError as e:
+                error_text = e.response.text[:200] if e.response.text else "No error text"
+                add_log("ERROR", "linkedin_profile_http_error",
+                        f"LinkedIn profile HTTP error: {e.response.status_code} - {error_text}")
+                logger.error(f"LinkedIn profile HTTP error: {e.response.status_code} - {e.response.text}")
+                raise TTWOAuthManagerError(f"LinkedIn profile request failed: {e.response.status_code}")
     
     async def _store_linkedin_connection(self, admin_email: str, token_data: Dict[str, Any], 
                                        requested_scopes: List[str], profile_data: Dict[str, Any]):

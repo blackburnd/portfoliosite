@@ -3992,20 +3992,44 @@ async def check_linkedin_scopes_status(admin: dict = Depends(require_admin_auth_
 async def linkedin_oauth_callback(request: Request, code: str = None, state: str = None, error: str = None):
     """Handle LinkedIn OAuth callback"""
     
+    # Get client info for logging
+    client_ip = get_client_ip(request)
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
     try:
+        # Log all incoming parameters for debugging
+        add_log("INFO", "linkedin_oauth_callback_start", 
+                f"LinkedIn OAuth callback received - IP: {client_ip}, "
+                f"code present: {bool(code)}, state present: {bool(state)}, error: {error}")
+        
         if error:
-            add_log("ERROR", "linkedin_oauth_callback_error", f"LinkedIn OAuth callback error: {error}")
+            add_log("ERROR", "linkedin_oauth_callback_error", 
+                    f"LinkedIn OAuth callback error from {client_ip}: {error}")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
                 "request": request,
                 "error": error
             })
         
         if not code:
-            add_log("linkedin_oauth_callback_no_code", "LinkedIn OAuth callback missing authorization code")
+            add_log("ERROR", "linkedin_oauth_callback_no_code", 
+                    f"LinkedIn OAuth callback from {client_ip} missing authorization code")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
                 "request": request,
                 "error": "Missing authorization code"
             })
+        
+        if not state:
+            add_log("ERROR", "linkedin_oauth_callback_no_state", 
+                    f"LinkedIn OAuth callback from {client_ip} missing state parameter")
+            return templates.TemplateResponse("linkedin_oauth_error.html", {
+                "request": request,
+                "error": "Missing state parameter"
+            })
+        
+        # Log code and state lengths for debugging (but not actual values)
+        add_log("INFO", "linkedin_oauth_callback_params", 
+                f"OAuth callback parameters - code length: {len(code)}, "
+                f"state length: {len(state)}, client IP: {client_ip}")
         
         # Extract admin email from state if available
         admin_email = None
@@ -4015,9 +4039,14 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
                 ttw_manager = TTWOAuthManager()
                 state_data = ttw_manager.verify_linkedin_state(state)
                 admin_email = state_data.get("admin_email")
+                
+                add_log("INFO", "linkedin_oauth_callback_state_decoded", 
+                        f"State decoded successfully for admin: {admin_email}, "
+                        f"scopes: {state_data.get('requested_scopes', [])}")
+                
             except Exception as e:
                 add_log("ERROR", "linkedin_oauth_callback_state_error",
-                        f"Failed to verify state: {str(e)}")
+                        f"Failed to verify state from {client_ip}: {str(e)}")
                 return templates.TemplateResponse(
                     "linkedin_oauth_error.html", {
                         "request": request,
@@ -4025,29 +4054,42 @@ async def linkedin_oauth_callback(request: Request, code: str = None, state: str
                     })
         
         if not admin_email:
-            add_log("linkedin_oauth_callback_no_admin", "LinkedIn OAuth callback missing admin email in state")
+            add_log("ERROR", "linkedin_oauth_callback_no_admin", 
+                    f"LinkedIn OAuth callback from {client_ip} missing admin email in state")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
                 "request": request,
                 "error": "Invalid state parameter"
             })
         
-        add_log("INFO", "linkedin_oauth_callback_processing", f"Processing LinkedIn OAuth callback for admin {admin_email}")
+        add_log("INFO", "linkedin_oauth_callback_processing", 
+                f"Processing LinkedIn OAuth callback for admin {admin_email} from {client_ip}")
         
         # Use TTW OAuth Manager to handle the callback
         ttw_manager = TTWOAuthManager()
         try:
-            # Verify the state parameter
+            # Verify the state parameter again
             state_data = ttw_manager.verify_linkedin_state(state)
+            
+            add_log("INFO", "linkedin_oauth_callback_exchange_start", 
+                    f"Starting token exchange for admin {admin_email}")
             
             # Exchange code for tokens
             token_result = await ttw_manager.exchange_linkedin_code_for_tokens(code, state_data)
             
-            add_log("INFO", "linkedin_oauth_callback_success", f"LinkedIn OAuth callback successful for admin {admin_email}")
+            add_log("INFO", "linkedin_oauth_callback_success", 
+                    f"LinkedIn OAuth callback successful for admin {admin_email} from {client_ip}")
             return templates.TemplateResponse("linkedin_oauth_success.html", {
                 "request": request,
                 "message": "LinkedIn OAuth authorization successful!"
             })
         except Exception as oauth_error:
+            logger.error(f"OAuth exchange failed: {str(oauth_error)}")
+            add_log("ERROR", "linkedin_oauth_callback_failure", 
+                    f"LinkedIn OAuth callback failed for admin {admin_email} from {client_ip}: {str(oauth_error)}")
+            return templates.TemplateResponse("linkedin_oauth_error.html", {
+                "request": request,
+                "error": f"OAuth exchange failed: {str(oauth_error)}"
+            })
             logger.error(f"OAuth exchange failed: {str(oauth_error)}")
             add_log("ERROR", "linkedin_oauth_callback_failure", f"LinkedIn OAuth callback failed for admin {admin_email}: {str(oauth_error)}")
             return templates.TemplateResponse("linkedin_oauth_error.html", {
