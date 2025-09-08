@@ -2532,8 +2532,12 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         google_configured = await ttw_manager.is_google_oauth_app_configured()
         
         config = None
+        client_secret = ""
         if google_configured:
             config = await ttw_manager.get_google_oauth_app_config()
+            # Get the actual client_secret for admin viewing
+            credentials = await ttw_manager.get_google_oauth_credentials()
+            client_secret = credentials.get("client_secret", "") if credentials else ""
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
@@ -2543,7 +2547,7 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
             "connected": google_connected,
             "app_name": config.get("app_name", "") if config else "",
             "client_id": config.get("client_id", "") if config else "",
-            "client_secret": config.get("client_secret", "") if config else "",
+            "client_secret": client_secret,  # Return actual client_secret for admin viewing
             "redirect_uri": config.get("redirect_uri", "") if config else "",
             "account_email": request.session.get("user", {}).get("email") if google_connected else None,
             "last_sync": request.session.get("user", {}).get("login_time") if google_connected else None,
@@ -3122,8 +3126,12 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
         linkedin_configured = await ttw_manager.is_linkedin_oauth_app_configured()
         
         config = None
+        client_secret = ""
         if linkedin_configured:
             config = await ttw_manager.get_linkedin_oauth_app_config()
+            # Get the actual client_secret for admin viewing
+            credentials = await ttw_manager.get_linkedin_oauth_credentials()
+            client_secret = credentials.get("client_secret", "") if credentials else ""
         
         # Check current session for LinkedIn auth
         linkedin_connected = "linkedin_user" in request.session if hasattr(request, 'session') else False
@@ -3133,7 +3141,7 @@ async def linkedin_oauth_status(request: Request, admin: dict = Depends(require_
             "connected": linkedin_connected,
             "app_name": config.get("app_name", "") if config else "",
             "client_id": config.get("client_id", "") if config else "",
-            "client_secret": config.get("client_secret", "") if config else "",
+            "client_secret": client_secret,  # Return actual client_secret for admin viewing
             "redirect_uri": config.get("redirect_uri", "") if config else "",
             "account_email": request.session.get("linkedin_user", {}).get("email") if linkedin_connected else None,
             "last_sync": request.session.get("linkedin_user", {}).get("login_time") if linkedin_connected else None,
