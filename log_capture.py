@@ -13,17 +13,6 @@ import databases
 from fastapi import Request
 
 
-def get_database_connection():
-    """
-    Centralized function to create database connections for logging.
-    This ensures consistent database URL handling across logging functions.
-    """
-    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if not database_url:
-        raise ValueError("No database URL found in environment variables")
-    return databases.Database(database_url)
-
-
 def get_client_ip(request: Request) -> str:
     """
     Extract the real client IP address from the request, accounting for proxies and load balancers.
@@ -57,10 +46,10 @@ def get_client_ip(request: Request) -> str:
 class DatabaseLogHandler(logging.Handler):
     """Custom logging handler that writes logs to the database"""
     
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: str):
         super().__init__()
         self.database_url = database_url
-        self.db = get_database_connection()
+        self.db = databases.Database(database_url)
         self._loop = None
         
     def emit(self, record: logging.LogRecord):
@@ -167,123 +156,16 @@ def setup_database_logging():
 
 def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
-            user: Optional[str] = None, extra: Optional[dict] = None):
+            user: Optional[str] = None, extra: Optional[dict] = None,
+            ip_address: Optional[str] = None):
     """Manually add a log entry to the database"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found for manual log entry")
+        return
+
     async def _add_log_async():
-        db = get_database_connection()
-
-        try:
-            await db.connect()
-
-            query = """
-                INSERT INTO app_log (timestamp, level, message, module,
-                                   function, line, "user", extra, ip_address)
-                VALUES (:timestamp, :level, :message, :module, :function,
-                       :line, :user, :extra, :ip_address)
-            """
-
-            values = {
-                'timestamp': datetime.now(),
-                'level': level.upper(),
-                'message': message,
-                'module': module,
-                'function': function,
-                'line': line,
-                'user': user,
-                'extra': json.dumps(extra) if extra else None,
-                'ip_address': None
-            }
-
-            await db.execute(query, values)
-            await db.disconnect()
-
-        except Exception as e:
-            print(f"Failed to add manual log entry: {e}")
-            try:
-                await db.disconnect()
-            except Exception:
-                pass
-
-    # Run the async function synchronously
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If loop is already running, schedule the task
-            asyncio.create_task(_add_log_async())
-        else:
-            # If loop is not running, run it
-            loop.run_until_complete(_add_log_async())
-    except RuntimeError:
-        # Create new loop if none exists
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(_add_log_async())
-
-
-async def clear_logs():
-    """Clear all logs from the database"""
-    db = get_database_connection()
-    
-    try:
-        await db.connect()
-        await db.execute("DELETE FROM app_log")
-        await db.disconnect()
-        print("All logs cleared from database")
-        
-    except Exception as e:
-        print(f"Failed to clear logs: {e}")
-        try:
-            await db.disconnect()
-        except:
-            pass
-
-
-# Legacy compatibility
-class LogCapture:
-    """Legacy log capture class for compatibility"""
-    
-    @staticmethod
-    def clear_logs():
-        """Clear logs - runs async function synchronously"""
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Create a task if loop is running
-                asyncio.create_task(clear_logs())
-            else:
-                # Run synchronously if no loop
-                loop.run_until_complete(clear_logs())
-        except RuntimeError:
-            # Create new loop if none exists
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(clear_logs())
-
-
-# Create global instance for legacy compatibility
-log_capture = LogCapture()
-
-# Set up database logging when module is imported
-setup_database_logging()
-
-
-
-
-def log_with_context(level: str, message: str, module: str = "manual",
-                     function: str = "add_log", line: int = 0,
-                     user: str = None, extra: dict = None,
-                     request=None):
-    """Context-aware logging identical to add_log but captures IP address"""
-    # Get IP address if request is provided
-    ip_address = None
-    if request:
-        try:
-            ip_address = get_client_ip(request)
-        except Exception:
-            ip_address = "unknown"
-    
-    async def _add_log_async():
-        db = get_database_connection()
+        db = databases.Database(database_url)
 
         try:
             await db.connect()
@@ -331,3 +213,55 @@ def log_with_context(level: str, message: str, module: str = "manual",
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(_add_log_async())
+
+
+async def clear_logs():
+    """Clear all logs from the database"""
+    database_url = os.getenv("_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if not database_url:
+        print("No database URL found for clearing logs")
+        return
+    
+    db = databases.Database(database_url)
+    
+    try:
+        await db.connect()
+        await db.execute("DELETE FROM app_log")
+        await db.disconnect()
+        print("All logs cleared from database")
+        
+    except Exception as e:
+        print(f"Failed to clear logs: {e}")
+        try:
+            await db.disconnect()
+        except:
+            pass
+
+
+# Legacy compatibility
+class LogCapture:
+    """Legacy log capture class for compatibility"""
+    
+    @staticmethod
+    def clear_logs():
+        """Clear logs - runs async function synchronously"""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create a task if loop is running
+                asyncio.create_task(clear_logs())
+            else:
+                # Run synchronously if no loop
+                loop.run_until_complete(clear_logs())
+        except RuntimeError:
+            # Create new loop if none exists
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(clear_logs())
+
+
+# Create global instance for legacy compatibility
+log_capture = LogCapture()
+
+# Set up database logging when module is imported
+setup_database_logging()
