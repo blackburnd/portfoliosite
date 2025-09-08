@@ -712,16 +712,18 @@ class TTWOAuthManager:
             # Encrypt the client secret
             encrypted_secret = self._encrypt_token(app_config["client_secret"])
             
-            # Insert or update Google OAuth configuration
+            # Insert or update Google OAuth configuration (only one config per provider)
             query = """
                 INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
                 VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
-                ON CONFLICT (provider, app_name) 
+                ON CONFLICT (provider) 
                 DO UPDATE SET 
+                    app_name = EXCLUDED.app_name,
                     client_id = EXCLUDED.client_id,
                     client_secret = EXCLUDED.client_secret,
                     redirect_uri = EXCLUDED.redirect_uri,
                     scopes = EXCLUDED.scopes,
+                    encryption_key = EXCLUDED.encryption_key,
                     updated_at = CURRENT_TIMESTAMP
             """
             
@@ -886,32 +888,71 @@ class TTWOAuthManager:
             # Store client secret as plain text (not encrypted)
             client_secret = app_config["client_secret"]
             
-            # Insert or update LinkedIn OAuth configuration
-            query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
-                ON CONFLICT (provider, app_name) 
-                DO UPDATE SET 
-                    client_id = EXCLUDED.client_id,
-                    client_secret = EXCLUDED.client_secret,
-                    redirect_uri = EXCLUDED.redirect_uri,
-                    scopes = EXCLUDED.scopes,
-                    updated_at = CURRENT_TIMESTAMP,
-                    is_active = true
+            # First, check if a LinkedIn OAuth configuration already exists
+            check_query = """
+                SELECT id FROM oauth_apps
+                WHERE provider = 'linkedin'
+                ORDER BY created_at DESC
+                LIMIT 1
             """
+            existing_record = await database.fetch_one(check_query)
             
-            await database.execute(query, {
-                "provider": "linkedin",
-                "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
-                "client_id": app_config["client_id"],
-                "client_secret": client_secret,  # Store as plain text
-                "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
-                "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
-                "encryption_key": "oauth_key",  # Using same key pattern as Google
-                "created_by": admin_email
-            })
+            if existing_record:
+                # Update existing record
+                update_query = """
+                    UPDATE oauth_apps SET
+                        app_name = :app_name,
+                        client_id = :client_id,
+                        client_secret = :client_secret,
+                        redirect_uri = :redirect_uri,
+                        scopes = :scopes,
+                        updated_at = CURRENT_TIMESTAMP,
+                        is_active = true
+                    WHERE provider = 'linkedin' AND id = :id
+                """
+                
+                await database.execute(update_query, {
+                    "id": existing_record["id"],
+                    "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
+                    "client_id": app_config["client_id"],
+                    "client_secret": client_secret,  # Store as plain text
+                    "redirect_uri": app_config.get(
+                        "redirect_uri", 
+                        f"{app_config.get('base_url', '')}/auth/linkedin/callback"
+                    ),
+                    "scopes": "r_liteprofile,r_emailaddress"
+                })
+                
+                logger.info(f"LinkedIn OAuth app updated by {admin_email}")
+            else:
+                # Insert new record
+                insert_query = """
+                    INSERT INTO oauth_apps (
+                        provider, app_name, client_id, client_secret, 
+                        redirect_uri, scopes, encryption_key, created_by, is_active
+                    )
+                    VALUES (
+                        :provider, :app_name, :client_id, :client_secret, 
+                        :redirect_uri, :scopes, :encryption_key, :created_by, true
+                    )
+                """
+                
+                await database.execute(insert_query, {
+                    "provider": "linkedin",
+                    "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
+                    "client_id": app_config["client_id"],
+                    "client_secret": client_secret,  # Store as plain text
+                    "redirect_uri": app_config.get(
+                        "redirect_uri", 
+                        f"{app_config.get('base_url', '')}/auth/linkedin/callback"
+                    ),
+                    "scopes": "r_liteprofile,r_emailaddress",
+                    "encryption_key": "oauth_key",
+                    "created_by": admin_email
+                })
+                
+                logger.info(f"LinkedIn OAuth app configured by {admin_email}")
             
-            logger.info(f"LinkedIn OAuth app configured by {admin_email}")
             return True
             
         except Exception as e:
