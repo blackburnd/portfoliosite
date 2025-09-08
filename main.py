@@ -906,11 +906,12 @@ async def auth_login(request: Request):
                     status_code=503
                 )
             
-            # Re-register OAuth client with fresh credentials
+            # Re-register OAuth client with fresh credentials including redirect_uri
             oauth.register(
                 name='google',
                 client_id=google_config['client_id'],
                 client_secret=google_config['client_secret'],
+                redirect_uri=google_config['redirect_uri'],
                 server_metadata_url=(
                     'https://accounts.google.com/.well-known/'
                     'openid-configuration'
@@ -929,7 +930,18 @@ async def auth_login(request: Request):
             
         except Exception as config_error:
             logger.error(f"Failed to get fresh OAuth config: {config_error}")
-            redirect_uri = str(request.url_for('auth_callback'))
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>OAuth Configuration Error</h1>
+                <p>Failed to load OAuth configuration from database.</p>
+                <p>Please check the OAuth configuration and try again.</p>
+                <p><a href="/admin/google/oauth">Configure OAuth</a></p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """,
+                status_code=503
+            )
         
         # Use the OAuth client to redirect
         google = oauth.google
@@ -2842,8 +2854,27 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
     try:
         add_log("INFO", "Initiating Google OAuth authorization", "main")
         
-        # Get redirect URI from environment
-        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback")
+        # Get fresh OAuth configuration from database
+        try:
+            ttw_manager = TTWOAuthManager()
+            google_config = await ttw_manager.get_google_oauth_app_config()
+            
+            if not google_config:
+                logger.error("No Google OAuth configuration found in database")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Google OAuth is not configured"
+                )
+            
+            redirect_uri = google_config['redirect_uri']
+            logger.info(f"Using OAuth redirect URI from database: {redirect_uri}")
+            
+        except Exception as config_error:
+            logger.error(f"Failed to get OAuth config from database: {config_error}")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to retrieve OAuth configuration"
+            )
         
         # Generate a new state parameter for CSRF protection
         import secrets
