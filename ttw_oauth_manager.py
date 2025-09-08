@@ -5,7 +5,7 @@ import secrets
 import logging
 import httpx
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from database import database
 from log_capture import add_log
 
