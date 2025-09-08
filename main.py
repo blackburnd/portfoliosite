@@ -1961,23 +1961,10 @@ async def get_oauth_status():
         except:
             oauth_apps = []
         
-        # Check oauth_system_settings table
-        system_settings_query = """
-            SELECT setting_key, setting_value, description, created_at
-            FROM oauth_system_settings 
-            ORDER BY created_at DESC
-        """
-        try:
-            system_settings = await database.fetch_all(system_settings_query)
-        except:
-            system_settings = []
-        
         return JSONResponse({
             "status": "success",
             "oauth_apps": [dict(row) for row in oauth_apps],
-            "system_settings": [dict(row) for row in system_settings],
-            "total_oauth_apps": len(oauth_apps),
-            "total_system_settings": len(system_settings)
+            "total_oauth_apps": len(oauth_apps)
         })
         
     except Exception as e:

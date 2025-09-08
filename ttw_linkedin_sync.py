@@ -60,6 +60,8 @@ class TTWLinkedInSync:
             }
         
         try:
+            # Get current LinkedIn connection 
+            connection = await self._get_current_connection()
             
             if not connection:
                 return {
