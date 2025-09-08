@@ -1800,7 +1800,7 @@ async def execute_sql(
         is_select = len(statements) == 1 and (statements[0].upper().strip().startswith('SELECT') or statements[0].upper().strip().startswith('PRAGMA'))
         
         # Add specific log entry for query history tracking
-        add_log("INFO", "sql_admin", f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}")
+        log_with_context("INFO", "sql_admin", f"SQL Query executed by {admin.get('email', 'unknown')}: {query[:200]}{'...' if len(query) > 200 else ''}", request)
         
         if is_select:
             # For SELECT queries, fetch results
@@ -1870,7 +1870,7 @@ async def execute_sql(
 
 
 @app.get("/admin/sql/download-schema")
-async def download_schema(admin: dict = Depends(require_admin_auth_session)):
+async def download_schema(request: Request, admin: dict = Depends(require_admin_auth_session)):
     """Download the current database schema as a SQL dump file"""
     from datetime import datetime
     from schema_dump import generate_schema_dump
@@ -1878,7 +1878,7 @@ async def download_schema(admin: dict = Depends(require_admin_auth_session)):
     admin_email = admin.get("email")
     
     try:
-        add_log("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema")
+        log_with_context("INFO", "sql_admin_schema_download", f"Admin {admin_email} downloading database schema", request)
         
         # Use the new schema dump module
         schema_content = await generate_schema_dump()
@@ -1887,7 +1887,7 @@ async def download_schema(admin: dict = Depends(require_admin_auth_session)):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"database_schema_{timestamp}.sql"
         
-        add_log("INFO", "sql_admin_schema_downloaded", f"Schema successfully downloaded by {admin_email}")
+        log_with_context("INFO", "sql_admin_schema_downloaded", f"Schema successfully downloaded by {admin_email}", request)
         
         # Return the schema as a downloadable file
         return Response(
@@ -1901,7 +1901,7 @@ async def download_schema(admin: dict = Depends(require_admin_auth_session)):
         
     except Exception as e:
         logger.error(f"Error downloading schema: {str(e)}")
-        add_log("ERROR", "sql_admin_schema_error", f"Schema download error for {admin_email}: {str(e)}")
+        log_with_context("ERROR", "sql_admin_schema_error", f"Schema download error for {admin_email}: {str(e)}", request)
         return JSONResponse({
             "status": "error",
             "message": f"Schema download failed: {str(e)}"
