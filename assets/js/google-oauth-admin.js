@@ -103,7 +103,6 @@ class GoogleOAuthAdmin {
             statusText.textContent = 'Google OAuth configured and ready';
             
             // Populate form with existing config
-            document.getElementById('google-app-name').value = data.app_name || '';
             document.getElementById('google-client-id').value = data.client_id || '';
             document.getElementById('google-client-secret').value = data.client_secret || '';
             document.getElementById('google-redirect-uri').value = data.redirect_uri || '';
