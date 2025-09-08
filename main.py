@@ -2576,8 +2576,10 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         google_configured = await ttw_manager.is_google_oauth_app_configured()
         
         config = None
+        credentials = None
         if google_configured:
             config = await ttw_manager.get_google_oauth_app_config()
+            credentials = await ttw_manager.get_google_oauth_credentials()
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
@@ -2587,7 +2589,7 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
             "connected": google_connected,
             "app_name": config.get("app_name", "") if config else "",
             "client_id": config.get("client_id", "") if config else "",
-            "client_secret": config.get("client_secret", "") if config else "",
+            "client_secret": credentials.get("client_secret", "") if credentials else "",
             "redirect_uri": config.get("redirect_uri", "") if config else "",
             "account_email": request.session.get("user", {}).get("email") if google_connected else None,
             "last_sync": request.session.get("user", {}).get("login_time") if google_connected else None,

@@ -5,7 +5,6 @@ import logging
 import secrets
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timedelta
-from cryptography.fernet import Fernet
 from database import database
 from log_capture import add_log
 import httpx
@@ -19,37 +18,12 @@ class TTWOAuthManagerError(Exception):
 class TTWOAuthManager:
     """
     Through-The-Web OAuth Management Service
-    Complete self-contained LinkedIn OAuth implementation with no environment variables
+    Complete self-contained OAuth implementation with plain text storage
     """
     
     def __init__(self):
-        # Generate or use encryption key (store in database in production)
-        encryption_key = self._get_or_create_encryption_key()
-        try:
-            self.cipher = Fernet(encryption_key.encode() if isinstance(encryption_key, str) else encryption_key)
-        except Exception as e:
-            logger.error(f"Failed to initialize encryption: {e}")
-            raise TTWOAuthManagerError("Invalid encryption key configuration")
-        
         # Default redirect URI pattern (will be configurable)
         self.default_redirect_uri_pattern = "/admin/linkedin/callback"
-    
-    def _get_or_create_encryption_key(self) -> str:
-        """Get or create encryption key for OAuth tokens"""
-        # In production, this could be stored in database or generated once
-        encryption_key = os.getenv("OAUTH_ENCRYPTION_KEY")
-        if not encryption_key:
-            encryption_key = Fernet.generate_key().decode()
-            logger.warning("Generated new encryption key for OAuth tokens. Store OAUTH_ENCRYPTION_KEY securely in production.")
-        return encryption_key
-    
-    def _encrypt_token(self, token: str) -> str:
-        """Encrypt a token for secure storage"""
-        return self.cipher.encrypt(token.encode()).decode()
-    
-    def _decrypt_token(self, encrypted_token: str) -> str:
-        """Decrypt a token for use"""
-        return self.cipher.decrypt(encrypted_token.encode()).decode()
     
     # OAuth App Configuration Methods
     
@@ -197,7 +171,7 @@ class TTWOAuthManager:
                 "timestamp": datetime.utcnow().isoformat(),
                 "nonce": secrets.token_urlsafe(16)
             }
-            state = self._encrypt_token(json.dumps(state_data))
+            state = json.dumps(state_data)
 
             # Build authorization URL
             import urllib.parse
@@ -232,7 +206,7 @@ class TTWOAuthManager:
     def verify_linkedin_state(self, state: str) -> Dict[str, Any]:
         """Verify and extract data from LinkedIn OAuth state parameter"""
         try:
-            state_data = json.loads(self._decrypt_token(state))
+            state_data = json.loads(state)
             
             # Verify timestamp (state should be used within 10 minutes)
             timestamp = datetime.fromisoformat(state_data["timestamp"])
@@ -375,8 +349,8 @@ class TTWOAuthManager:
                     admin_email, "_store_linkedin_connection")
 
             # Encrypt tokens
-            access_token = self._encrypt_token(token_data["access_token"])
-            refresh_token = self._encrypt_token(token_data.get("refresh_token", "")) if token_data.get("refresh_token") else None
+            access_token = token_data["access_token"]
+            refresh_token = token_data.get("refresh_token", "") if token_data.get("refresh_token") else None
             
             # Calculate expiration time
             expires_in = token_data.get("expires_in", 5184000)  # LinkedIn default: 60 days
@@ -455,8 +429,8 @@ class TTWOAuthManager:
             connection = {
                 "linkedin_profile_id": result["linkedin_profile_id"],
                 "linkedin_profile_name": result["linkedin_profile_name"],
-                "access_token": self._decrypt_token(result["access_token"]),
-                "refresh_token": self._decrypt_token(result["refresh_token"]) if result["refresh_token"] else None,
+                "access_token": result["access_token"],
+                "refresh_token": result["refresh_token"] if result["refresh_token"] else None,
                 "expires_at": result["token_expires_at"],
                 "granted_scopes": result["granted_scopes"].split() if result["granted_scopes"] else [],
                 "requested_scopes": result["requested_scopes"].split() if result["requested_scopes"] else [],
@@ -512,8 +486,8 @@ class TTWOAuthManager:
                 token_response = response.json()
                 
                 # Update stored tokens
-                encrypted_access = self._encrypt_token(token_response["access_token"])
-                encrypted_refresh = self._encrypt_token(token_response.get("refresh_token", refresh_token))
+                encrypted_access = token_response["access_token"]
+                encrypted_refresh = token_response.get("refresh_token", refresh_token)
                 expires_at = datetime.utcnow() + timedelta(seconds=token_response.get("expires_in", 5184000))
                 
                 query = """
@@ -604,13 +578,13 @@ class TTWOAuthManager:
                    f"Admin {admin_email} configuring Google OAuth app: {app_config.get('app_name', 'Google OAuth App')}",
                    admin_email, "configure_google_oauth_app")
             
-            # Encrypt the client secret
-            encrypted_secret = self._encrypt_token(app_config["client_secret"])
+            # Store client secret in plain text
+            client_secret = app_config["client_secret"]
             
             # Insert or update Google OAuth configuration
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
                 ON CONFLICT (provider, app_name) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
@@ -624,10 +598,9 @@ class TTWOAuthManager:
                 "provider": "google",
                 "app_name": app_config.get("app_name", "Google OAuth App"),
                 "client_id": app_config["client_id"],
-                "client_secret": encrypted_secret,
+                "client_secret": client_secret,
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback"),
                 "scopes": ",".join(["email", "profile"]),  # Default Google scopes
-                "encryption_key": self.encryption_key.decode(),
                 "created_by": admin_email
             })
             
@@ -688,7 +661,7 @@ class TTWOAuthManager:
         return None
 
     async def get_google_oauth_credentials(self) -> Optional[Dict[str, str]]:
-        """Get Google OAuth credentials including decrypted client secret"""
+        """Get Google OAuth credentials including client secret"""
         query = """
             SELECT client_id, client_secret, redirect_uri
             FROM oauth_apps 
@@ -699,16 +672,11 @@ class TTWOAuthManager:
         result = await database.fetch_one(query)
         
         if result:
-            try:
-                decrypted_secret = self._decrypt_token(result["client_secret"])
-                return {
-                    "client_id": result["client_id"],
-                    "client_secret": decrypted_secret,
-                    "redirect_uri": result["redirect_uri"]
-                }
-            except Exception as e:
-                logger.error(f"Failed to decrypt Google OAuth client secret: {e}")
-                return None
+            return {
+                "client_id": result["client_id"],
+                "client_secret": result["client_secret"],
+                "redirect_uri": result["redirect_uri"]
+            }
         return None
 
     async def remove_linkedin_oauth_app(self, admin_email: str) -> bool:
@@ -779,12 +747,13 @@ class TTWOAuthManager:
         """Configure LinkedIn OAuth application settings"""
         try:
             # Encrypt the client secret
-            encrypted_secret = self._encrypt_token(app_config["client_secret"])
+            # Store client secret in plain text
+            client_secret = app_config["client_secret"]
             
             # Insert or update LinkedIn OAuth configuration
             query = """
-                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, encryption_key, created_by)
-                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :encryption_key, :created_by)
+                INSERT INTO oauth_apps (provider, app_name, client_id, client_secret, redirect_uri, scopes, created_by)
+                VALUES (:provider, :app_name, :client_id, :client_secret, :redirect_uri, :scopes, :created_by)
                 ON CONFLICT (provider, app_name) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,
@@ -799,10 +768,9 @@ class TTWOAuthManager:
                 "provider": "linkedin",
                 "app_name": app_config.get("app_name", "LinkedIn OAuth App"),
                 "client_id": app_config["client_id"],
-                "client_secret": encrypted_secret,
+                "client_secret": client_secret,
                 "redirect_uri": app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback"),
                 "scopes": ["r_liteprofile", "r_emailaddress"],  # Default LinkedIn scopes
-                "encryption_key": "oauth_key",  # Using same key pattern as Google
                 "created_by": admin_email
             })
             
@@ -846,7 +814,7 @@ class TTWOAuthManager:
         return None
 
     async def get_linkedin_oauth_credentials(self) -> Optional[Dict[str, str]]:
-        """Get LinkedIn OAuth credentials including decrypted client secret"""
+        """Get LinkedIn OAuth credentials including client secret"""
         query = """
             SELECT client_id, client_secret, redirect_uri
             FROM oauth_apps 
@@ -857,16 +825,11 @@ class TTWOAuthManager:
         result = await database.fetch_one(query)
         
         if result:
-            try:
-                decrypted_secret = self._decrypt_token(result["client_secret"])
-                return {
-                    "client_id": result["client_id"],
-                    "client_secret": decrypted_secret,
-                    "redirect_uri": result["redirect_uri"]
-                }
-            except Exception as e:
-                logger.error(f"Failed to decrypt LinkedIn client secret: {e}")
-                return None
+            return {
+                "client_id": result["client_id"],
+                "client_secret": result["client_secret"],
+                "redirect_uri": result["redirect_uri"]
+            }
         return None
 
 # Global instance
