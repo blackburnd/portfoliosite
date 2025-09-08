@@ -23,15 +23,7 @@ class TTWOAuthManager:
     
     def __init__(self):
         # Default redirect URI pattern (will be configurable)
-        self.default_redirec            if result:
-                return {
-                    "app_name": result.get("app_name") or "",
-                    "client_id": result.get("client_id") or "",
-                    "redirect_uri": result.get("redirect_uri") or "",
-                    "scopes": result.get("scopes") or "",
-                    "configured_at": result.get("created_at"),
-                    "updated_at": result.get("updated_at")
-                }tern = "/admin/linkedin/callback"
+        self.default_redirect_pattern = "/admin/linkedin/callback"
     
     # OAuth App Configuration Methods
     
@@ -605,8 +597,8 @@ class TTWOAuthManager:
             
             # Prepare new values
             new_app_name = app_config.get("app_name", "Google OAuth App")
-            new_client_id = app_config["client_id"]
-            new_client_secret = app_config["client_secret"]
+            new_client_id = app_config.get("client_id", "")
+            new_client_secret = app_config.get("client_secret", "")
             new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/google/callback")
             new_scopes = ",".join(["email", "profile"])
             
@@ -625,12 +617,14 @@ class TTWOAuthManager:
             }
             
             if existing_config:
-                old_values = {k: existing_config.get(k, "NULL") for k in new_values.keys()}
+                old_values = {k: existing_config.get(k) or "" for k in new_values.keys()}
                 old_values["client_secret"] = "[REDACTED]"
                 for field, new_val in new_values.items():
-                    if old_values[field] != new_val:
+                    old_val = old_values[field]
+                    # Handle empty strings and NULL values consistently
+                    if (old_val or "") != (new_val or ""):
                         add_log("INFO", "google_oauth_field_change", 
-                               f"{field}: '{old_values[field]}' -> '{new_val}' by {admin_email}",
+                               f"{field}: '{old_val}' -> '{new_val}' by {admin_email}",
                                admin_email, "configure_google_oauth_app")
             else:
                 for field, value in new_values.items():
@@ -692,7 +686,7 @@ class TTWOAuthManager:
             query = """
                 SELECT COUNT(*) as count
                 FROM oauth_apps 
-                WHERE provider = 'google' AND is_active = true
+                WHERE provider = 'google'
             """
             result = await database.fetch_one(query)
             return result["count"] > 0
@@ -823,15 +817,15 @@ class TTWOAuthManager:
             existing_query = """
                 SELECT app_name, client_id, client_secret, redirect_uri, scopes, updated_at
                 FROM oauth_apps 
-                WHERE portfolio_id = :portfolio_id AND provider = 'linkedin' AND is_active = true
+                WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
                 ORDER BY updated_at DESC LIMIT 1
             """
             existing_config = await database.fetch_one(existing_query, {"portfolio_id": PORTFOLIO_ID})
             
             # Prepare new values
             new_app_name = app_config.get("app_name", "LinkedIn OAuth App")
-            new_client_id = app_config["client_id"]
-            new_client_secret = app_config["client_secret"]
+            new_client_id = app_config.get("client_id", "")
+            new_client_secret = app_config.get("client_secret", "")
             new_redirect_uri = app_config.get("redirect_uri", f"{app_config.get('base_url', '')}/auth/linkedin/callback")
             new_scopes = ["r_liteprofile", "r_emailaddress"]
             new_scopes_str = ",".join(new_scopes)
@@ -851,12 +845,14 @@ class TTWOAuthManager:
             }
             
             if existing_config:
-                old_values = {k: existing_config.get(k, "NULL") for k in new_values.keys()}
+                old_values = {k: existing_config.get(k) or "" for k in new_values.keys()}
                 old_values["client_secret"] = "[REDACTED]"
                 for field, new_val in new_values.items():
-                    if old_values[field] != new_val:
+                    old_val = old_values[field]
+                    # Handle empty strings and NULL values consistently
+                    if (old_val or "") != (new_val or ""):
                         add_log("INFO", "linkedin_oauth_field_change", 
-                               f"{field}: '{old_values[field]}' -> '{new_val}' by {admin_email}",
+                               f"{field}: '{old_val}' -> '{new_val}' by {admin_email}",
                                admin_email, "configure_linkedin_oauth_app")
             else:
                 for field, value in new_values.items():
@@ -891,7 +887,8 @@ class TTWOAuthManager:
                 "client_secret": new_client_secret,
                 "redirect_uri": new_redirect_uri,
                 "scopes": new_scopes_str,
-                "created_by": admin_email
+                "created_by": admin_email,
+                "is_active": True
             })
             
             # Log successful configuration
@@ -911,7 +908,7 @@ class TTWOAuthManager:
         query = """
             SELECT COUNT(*) as count
             FROM oauth_apps 
-            WHERE provider = 'linkedin' AND is_active = true
+            WHERE provider = 'linkedin'
         """
         result = await database.fetch_one(query)
         return result["count"] > 0
@@ -921,7 +918,7 @@ class TTWOAuthManager:
         query = """
             SELECT app_name, client_id, redirect_uri, scopes, created_at, updated_at
             FROM oauth_apps 
-            WHERE provider = 'linkedin' AND is_active = true
+            WHERE provider = 'linkedin'
             ORDER BY updated_at DESC
             LIMIT 1
         """
@@ -943,7 +940,7 @@ class TTWOAuthManager:
         query = """
             SELECT client_id, client_secret, redirect_uri
             FROM oauth_apps 
-            WHERE provider = 'linkedin' AND is_active = true
+            WHERE provider = 'linkedin'
             ORDER BY updated_at DESC
             LIMIT 1
         """
