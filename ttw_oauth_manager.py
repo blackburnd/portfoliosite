@@ -731,11 +731,11 @@ class TTWOAuthManager:
                 add_log("DEBUG", "google_oauth_config_keys", f"Result keys: {list(result.keys()) if hasattr(result, 'keys') else 'No keys method'}")
                 
                 config = {
-                    "client_id": result.get("client_id") or "",
-                    "redirect_uri": result.get("redirect_uri") or "",
-                    "scopes": result.get("scopes") or "",
-                    "configured_at": result.get("created_at"),
-                    "updated_at": result.get("updated_at")
+                    "client_id": result["client_id"] if "client_id" in result else "",
+                    "redirect_uri": result["redirect_uri"] if "redirect_uri" in result else "",
+                    "scopes": result["scopes"] if "scopes" in result else "",
+                    "configured_at": result["created_at"] if "created_at" in result else None,
+                    "updated_at": result["updated_at"] if "updated_at" in result else None
                 }
                 add_log("DEBUG", "google_oauth_config_final", f"Final config: {config}")
                 return config
@@ -770,9 +770,9 @@ class TTWOAuthManager:
             if result:
                 add_log("INFO", "google_oauth_credentials_found", f"Found Google OAuth credentials")
                 credentials = {
-                    "client_id": result.get("client_id") or "",
-                    "client_secret": result.get("client_secret") or "",
-                    "redirect_uri": result.get("redirect_uri") or ""
+                    "client_id": result["client_id"] if "client_id" in result else "",
+                    "client_secret": result["client_secret"] if "client_secret" in result else "",
+                    "redirect_uri": result["redirect_uri"] if "redirect_uri" in result else ""
                 }
                 add_log("DEBUG", "google_oauth_creds_final", f"Final credentials: {credentials}")
                 return credentials
