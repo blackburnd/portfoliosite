@@ -732,7 +732,6 @@ class TTWOAuthManager:
                 }
             return None
         except Exception as e:
-            logger.error(args)
             logger.error(f"Database error getting OAuth config: {e}")
             return None
 

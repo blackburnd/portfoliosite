@@ -40,7 +40,7 @@ from google.oauth2.credentials import Credentials
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -51,8 +51,8 @@ class DatabaseLoggingHandler(logging.Handler):
     
     def __init__(self):
         super().__init__()
-        # Capture ERROR and WARNING level logs to database
-        self.setLevel(logging.ERROR)
+        # Capture all logs to database for debugging
+        self.setLevel(logging.DEBUG)
         
     def emit(self, record):
         try:
@@ -65,11 +65,18 @@ class DatabaseLoggingHandler(logging.Handler):
             # Get the module name from the logger
             module = record.name if record.name != '__main__' else 'main'
             
-            # Add to database - use the log level as the level parameter
-            add_log(record.levelname, f"{module}_logging", message)
+            # Add to database with correct parameter order: level, message, module
+            add_log(
+                level=record.levelname,
+                message=message,
+                module=f"{module}_logging",
+                function=record.funcName,
+                line=record.lineno
+            )
             
-        except Exception:
-            # Don't let logging errors break the application
+        except Exception as e:
+            # Don't let logging errors break the application, but print for debugging
+            print(f"Database logging error: {e}")
             pass
 
 
