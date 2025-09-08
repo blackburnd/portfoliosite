@@ -54,8 +54,8 @@ class DatabaseLogHandler(logging.Handler):
     
     def _get_default_portfolio_id(self):
         """Get the default portfolio ID for logs"""
-        from database import get_portfolio_id
-        return get_portfolio_id()
+        from database import PORTFOLIO_ID
+        return PORTFOLIO_ID
         
     def emit(self, record: logging.LogRecord):
         """Emit a log record to the database"""
@@ -163,7 +163,7 @@ def add_log(level: str, message: str, module: str = "manual",
     """Manually add a log entry to the database"""
     
     async def _add_log_async():
-        from database import database as db, get_portfolio_id
+        from database import database as db, PORTFOLIO_ID
 
         try:
             query = """
@@ -175,7 +175,7 @@ def add_log(level: str, message: str, module: str = "manual",
             """
 
             values = {
-                'portfolio_id': get_portfolio_id(),
+                'portfolio_id': PORTFOLIO_ID,
                 'timestamp': datetime.now(),
                 'level': level.upper(),
                 'message': message,

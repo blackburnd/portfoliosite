@@ -583,8 +583,8 @@ class TTWOAuthManager:
             client_secret = app_config["client_secret"]
             
             # Get default portfolio ID
-            from database import get_portfolio_id
-            portfolio_id = get_portfolio_id()
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
             
             # Insert or update Google OAuth configuration
             query = """
