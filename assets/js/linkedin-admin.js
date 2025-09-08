@@ -125,7 +125,6 @@ class LinkedInAdmin {
     
     populateConfigForm(config) {
         const fields = [
-            { id: 'app_name', value: config.app_name || 'blackburnsystems profile site' },
             { id: 'client_id', value: config.client_id || '' },
             { id: 'client_secret', value: config.client_secret || '' },
             { id: 'redirect_uri', value: config.redirect_uri || 'https://www.blackburnsystems.com/admin/linkedin/callback' },
@@ -145,7 +144,6 @@ class LinkedInAdmin {
         
         const formData = new FormData(this.elements.configForm);
         const config = {
-            app_name: formData.get('app_name'),
             client_id: formData.get('client_id'),
             client_secret: formData.get('client_secret'),
             redirect_uri: formData.get('redirect_uri'),
@@ -215,7 +213,6 @@ class LinkedInAdmin {
         const hasRedirectUri = config.redirect_uri && config.redirect_uri.length > 0;
         
         const statusItems = [
-            { label: 'App Name', value: config.app_name || 'Not set', type: 'info' },
             { label: 'Client ID', value: hasClientId ? '✅ Configured' : '❌ Missing', type: hasClientId ? 'configured' : 'missing' },
             { label: 'Client Secret', value: hasClientSecret ? '✅ Configured' : '❌ Missing', type: hasClientSecret ? 'configured' : 'missing' },
             { label: 'Redirect URI', value: hasRedirectUri ? '✅ Configured' : '❌ Missing', type: hasRedirectUri ? 'configured' : 'missing' },
