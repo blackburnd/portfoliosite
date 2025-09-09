@@ -963,9 +963,7 @@ async def auth_login(request: Request):
             })
         else:
             # Direct access - redirect to Google OAuth
-            return RedirectResponse(url=auth_url, status_code=302) 
-                    status_code=500
-                )
+            return RedirectResponse(url=auth_url, status_code=302)
         
     except Exception as e:
         logger.error(f"OAuth login error: {str(e)}")
