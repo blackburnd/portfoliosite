@@ -924,31 +924,25 @@ async def auth_login(request: Request):
         request.session['oauth_state'] = state
         
         # Store state in database for popup support
-        from database import save_oauth_state_only, get_portfolio_id
+        from database import save_oauth_state_only, get_portfolio_id, database
         try:
             portfolio_id = get_portfolio_id()
-            logger.info(f"Portfolio ID for state storage: {portfolio_id}")
-            
             if not portfolio_id:
-                # Try to get portfolio_id directly from database
-                repo_name = os.getenv("_REPO_NAME", "daniel-blackburn")
+                # Fallback: If global portfolio_id isn't set, query it directly
+                repo_name = os.getenv("_REPO_NAME", "default-portfolio")
                 portfolio_query = "SELECT portfolio_id FROM portfolios WHERE id = :repo_name"
-                portfolio_result = await database.fetch_one(portfolio_query, {"repo_name": repo_name})
-                if portfolio_result:
-                    portfolio_id = portfolio_result["portfolio_id"]
-                    logger.info(f"Retrieved portfolio_id from database: {portfolio_id}")
-                else:
-                    logger.error(f"No portfolio found for repo_name: {repo_name}")
+                result = await database.fetch_one(portfolio_query, {"repo_name": repo_name})
+                if result:
+                    portfolio_id = result["portfolio_id"]
             
             if portfolio_id:
                 await save_oauth_state_only(portfolio_id, state)
-                logger.info(f"OAuth state saved to database: {state[:8]}...")
+                logger.info(f"OAuth state saved to database for portfolio {portfolio_id}")
             else:
-                logger.error("Portfolio ID is None - cannot save OAuth state")
+                logger.error("Could not determine portfolio_id to save OAuth state.")
+
         except Exception as state_error:
-            logger.error(f"Failed to save OAuth state: {state_error}")
-            import traceback
-            logger.error(f"State save traceback: {traceback.format_exc()}")
+            logger.error(f"Failed to save OAuth state: {state_error}", exc_info=True)
         
         # Define explicit scopes for login (basic scopes only)
         scopes = [
