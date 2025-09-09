@@ -15,13 +15,14 @@ body {
     box-shadow: 0 4px 32px rgba(0,0,0,0.07);
     border-radius: 16px;
     padding: 32px 18px 24px 18px;
+    overflow-x: hidden;
 }
 
 .profile-image {
     float: right !important;
-    width: 34vw !important;
-    max-width: 320px !important;
-    min-width: 180px !important;
+    width: 37vw !important;
+    max-width: 350px !important;
+    min-width: 200px !important;
     margin: 0 0 20px 30px !important;
     text-align: right !important;
     position: static !important;
@@ -44,11 +45,13 @@ body {
     width: 100%;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .hero-content {
-    max-width: 65%;
-    width: 65%;
+    max-width: 58%;
+    width: 58%;
     overflow: visible;
     float: left;
 }
@@ -409,8 +412,22 @@ input[type="checkbox"] {
         flex-direction: column;
     }
 
-    figure img {
+    .profile-image {
+        float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 20px 0 !important;
+        text-align: center !important;
+    }
+
+    .hero-content {
+        width: 100%;
         max-width: 100%;
+        float: none;
+    }
+
+    figure img {
+        max-width: 80%;
     }
 
     .header-top {
