@@ -9,12 +9,12 @@ body {
 }
 
 .wrap {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 32px auto 0 auto;
     background: #fff;
     box-shadow: 0 4px 32px rgba(0,0,0,0.07);
     border-radius: 16px;
-    padding: 32px 36px 24px 36px;
+    padding: 32px 18px 24px 18px;
 }
 
 .profile-image {
@@ -41,6 +41,7 @@ body {
 
 .intro-flex {
     display: flex;
+    flex-direction: row-reverse;
     align-items: flex-start;
     gap: 32px;
     margin-bottom: 18px;
