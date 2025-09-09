@@ -2818,17 +2818,15 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         config = None
         credentials = None
         if google_configured:
-            config = await ttw_manager.get_google_oauth_app_config()
-            credentials = await ttw_manager.get_google_oauth_credentials()
-            add_log("DEBUG", "oauth_config_loaded", f"Config loaded: {config is not None}, Credentials loaded: {credentials is not None}")
+            config = await ttw_manager.get_google_config()
+            add_log("DEBUG", "oauth_config_loaded", f"Config loaded: {config is not None}")
             add_log("DEBUG", "oauth_config_content", f"Config content: {config}")
-            add_log("DEBUG", "oauth_credentials_content", f"Credentials content: {credentials}")
         
         # Check current session for Google auth
         google_connected = "user" in request.session if hasattr(request, 'session') else False
         
         # Build response with detailed logging
-        client_secret = credentials.get("client_secret", "") if credentials else ""
+        client_secret = config.get("client_secret", "") if config else ""
         add_log("DEBUG", "oauth_client_secret_check", f"Client secret value: {'[PRESENT]' if client_secret else '[EMPTY]'}")
         
         # Log the exact values being returned
