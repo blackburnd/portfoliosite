@@ -873,60 +873,12 @@ async def shutdown_event():
 
 @app.get("/auth/login")
 async def auth_login(request: Request):
-    """Initiate Google OAuth login"""
+    """Initiate Google OAuth login via popup"""
     try:
         logger.info("=== OAuth Login Request Started ===")
         
         # Add log entry for login attempt
         log_with_context("INFO", "auth", "User initiated Google OAuth login process", request)
-        
-        # Try to configure OAuth from database first
-        from auth import configure_oauth_from_database, oauth_configured
-        
-        if not oauth_configured:
-            await configure_oauth_from_database()
-        
-        # Check if OAuth is properly configured
-        if not oauth or not oauth.google:
-            logger.error("OAuth not configured - checking database...")
-            
-            # Try to get configuration from TTWOAuthManager
-            try:
-                ttw_manager = TTWOAuthManager()
-                google_credentials = await ttw_manager.get_google_oauth_credentials()
-                
-                if not google_credentials:
-                    log_with_context("ERROR", "auth", "OAuth login failed - no Google OAuth configuration found", request)
-                    return HTMLResponse(
-                        content="""
-                        <html><body>
-                        <h1>Authentication Not Available</h1>
-                        <p>Google OAuth is not configured on this server.</p>
-                        <p>No Google OAuth configuration found in database.</p>
-                        <p><a href="/admin">Go to Admin Panel to configure OAuth</a></p>
-                        <p><a href="/">Return to main site</a></p>
-                        </body></html>
-                        """, 
-                        status_code=503
-                    )
-                else:
-                    # Reconfigure OAuth with database credentials
-                    await configure_oauth_from_database()
-                    
-            except Exception as config_error:
-                logger.error(f"Failed to configure OAuth from database: {config_error}")
-                log_with_context("ERROR", "auth", f"OAuth configuration error: {str(config_error)}", request)
-                return HTMLResponse(
-                    content="""
-                    <html><body>
-                    <h1>OAuth Configuration Error</h1>
-                    <p>Unable to configure Google OAuth.</p>
-                    <p><a href="/admin">Go to Admin Panel to configure OAuth</a></p>
-                    <p><a href="/">Return to main site</a></p>
-                    </body></html>
-                    """, 
-                    status_code=503
-                )
         
         # Get fresh OAuth credentials from database before authorization
         try:
@@ -935,18 +887,11 @@ async def auth_login(request: Request):
             google_credentials = await ttw_manager.get_google_oauth_credentials()
             
             if not google_config or not google_credentials:
-                logger.error("No Google OAuth configuration found in database")
-                return HTMLResponse(
-                    content="""
-                    <html><body>
-                    <h1>OAuth Configuration Error</h1>
-                    <p>Google OAuth is not configured. Please configure it first.</p>
-                    <p><a href="/admin/google/oauth">Configure OAuth</a></p>
-                    <p><a href="/">Return to main site</a></p>
-                    </body></html>
-                    """,
-                    status_code=503
-                )
+                return JSONResponse({
+                    "status": "error",
+                    "error": "Google OAuth is not configured. Please configure it first.",
+                    "redirect": "/admin/google/oauth"
+                }, status_code=503)
             
             # Re-register OAuth client with fresh credentials including redirect_uri
             oauth.register(
@@ -972,36 +917,26 @@ async def auth_login(request: Request):
             
         except Exception as config_error:
             logger.error(f"Failed to get fresh OAuth config: {config_error}")
-            return HTMLResponse(
-                content="""
-                <html><body>
-                <h1>OAuth Configuration Error</h1>
-                <p>Failed to load OAuth configuration from database.</p>
-                <p>Please check the OAuth configuration and try again.</p>
-                <p><a href="/admin/google/oauth">Configure OAuth</a></p>
-                <p><a href="/">Return to main site</a></p>
-                </body></html>
-                """,
-                status_code=503
-            )
+            return JSONResponse({
+                "status": "error", 
+                "error": "Failed to load OAuth configuration from database."
+            }, status_code=503)
         
-        # Use the OAuth client to redirect
+        # Generate and store state parameter for CSRF protection
+        import secrets
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        
+        # Define explicit scopes for login (basic scopes only)
+        scopes = [
+            'openid',
+            'email', 
+            'profile'
+        ]
+        
+        # Use the OAuth client to get auth URL
         google = oauth.google
         try:
-            # Generate and store state parameter for CSRF protection
-            import secrets
-            state = secrets.token_urlsafe(32)
-            
-            # Store state in session for later validation
-            request.session['oauth_state'] = state
-            
-            # Define explicit scopes for login (basic scopes only)
-            scopes = [
-                'openid',
-                'email', 
-                'profile'
-            ]
-            
             result = await google.authorize_redirect(
                 request, 
                 redirect_uri,
@@ -1010,14 +945,63 @@ async def auth_login(request: Request):
                 access_type='offline',  # Request refresh token
                 prompt='select_account'  # Allow account selection
             )
-            logger.info(f"OAuth redirect created successfully with state: {state[:8]}...")
-            logger.info(f"Session state stored: {request.session.get('oauth_state', 'NOT_FOUND')[:8]}...")
+            
+            # Extract the redirect URL from the response
+            if hasattr(result, 'headers') and 'location' in result.headers:
+                auth_url = result.headers['location']
+            else:
+                # Fallback - construct URL manually
+                auth_url = str(result)
+            
+            logger.info(f"OAuth auth URL created successfully with state: {state[:8]}...")
+            
+            return JSONResponse({
+                "status": "success",
+                "auth_url": auth_url,
+                "requested_scopes": scopes
+            })
+            
         except Exception as redirect_error:
             logger.error(f"OAuth redirect error: {str(redirect_error)}")
-            raise
+            return JSONResponse({
+                "status": "error",
+                "error": f"OAuth configuration error: {str(redirect_error)}"
+            }, status_code=500)
         
-        logger.info("OAuth redirect completed successfully")
-        return result
+    except Exception as e:
+        logger.error(f"OAuth login error: {str(e)}")
+        logger.exception("Full traceback:")
+        return JSONResponse({
+            "status": "error",
+            "error": f"Authentication error: {str(e)}"
+        }, status_code=500)
+
+
+@app.get("/auth/login/redirect")
+async def auth_login_redirect(request: Request):
+    """Legacy redirect-based login for backward compatibility"""
+    try:
+        # Get the auth URL from the main endpoint
+        auth_response = await auth_login(request)
+        
+        if auth_response.status_code == 200:
+            import json
+            auth_data = json.loads(auth_response.body)
+            if auth_data.get("status") == "success":
+                # Redirect to the auth URL
+                return RedirectResponse(url=auth_data["auth_url"])
+        
+        # If there was an error, show error page
+        return HTMLResponse(
+            content="""
+            <html><body>
+            <h1>OAuth Login Failed</h1>
+            <p>Unable to initiate OAuth login. Please try again.</p>
+            <p><a href="/">Return to main site</a></p>
+            </body></html>
+            """, 
+            status_code=500
+        )
         
     except Exception as e:
         logger.error(f"OAuth login error: {str(e)}")
