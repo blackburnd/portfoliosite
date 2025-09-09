@@ -91,21 +91,37 @@ body {
 }
 
 /* Technology list styling */
-.main-content ul {
+.main-content ul, .technical-showcase ul {
     padding-left: 20px;
     margin-bottom: 20px;
 }
 
-.main-content ul li {
+.main-content ul li, .technical-showcase ul li {
     margin-bottom: 8px;
     line-height: 1.5;
 }
 
-.main-content ul li strong {
+.main-content ul li strong, .technical-showcase ul li strong {
     color: #000;
     font-weight: 600;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #333;
+}
+
+/* Technical Showcase section styling */
+.technical-showcase {
+    background-color: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px 25px;
+    margin: 25px 0 35px 0;
+}
+
+.technical-showcase h3 {
+    color: #111;
+    font-size: 1.4rem;
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #555;
     letter-spacing: 0.01em;
 }
 
