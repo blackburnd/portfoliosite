@@ -926,25 +926,7 @@ async def auth_login(request: Request):
         # Generate and store state parameter for CSRF protection
         import secrets
         state = secrets.token_urlsafe(32)
-        
-        # Store state in session AND in a temporary storage for popup validation
         request.session['oauth_state'] = state
-        
-        # Also store in a simple in-memory cache for popup validation
-        # This is a workaround for popup session sharing issues
-        if not hasattr(app, 'oauth_states'):
-            app.oauth_states = {}
-        app.oauth_states[state] = {
-            'created_at': time.time(),
-            'used': False
-        }
-        
-        # Clean up old states (older than 10 minutes)
-        current_time = time.time()
-        expired_states = [s for s, data in app.oauth_states.items() 
-                         if current_time - data['created_at'] > 600]
-        for expired_state in expired_states:
-            del app.oauth_states[expired_state]
         
         # Define explicit scopes for login (basic scopes only)
         scopes = [
@@ -1134,29 +1116,11 @@ async def auth_callback(request: Request):
         logger.info(f"Callback state: {callback_state or 'NONE'}")
         logger.info(f"Session state: {session_state or 'NONE'}")
         logger.info(f"Session keys: {list(request.session.keys())}")
-        
-        # Check if state exists in our in-memory store (for popup support)
-        state_valid = False
-        if callback_state:
-            # First try session validation (for direct navigation)
-            if session_state and callback_state == session_state:
-                state_valid = True
-                logger.info("State validated via session")
-            # Then try in-memory validation (for popup windows)
-            elif hasattr(app, 'oauth_states') and callback_state in app.oauth_states:
-                state_data = app.oauth_states[callback_state]
-                if not state_data['used'] and time.time() - state_data['created_at'] < 600:
-                    state_valid = True
-                    state_data['used'] = True  # Mark as used
-                    logger.info("State validated via in-memory store (popup)")
-                else:
-                    logger.warning("State found but expired or already used")
-        
-        logger.info(f"Final state validation: {state_valid}")
+        logger.info(f"State match: {callback_state == session_state}")
         
         # Validate CSRF state parameter
-        if not callback_state or not state_valid:
-            logger.error(f"CSRF validation failed - callback: {callback_state or 'NONE'}")
+        if not callback_state or not session_state or callback_state != session_state:
+            logger.error(f"CSRF validation failed - callback: {callback_state or 'NONE'}, session: {session_state or 'NONE'}")
             return HTMLResponse(
                 content="""
                 <html><body>
