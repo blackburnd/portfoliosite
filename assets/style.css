@@ -2203,7 +2203,8 @@ td[style*="#abd6ff"] {
 .logs-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px; /* Ensure table has minimum width to show all columns */
+    min-width: 980px; /* Adjusted for new column widths */
+    table-layout: fixed; /* Fixed layout to respect column widths */
 }
 
 .logs-table th {
@@ -2217,6 +2218,9 @@ td[style*="#abd6ff"] {
     z-index: 10;
     cursor: pointer;
     user-select: none;
+    overflow: hidden; /* Prevent header text overflow */
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .logs-table th:hover {
@@ -2246,6 +2250,17 @@ td[style*="#abd6ff"] {
     padding: 8px 12px;
     border-bottom: 1px solid #eee;
     vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 0; /* Force text-overflow to work with table-layout: fixed */
+}
+
+/* Allow message column to wrap text but still respect its boundaries */
+.logs-table td:nth-child(4) {
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
 .logs-table tr:hover {
