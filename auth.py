@@ -5,8 +5,6 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from authlib.integrations.starlette_client import OAuth
-from authlib.integrations.starlette_client import OAuthError
 from jose import jwt, JWTError
 import secrets
 
@@ -18,48 +16,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 # Authorized emails - load from environment as fallback
 AUTHORIZED_EMAILS = os.getenv("AUTHORIZED_EMAILS", "").split(",")
 AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS if email.strip()]
-
-# OAuth setup - configured on-demand in endpoints
-oauth = OAuth()
-
-
-async def configure_oauth_on_demand():
-    """Configure OAuth on-demand when needed for login or email sending"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    try:
-        from ttw_oauth_manager import TTWOAuthManager
-        ttw_manager = TTWOAuthManager()
-        
-        # Get OAuth configuration from database
-        google_config = await ttw_manager.get_google_oauth_app_config()
-        google_credentials = await ttw_manager.get_google_oauth_credentials()
-        
-        if google_config and google_credentials:
-            # Register OAuth client with fresh credentials
-            oauth.register(
-                name='google',
-                client_id=google_config['client_id'],
-                client_secret=google_credentials['client_secret'],
-                server_metadata_url=(
-                    'https://accounts.google.com/.well-known/'
-                    'openid-configuration'
-                ),
-                client_kwargs={
-                    'scope': 'openid email profile'
-                }
-            )
-            logger.info("OAuth configured on-demand successfully")
-            return True
-        else:
-            logger.warning("OAuth configuration not available in database")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Failed to configure OAuth on-demand: {e}")
-        return False
-
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
