@@ -17,6 +17,47 @@ body {
     padding: 32px 36px 24px 36px;
 }
 
+.profile-image {
+    float: right;
+    width: 26vw;
+    max-width: 220px;
+    min-width: 140px;
+    margin: 0 0 8px 24px;
+    text-align: right;
+    position: relative;
+    top: 0;
+}
+
+.profile-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    filter: grayscale(100%) contrast(1.08);
+    border: 1px solid #e0e0e0;
+}
+
+.main-content {
+    margin-top: 0;
+    margin-right: 0;
+    margin-left: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: visible;
+    max-width: none;
+}
+
+.about {
+    font-size: 1.08rem;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    max-width: 100%;
+}
+
+.bc {
+    margin-top: 32px;
+}
+
 /* Site Header Styles */
 .site-header {
     margin-bottom: 18px;
@@ -213,17 +254,17 @@ nav li.active a:hover {
 .about {
     font-size: 1.08rem;
     line-height: 1.6;
-    margin-bottom: 18px;
-    max-width: 680px;
+    margin-bottom: 12px;
+    max-width: 100%;
 }
 
 /* Profile Image Styles */
 .profile-image {
     float: right;
-    width: 32vw;
-    max-width: 320px;
-    min-width: 180px;
-    margin: 0 0 16px 32px;
+    width: 26vw;
+    max-width: 220px;
+    min-width: 140px;
+    margin: 0 0 8px 24px;
     text-align: right;
     position: relative;
     top: 0;
@@ -233,9 +274,9 @@ nav li.active a:hover {
     width: 100%;
     height: auto;
     border-radius: 12px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
     filter: grayscale(100%) contrast(1.08);
-    border: 2px solid #e0e0e0;
+    border: 1px solid #e0e0e0;
 }
 
 .amp {
