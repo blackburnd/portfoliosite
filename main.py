@@ -849,15 +849,7 @@ async def startup_event():
         
         # Database logging is now handled directly by add_log function
         logger.info("Database logging ready via add_log function")
-        
-        # Configure OAuth from database
-        from auth import configure_oauth_from_database
-        logger.info("Attempting to configure OAuth from database...")
-        success = await configure_oauth_from_database()
-        if success:
-            logger.info("✅ OAuth configured successfully from database")
-        else:
-            logger.warning("⚠️ OAuth configuration not found in database")
+        logger.info("OAuth will be configured on-demand in endpoints")
             
     except Exception as e:
         logger.error(f"❌ Startup error: {str(e)}", exc_info=True)
@@ -935,10 +927,16 @@ async def auth_login(request: Request):
         from database import save_oauth_state_only, get_portfolio_id
         try:
             portfolio_id = get_portfolio_id()
-            await save_oauth_state_only(portfolio_id, state)
-            logger.info(f"OAuth state saved to database: {state[:8]}...")
+            logger.info(f"Portfolio ID for state storage: {portfolio_id}")
+            if portfolio_id:
+                await save_oauth_state_only(portfolio_id, state)
+                logger.info(f"OAuth state saved to database: {state[:8]}...")
+            else:
+                logger.error("Portfolio ID is None - cannot save OAuth state")
         except Exception as state_error:
-            logger.warning(f"Failed to save OAuth state: {state_error}")
+            logger.error(f"Failed to save OAuth state: {state_error}")
+            import traceback
+            logger.error(f"State save traceback: {traceback.format_exc()}")
         
         # Define explicit scopes for login (basic scopes only)
         scopes = [
@@ -1158,7 +1156,7 @@ async def auth_callback(request: Request):
         logger.info("=== CSRF State Validation Debug ===")
         logger.info(f"Callback state: {callback_state or 'NONE'}")
         
-        # Validate CSRF state parameter using database
+        # Validate CSRF state parameter - try database first, then session
         if not callback_state:
             logger.error("No CSRF state in callback")
             return HTMLResponse(
@@ -1173,11 +1171,23 @@ async def auth_callback(request: Request):
                 status_code=400
             )
         
-        # Validate state using database (without portfolio_id dependency)
+        # Try database validation first, fall back to session validation
         is_valid = await validate_oauth_state_simple(callback_state)
         if not is_valid:
-            logger.error(f"CSRF state validation failed with state "
-                         f"{callback_state}")
+            # Fallback to session validation
+            session_state = request.session.get('oauth_state')
+            if session_state and callback_state == session_state:
+                is_valid = True
+                logger.info("State validated using session fallback")
+                # Clear the session state after use
+                request.session.pop('oauth_state', None)
+            else:
+                session_valid = (session_state == callback_state
+                                 if session_state else False)
+                logger.error(f"CSRF state validation failed - "
+                             f"database: False, session: {session_valid}")
+        
+        if not is_valid:
             return HTMLResponse(
                 content="""
                 <html><body>

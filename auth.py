@@ -19,41 +19,47 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 AUTHORIZED_EMAILS = os.getenv("AUTHORIZED_EMAILS", "").split(",")
 AUTHORIZED_EMAILS = [email.strip() for email in AUTHORIZED_EMAILS if email.strip()]
 
-# OAuth setup - will be configured from database ONLY
+# OAuth setup - configured on-demand in endpoints
 oauth = OAuth()
-oauth_configured = False
 
 
-async def configure_oauth_from_database():
-    """Configure OAuth from database settings"""
-    global oauth, oauth_configured
+async def configure_oauth_on_demand():
+    """Configure OAuth on-demand when needed for login or email sending"""
+    import logging
+    logger = logging.getLogger(__name__)
     
     try:
         from ttw_oauth_manager import TTWOAuthManager
-        
         ttw_manager = TTWOAuthManager()
+        
+        # Get OAuth configuration from database
+        google_config = await ttw_manager.get_google_oauth_app_config()
         google_credentials = await ttw_manager.get_google_oauth_credentials()
         
-        if google_credentials:
+        if google_config and google_credentials:
+            # Register OAuth client with fresh credentials
             oauth.register(
                 name='google',
-                client_id=google_credentials['client_id'],
+                client_id=google_config['client_id'],
                 client_secret=google_credentials['client_secret'],
-                server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+                server_metadata_url=(
+                    'https://accounts.google.com/.well-known/'
+                    'openid-configuration'
+                ),
                 client_kwargs={
                     'scope': 'openid email profile'
                 }
             )
-            oauth_configured = True
-            print(f"✅ OAuth configured from database with client ID: {google_credentials['client_id'][:10]}...")
+            logger.info("OAuth configured on-demand successfully")
             return True
         else:
-            print("❌ No Google OAuth configuration found in database")
+            logger.warning("OAuth configuration not available in database")
             return False
             
     except Exception as e:
-        print(f"❌ Failed to configure OAuth from database: {e}")
+        logger.error(f"Failed to configure OAuth on-demand: {e}")
         return False
+
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
@@ -155,23 +161,6 @@ async def require_admin_auth(user: dict = Depends(get_current_user)) -> dict:
     return user
 
 
-async def get_oauth_client():
-    """Get configured OAuth client, trying database first"""
-    global oauth_configured
-    
-    # Try to configure from database if not already configured
-    if not oauth_configured:
-        await configure_oauth_from_database()
-    
-    # Check if we have OAuth configured from database
-    if not oauth_configured:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Google OAuth not configured"
-        )
-    return oauth.google
-
-
 def get_login_url(request: Request) -> str:
     """Get Google OAuth login URL"""
     # This function is deprecated - OAuth login URLs should be generated
@@ -194,9 +183,13 @@ def create_user_session(user_info: dict) -> dict:
 
 async def get_auth_status():
     """Get authentication configuration status"""
-    # Try to configure OAuth if not already done
-    if not oauth_configured:
-        await configure_oauth_from_database()
+    try:
+        from ttw_oauth_manager import TTWOAuthManager
+        ttw_manager = TTWOAuthManager()
+        google_credentials = await ttw_manager.get_google_oauth_credentials()
+        oauth_configured = bool(google_credentials)
+    except Exception:
+        oauth_configured = False
     
     return {
         "google_oauth_configured": oauth_configured,
