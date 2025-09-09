@@ -937,54 +937,33 @@ async def auth_login(request: Request):
             'profile'
         ]
         
-        # Use the OAuth client to get auth URL
-        google = oauth.google
-        try:
-            result = await google.authorize_redirect(
-                request, 
-                redirect_uri,
-                scope=' '.join(scopes),
-                state=state,
-                access_type='offline',  # Request refresh token
-                prompt='select_account'  # Allow account selection
-            )
-            
-            # Extract the redirect URL from the response
-            if hasattr(result, 'headers') and 'location' in result.headers:
-                auth_url = result.headers['location']
-            else:
-                # Fallback - construct URL manually
-                auth_url = str(result)
-            
-            logger.info(f"OAuth auth URL created successfully with state: {state[:8]}...")
-            
-            # Return JSON for popup requests, redirect for direct access
-            if is_popup_request:
-                return JSONResponse({
-                    "status": "success",
-                    "auth_url": auth_url,
-                    "requested_scopes": scopes
-                })
-            else:
-                # Direct access - redirect to Google OAuth
-                return RedirectResponse(url=auth_url, status_code=302)
-            
-        except Exception as redirect_error:
-            logger.error(f"OAuth redirect error: {str(redirect_error)}")
-            if is_popup_request:
-                return JSONResponse({
-                    "status": "error",
-                    "error": f"OAuth configuration error: {str(redirect_error)}"
-                }, status_code=500)
-            else:
-                return HTMLResponse(
-                    content=f"""
-                    <html><body>
-                    <h1>Login Error</h1>
-                    <p>OAuth configuration error: {str(redirect_error)}</p>
-                    <p><a href="/">Return to main site</a></p>
-                    </body></html>
-                    """, 
+        # Manually construct the Google OAuth authorization URL
+        from urllib.parse import urlencode
+
+        auth_url_base = "https://accounts.google.com/o/oauth2/v2/auth"
+        params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": ' '.join(scopes),
+            "response_type": "code",
+            "state": state,
+            "access_type": "offline",
+            "prompt": "select_account",
+        }
+        auth_url = f"{auth_url_base}?{urlencode(params)}"
+
+        logger.info(f"Manually constructed auth URL with state: {state[:8]}...")
+
+        # Return JSON for popup requests, redirect for direct access
+        if is_popup_request:
+            return JSONResponse({
+                "status": "success",
+                "auth_url": auth_url,
+                "requested_scopes": scopes
+            })
+        else:
+            # Direct access - redirect to Google OAuth
+            return RedirectResponse(url=auth_url, status_code=302) 
                     status_code=500
                 )
         
