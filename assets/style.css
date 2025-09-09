@@ -23,7 +23,7 @@ body {
     width: 37vw !important;
     max-width: 350px !important;
     min-width: 200px !important;
-    margin: 0 0 20px 30px !important;
+    margin: 8px 0 20px 30px !important;
     text-align: right !important;
     position: static !important;
 }
