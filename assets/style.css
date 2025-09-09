@@ -18,15 +18,14 @@ body {
 }
 
 .profile-image {
-    float: none !important;
-    margin: 0 !important;
+    position: absolute;
+    top: 0;
+    right: 0;
     width: 34vw;
     max-width: 320px;
     min-width: 180px;
     text-align: right;
-    position: relative;
-    top: 0;
-    flex-shrink: 0;
+    z-index: 1;
 }
 
 .profile-image img {
@@ -40,18 +39,14 @@ body {
 }
 
 .intro-flex {
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: flex-start;
-    justify-content: flex-end;
-    gap: 32px;
-    margin-bottom: 18px;
+    position: relative;
+    margin-bottom: 32px;
     width: 100%;
+    min-height: 340px;
 }
 
 .hero-content {
-    flex: 1 1 0;
-    min-width: 220px;
+    width: 65%;
     max-width: 600px;
 }
 
