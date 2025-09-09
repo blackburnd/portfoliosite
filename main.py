@@ -1087,13 +1087,14 @@ async def auth_callback(request: Request):
     try:
         ttw_manager = TTWOAuthManager()
         google_config = await ttw_manager.get_google_oauth_app_config()
+        google_credentials = await ttw_manager.get_google_oauth_credentials()
         
-        if google_config:
+        if google_config and google_credentials:
             # Re-register OAuth client with fresh credentials for callback
             oauth.register(
                 name='google',
                 client_id=google_config['client_id'],
-                client_secret=google_config['client_secret'],
+                client_secret=google_credentials['client_secret'],
                 server_metadata_url=(
                     'https://accounts.google.com/.well-known/'
                     'openid-configuration'
@@ -1118,6 +1119,28 @@ async def auth_callback(request: Request):
         logger.info(f"Callback state: {callback_state[:8] if callback_state else 'NONE'}...")
         logger.info(f"Session state: {session_state[:8] if session_state else 'NONE'}...")
         logger.info(f"State match: {callback_state == session_state}")
+        
+        # Validate CSRF state parameter
+        if not callback_state or not session_state or callback_state != session_state:
+            logger.error(f"CSRF validation failed - callback: {callback_state[:8] if callback_state else 'NONE'}, session: {session_state[:8] if session_state else 'NONE'}")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Security Error</h1>
+                <p>CSRF validation failed. This could be due to:</p>
+                <ul>
+                    <li>Session timeout</li>
+                    <li>Browser security restrictions</li>
+                    <li>Invalid request state</li>
+                </ul>
+                <p><a href="/auth/login">Try logging in again</a> | <a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=400
+            )
+        
+        # Clear the state from session after validation
+        request.session.pop('oauth_state', None)
         
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
