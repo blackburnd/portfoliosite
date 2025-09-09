@@ -88,6 +88,22 @@ body {
     font-weight: 700;
     color: #000;
     margin-bottom: 18px;
+}
+
+/* Technology list styling */
+.main-content ul {
+    padding-left: 20px;
+    margin-bottom: 20px;
+}
+
+.main-content ul li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.main-content ul li strong {
+    color: #000;
+    font-weight: 600;
     padding-bottom: 6px;
     border-bottom: 2px solid #333;
     letter-spacing: 0.01em;
