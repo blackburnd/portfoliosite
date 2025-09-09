@@ -932,8 +932,9 @@ async def auth_login(request: Request):
         try:
             ttw_manager = TTWOAuthManager()
             google_config = await ttw_manager.get_google_oauth_app_config()
+            google_credentials = await ttw_manager.get_google_oauth_credentials()
             
-            if not google_config:
+            if not google_config or not google_credentials:
                 logger.error("No Google OAuth configuration found in database")
                 return HTMLResponse(
                     content="""
@@ -951,7 +952,7 @@ async def auth_login(request: Request):
             oauth.register(
                 name='google',
                 client_id=google_config['client_id'],
-                client_secret=google_config['client_secret'],
+                client_secret=google_credentials['client_secret'],
                 redirect_uri=google_config['redirect_uri'],
                 server_metadata_url=(
                     'https://accounts.google.com/.well-known/'
