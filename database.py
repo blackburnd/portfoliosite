@@ -461,8 +461,15 @@ async def update_google_oauth_token_usage(
 async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
     """Save only OAuth state for initiation (no tokens yet)"""
     from datetime import datetime, timezone, timedelta
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"=== save_oauth_state_only called ===")
+    logger.info(f"portfolio_id: {portfolio_id}")
+    logger.info(f"state: {state}")
     
     state_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    logger.info(f"state_expires_at: {state_expires_at}")
     
     query = """
     INSERT INTO google_oauth_tokens (portfolio_id, oauth_state, state_expires_at)
@@ -474,11 +481,35 @@ async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
         updated_at = NOW()
     """
     
-    await database.execute(query, {
+    params = {
         "portfolio_id": portfolio_id,
         "oauth_state": state,
         "state_expires_at": state_expires_at
-    })
+    }
+    
+    logger.info(f"Executing query with params: {params}")
+    
+    try:
+        await database.execute(query, params)
+        logger.info("Query executed successfully")
+        
+        # Verify the state was saved
+        verify_query = """
+        SELECT oauth_state, state_expires_at FROM google_oauth_tokens 
+        WHERE portfolio_id = :portfolio_id
+        """
+        result = await database.fetch_one(verify_query, {"portfolio_id": portfolio_id})
+        if result:
+            logger.info(f"Verification: oauth_state = {result['oauth_state']}")
+            logger.info(f"Verification: state_expires_at = {result['state_expires_at']}")
+        else:
+            logger.error("Verification failed: No record found after insert")
+            
+    except Exception as e:
+        logger.error(f"Error executing save_oauth_state_only: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return False
     
     # For INSERT/UPDATE operations, execute() returns None on success
     return True
