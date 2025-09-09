@@ -19,10 +19,10 @@ body {
 
 .profile-image {
     float: right;
-    width: 26vw;
-    max-width: 220px;
-    min-width: 140px;
-    margin: 0 0 8px 24px;
+    width: 34vw;
+    max-width: 320px;
+    min-width: 180px;
+    margin: 0 0 12px 32px;
     text-align: right;
     position: relative;
     top: 0;
@@ -45,6 +45,8 @@ body {
     padding-bottom: 0;
     overflow: visible;
     max-width: none;
+    display: block;
+    clear: none;
 }
 
 .about {
@@ -261,10 +263,10 @@ nav li.active a:hover {
 /* Profile Image Styles */
 .profile-image {
     float: right;
-    width: 26vw;
-    max-width: 220px;
-    min-width: 140px;
-    margin: 0 0 8px 24px;
+    width: 34vw;
+    max-width: 320px;
+    min-width: 180px;
+    margin: 0 0 12px 32px;
     text-align: right;
     position: relative;
     top: 0;
