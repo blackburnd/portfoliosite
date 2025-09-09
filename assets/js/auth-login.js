@@ -39,7 +39,7 @@ async function initiateLogin() {
         }
         
         // Get auth URL from server
-        const response = await fetch('/auth/login', {
+        const response = await fetch('/auth/login?popup=true', {
             method: 'GET',
             credentials: 'same-origin'
         });

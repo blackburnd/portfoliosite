@@ -874,9 +874,12 @@ async def shutdown_event():
 
 @app.get("/auth/login")
 async def auth_login(request: Request):
-    """Initiate Google OAuth login via popup"""
+    """Initiate Google OAuth login - popup for AJAX, redirect for direct access"""
     try:
         logger.info("=== OAuth Login Request Started ===")
+        
+        # Check if this is a popup request (AJAX call)
+        is_popup_request = request.query_params.get('popup') == 'true'
         
         # Add log entry for login attempt
         log_with_context("INFO", "auth", "User initiated Google OAuth login process", request)
@@ -956,26 +959,55 @@ async def auth_login(request: Request):
             
             logger.info(f"OAuth auth URL created successfully with state: {state[:8]}...")
             
-            return JSONResponse({
-                "status": "success",
-                "auth_url": auth_url,
-                "requested_scopes": scopes
-            })
+            # Return JSON for popup requests, redirect for direct access
+            if is_popup_request:
+                return JSONResponse({
+                    "status": "success",
+                    "auth_url": auth_url,
+                    "requested_scopes": scopes
+                })
+            else:
+                # Direct access - redirect to Google OAuth
+                return RedirectResponse(url=auth_url, status_code=302)
             
         except Exception as redirect_error:
             logger.error(f"OAuth redirect error: {str(redirect_error)}")
-            return JSONResponse({
-                "status": "error",
-                "error": f"OAuth configuration error: {str(redirect_error)}"
-            }, status_code=500)
+            if is_popup_request:
+                return JSONResponse({
+                    "status": "error",
+                    "error": f"OAuth configuration error: {str(redirect_error)}"
+                }, status_code=500)
+            else:
+                return HTMLResponse(
+                    content=f"""
+                    <html><body>
+                    <h1>Login Error</h1>
+                    <p>OAuth configuration error: {str(redirect_error)}</p>
+                    <p><a href="/">Return to main site</a></p>
+                    </body></html>
+                    """, 
+                    status_code=500
+                )
         
     except Exception as e:
         logger.error(f"OAuth login error: {str(e)}")
         logger.exception("Full traceback:")
-        return JSONResponse({
-            "status": "error",
-            "error": f"Authentication error: {str(e)}"
-        }, status_code=500)
+        if is_popup_request:
+            return JSONResponse({
+                "status": "error",
+                "error": f"Authentication error: {str(e)}"
+            }, status_code=500)
+        else:
+            return HTMLResponse(
+                content=f"""
+                <html><body>
+                <h1>Login Error</h1>
+                <p>Authentication error: {str(e)}</p>
+                <p><a href="/">Return to main site</a></p>
+                </body></html>
+                """, 
+                status_code=500
+            )
 
 
 @app.get("/auth/login/redirect")
