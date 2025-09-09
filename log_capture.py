@@ -215,43 +215,11 @@ def add_log(level: str, message: str, module: str = "manual",
         loop.run_until_complete(_add_log_async())
 
 
-async def clear_logs():
-    """Clear all logs from the database"""
-    from database import database as db
-    
-    try:
-        await db.execute("DELETE FROM app_log")
-        await db.disconnect()
-        print("All logs cleared from database")
-        
-    except Exception as e:
-        print(f"Failed to clear logs: {e}")
-        try:
-            await db.disconnect()
-        except Exception:
-            pass
-
-
 # Legacy compatibility
 class LogCapture:
     """Legacy log capture class for compatibility"""
     
-    @staticmethod
-    def clear_logs():
-        """Clear logs - runs async function synchronously"""
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Create a task if loop is running
-                asyncio.create_task(clear_logs())
-            else:
-                # Run synchronously if no loop
-                loop.run_until_complete(clear_logs())
-        except RuntimeError:
-            # Create new loop if none exists
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(clear_logs())
+    pass
 
 
 # Create global instance for legacy compatibility

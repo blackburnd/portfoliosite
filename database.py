@@ -358,31 +358,42 @@ async def get_database():
 async def save_google_oauth_tokens(
     portfolio_id: str, access_token: str,
     refresh_token: str = None, expires_at: datetime = None,
-    scopes: str = None
+    scopes: str = None, oauth_state: str = None
 ) -> Dict[str, Any]:
-    """Save Google OAuth tokens to database"""
+    """Save Google OAuth tokens to database with optional state"""
     query = """
     INSERT INTO google_oauth_tokens
     (portfolio_id, access_token, refresh_token,
-     token_expires_at, granted_scopes)
+     token_expires_at, granted_scopes, oauth_state, state_expires_at)
     VALUES (:portfolio_id, :access_token, :refresh_token,
-            :token_expires_at, :granted_scopes)
-    ON CONFLICT (portfolio_id, access_token)
+            :token_expires_at, :granted_scopes, :oauth_state, :state_expires_at)
+    ON CONFLICT (portfolio_id)
     DO UPDATE SET
+        access_token = EXCLUDED.access_token,
         refresh_token = EXCLUDED.refresh_token,
         token_expires_at = EXCLUDED.token_expires_at,
         granted_scopes = EXCLUDED.granted_scopes,
+        oauth_state = EXCLUDED.oauth_state,
+        state_expires_at = EXCLUDED.state_expires_at,
         last_used_at = NOW(),
         updated_at = NOW()
     RETURNING id, portfolio_id, created_at
     """
+
+    # Calculate state expiration (10 minutes from now)
+    state_expires_at = None
+    if oauth_state:
+        from datetime import datetime, timezone, timedelta
+        state_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
     values = {
         "portfolio_id": portfolio_id,
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_expires_at": expires_at,
-        "granted_scopes": scopes
+        "granted_scopes": scopes,
+        "oauth_state": oauth_state,
+        "state_expires_at": state_expires_at
     }
 
     result = await database.fetch_one(query, values)
@@ -447,38 +458,53 @@ async def update_google_oauth_token_usage(
     return result > 0
 
 
-# OAuth State Management Functions for popup support
-async def save_oauth_state(state: str, portfolio_id: str) -> None:
-    """Save OAuth state for CSRF validation (works with popups)"""
+async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
+    """Save only OAuth state for initiation (no tokens yet)"""
+    from datetime import datetime, timezone, timedelta
+    
+    state_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
     query = """
-    INSERT INTO oauth_states (state, portfolio_id, created_at, expires_at)
-    VALUES (:state, :portfolio_id, NOW(), NOW() + INTERVAL '10 minutes')
-    ON CONFLICT (state) DO UPDATE SET
-        portfolio_id = EXCLUDED.portfolio_id,
-        created_at = EXCLUDED.created_at,
-        expires_at = EXCLUDED.expires_at
+    INSERT INTO google_oauth_tokens (portfolio_id, oauth_state, state_expires_at)
+    VALUES (:portfolio_id, :oauth_state, :state_expires_at)
+    ON CONFLICT (portfolio_id)
+    DO UPDATE SET
+        oauth_state = EXCLUDED.oauth_state,
+        state_expires_at = EXCLUDED.state_expires_at,
+        updated_at = NOW()
     """
     
-    await database.execute(query, {
-        "state": state,
-        "portfolio_id": portfolio_id
+    result = await database.execute(query, {
+        "portfolio_id": portfolio_id,
+        "oauth_state": state,
+        "state_expires_at": state_expires_at
     })
+    
+    return result > 0
 
 
-async def validate_and_consume_oauth_state(state: str) -> bool:
-    """Validate OAuth state and mark as used (one-time use)"""
+async def validate_oauth_state(portfolio_id: str, state: str) -> bool:
+    """Validate OAuth state and clear it after use"""
     query = """
-    DELETE FROM oauth_states 
-    WHERE state = :state AND expires_at > NOW() AND used = false
-    RETURNING state
+    SELECT id FROM google_oauth_tokens 
+    WHERE portfolio_id = :portfolio_id
+          AND oauth_state = :state
+          AND state_expires_at > NOW()
     """
     
-    result = await database.fetch_one(query, {"state": state})
-    return result is not None
-
-
-async def cleanup_expired_oauth_states() -> int:
-    """Clean up expired OAuth states"""
-    query = "DELETE FROM oauth_states WHERE expires_at < NOW()"
-    result = await database.execute(query)
-    return result
+    result = await database.fetch_one(query, {
+        "portfolio_id": portfolio_id,
+        "state": state
+    })
+    
+    if result:
+        # Clear the state after successful validation
+        clear_query = """
+        UPDATE google_oauth_tokens 
+        SET oauth_state = NULL, state_expires_at = NULL
+        WHERE id = :id
+        """
+        await database.execute(clear_query, {"id": result["id"]})
+        return True
+    
+    return False

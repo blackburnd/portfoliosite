@@ -931,13 +931,14 @@ async def auth_login(request: Request):
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
-        # Also store in database for popup support
-        from database import save_oauth_state, get_portfolio_id
+        # Store state in database for popup support
+        from database import save_oauth_state_only, get_portfolio_id
         try:
             portfolio_id = get_portfolio_id()
-            await save_oauth_state(state, portfolio_id)
+            await save_oauth_state_only(portfolio_id, state)
+            logger.info(f"OAuth state saved to database: {state[:8]}...")
         except Exception as state_error:
-            logger.warning(f"Failed to save OAuth state to database: {state_error}")
+            logger.warning(f"Failed to save OAuth state: {state_error}")
         
         # Define explicit scopes for login (basic scopes only)
         scopes = [
@@ -1062,6 +1063,9 @@ async def auth_login_redirect(request: Request):
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
+    from database import (validate_oauth_state, get_portfolio_id,
+                          save_google_oauth_tokens)
+    
     logger.info("=== OAuth Callback Received ===")
     logger.info(f"Callback URL: {request.url}")
     logger.info(f"Query params: {dict(request.query_params)}")
@@ -1150,53 +1154,66 @@ async def auth_callback(request: Request):
     try:
         # Debug state validation with enhanced popup support
         callback_state = request.query_params.get('state')
-        session_state = request.session.get('oauth_state')
         
         logger.info("=== CSRF State Validation Debug ===")
         logger.info(f"Callback state: {callback_state or 'NONE'}")
-        logger.info(f"Session state: {session_state or 'NONE'}")
-        logger.info(f"Session keys: {list(request.session.keys())}")
-        logger.info(f"State match: {callback_state == session_state}")
         
-        # Validate CSRF state parameter using both session and database
-        state_valid = False
-        if callback_state:
-            # Try session validation first
-            if session_state and callback_state == session_state:
-                state_valid = True
-                logger.info("State validated via session")
-            # Try database validation for popup support
-            else:
-                from database import validate_and_consume_oauth_state
-                try:
-                    state_valid = await validate_and_consume_oauth_state(callback_state)
-                    if state_valid:
-                        logger.info("State validated via database (popup)")
-                    else:
-                        logger.warning("State not found in database or expired")
-                except Exception as db_state_error:
-                    logger.error(f"Database state validation error: {db_state_error}")
+        # Validate CSRF state parameter using database
+        if not callback_state:
+            logger.error("No CSRF state in callback")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Security Error</h1>
+                <p>CSRF validation failed - missing state parameter.</p>
+                <p><a href="/auth/login">Try logging in again</a> |
+                   <a href="/">Return to main site</a></p>
+                </body></html>
+                """,
+                status_code=400
+            )
         
-        # Validate CSRF state parameter
-        if not callback_state or not state_valid:
-            logger.error(f"CSRF validation failed - callback: {callback_state or 'NONE'}, session: {session_state or 'NONE'}")
+        # Get portfolio ID for state validation
+        portfolio_id = request.session.get('portfolio_id')
+        if not portfolio_id:
+            logger.error("No portfolio ID in session")
+            return HTMLResponse(
+                content="""
+                <html><body>
+                <h1>Security Error</h1>
+                <p>Session error - missing portfolio context.</p>
+                <p><a href="/auth/login">Try logging in again</a> |
+                   <a href="/">Return to main site</a></p>
+                </body></html>
+                """,
+                status_code=400
+            )
+        
+        # Validate state using database
+        is_valid = validate_oauth_state(portfolio_id, callback_state)
+        if not is_valid:
+            logger.error(f"CSRF state validation failed for portfolio "
+                         f"{portfolio_id} with state {callback_state}")
             return HTMLResponse(
                 content="""
                 <html><body>
                 <h1>Security Error</h1>
                 <p>CSRF validation failed. This could be due to:</p>
                 <ul>
-                    <li>Session timeout</li>
-                    <li>Browser security restrictions</li>
-                    <li>Invalid request state</li>
+                    <li>State timeout (10 minutes)</li>
+                    <li>Invalid or expired state</li>
+                    <li>Security validation failure</li>
                 </ul>
-                <p><a href="/auth/login">Try logging in again</a> | <a href="/">Return to main site</a></p>
+                <p><a href="/auth/login">Try logging in again</a> |
+                   <a href="/">Return to main site</a></p>
                 </body></html>
-                """, 
+                """,
                 status_code=400
             )
         
-        # Clear the state from session after validation
+        logger.info(f"CSRF state validation successful for "
+                    f"portfolio {portfolio_id}")
+        # State is automatically removed from database after validation
         request.session.pop('oauth_state', None)
         
         # Check if OAuth is properly configured
@@ -1263,7 +1280,6 @@ async def auth_callback(request: Request):
         }
         
         # Also save OAuth tokens to database for Gmail API usage
-        from database import save_google_oauth_tokens, get_portfolio_id
         portfolio_id = get_portfolio_id()
         if token.get('access_token'):
             try:
@@ -1934,41 +1950,6 @@ async def get_logs_data(
                 "total": 0,
                 "pages": 0
             }
-        }, status_code=500)
-
-
-@app.post("/logs/clear")
-async def clear_logs(
-    request: Request,
-    admin: dict = Depends(require_admin_auth_session)
-):
-    """Clear all application logs"""
-    
-    try:
-        # Log the clear action before clearing
-        add_log(
-            "INFO",
-            "logs_admin",
-            "Admin cleared all application logs",
-            function="clear_logs",
-            line=0,
-            user="system",
-            extra={}
-        )
-        
-        # Clear all logs
-        await database.execute("DELETE FROM app_log")
-        
-        return JSONResponse({
-            "status": "success",
-            "message": "All logs cleared successfully"
-        })
-        
-    except Exception as e:
-        logger.error(f"Error clearing logs: {str(e)}")
-        return JSONResponse({
-            "status": "error",
-            "message": f"Failed to clear logs: {str(e)}"
         }, status_code=500)
 
 
@@ -3025,16 +3006,6 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         import secrets
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
-        
-        # Store state in database for popup support
-        from database import save_oauth_state, get_portfolio_id
-        try:
-            portfolio_id = get_portfolio_id()
-            await save_oauth_state(state, portfolio_id)
-            logger.info(f"OAuth state saved to database for popup support: {state[:8]}...")
-        except Exception as state_error:
-            logger.error(f"Failed to save OAuth state to database: {state_error}")
-            # Continue anyway, session state might still work
         
         # Define explicit scopes that we're requesting (including Gmail for email sending)
         scopes = [

@@ -23,29 +23,6 @@ window.refreshLogs = function() {
     loadLogs();
 };
 
-window.clearLogs = async function() {
-    console.log('Clear button clicked');
-    if (confirm('Are you sure you want to clear all logs?')) {
-        try {
-            const cacheBust = Date.now() + Math.random();
-            const response = await fetch(`/logs/clear?v=${cacheBust}&cb=v2_1`, { 
-                method: 'POST',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache'
-                }
-            });
-            if (response.ok) {
-                refreshLogs();
-            } else {
-                alert('Failed to clear logs');
-            }
-        } catch (error) {
-            alert('Failed to clear logs: ' + error.message);
-        }
-    }
-};
-
 window.clearFilters = function() {
     console.log('Clear filters button clicked');
     document.getElementById('searchBox').value = '';
