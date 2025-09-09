@@ -271,8 +271,9 @@ async def send_contact_email(name: str, email: str, subject: str, message: str, 
         recipient_email = os.getenv("CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com")
         
         # Get OAuth credentials from database
-        from database import get_google_oauth_tokens, save_google_oauth_tokens, update_google_oauth_token_usage
-        oauth_data = await get_google_oauth_tokens()
+        from database import get_google_oauth_tokens, save_google_oauth_tokens, update_google_oauth_token_usage, get_portfolio_id
+        portfolio_id = get_portfolio_id()
+        oauth_data = await get_google_oauth_tokens(portfolio_id)
         
         if not oauth_data or not oauth_data.get('access_token'):
             logger.warning("Gmail API: No OAuth credentials found for email sending")
@@ -303,11 +304,11 @@ async def send_contact_email(name: str, email: str, subject: str, message: str, 
             credentials.refresh(GoogleRequest())
             # Save refreshed token back to database
             await save_google_oauth_tokens(
+                portfolio_id,
                 credentials.token,
                 credentials.refresh_token,
                 credentials.expiry,
-                " ".join(credentials.scopes),
-                oauth_data['requested_scopes']
+                " ".join(credentials.scopes)
             )
         
         # Build Gmail service
@@ -344,7 +345,7 @@ This email was automatically generated from your portfolio website contact form.
         result = service.users().messages().send(userId='me', body=message_obj).execute()
         
         # Update token usage
-        await update_google_oauth_token_usage()
+        await update_google_oauth_token_usage(portfolio_id)
         
         logger.info(f"Gmail API: Contact notification email sent for submission #{contact_id}, Message ID: {result.get('id')}")
         add_log("INFO", f"Gmail API: Email sent for submission #{contact_id}, Message ID: {result.get('id')}", "gmail_api_email_sent")
@@ -1200,7 +1201,8 @@ async def auth_callback(request: Request):
         }
         
         # Also save OAuth tokens to database for Gmail API usage
-        from database import save_google_oauth_tokens
+        from database import save_google_oauth_tokens, get_portfolio_id
+        portfolio_id = get_portfolio_id()
         if token.get('access_token'):
             try:
                 from datetime import datetime, timezone
@@ -1224,12 +1226,11 @@ async def auth_callback(request: Request):
                 
                 # Ensure database save happens
                 save_result = await save_google_oauth_tokens(
-                    email,
+                    portfolio_id,
                     token.get('access_token'),
                     token.get('refresh_token', ''),
                     expires_at,
-                    granted_scopes,
-                    requested_scopes
+                    granted_scopes
                 )
                 
                 logger.info(f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, save_result: {save_result}")
@@ -1704,17 +1705,14 @@ async def work_admin_page(
 
 # --- Logs Admin Page ---
 @app.get("/logs", response_class=HTMLResponse)
-async def logs_admin_page(
-    request: Request,
-    admin: dict = Depends(require_admin_auth_session)
-):
+async def logs_admin_page(request: Request):
     """Application logs viewer interface"""
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "current_page": "logs",
-        "user_info": admin,
-        "user_authenticated": True,
-        "user_email": admin.get("email", ""),
+        "user_info": None,
+        "user_authenticated": False,
+        "user_email": "",
         "cache_bust_version": str(int(time.time()))
     })
 
@@ -1730,8 +1728,7 @@ async def get_logs_data(
     search: str = None,
     level: str = None,
     module: str = None,
-    time_filter: str = None,
-    admin: dict = Depends(require_admin_auth_session)
+    time_filter: str = None
 ):
     """Get log data for endless scrolling logs interface"""
     from datetime import datetime

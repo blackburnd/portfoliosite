@@ -352,3 +352,106 @@ db = PortfolioDatabase()
 async def get_database():
     """Get database instance"""
     return db
+
+
+# OAuth Token Functions
+async def save_google_oauth_tokens(
+    portfolio_id: str, access_token: str,
+    refresh_token: str = None, expires_at: datetime = None,
+    scopes: str = None
+) -> Dict[str, Any]:
+    """Save Google OAuth tokens to database"""
+    query = """
+    INSERT INTO google_oauth_tokens
+    (portfolio_id, admin_email, access_token, refresh_token,
+     token_expires_at, granted_scopes)
+    VALUES (:portfolio_id, :admin_email, :access_token, :refresh_token,
+            :token_expires_at, :granted_scopes)
+    ON CONFLICT (portfolio_id, admin_email)
+    DO UPDATE SET
+        access_token = EXCLUDED.access_token,
+        refresh_token = EXCLUDED.refresh_token,
+        token_expires_at = EXCLUDED.token_expires_at,
+        granted_scopes = EXCLUDED.granted_scopes,
+        last_used_at = NOW(),
+        updated_at = NOW()
+    RETURNING id, portfolio_id, created_at
+    """
+
+    values = {
+        "portfolio_id": portfolio_id,
+        "admin_email": "system@blackburnsystems.com",  # Default admin email
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_expires_at": expires_at,
+        "granted_scopes": scopes
+    }
+
+    result = await database.fetch_one(query, values)
+    return {
+        "id": result["id"],
+        "portfolio_id": str(result["portfolio_id"]),
+        "created_at": (result["created_at"].isoformat()
+                       if result["created_at"] else None)
+    }
+
+
+async def get_google_oauth_tokens(
+    portfolio_id: str
+) -> Optional[Dict[str, Any]]:
+    """Get Google OAuth tokens from database"""
+    query = """
+    SELECT id, portfolio_id, access_token, refresh_token,
+           token_expires_at, granted_scopes, last_used_at, is_active,
+           created_at, updated_at
+    FROM google_oauth_tokens
+    WHERE portfolio_id = :portfolio_id AND admin_email = :admin_email
+          AND is_active = true
+    ORDER BY updated_at DESC
+    LIMIT 1
+    """
+    values = {
+        "portfolio_id": portfolio_id,
+        "admin_email": "system@blackburnsystems.com"
+    }
+
+    result = await database.fetch_one(query, values)
+    if not result:
+        return None
+
+    return {
+        "id": result["id"],
+        "portfolio_id": str(result["portfolio_id"]),
+        "access_token": result["access_token"],
+        "refresh_token": result["refresh_token"],
+        "token_expires_at": (result["token_expires_at"].isoformat()
+                             if result["token_expires_at"] else None),
+        "granted_scopes": result["granted_scopes"],
+        "last_used_at": (result["last_used_at"].isoformat()
+                         if result["last_used_at"] else None),
+        "is_active": result["is_active"],
+        "created_at": (result["created_at"].isoformat()
+                       if result["created_at"] else None),
+        "updated_at": (result["updated_at"].isoformat()
+                       if result["updated_at"] else None)
+    }
+
+
+async def update_google_oauth_token_usage(
+    portfolio_id: str
+) -> bool:
+    """Update last_used_at timestamp for OAuth token"""
+    query = """
+    UPDATE google_oauth_tokens
+    SET last_used_at = NOW(), updated_at = NOW()
+    WHERE portfolio_id = :portfolio_id AND admin_email = :admin_email
+          AND is_active = true
+    """
+
+    result = await database.execute(
+        query, {
+            "portfolio_id": portfolio_id,
+            "admin_email": "system@blackburnsystems.com"
+        }
+    )
+    return result > 0
