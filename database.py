@@ -508,3 +508,26 @@ async def validate_oauth_state(portfolio_id: str, state: str) -> bool:
         return True
     
     return False
+
+
+async def validate_oauth_state_simple(state: str) -> bool:
+    """Validate OAuth state without portfolio_id dependency"""
+    query = """
+    SELECT id FROM google_oauth_tokens 
+    WHERE oauth_state = :state
+          AND state_expires_at > NOW()
+    """
+    
+    result = await database.fetch_one(query, {"state": state})
+    
+    if result:
+        # Clear the state after successful validation
+        clear_query = """
+        UPDATE google_oauth_tokens 
+        SET oauth_state = NULL, state_expires_at = NULL
+        WHERE id = :id
+        """
+        await database.execute(clear_query, {"id": result["id"]})
+        return True
+    
+    return False

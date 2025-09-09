@@ -1063,7 +1063,7 @@ async def auth_login_redirect(request: Request):
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
-    from database import (validate_oauth_state, get_portfolio_id,
+    from database import (validate_oauth_state_simple, get_portfolio_id,
                           save_google_oauth_tokens)
     
     logger.info("=== OAuth Callback Received ===")
@@ -1173,27 +1173,11 @@ async def auth_callback(request: Request):
                 status_code=400
             )
         
-        # Get portfolio ID for state validation
-        portfolio_id = request.session.get('portfolio_id')
-        if not portfolio_id:
-            logger.error("No portfolio ID in session")
-            return HTMLResponse(
-                content="""
-                <html><body>
-                <h1>Security Error</h1>
-                <p>Session error - missing portfolio context.</p>
-                <p><a href="/auth/login">Try logging in again</a> |
-                   <a href="/">Return to main site</a></p>
-                </body></html>
-                """,
-                status_code=400
-            )
-        
-        # Validate state using database
-        is_valid = validate_oauth_state(portfolio_id, callback_state)
+        # Validate state using database (without portfolio_id dependency)
+        is_valid = await validate_oauth_state_simple(callback_state)
         if not is_valid:
-            logger.error(f"CSRF state validation failed for portfolio "
-                         f"{portfolio_id} with state {callback_state}")
+            logger.error(f"CSRF state validation failed with state "
+                         f"{callback_state}")
             return HTMLResponse(
                 content="""
                 <html><body>
@@ -1211,8 +1195,7 @@ async def auth_callback(request: Request):
                 status_code=400
             )
         
-        logger.info(f"CSRF state validation successful for "
-                    f"portfolio {portfolio_id}")
+        logger.info("CSRF state validation successful")
         # State is automatically removed from database after validation
         request.session.pop('oauth_state', None)
         
