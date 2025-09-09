@@ -79,6 +79,14 @@ steps:
     sudo cp portfolio.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable portfolio.service
+
+    # Create and configure the portfoliosite logging directory
+    echo "=== Setting up logging directory ==="
+    sudo mkdir -p /var/log/portfoliosite
+    sudo chown blackburnd:www-data /var/log/portfoliosite
+    sudo chmod 755 /var/log/portfoliosite
+    echo "✓ Logging directory created and configured"
+
     sudo systemctl start portfolio.service
 
     # Start Nginx
