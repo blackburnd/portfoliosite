@@ -98,7 +98,6 @@ CREATE TABLE IF NOT EXISTS app_log (
 CREATE TABLE IF NOT EXISTS google_oauth_tokens (
     id SERIAL PRIMARY KEY,
     portfolio_id UUID NOT NULL REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
-    admin_email VARCHAR(100) NOT NULL,
     access_token TEXT,
     refresh_token TEXT,
     token_expires_at TIMESTAMP WITH TIME ZONE,
@@ -110,7 +109,7 @@ CREATE TABLE IF NOT EXISTS google_oauth_tokens (
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(portfolio_id, admin_email)
+    UNIQUE(portfolio_id)
 );
 
 -- LinkedIn OAuth Config table
@@ -173,7 +172,6 @@ CREATE INDEX IF NOT EXISTS idx_oauth_apps_active ON oauth_apps(is_active);
 CREATE INDEX IF NOT EXISTS idx_app_log_portfolio_id ON app_log(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_app_log_timestamp ON app_log(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_google_oauth_tokens_portfolio_id ON google_oauth_tokens(portfolio_id);
-CREATE INDEX IF NOT EXISTS idx_google_oauth_tokens_admin_email ON google_oauth_tokens(admin_email);
 CREATE INDEX IF NOT EXISTS idx_linkedin_oauth_config_portfolio_id ON linkedin_oauth_config(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_linkedin_oauth_connections_portfolio_id ON linkedin_oauth_connections(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_linkedin_oauth_scopes_portfolio_id ON linkedin_oauth_scopes(portfolio_id);
