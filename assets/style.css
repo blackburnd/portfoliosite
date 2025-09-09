@@ -19,6 +19,7 @@ body {
 
 .profile-image {
     grid-column: 2;
+    grid-row: 1;
     width: 100%;
     max-width: 320px;
     min-width: 180px;
@@ -46,7 +47,9 @@ body {
 
 .hero-content {
     grid-column: 1;
+    grid-row: 1;
     max-width: 600px;
+    padding-right: 20px;
 }
 
 .main-content {
@@ -78,7 +81,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2em;
+    margin-bottom: 4em;
     position: relative;
 }
 
