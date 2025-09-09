@@ -18,11 +18,11 @@ body {
 }
 
 .profile-image {
-    float: none;
+    float: none !important;
+    margin: 0 !important;
     width: 34vw;
     max-width: 320px;
     min-width: 180px;
-    margin: 0;
     text-align: right;
     position: relative;
     top: 0;
