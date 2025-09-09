@@ -33,20 +33,15 @@ body {
     height: auto;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    filter: grayscale(100%) contrast(1.08);
+    filter: grayscale(100%) contrast(1.08) scaleX(-1);
     border: 1px solid #e0e0e0;
 }
 
 .main-content {
-    margin-top: 0;
-    margin-right: 0;
-    margin-left: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+    display: block;
+    clear: right;
     overflow: visible;
     max-width: none;
-    display: block;
-    clear: none;
 }
 
 .about {
@@ -277,7 +272,7 @@ nav li.active a:hover {
     height: auto;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    filter: grayscale(100%) contrast(1.08);
+    filter: grayscale(100%) contrast(1.08) scaleX(-1);
     border: 1px solid #e0e0e0;
 }
 
@@ -2259,6 +2254,7 @@ td[style*="#abd6ff"] {
     border-radius: 8px;
     font-size: 14px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .logs-table-container {
