@@ -247,13 +247,22 @@ async def send_contact_email(name: str, email: str, subject: str, message: str, 
             add_log("WARNING", "Gmail API: No OAuth credentials found", "gmail_api_no_credentials")
             return False
         
+        # Get OAuth app configuration from database for client credentials
+        ttw_manager = TTWOAuthManager()
+        google_config = await ttw_manager.get_google_oauth_app_config()
+        
+        if not google_config:
+            logger.warning("Gmail API: No OAuth app configuration found")
+            add_log("WARNING", "Gmail API: No OAuth app configuration found", "gmail_api_no_config")
+            return False
+        
         # Create credentials object
         credentials = Credentials(
             token=oauth_data['access_token'],
             refresh_token=oauth_data.get('refresh_token'),
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=os.getenv("GOOGLE_CLIENT_ID"),
-            client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+            client_id=google_config['client_id'],
+            client_secret=google_config['client_secret'],
             scopes=oauth_data['granted_scopes'].split()
         )
         
@@ -950,12 +959,16 @@ async def auth_login(request: Request):
             import secrets
             state = secrets.token_urlsafe(32)
             
+            # Store state in session for later validation
+            request.session['oauth_state'] = state
+            
             result = await google.authorize_redirect(
                 request, 
                 redirect_uri,
                 state=state
             )
             logger.info(f"OAuth redirect created successfully with state: {state[:8]}...")
+            logger.info(f"Session state stored: {request.session.get('oauth_state', 'NOT_FOUND')[:8]}...")
         except Exception as redirect_error:
             logger.error(f"OAuth redirect error: {str(redirect_error)}")
             raise
@@ -1066,6 +1079,13 @@ async def auth_callback(request: Request):
         logger.error(f"Failed to refresh OAuth config in callback: {config_error}")
     
     try:
+        # Debug state validation
+        callback_state = request.query_params.get('state')
+        session_state = request.session.get('oauth_state')
+        logger.info(f"Callback state: {callback_state[:8] if callback_state else 'NONE'}...")
+        logger.info(f"Session state: {session_state[:8] if session_state else 'NONE'}...")
+        logger.info(f"State match: {callback_state == session_state}")
+        
         # Check if OAuth is properly configured
         if not oauth or not oauth.google:
             logger.error("OAuth not configured in callback")
@@ -1080,7 +1100,7 @@ async def auth_callback(request: Request):
                 status_code=503
             )
         
-        logger.info("State validation passed, exchanging code for token...")
+        logger.info("About to exchange code for token...")
         google = oauth.google
         token = await google.authorize_access_token(request)
         logger.info(f"Token received: {bool(token)}")
@@ -3054,12 +3074,14 @@ async def test_google_oauth_connection(admin: dict = Depends(require_admin_auth_
     try:
         add_log("INFO", "admin_google_oauth_test", "System")
         
-        google_configured = bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"))
+        # Check if Google OAuth is configured in database
+        ttw_manager = TTWOAuthManager()
+        google_configured = await ttw_manager.is_google_oauth_app_configured()
         
         if not google_configured:
             return JSONResponse({
                 "status": "error",
-                "detail": "Google OAuth not configured"
+                "detail": "Google OAuth not configured in database"
             }, status_code=400)
         
         # Test configuration validity
