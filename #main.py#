@@ -140,7 +140,7 @@ def log_with_context(level: str, module: str, message: str,
         except Exception:
             pass
     
-    # ALSO log through Python logging system to ensure database handler captures it
+We need to finish up fixing the oauth workflow, it appears we still have a CSRF issue, at one of the very last steps of the authorization process when triggering the process from clicking on 'Authorize Google Access', S    # ALSO log through Python logging system to ensure database handler captures it
     try:
         logger_obj = logging.getLogger(module)
         log_level = getattr(logging, level.upper(), logging.INFO)
@@ -1272,7 +1272,7 @@ async def logout(request: Request, response: Response):
             user_email = user_session.get('email', 'unknown')
         
         # Add log entry for logout
-        log_with_context("INFO", "auth", f"User logged out: {user_email}", request)
+        log_with_context(request, "INFO", "auth", f"User logged out: {user_email}")
         
         # Clear all session data
         request.session.clear()
@@ -1302,7 +1302,7 @@ async def disconnect(request: Request, response: Response):
             pass
         
         # Add log entry for disconnect
-        log_with_context("INFO", "auth", f"User disconnected (revoked tokens): {user_email}", request)
+        log_with_context(request, "INFO", "auth", f"User disconnected (revoked tokens): {user_email}")
         
         # First try to revoke the Google token if we have one
         try:
