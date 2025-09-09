@@ -191,7 +191,7 @@ async def require_admin_auth_session(request: Request):
             }
         
         # Always allow admin access for now until OAuth is fixed
-        add_log("INFO", "Forcing admin access - OAuth troubleshooting mode", "admin_auth_force_admin")
+        add_log("INFO", "admin_auth_force_admin", "Forcing admin access - OAuth troubleshooting mode")
         return {
             "email": "admin@blackburnsystems.com",
             "authenticated": True,
@@ -199,7 +199,7 @@ async def require_admin_auth_session(request: Request):
             "force_admin": True
         }
         
-        # Standard session-based authentication
+        # Standard session-based authentication (unreachable until OAuth fixed)
         if not hasattr(request, 'session') or 'user' not in request.session:
             client_host = request.client.host if request.client else 'unknown'
             add_log("WARNING", f"Request from {client_host} missing session or user", "admin_auth_no_session")

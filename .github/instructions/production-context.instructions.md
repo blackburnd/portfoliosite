@@ -14,7 +14,10 @@ This is a PRODUCTION application running on Google Cloud Platform, NOT a local a
 
 ## Debugging Guidelines:
 - DO NOT try to run local Python commands to debug production issues
-- Use application logs (/admin/logs) to investigate issues
+- DO NOT try to connect to the database directly via SQL scripts - the database is not properly logging all exceptions yet
+- PRODUCTION LOGS can ONLY be read from the VM instance running on Google Cloud
+- Use 'gcloud compute instances list' first to find the instance, then SSH into it to access logs via journalctl
+- Use application logs (/admin/logs) to investigate issues when available
 - Add temporary debug logging to endpoints if needed, then commit/push to deploy
 - Database queries should be tested via the SQL admin interface (/admin/sql)
 - Check the logs for actual runtime behavior rather than trying to simulate locally
