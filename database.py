@@ -363,13 +363,12 @@ async def save_google_oauth_tokens(
     """Save Google OAuth tokens to database"""
     query = """
     INSERT INTO google_oauth_tokens
-    (portfolio_id, admin_email, access_token, refresh_token,
+    (portfolio_id, access_token, refresh_token,
      token_expires_at, granted_scopes)
-    VALUES (:portfolio_id, :admin_email, :access_token, :refresh_token,
+    VALUES (:portfolio_id, :access_token, :refresh_token,
             :token_expires_at, :granted_scopes)
-    ON CONFLICT (portfolio_id, admin_email)
+    ON CONFLICT (portfolio_id, access_token)
     DO UPDATE SET
-        access_token = EXCLUDED.access_token,
         refresh_token = EXCLUDED.refresh_token,
         token_expires_at = EXCLUDED.token_expires_at,
         granted_scopes = EXCLUDED.granted_scopes,
@@ -380,7 +379,6 @@ async def save_google_oauth_tokens(
 
     values = {
         "portfolio_id": portfolio_id,
-        "admin_email": "system@blackburnsystems.com",  # Default admin email
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_expires_at": expires_at,
@@ -405,15 +403,11 @@ async def get_google_oauth_tokens(
            token_expires_at, granted_scopes, last_used_at, is_active,
            created_at, updated_at
     FROM google_oauth_tokens
-    WHERE portfolio_id = :portfolio_id AND admin_email = :admin_email
-          AND is_active = true
+    WHERE portfolio_id = :portfolio_id AND is_active = true
     ORDER BY updated_at DESC
     LIMIT 1
     """
-    values = {
-        "portfolio_id": portfolio_id,
-        "admin_email": "system@blackburnsystems.com"
-    }
+    values = {"portfolio_id": portfolio_id}
 
     result = await database.fetch_one(query, values)
     if not result:
@@ -444,14 +438,10 @@ async def update_google_oauth_token_usage(
     query = """
     UPDATE google_oauth_tokens
     SET last_used_at = NOW(), updated_at = NOW()
-    WHERE portfolio_id = :portfolio_id AND admin_email = :admin_email
-          AND is_active = true
+    WHERE portfolio_id = :portfolio_id AND is_active = true
     """
 
     result = await database.execute(
-        query, {
-            "portfolio_id": portfolio_id,
-            "admin_email": "system@blackburnsystems.com"
-        }
+        query, {"portfolio_id": portfolio_id}
     )
     return result > 0
