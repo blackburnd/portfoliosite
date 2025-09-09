@@ -445,3 +445,40 @@ async def update_google_oauth_token_usage(
         query, {"portfolio_id": portfolio_id}
     )
     return result > 0
+
+
+# OAuth State Management Functions for popup support
+async def save_oauth_state(state: str, portfolio_id: str) -> None:
+    """Save OAuth state for CSRF validation (works with popups)"""
+    query = """
+    INSERT INTO oauth_states (state, portfolio_id, created_at, expires_at)
+    VALUES (:state, :portfolio_id, NOW(), NOW() + INTERVAL '10 minutes')
+    ON CONFLICT (state) DO UPDATE SET
+        portfolio_id = EXCLUDED.portfolio_id,
+        created_at = EXCLUDED.created_at,
+        expires_at = EXCLUDED.expires_at
+    """
+    
+    await database.execute(query, {
+        "state": state,
+        "portfolio_id": portfolio_id
+    })
+
+
+async def validate_and_consume_oauth_state(state: str) -> bool:
+    """Validate OAuth state and mark as used (one-time use)"""
+    query = """
+    DELETE FROM oauth_states 
+    WHERE state = :state AND expires_at > NOW() AND used = false
+    RETURNING state
+    """
+    
+    result = await database.fetch_one(query, {"state": state})
+    return result is not None
+
+
+async def cleanup_expired_oauth_states() -> int:
+    """Clean up expired OAuth states"""
+    query = "DELETE FROM oauth_states WHERE expires_at < NOW()"
+    result = await database.execute(query)
+    return result

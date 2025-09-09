@@ -931,6 +931,14 @@ async def auth_login(request: Request):
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
+        # Also store in database for popup support
+        from database import save_oauth_state, get_portfolio_id
+        try:
+            portfolio_id = get_portfolio_id()
+            await save_oauth_state(state, portfolio_id)
+        except Exception as state_error:
+            logger.warning(f"Failed to save OAuth state to database: {state_error}")
+        
         # Define explicit scopes for login (basic scopes only)
         scopes = [
             'openid',
@@ -1150,8 +1158,27 @@ async def auth_callback(request: Request):
         logger.info(f"Session keys: {list(request.session.keys())}")
         logger.info(f"State match: {callback_state == session_state}")
         
+        # Validate CSRF state parameter using both session and database
+        state_valid = False
+        if callback_state:
+            # Try session validation first
+            if session_state and callback_state == session_state:
+                state_valid = True
+                logger.info("State validated via session")
+            # Try database validation for popup support
+            else:
+                from database import validate_and_consume_oauth_state
+                try:
+                    state_valid = await validate_and_consume_oauth_state(callback_state)
+                    if state_valid:
+                        logger.info("State validated via database (popup)")
+                    else:
+                        logger.warning("State not found in database or expired")
+                except Exception as db_state_error:
+                    logger.error(f"Database state validation error: {db_state_error}")
+        
         # Validate CSRF state parameter
-        if not callback_state or not session_state or callback_state != session_state:
+        if not callback_state or not state_valid:
             logger.error(f"CSRF validation failed - callback: {callback_state or 'NONE'}, session: {session_state or 'NONE'}")
             return HTMLResponse(
                 content="""
@@ -2998,6 +3025,16 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         import secrets
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
+        
+        # Store state in database for popup support
+        from database import save_oauth_state, get_portfolio_id
+        try:
+            portfolio_id = get_portfolio_id()
+            await save_oauth_state(state, portfolio_id)
+            logger.info(f"OAuth state saved to database for popup support: {state[:8]}...")
+        except Exception as state_error:
+            logger.error(f"Failed to save OAuth state to database: {state_error}")
+            # Continue anyway, session state might still work
         
         # Define explicit scopes that we're requesting (including Gmail for email sending)
         scopes = [

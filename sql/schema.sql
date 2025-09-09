@@ -111,6 +111,15 @@ CREATE TABLE IF NOT EXISTS google_oauth_tokens (
     UNIQUE(portfolio_id, admin_email)
 );
 
+-- OAuth State Management table for popup CSRF validation
+CREATE TABLE IF NOT EXISTS oauth_states (
+    state VARCHAR(100) PRIMARY KEY,
+    portfolio_id UUID NOT NULL REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- LinkedIn OAuth Config table
 CREATE TABLE IF NOT EXISTS linkedin_oauth_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
