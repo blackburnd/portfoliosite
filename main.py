@@ -878,35 +878,22 @@ async def auth_login(request: Request):
         # Get fresh OAuth credentials from database before authorization
         try:
             ttw_manager = TTWOAuthManager()
-            google_config = await ttw_manager.get_google_oauth_app_config()
-            google_credentials = await ttw_manager.get_google_oauth_credentials()
+            google_config = await ttw_manager.get_google_config()
             
-            if not google_config or not google_credentials:
+            if not google_config:
                 return JSONResponse({
                     "status": "error",
                     "error": "Google OAuth is not configured. Please configure it first.",
                     "redirect": "/admin/google/oauth"
                 }, status_code=503)
             
-            # Re-register OAuth client with fresh credentials including redirect_uri
-            oauth.register(
-                name='google',
-                client_id=google_config['client_id'],
-                client_secret=google_credentials['client_secret'],
-                redirect_uri=google_config['redirect_uri'],
-                server_metadata_url=(
-                    'https://accounts.google.com/.well-known/'
-                    'openid-configuration'
-                ),
-                client_kwargs={
-                    'scope': 'openid email profile'
-                }
-            )
-            
+            client_id = google_config['client_id']
             redirect_uri = google_config['redirect_uri']
+            scopes = google_config['scopes']
+            
             logger.info(
                 f"Using fresh OAuth config - Client ID: "
-                f"{google_config['client_id'][:10]}..., "
+                f"{client_id[:10]}..., "
                 f"Redirect URI: {redirect_uri}"
             )
             
