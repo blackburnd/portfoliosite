@@ -459,20 +459,22 @@ async def update_google_oauth_token_usage(
 
 
 async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
-    """Save only OAuth state for initiation, updating the existing record."""
+    """Save only OAuth state for initiation, creating or updating the record as needed."""
     from datetime import datetime, timezone, timedelta
     
     state_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     
-    # Use a direct UPDATE statement to ensure oauth_state is set.
-    # This presumes a record for the portfolio_id already exists.
+    # Use INSERT ... ON CONFLICT to handle both new and existing users robustly.
+    # This will create a new record if one doesn't exist for the portfolio_id,
+    # or update the existing one if it does.
     query = """
-    UPDATE google_oauth_tokens
-    SET
-        oauth_state = :oauth_state,
-        state_expires_at = :state_expires_at,
+    INSERT INTO google_oauth_tokens (portfolio_id, oauth_state, state_expires_at, updated_at)
+    VALUES (:portfolio_id, :oauth_state, :state_expires_at, NOW())
+    ON CONFLICT (portfolio_id)
+    DO UPDATE SET
+        oauth_state = EXCLUDED.oauth_state,
+        state_expires_at = EXCLUDED.state_expires_at,
         updated_at = NOW()
-    WHERE portfolio_id = :portfolio_id
     """
     
     params = {
@@ -483,7 +485,7 @@ async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
     
     await database.execute(query, params)
     
-    # The row should always exist, so we assume success.
+    # This operation should always succeed.
     return True
 
 
