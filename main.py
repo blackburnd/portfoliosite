@@ -1260,6 +1260,13 @@ async def auth_callback(request: Request):
                     requested_scopes = 'openid email profile'
                 
                 # Ensure database save happens
+                logger.info(f"=== Saving OAuth tokens to database ===")
+                logger.info(f"Portfolio ID: {portfolio_id}")
+                logger.info(f"Access token (first 10 chars): {token.get('access_token', '')[:10]}...")
+                logger.info(f"Refresh token exists: {bool(token.get('refresh_token'))}")
+                logger.info(f"Expires at: {expires_at}")
+                logger.info(f"Granted scopes: {granted_scopes}")
+                
                 save_result = await save_google_oauth_tokens(
                     portfolio_id,
                     token.get('access_token'),
@@ -1268,13 +1275,12 @@ async def auth_callback(request: Request):
                     granted_scopes
                 )
                 
-                logger.info(f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, save_result: {save_result}")
-                add_log("INFO", "oauth_tokens_saved", f"OAuth tokens saved to database for {email} with scopes: {granted_scopes}, database_save_success: {save_result}")
+                logger.info(f"Token save result: {save_result}")
+                logger.info("=== OAuth tokens saved successfully ===")
                 
-            except Exception as db_error:
-                logger.error(f"Failed to save OAuth tokens to database: {str(db_error)}")
-                log_with_context("ERROR", "oauth_database_save_error", f"Failed to save OAuth tokens to database for {email}: {str(db_error)}", request)
-                # Don't fail the login if database save fails
+            except Exception as save_error:
+                logger.error(f"Failed to save OAuth tokens: {str(save_error)}")
+                logger.exception("Token save error details:")
         
         # Log successful login and session creation
         log_with_context("INFO", "auth", f"Successful login by {email} - session auth created", request)
