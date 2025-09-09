@@ -474,13 +474,14 @@ async def save_oauth_state_only(portfolio_id: str, state: str) -> bool:
         updated_at = NOW()
     """
     
-    result = await database.execute(query, {
+    await database.execute(query, {
         "portfolio_id": portfolio_id,
         "oauth_state": state,
         "state_expires_at": state_expires_at
     })
     
-    return result > 0
+    # For INSERT/UPDATE operations, execute() returns None on success
+    return True
 
 
 async def validate_oauth_state(portfolio_id: str, state: str) -> bool:
