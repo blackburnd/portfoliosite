@@ -995,10 +995,20 @@ async def auth_login(request: Request):
             # Store state in session for later validation
             request.session['oauth_state'] = state
             
+            # Define explicit scopes for login (basic scopes only)
+            scopes = [
+                'openid',
+                'email', 
+                'profile'
+            ]
+            
             result = await google.authorize_redirect(
                 request, 
                 redirect_uri,
-                state=state
+                scope=' '.join(scopes),
+                state=state,
+                access_type='offline',  # Request refresh token
+                prompt='select_account'  # Allow account selection
             )
             logger.info(f"OAuth redirect created successfully with state: {state[:8]}...")
             logger.info(f"Session state stored: {request.session.get('oauth_state', 'NOT_FOUND')[:8]}...")
