@@ -2764,16 +2764,26 @@ async def google_oauth_status(request: Request, admin: dict = Depends(require_ad
         client_secret = credentials.get("client_secret", "") if credentials else ""
         add_log("DEBUG", "oauth_client_secret_check", f"Client secret value: {'[PRESENT]' if client_secret else '[EMPTY]'}")
         
-        return JSONResponse({
+        # Log the exact values being returned
+        client_id = config.get("client_id", "") if config else ""
+        redirect_uri = config.get("redirect_uri", "") if config else ""
+        
+        add_log("DEBUG", "oauth_status_response_values", f"client_id: '{client_id}', client_secret: '{'[PRESENT]' if client_secret else '[EMPTY]'}', redirect_uri: '{redirect_uri}'")
+        
+        response_data = {
             "configured": google_configured,
             "connected": google_connected,
-            "client_id": config.get("client_id", "") if config else "",
+            "client_id": client_id,
             "client_secret": client_secret,
-            "redirect_uri": config.get("redirect_uri", "") if config else "",
+            "redirect_uri": redirect_uri,
             "account_email": request.session.get("user", {}).get("email") if google_connected else None,
             "last_sync": request.session.get("user", {}).get("login_time") if google_connected else None,
             "token_expiry": request.session.get("user", {}).get("expires_at") if google_connected else None
-        })
+        }
+        
+        add_log("DEBUG", "oauth_status_full_response", f"Full response: {response_data}")
+        
+        return JSONResponse(response_data)
         
     except Exception as e:
         add_log("ERROR", "oauth_status_error", f"Error getting Google OAuth status: {str(e)}")
