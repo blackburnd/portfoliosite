@@ -19,7 +19,7 @@ body {
 
 .profile-image {
     float: right;
-    width: 30%;
+    width: 34vw;
     max-width: 320px;
     min-width: 180px;
     margin: 0 0 20px 30px;
@@ -45,6 +45,7 @@ body {
 .hero-content {
     max-width: 100%;
     margin-right: 0;
+    overflow: visible;
 }
 
 .main-content {
