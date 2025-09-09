@@ -3,6 +3,7 @@
 import os
 import secrets
 import logging
+from logging.handlers import RotatingFileHandler
 import time
 import traceback
 import sys
@@ -38,12 +39,41 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2.credentials import Credentials
 
-# Configure logging
+# Configure logging with dedicated portfoliosite.log file
+# Create logs directory if it doesn't exist
+os.makedirs('/var/log/portfoliosite', exist_ok=True)
+
+# Configure main application logger
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - '
+           '[%(filename)s:%(lineno)d] - %(funcName)s() - %(message)s',
+    handlers=[
+        # File handler for portfoliosite.log with rotation
+        RotatingFileHandler(
+            '/var/log/portfoliosite/portfoliosite.log',
+            maxBytes=10*1024*1024,  # 10MB
+            backupCount=5,
+            encoding='utf-8'
+        ),
+        # Console handler for development
+        logging.StreamHandler()
+    ]
 )
-logger = logging.getLogger(__name__)
+
+# Get main logger
+logger = logging.getLogger('portfoliosite')
+logger.setLevel(logging.DEBUG)
+
+# Set specific loggers to appropriate levels
+logging.getLogger('uvicorn.access').setLevel(logging.INFO)
+logging.getLogger('uvicorn.error').setLevel(logging.INFO)
+logging.getLogger('databases').setLevel(logging.WARNING)
+
+logger.info("=== Portfolio Application Logging Initialized ===")
+logger.info("Log file: /var/log/portfoliosite/portfoliosite.log")
+logger.info("Log level: %s", logger.level)
+logger.info("Environment: %s", os.getenv('ENV', 'development'))
 
 
 class DatabaseLoggingHandler(logging.Handler):
@@ -65,7 +95,8 @@ class DatabaseLoggingHandler(logging.Handler):
             # Get the module name from the logger
             module = record.name if record.name != '__main__' else 'main'
             
-            # Add to database with correct parameter order: level, message, module
+            # Add to database with correct parameter order: level, message,
+            # module
             add_log(
                 level=record.levelname,
                 message=message,
@@ -75,7 +106,8 @@ class DatabaseLoggingHandler(logging.Handler):
             )
             
         except Exception as e:
-            # Don't let logging errors break the application, but print for debugging
+            # Don't let logging errors break the application, but print for
+            # debugging
             print(f"Database logging error: {e}")
             # Try to also log this error through standard logging
             try:

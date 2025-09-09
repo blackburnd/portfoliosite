@@ -7,6 +7,8 @@ User=blackburnd
 Group=www-data
 WorkingDirectory=/opt/portfoliosite
 EnvironmentFile=/etc/environment
+ExecStartPre=/bin/mkdir -p /var/log/portfoliosite
+ExecStartPre=/bin/chown blackburnd:www-data /var/log/portfoliosite
 ExecStart=/opt/portfoliosite/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 
 Restart=always
