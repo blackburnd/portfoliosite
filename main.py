@@ -1092,31 +1092,20 @@ async def auth_callback(request: Request):
     # Get fresh OAuth credentials from database for callback
     try:
         ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_google_oauth_app_config()
-        google_credentials = await ttw_manager.get_google_oauth_credentials()
+        google_config = await ttw_manager.get_google_config()
         
-        if google_config and google_credentials:
-            # Re-register OAuth client with fresh credentials for callback
-            oauth.register(
-                name='google',
-                client_id=google_config['client_id'],
-                client_secret=google_credentials['client_secret'],
-                server_metadata_url=(
-                    'https://accounts.google.com/.well-known/'
-                    'openid-configuration'
-                ),
-                client_kwargs={
-                    'scope': 'openid email profile'
-                }
+        if not google_config:
+            logger.error("Failed to load Google OAuth config during callback.")
+            return HTMLResponse(
+                content="<h1>Configuration Error</h1><p>Could not load Google OAuth configuration.</p>",
+                status_code=500
             )
-            logger.info(
-                f"Refreshed OAuth config for callback - "
-                f"Client ID: {google_config['client_id'][:10]}..."
-            )
-        else:
-            logger.warning("No OAuth config found during callback")
     except Exception as config_error:
         logger.error(f"Failed to refresh OAuth config in callback: {config_error}")
+        return HTMLResponse(
+            content="<h1>Configuration Error</h1><p>Could not load Google OAuth configuration.</p>",
+            status_code=500
+        )
     
     try:
         # Debug state validation with enhanced popup support
@@ -1178,31 +1167,51 @@ async def auth_callback(request: Request):
         # State is automatically removed from database after validation
         request.session.pop('oauth_state', None)
         
-        # Check if OAuth is properly configured
-        if not oauth or not oauth.google:
-            logger.error("OAuth not configured in callback")
+        # Exchange authorization code for tokens
+        code = request.query_params.get("code")
+        if not code:
+            logger.error("No authorization code in callback.")
             return HTMLResponse(
-                content="""
-                <html><body>
-                <h1>Authentication Error</h1>
-                <p>Google OAuth is not configured on this server.</p>
-                <p><a href="/">Return to main site</a></p>
-                </body></html>
-                """, 
-                status_code=503
+                content="<h1>Authentication Error</h1><p>Missing authorization code.</p>",
+                status_code=400
             )
+
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "client_id": google_config["client_id"],
+            "client_secret": google_config["client_secret"],
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": google_config["redirect_uri"],
+        }
+
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(token_url, data=token_data)
         
-        logger.info("About to exchange code for token...")
-        google = oauth.google
-        token = await google.authorize_access_token(request)
+        if token_response.status_code != 200:
+            logger.error(f"Failed to fetch token: {token_response.text}")
+            return HTMLResponse(
+                content=f"<h1>Authentication Error</h1><p>Failed to fetch token: {token_response.text}</p>",
+                status_code=400
+            )
+            
+        token = token_response.json()
         logger.info(f"Token received: {bool(token)}")
         
-        user_info = token.get('userinfo')
+        # Get user info from Google
+        user_info_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+        headers = {"Authorization": f"Bearer {token['access_token']}"}
+        async with httpx.AsyncClient() as client:
+            user_info_response = await client.get(user_info_url, headers=headers)
         
-        if not user_info:
-            # Fallback to get user info from Google
-            resp = await google.get('https://www.googleapis.com/oauth2/v1/userinfo', token=token)
-            user_info = resp.json()
+        if user_info_response.status_code != 200:
+            logger.error(f"Failed to fetch user info: {user_info_response.text}")
+            return HTMLResponse(
+                content=f"<h1>Authentication Error</h1><p>Failed to fetch user info: {user_info_response.text}</p>",
+                status_code=400
+            )
+            
+        user_info = user_info_response.json()
         
         email = user_info.get('email')
         if not email:
