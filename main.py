@@ -928,6 +928,18 @@ async def auth_login(request: Request):
         try:
             portfolio_id = get_portfolio_id()
             logger.info(f"Portfolio ID for state storage: {portfolio_id}")
+            
+            if not portfolio_id:
+                # Try to get portfolio_id directly from database
+                repo_name = os.getenv("_REPO_NAME", "daniel-blackburn")
+                portfolio_query = "SELECT portfolio_id FROM portfolios WHERE id = :repo_name"
+                portfolio_result = await database.fetch_one(portfolio_query, {"repo_name": repo_name})
+                if portfolio_result:
+                    portfolio_id = portfolio_result["portfolio_id"]
+                    logger.info(f"Retrieved portfolio_id from database: {portfolio_id}")
+                else:
+                    logger.error(f"No portfolio found for repo_name: {repo_name}")
+            
             if portfolio_id:
                 await save_oauth_state_only(portfolio_id, state)
                 logger.info(f"OAuth state saved to database: {state[:8]}...")
