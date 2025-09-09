@@ -18,12 +18,15 @@ body {
 }
 
 .profile-image {
-    float: right;
-    width: 34vw;
-    max-width: 320px;
-    min-width: 180px;
-    margin: 0 0 20px 30px;
-    text-align: right;
+    float: right !important;
+    width: 34vw !important;
+    max-width: 320px !important;
+    min-width: 180px !important;
+    margin: 0 0 20px 30px !important;
+    text-align: right !important;
+    position: static !important;
+    right: auto !important;
+    left: auto !important;
 }
 
 .profile-image img {
@@ -39,13 +42,15 @@ body {
 .intro-flex {
     margin-bottom: 32px;
     width: 100%;
-    overflow: auto; /* Clearfix to contain floats */
+    overflow: hidden;
+    position: relative;
 }
 
 .hero-content {
-    max-width: 100%;
-    margin-right: 0;
+    max-width: 65%;
+    width: 65%;
     overflow: visible;
+    float: left;
 }
 
 .main-content {
