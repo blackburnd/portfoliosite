@@ -18,14 +18,15 @@ body {
 }
 
 .profile-image {
-    float: right;
+    float: none;
     width: 34vw;
     max-width: 320px;
     min-width: 180px;
-    margin: 0 0 12px 32px;
+    margin: 0;
     text-align: right;
     position: relative;
     top: 0;
+    flex-shrink: 0;
 }
 
 .profile-image img {
@@ -35,13 +36,28 @@ body {
     box-shadow: 0 4px 16px rgba(0,0,0,0.10);
     filter: grayscale(100%) contrast(1.08) scaleX(-1);
     border: 1px solid #e0e0e0;
+    transform: scaleX(-1);
+}
+
+.intro-flex {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    margin-bottom: 18px;
+}
+
+.hero-content {
+    flex: 1 1 0;
+    min-width: 220px;
+    max-width: 600px;
 }
 
 .main-content {
     display: block;
-    clear: right;
+    clear: both;
     overflow: visible;
     max-width: none;
+    margin-top: 0;
 }
 
 .about {
@@ -64,7 +80,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 2em;
     position: relative;
 }
 
@@ -257,14 +273,15 @@ nav li.active a:hover {
 
 /* Profile Image Styles */
 .profile-image {
-    float: right;
+    float: none;
     width: 34vw;
     max-width: 320px;
     min-width: 180px;
-    margin: 0 0 12px 32px;
+    margin: 0;
     text-align: right;
     position: relative;
     top: 0;
+    flex-shrink: 0;
 }
 
 .profile-image img {
@@ -274,6 +291,7 @@ nav li.active a:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.10);
     filter: grayscale(100%) contrast(1.08) scaleX(-1);
     border: 1px solid #e0e0e0;
+    transform: scaleX(-1);
 }
 
 .amp {
@@ -1579,15 +1597,6 @@ button[type="submit"]:hover,
     .form-actions .btn {
         width: 100%;
         margin-bottom: 10px;
-    }
-    
-    .work-items-table {
-        font-size: 14px;
-    }
-    
-    .work-items-table th,
-    .work-items-table td {
-        padding: 8px;
     }
 }
 
