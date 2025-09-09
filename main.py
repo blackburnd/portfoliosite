@@ -128,7 +128,6 @@ class DatabaseLoggingHandler(logging.Handler):
 
 # Import our Google OAuth authentication module
 from auth import (
-    oauth, 
     get_current_user, 
     verify_token,
     is_authorized_user,
