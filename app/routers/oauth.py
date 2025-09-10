@@ -172,6 +172,14 @@ async def auth_callback(request: Request):
                 detail="Could not retrieve Google's public keys."
             )
 
+        # Re-fetch credentials just before use to ensure they are fresh
+        ttw_manager = TTWOAuthManager()
+        google_config = await ttw_manager.get_google_oauth_credentials()
+        if not google_config or not google_config.get('client_id'):
+            raise HTTPException(
+                status_code=503, detail="Google OAuth is not configured."
+            )
+
         try:
             header = jwt.get_unverified_header(id_token)
             kid = header['kid']
