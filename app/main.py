@@ -1,21 +1,43 @@
+import sys
+import os
+from typing import Optional, List
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from strawberry.fastapi import GraphQLRouter
 from pydantic import BaseModel
-from typing import Optional, List
-import app.resolvers as resolvers
-import sys
-import os
+from strawberry.fastapi import GraphQLRouter
+from starlette.middleware.sessions import SessionMiddleware
 
-# Add parent directory to path for imports
+# Add parent directory to path for local imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database import database as db
+
+import app.resolvers as resolvers
+from app.routers import admin, contact, logs, oauth, projects, showcase, sql, work
+from database import database, init_database, close_database
+
 
 app = FastAPI()
+
+# Add session middleware, required for OAuth user session
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "a_secret_key"))
+
 templates = Jinja2Templates(directory="templates")
 
-# Pydantic model for work item
+
+@app.on_event("startup")
+async def startup():
+    """Initialize database connection on startup."""
+    await init_database()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Close database connection on shutdown."""
+    await close_database()
+
+
+# --- Pydantic Models ---
 class WorkItem(BaseModel):
     id: Optional[str]
     portfolio_id: str
@@ -29,112 +51,101 @@ class WorkItem(BaseModel):
     company_url: Optional[str]
     sort_order: Optional[int] = 0
 
+
+# --- Routers ---
+# Include all modular routers
+app.include_router(admin.router)
+app.include_router(contact.router)
+app.include_router(logs.router)
+app.include_router(oauth.router)
+app.include_router(projects.router)
+app.include_router(showcase.router)
+app.include_router(sql.router)
+app.include_router(work.router)
+
 # GraphQL endpoint
 graphql_app = GraphQLRouter(resolvers.schema)
 app.include_router(graphql_app, prefix="/graphql")
 
+
+# --- Legacy Routes (to be phased out) ---
+
 @app.get("/profile")
 def get_profile():
+    """Placeholder for a user profile endpoint."""
     return {"name": "Your Name", "bio": "Short bio here."}
+
 
 @app.get("/portfolio")
 def get_portfolio():
-    return {"projects": [
-        {"title": "Project 1", "description": "Description of project 1."},
-        {"title": "Project 2", "description": "Description of project 2."}
-    ]}
-
-# /work page populated via GraphQL
-@app.get("/work", response_class=HTMLResponse)
-async def work_page():
-    # Query GraphQL endpoint for work experience
-    import httpx
-    query = """
-    query {
-        workExperience {
-            company
-            position
-            startDate
-            endDate
-            description
-        }
+    """Placeholder for a portfolio endpoint."""
+    return {
+        "projects": [
+            {"title": "Project 1", "description": "Description of project 1."},
+            {"title": "Project 2", "description": "Description of project 2."},
+        ]
     }
-    """
-    async with httpx.AsyncClient() as client:
-        resp = await client.post("http://localhost:8000/graphql", json={"query": query})
-        data = resp.json()
-    work_items = data.get("data", {}).get("workExperience", [])
-    html = "<h1>Work Experience</h1><ul>"
-    for item in work_items:
-        html += f"<li><strong>{item['company']}</strong> - {item['position']} ({item['startDate']} - {item.get('endDate','Present')})<br>{item['description']}</li>"
-    html += "</ul>"
-    return html
 
-# /schema page returns DB schema info
+
 @app.get("/schema", response_class=JSONResponse)
 async def schema_page():
-    # Get tables
-    tables = await db.fetch_all("""
-        SELECT table_name FROM information_schema.tables WHERE table_schema='public'
-    """)
+    """Endpoint to display database schema information."""
+    tables = await database.fetch_all(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+    )
     result = {}
     for t in tables:
-        table = t[0] if isinstance(t, tuple) else t['table_name']
-        # Get columns
-        columns = await db.fetch_all(f"""
-            SELECT column_name, data_type FROM information_schema.columns WHERE table_name='{table}'
-        """)
-        # Get count
-        count = await db.fetch_val(f"SELECT COUNT(*) FROM {table}")
+        table = t[0] if isinstance(t, tuple) else t["table_name"]
+        columns = await database.fetch_all(
+            f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name='{table}'"
+        )
+        count = await database.fetch_val(f"SELECT COUNT(*) FROM {table}")
         result[table] = {
-            "columns": [{"name": c[0] if isinstance(c, tuple) else c['column_name'], "type": c[1] if isinstance(c, tuple) else c['data_type']} for c in columns],
-            "count": count
+            "columns": [
+                {
+                    "name": c[0] if isinstance(c, tuple) else c["column_name"],
+                    "type": c[1] if isinstance(c, tuple) else c["data_type"],
+                }
+                for c in columns
+            ],
+            "count": count,
         }
-    await db.disconnect()
     return result
 
-# --- Resume Download Route ---
-@app.get("/resume/download", response_class=FileResponse)
-async def download_resume():
-    resume_path = "assets/files/danielblackburn.pdf"
-    return FileResponse(resume_path, media_type="application/pdf", filename="danielblackburn_resume.pdf")
 
-# --- Resume View Route ---
-@app.get("/resume", response_class=FileResponse)
-async def view_resume():
-    resume_path = "assets/files/danielblackburn.pdf"
-    return FileResponse(resume_path, media_type="application/pdf")
+# --- CRUD Endpoints for Work Items (consider moving to work router) ---
 
-# --- Work Admin Page ---
-@app.get("/workadmin", response_class=HTMLResponse)
-async def work_admin_page(request: Request):
-    return templates.TemplateResponse("workadmin.html", {"request": request})
-
-# --- CRUD Endpoints for Work Items ---
-
-# List all work items
 @app.get("/workitems", response_model=List[WorkItem])
 async def list_workitems():
+    """List all work items for the portfolio."""
     from database import PORTFOLIO_ID
-    portfolio_id = PORTFOLIO_ID
     query = "SELECT * FROM work_experience WHERE portfolio_id = :portfolio_id ORDER BY sort_order, start_date DESC"
-    rows = await db.fetch_all(query, {"portfolio_id": portfolio_id})
+    rows = await database.fetch_all(query, {"portfolio_id": PORTFOLIO_ID})
     return [WorkItem(**dict(row)) for row in rows]
 
-# Create a new work item
+
 @app.post("/workitems", response_model=WorkItem)
 async def create_workitem(item: WorkItem):
+    """Create a new work item."""
     query = """
         INSERT INTO work_experience (portfolio_id, company, position, location, start_date, end_date, description, is_current, company_url, sort_order)
         VALUES (:portfolio_id, :company, :position, :location, :start_date, :end_date, :description, :is_current, :company_url, :sort_order)
         RETURNING *
     """
-    row = await db.fetch_one(query, item.dict(exclude_unset=True))
+    # Use .dict() and exclude unset to handle optional fields correctly
+    values = item.dict(exclude_unset=True)
+    # Ensure portfolio_id is set if not provided in the request body
+    if 'portfolio_id' not in values:
+        from database import PORTFOLIO_ID
+        values['portfolio_id'] = PORTFOLIO_ID
+
+    row = await database.fetch_one(query, values)
     return WorkItem(**dict(row))
 
-# Update a work item
-@app.put("/workitems/{id}", response_model=WorkItem)
-async def update_workitem(id: str, item: WorkItem):
+
+@app.put("/workitems/{item_id}", response_model=WorkItem)
+async def update_workitem(item_id: str, item: WorkItem):
+    """Update an existing work item."""
     query = """
         UPDATE work_experience SET
             company=:company, position=:position, location=:location, start_date=:start_date, end_date=:end_date,
@@ -142,15 +153,16 @@ async def update_workitem(id: str, item: WorkItem):
         WHERE id=:id RETURNING *
     """
     values = item.dict(exclude_unset=True)
-    values["id"] = id
-    row = await db.fetch_one(query, values)
+    values["id"] = item_id
+    row = await database.fetch_one(query, values)
     if not row:
         raise HTTPException(status_code=404, detail="Work item not found")
     return WorkItem(**dict(row))
 
-# Delete a work item
-@app.delete("/workitems/{id}")
-async def delete_workitem(id: str):
+
+@app.delete("/workitems/{item_id}")
+async def delete_workitem(item_id: str):
+    """Delete a work item."""
     query = "DELETE FROM work_experience WHERE id=:id"
-    result = await db.execute(query, {"id": id})
+    await database.execute(query, {"id": item_id})
     return {"success": True}
