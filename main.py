@@ -32,7 +32,6 @@ from auth import (
     is_authorized_user,
     require_admin_auth,
 )
-from cookie_auth import get_session_data
 from database import close_database, database, init_database
 from log_capture import add_log, log_with_context
 from ttw_oauth_manager import TTWOAuthManager
@@ -1063,7 +1062,7 @@ async def logout(request: Request, response: HTMLResponse):
 @app.get("/admin/status", response_class=JSONResponse)
 async def get_admin_status(request: Request):
     """Endpoint to check authentication status from the frontend."""
-    user_info = get_session_data(request)
+    user_info = request.session.get("user")
     is_authenticated = user_info is not None
     user_email = user_info.get("email") if user_info else None
 
