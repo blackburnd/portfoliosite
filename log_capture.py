@@ -9,7 +9,12 @@ from typing import Optional
 import json
 
 from fastapi import Request
-from database import database
+
+
+def get_database():
+    """Lazy import of database to avoid circular imports."""
+    from database import database
+    return database
 
 
 def get_client_ip(request: Request) -> str:
@@ -118,7 +123,7 @@ class DatabaseLogHandler(logging.Handler):
                 'ip_address': ip_address
             }
             
-            await database.execute(query, values)
+            await get_database().execute(query, values)
             
         except Exception as e:
             # Silently fail if database isn't available - don't spam logs
