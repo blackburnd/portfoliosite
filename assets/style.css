@@ -117,11 +117,6 @@ body {
     font-weight: 600;
 }
 
-.main-content p strong {
-    color: #333;
-    font-weight: 600;
-}
-
 /* Technical Showcase section styling */
 .technical-showcase {
     background-color: #f8f8f8;
@@ -160,14 +155,10 @@ body {
     padding: 10px 0;
 }
 
-.cta-link strong {
-    color: #222;
-    font-weight: 600;
-}
-
 .cta-link a {
     text-decoration: none;
     color: #222;
+    font-weight: 500;
     transition: color 0.2s ease;
 }
 
