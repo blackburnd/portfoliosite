@@ -40,6 +40,10 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     
+    # OAuth popup support - allow same-origin popups to communicate
+    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+    add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
+    
     # Gzip compression
     gzip on;
     gzip_vary on;
