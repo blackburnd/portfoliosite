@@ -1,70 +1,44 @@
-<!DOCTYPE html>
-<html
-    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ title }}</title>
-    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
-    <link rel="stylesheet" href="/assets/style.css">
+{% block title %}{{ title }}{% endblock %}
 
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'UA-27877508-5');
-    </script>
-</head>
+{% block body_class %}contact{% endblock %}
 
-<body class="contact">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component with current page set to 'contact' -->
-            {% with current_page='contact', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            <div id="bw" aria-live="polite">
-                <article class="bc clearfix">
-                    <section class="contact-content">
-                        <h2>Let's Talk</h2>
-                        <p>I'm always interested in hearing about new opportunities and interesting projects. Whether you have a question, want to collaborate, or just want to say hello, feel free to reach out.</p>
+{% block content %}
+<div id="bw" aria-live="polite">
+    <article class="bc clearfix">
+        <section class="contact-content">
+            <h2>Let's Talk</h2>
+            <p>I'm always interested in hearing about new opportunities and interesting projects. Whether you have a question, want to collaborate, or just want to say hello, feel free to reach out.</p>
 
-                        <div class="contact-info">
-                            <h3>Get in Touch</h3>
-                            <p><strong>Email:</strong> <a href="mailto:danielb@blackburnsystems.com">danielb@blackburnsystems.com</a></p>
-                            <p><strong>Phone:</strong> <a href="tel:+13057733923">305-773-3923</a></p>
-                            <p><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin.com/in/blackburnd</a></p>
-                            <p><strong>GitHub:</strong> <a href="https://github.com/blackburnd" target="_blank">github.com/blackburnd</a></p>
-                        </div>
+            <div class="contact-info">
+                <h3>Get in Touch</h3>
+                <p><strong>Email:</strong> <a href="mailto:danielb@blackburnsystems.com">danielb@blackburnsystems.com</a></p>
+                <p><strong>Phone:</strong> <a href="tel:+13057733923">305-773-3923</a></p>
+                <p><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/blackburnd" target="_blank">linkedin.com/in/blackburnd</a></p>
+                <p><strong>GitHub:</strong> <a href="https://github.com/blackburnd" target="_blank">github.com/blackburnd</a></p>
+            </div>
 
-                        <form class="contact-form" action="/contact/submit" method="post">
-                            <div class="form-group">
-                                <label for="name">Name *</label>
-                                <input type="text" id="name" name="name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="email">Email *</label>
-                                <input type="email" id="email" name="email" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="subject">Subject</label>
-                                <input type="text" id="subject" name="subject">
-                            </div>
-                            <div class="form-group">
-                                <label for="message">Message *</label>
-                                <textarea id="message" name="message" required placeholder="Tell me about your project or question..."></textarea>
-                            </div>
-                            <button type="submit" class="btn">Send Message</button>
-                        </form>
-                    </section>
-                </article>
-            </div><!-- barba wrapper -->
-            <footer class="footer" role="contentinfo">
-                <p class="copyright">© 2025 Blackburn.</p>
-            </footer>
-        </div><!-- #fg -->
-    </div><!-- .wrap -->
-</body>
-
-</html>
+            <form class="contact-form" action="/contact/submit" method="post">
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" name="subject">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message *</label>
+                    <textarea id="message" name="message" required placeholder="Tell me about your project or question..."></textarea>
+                </div>
+                <button type="submit" class="btn">Send Message</button>
+            </form>
+        </section>
+    </article>
+</div>
+{% endblock %}

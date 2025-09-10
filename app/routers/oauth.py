@@ -65,13 +65,24 @@ async def auth_login(request: Request):
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
         
-        result = await oauth.google.authorize_redirect(
-            request,
-            redirect_uri,
-            state=state,
-            access_type='offline',
-            prompt='select_account'
-        )
+        try:
+            result = await oauth.google.authorize_redirect(
+                request,
+                redirect_uri,
+                state=state,
+                access_type='offline',
+                prompt='select_account'
+            )
+        except Exception as e:
+            log_with_context(
+                "ERROR", "authorize_redirect",
+                f"Error during authorize_redirect: {str(e)}",
+                request, exc_info=True
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="Error preparing Google OAuth redirect."
+            )
         
         auth_url = result.headers['location']
         
