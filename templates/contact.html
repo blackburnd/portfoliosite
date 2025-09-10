@@ -5,6 +5,13 @@
 {% block body_class %}contact{% endblock %}
 
 {% block content %}
+{% extends "base.html" %}
+
+{% block title %}Contact Me{% endblock %}
+
+{% block body_class %}contact{% endblock %}
+
+{% block content %}
 <div id="bw" aria-live="polite">
     <article class="bc clearfix">
         <section class="contact-content">
@@ -41,4 +48,6 @@
         </section>
     </article>
 </div>
+{% endblock %}
+
 {% endblock %}

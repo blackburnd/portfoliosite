@@ -610,6 +610,7 @@ app.include_router(contact.router, tags=["contact"])
 app.include_router(projects.router, tags=["projects"])
 app.include_router(google_oauth_router, tags=["oauth"])
 app.include_router(work.router, tags=["work"])
+app.include_router(work.router, tags=["work"])
 
 
 @app.get("/", response_class=HTMLResponse)
