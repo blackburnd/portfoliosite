@@ -3,7 +3,7 @@
 body {
     font-family: 'Segoe UI', 'Arial', sans-serif;
     background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
-    color: #111;
+    color: #333;
     margin: 0;
     padding: 0;
 }
@@ -65,11 +65,11 @@ body {
 .main-content h2 {
     font-size: 1.7rem;
     font-weight: 700;
-    color: #000;
+    color: #222;
     margin-top: 35px;
     margin-bottom: 18px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #444;
     letter-spacing: 0.01em;
 }
 
@@ -87,10 +87,15 @@ body {
 .hero-content h2 {
     font-size: 1.7rem;
     font-weight: 700;
-    color: #000;
+    color: #222;
     margin-bottom: 18px;
     border-bottom: none;
     padding-bottom: 0;
+}
+
+.hero-content p {
+    color: #444;
+    line-height: 1.65;
 }
 
 /* Technology list styling */
@@ -106,6 +111,11 @@ body {
 
 .main-content ul li strong, .technical-showcase ul li strong {
     color: #000;
+    font-weight: 600;
+}
+
+.main-content p strong {
+    color: #333;
     font-weight: 600;
 }
 
@@ -136,9 +146,31 @@ body {
     max-width: none;
 }
 
+.main-content p {
+    color: #444;
+    margin-bottom: 1.2em;
+    line-height: 1.65;
+}
+
 .cta-link {
     margin-top: 20px;
     padding: 10px 0;
+}
+
+.cta-link strong {
+    color: #222;
+    font-weight: 600;
+}
+
+.cta-link a {
+    text-decoration: none;
+    color: #222;
+    transition: color 0.2s ease;
+}
+
+.cta-link a:hover {
+    color: #000;
+    text-decoration: underline;
 }
 
 .bc {
