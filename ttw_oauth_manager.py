@@ -704,6 +704,50 @@ class TTWOAuthManager:
             add_log("DEBUG", "google_oauth_config_params", f"Portfolio ID: {portfolio_id}")
             add_log("DEBUG", "google_oauth_config_sql", f"SQL: SELECT client_id, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
             result = await database.fetch_one(query, params)
+            
+            add_log("DEBUG", "google_oauth_config_result", f"Raw result: {result}")
+            add_log("DEBUG", "google_oauth_config_result_type", f"Result type: {type(result)}")
+            
+            if result:
+                add_log("DEBUG", "google_oauth_config_found", f"Found Google OAuth config")
+                # Try different ways to access the data
+                add_log("DEBUG", "google_oauth_config_items", f"Result items: {dict(result) if hasattr(result, 'items') else 'No items method'}")
+                add_log("DEBUG", "google_oauth_config_keys", f"Result keys: {list(result.keys()) if hasattr(result, 'keys') else 'No keys method'}")
+                
+                config = {
+                    "client_id": result["client_id"] if "client_id" in result else "",
+                    "redirect_uri": result["redirect_uri"] if "redirect_uri" in result else "",
+                    "scopes": result["scopes"] if "scopes" in result else "",
+                    "configured_at": result["created_at"] if "created_at" in result else None,
+                    "updated_at": result["updated_at"] if "updated_at" in result else None
+                }
+                add_log("DEBUG", "google_oauth_config_final", f"Final config: {config}")
+                return config
+            
+            add_log("DEBUG", "google_oauth_config_none", "No Google OAuth config found")
+            return None
+        except Exception as e:
+            logger.error(f"Database error getting OAuth config: {e}")
+            return None
+
+    async def get_google_oauth_credentials(self) -> Optional[Dict[str, str]]:
+        """Get Google OAuth credentials including client secret"""
+        try:
+            from database import PORTFOLIO_ID
+            portfolio_id = PORTFOLIO_ID
+            
+            query = """
+                SELECT client_id, client_secret, redirect_uri
+                FROM oauth_apps 
+                WHERE portfolio_id = :portfolio_id AND provider = 'google'
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """
+            params = {"portfolio_id": portfolio_id}
+            add_log("DEBUG", "google_oauth_credentials_query", f"Executing Google OAuth credentials query during startup")
+            add_log("DEBUG", "google_oauth_credentials_params", f"Portfolio ID: {portfolio_id}")
+            add_log("DEBUG", "google_oauth_credentials_sql", f"SQL: SELECT client_id, client_secret, redirect_uri FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'google'")
+            result = await database.fetch_one(query, params)
 
             add_log("DEBUG", "google_oauth_creds_result", f"Credentials raw result: {result}")
             
@@ -927,38 +971,6 @@ class TTWOAuthManager:
                 "redirect_uri": result["redirect_uri"]
             }
         return None
-
-    async def get_google_config(self) -> Optional[Dict[str, Any]]:
-        """Get active Google OAuth app configuration"""
-        try:
-            from database import PORTFOLIO_ID
-            portfolio_id = PORTFOLIO_ID
-            
-            query = """
-                SELECT client_id, client_secret, redirect_uri, scopes
-                FROM oauth_apps 
-                WHERE portfolio_id = :portfolio_id AND provider = 'google'
-                ORDER BY updated_at DESC
-                LIMIT 1
-            """
-            params = {"portfolio_id": portfolio_id}
-            result = await database.fetch_one(query, params)
-            
-            if not result:
-                add_log("ERROR", "google_oauth_config_not_found", "No Google OAuth configuration found in database")
-                return None
-            
-            return {
-                "client_id": result["client_id"],
-                "client_secret": result["client_secret"],
-                "redirect_uri": result["redirect_uri"],
-                "scopes": result["scopes"].split() if result["scopes"] else []
-            }
-            
-        except Exception as e:
-            add_log("ERROR", "google_oauth_config_error", f"Error retrieving Google OAuth config: {str(e)}")
-            logger.error(f"Failed to retrieve Google OAuth app config: {e}")
-            return None
 
 # Global instance
 ttw_oauth_manager = TTWOAuthManager()
