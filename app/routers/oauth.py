@@ -10,7 +10,6 @@ from jose import jwt, jwk
 from jose.exceptions import JWTError
 
 from auth import (
-    is_authenticated,
     is_authorized_user,
     create_access_token,
     require_admin_auth,
