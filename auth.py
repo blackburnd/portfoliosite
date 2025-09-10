@@ -7,7 +7,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 import secrets
 
-from oauth_client import oauth
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
@@ -20,40 +19,6 @@ AUTHORIZED_EMAILS = [
     email.strip() for email in AUTHORIZED_EMAILS if email.strip()
 ]
 
-
-async def configure_oauth_from_database():
-    """Configure OAuth from database settings"""
-    try:
-        from ttw_oauth_manager import TTWOAuthManager
-
-        ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_google_oauth_app_config()
-
-        if google_config:
-            oauth.register(
-                name='google',
-                client_id=google_config['client_id'],
-                client_secret=google_config.get('client_secret'),
-                server_metadata_url=(
-                    'https://accounts.google.com/.well-known/openid-configuration'
-                ),
-                client_kwargs={
-                    'scope': 'openid email profile'
-                }
-            )
-            client_id = google_config['client_id'][:10]
-            print(
-                "✅ OAuth configured from database with client ID: "
-                f"{client_id}..."
-            )
-            return True
-        else:
-            print("❌ No Google OAuth configuration found in database")
-            return False
-
-    except Exception as e:
-        print(f"❌ Failed to configure OAuth from database: {e}")
-        return False
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
@@ -183,22 +148,4 @@ def create_user_session(user_info: dict) -> dict:
         "picture": user_info.get("picture"),
         "iss": "google",
         "iat": datetime.utcnow().timestamp(),
-    }
-
-
-async def get_auth_status():
-    """Get authentication configuration status"""
-    # Try to configure OAuth if not already done
-    is_configured = (
-        hasattr(oauth, 'google') and oauth.google.client_id is not None
-    )
-    if not is_configured:
-        await configure_oauth_from_database()
-        is_configured = (
-            hasattr(oauth, 'google') and oauth.google.client_id is not None
-        )
-
-    return {
-        "google_oauth_configured": is_configured,
-        "authorized_emails_count": len(AUTHORIZED_EMAILS)
     }
