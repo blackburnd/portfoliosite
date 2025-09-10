@@ -10,31 +10,9 @@ from jose import jwt, jwk
 from jose.exceptions import JWTError
 
 from auth import (
-    is_au        response = HTMLResponse(f"""
-            <html><head><title>Authentication Successful</title><script>
-                if (window.opener) {{
-                    // Send the token to the parent window
-                    window.opener.postMessage({{
-                        type: 'OAUTH_SUCCESS',
-                        token: '{access_token}'
-                    }}, window.location.origin);
-                    window.close();
-                }} else {{ 
-                    // If not in popup, set cookie and redirect
-                    document.cookie = 'access_token={access_token}; path=/; max-age={int(ACCESS_TOKEN_EXPIRE_MINUTES * 60)}; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
-                    window.location.href = '/workadmin'; 
-                }}
-            </script></head><body><p>Auth successful. Closing...</p></body>
-        </html>
-        """)
-        
-        # Don't set cookie here - it's set by JavaScript in the parent window
-        return response   )
-        
-        """)
-        
-        # Don't set cookie here - it's set by JavaScript in the parent window
-        return response
+    is_authenticated,
+    is_authorized_user,
+    create_access_token,
     require_admin_auth,
     SECRET_KEY,
     ALGORITHM,
