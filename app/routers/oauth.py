@@ -298,11 +298,14 @@ async def auth_callback(request: Request):
                 code=code,
                 error=f"ID Token verification failed: {str(e)}"
             )
-            # Redirect to admin login form as fallback
-            return RedirectResponse(
-                url="/auth/admin-login?error=Google%20OAuth%20failed."
-                    "%20Please%20use%20admin%20login.",
-                status_code=302
+            # Temporarily show error details instead of redirecting
+            return HTMLResponse(
+                f"<h1>JWT Debug Info</h1>"
+                f"<p><strong>Error:</strong> {str(e)}</p>"
+                f"<p><strong>Token preview:</strong> {token_preview}...</p>"
+                f"<p><strong>Google Config Client ID:</strong> {google_config.get('client_id', 'Not found')}</p>"
+                f"<p><a href='/auth/admin-login'>Continue to Admin Login</a></p>",
+                status_code=400
             )
 
         # Update OAuth session with user email from successful callback
