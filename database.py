@@ -411,21 +411,15 @@ async def save_google_oauth_tokens(
     refresh_token: str = None, expires_at: datetime = None,
     scopes: str = None
 ) -> Dict[str, Any]:
-    """Save Google OAuth tokens to database"""
+    """
+    Save Google OAuth tokens to database, creating a new record each time.
+    """
     query = """
     INSERT INTO google_oauth_tokens
     (portfolio_id, admin_email, access_token, refresh_token,
-     token_expires_at, granted_scopes)
+     token_expires_at, granted_scopes, is_active)
     VALUES (:portfolio_id, :admin_email, :access_token, :refresh_token,
-            :token_expires_at, :granted_scopes)
-    ON CONFLICT (portfolio_id, admin_email)
-    DO UPDATE SET
-        access_token = EXCLUDED.access_token,
-        refresh_token = EXCLUDED.refresh_token,
-        token_expires_at = EXCLUDED.token_expires_at,
-        granted_scopes = EXCLUDED.granted_scopes,
-        last_used_at = NOW(),
-        updated_at = NOW()
+            :token_expires_at, :granted_scopes, :is_active)
     RETURNING id, portfolio_id, admin_email, created_at
     """
 
@@ -435,8 +429,22 @@ async def save_google_oauth_tokens(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_expires_at": expires_at,
-        "granted_scopes": scopes
+        "granted_scopes": scopes,
+        "is_active": True
     }
+
+    # Deactivate older tokens for the same user
+    deactivate_query = """
+    UPDATE google_oauth_tokens
+    SET is_active = false
+    WHERE portfolio_id = :portfolio_id
+      AND admin_email = :admin_email
+      AND is_active = true;
+    """
+    await database.execute(
+        deactivate_query,
+        {"portfolio_id": portfolio_id, "admin_email": email}
+    )
 
     result = await database.fetch_one(query, values)
     return {

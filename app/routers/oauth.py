@@ -211,6 +211,22 @@ async def auth_callback(request: Request):
                 status_code=403
             )
 
+        # Save the new tokens to the database
+        from database import save_google_oauth_tokens, get_portfolio_id
+        from datetime import datetime, timedelta
+
+        expires_in = token_payload.get('expires_in', 3600)
+        expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+
+        await save_google_oauth_tokens(
+            portfolio_id=get_portfolio_id(),
+            email=email,
+            access_token=token_payload['access_token'],
+            refresh_token=token_payload.get('refresh_token'),
+            expires_at=expires_at,
+            scopes=token_payload.get('scope')
+        )
+
         access_token = create_access_token(data={"sub": email})
         log_with_context(
             "INFO", "auth", f"Successful login by {email} - JWT created",
