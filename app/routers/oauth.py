@@ -92,6 +92,29 @@ async def auth_login(request: Request):
 async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
     try:
+        # Ensure OAuth is configured for this worker
+        ttw_manager = TTWOAuthManager()
+        google_config = await ttw_manager.get_google_oauth_app_config()
+        if not google_config:
+            raise HTTPException(
+                status_code=503,
+                detail="Google OAuth is not configured."
+            )
+
+        oauth.register(
+            name='google',
+            client_id=google_config['client_id'],
+            client_secret=google_config['client_secret'],
+            redirect_uri=google_config['redirect_uri'],
+            server_metadata_url=(
+                'https://accounts.google.com/.well-known/openid-configuration'
+            ),
+            client_kwargs={
+                'scope': 'openid email profile '
+                         'https://www.googleapis.com/auth/gmail.send'
+            }
+        )
+
         error = request.query_params.get('error')
         if error:
             log_with_context(
