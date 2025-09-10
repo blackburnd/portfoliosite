@@ -6,8 +6,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jose import jwt
 
+from oauth_client import oauth
 from auth import (
-    oauth,
     is_authorized_user,
     create_access_token,
     require_admin_auth,

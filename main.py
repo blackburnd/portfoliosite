@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 # --- Third-Party Imports ---
-from authlib.integrations.starlette_client import OAuth
 from fastapi import (Depends, FastAPI, HTTPException, Request, Response)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse)
@@ -37,6 +36,7 @@ from cookie_auth import get_session_data
 from database import close_database, database, init_database
 from log_capture import add_log, log_with_context
 from ttw_oauth_manager import TTWOAuthManager
+from oauth_client import oauth
 
 
 def get_client_ip(request: Request) -> str:
@@ -63,7 +63,7 @@ app.add_middleware(
 )
 
 # Initialize OAuth client
-oauth = OAuth()
+# The oauth object is now imported from oauth_client.py
 
 # Configure logging with dedicated portfoliosite.log file
 # Create logs directory if it doesn't exist
