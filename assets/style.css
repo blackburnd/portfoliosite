@@ -150,6 +150,18 @@ body {
     line-height: 1.65;
 }
 
+.main-content p a {
+    color: #222;
+    text-decoration: none;
+    border-bottom: 1px dotted #666;
+    transition: all 0.2s ease;
+}
+
+.main-content p a:hover {
+    color: #000;
+    border-bottom: 1px solid #222;
+}
+
 .cta-link {
     margin-top: 20px;
     padding: 10px 0;
