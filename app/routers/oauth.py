@@ -142,7 +142,7 @@ async def auth_callback(request: Request):
             )
 
         ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_google_oauth_app_config()
+        google_config = await ttw_manager.get_google_oauth_credentials()
         if not google_config:
             raise HTTPException(
                 status_code=503, detail="Google OAuth is not configured."

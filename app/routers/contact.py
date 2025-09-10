@@ -155,7 +155,6 @@ async def contact(request: Request):
 
     return templates.TemplateResponse("contact.html", {
         "request": request,
-        "title": "Contact - Daniel Blackburn",
         "current_page": "contact",
         "user_authenticated": user_authenticated,
         "user_email": user_email,
