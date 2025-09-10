@@ -29,81 +29,67 @@ function getPopupPosition(width = 500, height = 600) {
 /**
  * Initiate Google OAuth login via popup
  */
-async function initiateLogin() {
-    try {
-        console.log('Initiating Google OAuth login...');
-        
-        // Close any existing popup
-        if (authPopup && !authPopup.closed) {
-            authPopup.close();
-        }
-        
-        // Get auth URL from server
-        const response = await fetch('/auth/login', {
-            method: 'GET',
-            credentials: 'same-origin'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.status === 'error') {
-            console.error('OAuth initiation failed:', data.error);
-            alert(`Login failed: ${data.error}`);
-            if (data.redirect) {
-                window.location.href = data.redirect;
+// assets/js/auth-login.js
+
+function initiateLogin() {
+    fetch('/auth/login')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            return response.json();
+        })
+        .then(data => {
+            if (data.auth_url) {
+                openOAuthPopup(data.auth_url);
+            } else {
+                console.error('Auth URL not found in response:', data);
+                alert('Could not initiate login. The authentication URL was not provided.');
+            }
+        })
+        .catch(error => {
+            console.error('Error initiating login:', error);
+            alert('An error occurred during login. Please check the console for more details.');
+        });
+}
+
+function openOAuthPopup(url) {
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    const popup = window.open(
+        url,
+        'oauthPopup',
+        `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`
+    );
+
+    // Listen for messages from the popup
+    window.addEventListener('message', function(event) {
+        // Ensure the message is from a trusted origin
+        if (event.origin !== window.location.origin) {
             return;
         }
-        
-        if (data.status === 'success' && data.auth_url) {
-            console.log('Opening OAuth popup...');
-            
-            // Calculate centered position
-            const popupPos = getPopupPosition(600, 700);
-            
-            // Open popup window at center
-            const popupFeatures = [
-                `width=${popupPos.width}`,
-                `height=${popupPos.height}`,
-                `left=${popupPos.left}`,
-                `top=${popupPos.top}`,
-                'scrollbars=yes',
-                'resizable=yes',
-                'status=no',
-                'location=no',
-                'toolbar=no',
-                'menubar=no'
-            ].join(',');
-            
-            authPopup = window.open(data.auth_url, 'googleOAuth', popupFeatures);
-            
-            if (!authPopup) {
-                alert('Popup was blocked. Please allow popups for this site and try again.');
-                return;
+        // Check for the success message
+        if (event.data.type === 'OAUTH_SUCCESS') {
+            if (popup) {
+                popup.close();
             }
-            
-            // Focus the popup
-            if (authPopup.focus) {
-                authPopup.focus();
-            }
-            
-            // Monitor popup for completion
-            monitorPopup();
-            
-        } else {
-            console.error('Invalid response from login endpoint:', data);
-            alert('Login failed: Invalid server response');
+            window.location.reload(); // Reload the page to reflect login state
         }
-        
-    } catch (error) {
-        console.error('Login initiation error:', error);
-        alert(`Login failed: ${error.message}`);
-    }
+    }, false);
+
+    // Periodically check if the popup was closed by the user
+    const checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+            clearInterval(checkPopup);
+            // Optional: could check login status here in case the user
+            // completed auth but the message failed. For now, we do nothing.
+        }
+    }, 1000);
 }
+
 
 /**
  * Monitor popup window for completion

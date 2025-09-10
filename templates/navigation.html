@@ -13,7 +13,7 @@
             {% if user_authenticated %}
                 <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
             {% else %}
-                <a href="/auth/login" class="auth-link">Login</a>
+                <a href="#" onclick="initiateLogin(); return false;" class="auth-link">Login</a>
             {% endif %}
         </div>
     </div>
