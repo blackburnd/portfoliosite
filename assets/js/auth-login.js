@@ -85,6 +85,14 @@ function openOAuthPopup(url) {
             if (popup) {
                 popup.close();
             }
+            
+            // Set the cookie with the token from the popup
+            if (event.data.token) {
+                const isSecure = window.location.protocol === 'https:';
+                const securePart = isSecure ? '; Secure' : '';
+                document.cookie = `access_token=${event.data.token}; path=/; max-age=${8*60*60}; SameSite=Lax${securePart}`;
+            }
+            
             window.location.reload(); // Reload the page to reflect login state
         }
     }, false);
