@@ -157,6 +157,48 @@ def setup_database_logging():
         print(f"Failed to set up database logging: {e}")
 
 
+def log_with_context(
+    level: str,
+    module: str,
+    message: str,
+    request: Request,
+    exc_info: bool = False
+):
+    """
+    Logs a message with context from the request, including IP and user.
+    """
+    ip_address = get_client_ip(request)
+    user = request.session.get("user", {}).get("email")
+
+    # Create a basic log record to pass to the handler
+    logger = logging.getLogger(module)
+    if exc_info:
+        import sys
+        exc_info_tuple = sys.exc_info()
+    else:
+        exc_info_tuple = None
+
+    record = logging.LogRecord(
+        name=module,
+        level=logging.getLevelName(level.upper()),
+        pathname="",
+        lineno=0,
+        msg=message,
+        args=(),
+        exc_info=exc_info_tuple,
+        func=None,
+    )
+    record.user = user
+    record.ip_address = ip_address
+
+    # Use the database handler to emit the record
+    if _db_log_handler:
+        _db_log_handler.emit(record)
+    else:
+        # Fallback if handler not initialized
+        logger.log(record.levelno, message)
+
+
 def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
             user: Optional[str] = None, extra: Optional[dict] = None,
@@ -215,11 +257,43 @@ def add_log(level: str, message: str, module: str = "manual",
         loop.run_until_complete(_add_log_async())
 
 
+async def clear_logs():
+    """Clear all logs from the database"""
+    from database import database as db
+    
+    try:
+        await db.execute("DELETE FROM app_log")
+        await db.disconnect()
+        print("All logs cleared from database")
+        
+    except Exception as e:
+        print(f"Failed to clear logs: {e}")
+        try:
+            await db.disconnect()
+        except Exception:
+            pass
+
+
 # Legacy compatibility
 class LogCapture:
     """Legacy log capture class for compatibility"""
     
-    pass
+    @staticmethod
+    def clear_logs():
+        """Clear logs - runs async function synchronously"""
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create a task if loop is running
+                asyncio.create_task(clear_logs())
+            else:
+                # Run synchronously if no loop
+                loop.run_until_complete(clear_logs())
+        except RuntimeError:
+            # Create new loop if none exists
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(clear_logs())
 
 
 # Create global instance for legacy compatibility
