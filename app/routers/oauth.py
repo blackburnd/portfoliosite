@@ -267,6 +267,7 @@ async def auth_callback(request: Request):
             )
 
         # Update OAuth session with user email from successful callback
+        # Email is always from AUTHORIZED_EMAILS collection verified earlier
         await update_oauth_session_with_callback(
             oauth_state=callback_state,
             code=code,

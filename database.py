@@ -406,7 +406,7 @@ async def get_database():
 
 
 async def create_oauth_session(
-    portfolio_id: str, state: str, scopes: str, 
+    portfolio_id: str, state: str, scopes: str,
     auth_url: str, redirect_uri: str
 ) -> Dict[str, Any]:
     """
@@ -415,9 +415,9 @@ async def create_oauth_session(
     """
     query = """
     INSERT INTO google_oauth_tokens
-    (portfolio_id, oauth_state, requested_scopes, auth_url, redirect_uri, 
+    (portfolio_id, oauth_state, requested_scopes, auth_url, redirect_uri,
      workflow_status, is_active)
-    VALUES (:portfolio_id, :oauth_state, :requested_scopes, :auth_url, 
+    VALUES (:portfolio_id, :oauth_state, :requested_scopes, :auth_url,
             :redirect_uri, 'initiated', false)
     RETURNING id, portfolio_id, oauth_state, created_at
     """
@@ -445,11 +445,12 @@ async def update_oauth_session_with_callback(
 ) -> bool:
     """
     Update the OAuth session with callback information.
+    Email is derived from the OAuth process and will be from AUTHORIZED_EMAILS.
     """
     if error:
         query = """
         UPDATE google_oauth_tokens
-        SET workflow_status = 'failed', callback_error = :error, 
+        SET workflow_status = 'failed', callback_error = :error,
             callback_received_at = NOW()
         WHERE oauth_state = :oauth_state
         """
@@ -462,7 +463,7 @@ async def update_oauth_session_with_callback(
         WHERE oauth_state = :oauth_state
         """
         values = {"oauth_state": oauth_state, "code": code, "email": email}
-    
+
     await database.execute(query, values)
     return True
 
