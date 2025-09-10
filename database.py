@@ -405,6 +405,95 @@ async def get_database():
     return db
 
 
+async def create_oauth_session(
+    portfolio_id: str, state: str, scopes: str, 
+    auth_url: str, redirect_uri: str
+) -> Dict[str, Any]:
+    """
+    Create an OAuth session record at the start of the workflow.
+    This serves as the persistent datapoint for the entire OAuth handshake.
+    """
+    query = """
+    INSERT INTO google_oauth_tokens
+    (portfolio_id, oauth_state, requested_scopes, auth_url, redirect_uri, 
+     workflow_status, is_active)
+    VALUES (:portfolio_id, :oauth_state, :requested_scopes, :auth_url, 
+            :redirect_uri, 'initiated', false)
+    RETURNING id, portfolio_id, oauth_state, created_at
+    """
+
+    values = {
+        "portfolio_id": portfolio_id,
+        "oauth_state": state,
+        "requested_scopes": scopes,
+        "auth_url": auth_url,
+        "redirect_uri": redirect_uri
+    }
+
+    result = await database.fetch_one(query, values)
+    return {
+        "id": result["id"],
+        "portfolio_id": str(result["portfolio_id"]),
+        "oauth_state": result["oauth_state"],
+        "created_at": (result["created_at"].isoformat()
+                       if result["created_at"] else None)
+    }
+
+
+async def update_oauth_session_with_callback(
+    oauth_state: str, code: str, email: str = None, error: str = None
+) -> bool:
+    """
+    Update the OAuth session with callback information.
+    """
+    if error:
+        query = """
+        UPDATE google_oauth_tokens
+        SET workflow_status = 'failed', callback_error = :error, 
+            callback_received_at = NOW()
+        WHERE oauth_state = :oauth_state
+        """
+        values = {"oauth_state": oauth_state, "error": error}
+    else:
+        query = """
+        UPDATE google_oauth_tokens
+        SET workflow_status = 'callback_received', authorization_code = :code,
+            admin_email = :email, callback_received_at = NOW()
+        WHERE oauth_state = :oauth_state
+        """
+        values = {"oauth_state": oauth_state, "code": code, "email": email}
+    
+    await database.execute(query, values)
+    return True
+
+
+async def complete_oauth_session(
+    oauth_state: str, access_token: str, refresh_token: str = None,
+    expires_at: datetime = None, scopes: str = None
+) -> bool:
+    """
+    Complete the OAuth session with final token information.
+    """
+    query = """
+    UPDATE google_oauth_tokens
+    SET workflow_status = 'completed', access_token = :access_token,
+        refresh_token = :refresh_token, token_expires_at = :expires_at,
+        granted_scopes = :scopes, is_active = true, completed_at = NOW()
+    WHERE oauth_state = :oauth_state
+    """
+    
+    values = {
+        "oauth_state": oauth_state,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "expires_at": expires_at,
+        "scopes": scopes
+    }
+    
+    await database.execute(query, values)
+    return True
+
+
 # OAuth Token Functions
 async def save_google_oauth_tokens(
     portfolio_id: str, email: str, access_token: str,

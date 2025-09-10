@@ -91,6 +91,22 @@ async def auth_login(request: Request):
         auth_url = "https://accounts.google.com/o/oauth2/v2/auth?"
         auth_url += urlencode(params)
 
+        # Create OAuth session record at the start of the workflow
+        from database import create_oauth_session, get_portfolio_id
+        
+        await create_oauth_session(
+            portfolio_id=get_portfolio_id(),
+            state=state,
+            scopes=scope,
+            auth_url=auth_url,
+            redirect_uri=google_config['redirect_uri']
+        )
+
+        log_with_context(
+            "INFO", "auth", f"OAuth session created with state: {state}",
+            request
+        )
+
         return JSONResponse({"status": "success", "auth_url": auth_url})
 
     except Exception as e:
@@ -109,23 +125,39 @@ async def auth_callback(request: Request):
     """Handle Google OAuth callback"""
     try:
         error = request.query_params.get('error')
+        callback_state = request.query_params.get('state')
+        
+        # Update OAuth session with callback information
+        from database import update_oauth_session_with_callback
+        
         if error:
             log_with_context(
                 "WARNING", "auth_callback", f"OAuth error received: {error}",
                 request
             )
+            if callback_state:
+                await update_oauth_session_with_callback(
+                    oauth_state=callback_state, 
+                    code=None, 
+                    error=error
+                )
             return HTMLResponse(
                 f"<h1>Authorization Error</h1><p>{error}</p>",
                 status_code=400
             )
 
-        callback_state = request.query_params.get('state')
         session_state = request.session.get('oauth_state')
 
         if not callback_state or callback_state != session_state:
             log_with_context(
                 "ERROR", "auth_callback", "CSRF validation failed", request
             )
+            if callback_state:
+                await update_oauth_session_with_callback(
+                    oauth_state=callback_state,
+                    code=None,
+                    error="CSRF validation failed"
+                )
             return HTMLResponse(
                 "<h1>Security Error</h1><p>CSRF validation failed.</p>",
                 status_code=400
@@ -135,6 +167,11 @@ async def auth_callback(request: Request):
 
         code = request.query_params.get('code')
         if not code:
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=None,
+                error="Authorization code not found"
+            )
             return HTMLResponse(
                 "<h1>Authentication Error</h1>"
                 "<p>Authorization code not found.</p>",
@@ -144,6 +181,11 @@ async def auth_callback(request: Request):
         ttw_manager = TTWOAuthManager()
         google_config = await ttw_manager.get_google_oauth_credentials()
         if not google_config or not google_config.get('client_id'):
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=code,
+                error="Google OAuth configuration missing"
+            )
             raise HTTPException(
                 status_code=503, detail="Google OAuth is not configured."
             )
@@ -167,6 +209,11 @@ async def auth_callback(request: Request):
         # Verify the ID token
         keys = await get_google_certs()
         if not keys:
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=code,
+                error="Could not retrieve Google's public keys"
+            )
             raise HTTPException(
                 status_code=500,
                 detail="Could not retrieve Google's public keys."
@@ -176,6 +223,11 @@ async def auth_callback(request: Request):
         ttw_manager = TTWOAuthManager()
         google_config = await ttw_manager.get_google_oauth_credentials()
         if not google_config or not google_config.get('client_id'):
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=code,
+                error="Google OAuth configuration missing on token verification"
+            )
             raise HTTPException(
                 status_code=503, detail="Google OAuth is not configured."
             )
@@ -204,31 +256,48 @@ async def auth_callback(request: Request):
                 "ERROR", "auth_callback",
                 f"ID Token verification failed: {e}", request
             )
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=code,
+                error=f"ID Token verification failed: {str(e)}"
+            )
             return HTMLResponse(
                 "<h1>Security Error</h1><p>Invalid token signature.</p>",
                 status_code=400
             )
+
+        # Update OAuth session with user email from successful callback
+        await update_oauth_session_with_callback(
+            oauth_state=callback_state,
+            code=code,
+            email=email
+        )
 
         if not email or not is_authorized_user(email):
             log_with_context(
                 "WARNING", "auth",
                 f"Unauthorized login attempt by {email}", request
             )
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=code,
+                error=f"Unauthorized user: {email}"
+            )
             return HTMLResponse(
-                f"<h1>Access Denied</h1><p>Email {email} is not authorized.</p>",
+                f"<h1>Access Denied</h1>"
+                f"<p>Email {email} is not authorized.</p>",
                 status_code=403
             )
 
-        # Save the new tokens to the database
-        from database import save_google_oauth_tokens, get_portfolio_id
+        # Complete the OAuth session with final token information
+        from database import complete_oauth_session
         from datetime import datetime, timedelta
 
         expires_in = token_payload.get('expires_in', 3600)
         expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
 
-        await save_google_oauth_tokens(
-            portfolio_id=get_portfolio_id(),
-            email=email,
+        await complete_oauth_session(
+            oauth_state=callback_state,
             access_token=token_payload['access_token'],
             refresh_token=token_payload.get('refresh_token'),
             expires_at=expires_at,

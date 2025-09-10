@@ -98,17 +98,24 @@ CREATE TABLE IF NOT EXISTS app_log (
 CREATE TABLE IF NOT EXISTS google_oauth_tokens (
     id SERIAL PRIMARY KEY,
     portfolio_id UUID NOT NULL REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
-    admin_email VARCHAR(100) NOT NULL,
+    admin_email VARCHAR(100),
+    oauth_state VARCHAR(100),
+    authorization_code TEXT,
     access_token TEXT,
     refresh_token TEXT,
     token_expires_at TIMESTAMP WITH TIME ZONE,
     granted_scopes TEXT,
     requested_scopes TEXT,
+    auth_url TEXT,
+    redirect_uri TEXT,
+    workflow_status VARCHAR(50) DEFAULT 'initiated',
+    callback_error TEXT,
+    callback_received_at TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
     last_used_at TIMESTAMP WITH TIME ZONE,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(portfolio_id, admin_email)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- LinkedIn OAuth Config table
