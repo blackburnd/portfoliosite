@@ -2952,7 +2952,7 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
         # Get fresh OAuth configuration from database
         try:
             ttw_manager = TTWOAuthManager()
-            google_config = await ttw_manager.get_google_oauth_app_config()
+            google_config = await ttw_manager.get_google_config()
             
             if not google_config:
                 logger.error("No Google OAuth configuration found in database")
@@ -2961,6 +2961,7 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
                     detail="Google OAuth is not configured"
                 )
             
+            client_id = google_config['client_id']
             redirect_uri = google_config['redirect_uri']
             logger.info(f"Using OAuth redirect URI from database: {redirect_uri}")
             
@@ -2984,22 +2985,20 @@ async def initiate_google_oauth(request: Request, admin: dict = Depends(require_
             'https://www.googleapis.com/auth/gmail.send'
         ]
         
-        # Use existing OAuth flow with explicit scopes
-        auth_result = await oauth.google.authorize_redirect(
-            request, 
-            redirect_uri,
-            scope=' '.join(scopes),
-            state=state,
-            access_type='offline',  # Request refresh token
-            prompt='consent'        # Force consent screen to show permissions
-        )
-        
-        # Extract the redirect URL from the response
-        if hasattr(auth_result, 'headers') and 'location' in auth_result.headers:
-            auth_url = auth_result.headers['location']
-        else:
-            # Fallback - construct URL manually
-            auth_url = str(auth_result)
+        # Manually construct the Google OAuth authorization URL
+        from urllib.parse import urlencode
+
+        auth_url_base = "https://accounts.google.com/o/oauth2/v2/auth"
+        params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": ' '.join(scopes),
+            "response_type": "code",
+            "state": state,
+            "access_type": "offline",
+            "prompt": "consent",
+        }
+        auth_url = f"{auth_url_base}?{urlencode(params)}"
         
         return JSONResponse({
             "status": "success",
