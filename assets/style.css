@@ -39,7 +39,7 @@ body {
 }
 
 .intro-flex {
-    margin-bottom: 32px;
+    margin-bottom: 15px;
     width: 100%;
     overflow: hidden;
     position: relative;
@@ -57,19 +57,20 @@ body {
     clear: both;
     overflow: visible;
     max-width: none;
-    margin-top: 0;
+    margin-top: 40px;
+    padding-top: 10px;
 }
 
 /* Enhanced heading styles for better distinction */
 .main-content h2 {
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     font-weight: 700;
     color: #000;
     margin-top: 35px;
     margin-bottom: 18px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #333;
-    letter-spacing: 0.02em;
+    border-bottom: 1px solid #333;
+    letter-spacing: 0.01em;
 }
 
 .main-content h3 {
@@ -88,6 +89,8 @@ body {
     font-weight: 700;
     color: #000;
     margin-bottom: 18px;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* Technology list styling */
@@ -131,6 +134,11 @@ body {
     margin-bottom: 12px;
     width: 100%;
     max-width: none;
+}
+
+.cta-link {
+    margin-top: 20px;
+    padding: 10px 0;
 }
 
 .bc {
@@ -485,6 +493,10 @@ input[type="checkbox"] {
         width: 100%;
         max-width: 100%;
         float: none;
+    }
+
+    .main-content {
+        margin-top: 20px;
     }
 
     figure img {
