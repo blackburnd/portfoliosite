@@ -355,56 +355,6 @@ async def get_database():
 
 
 # OAuth Token Functions
-async def save_google_oauth_tokens(
-    portfolio_id: str, access_token: str,
-    refresh_token: str = None, expires_at: datetime = None,
-    scopes: str = None, oauth_state: str = None
-) -> Dict[str, Any]:
-    """Save Google OAuth tokens to database with optional state"""
-    query = """
-    INSERT INTO google_oauth_tokens
-    (portfolio_id, access_token, refresh_token,
-     token_expires_at, granted_scopes, oauth_state, state_expires_at)
-    VALUES (:portfolio_id, :access_token, :refresh_token,
-            :token_expires_at, :granted_scopes, :oauth_state, :state_expires_at)
-    ON CONFLICT (portfolio_id)
-    DO UPDATE SET
-        access_token = EXCLUDED.access_token,
-        refresh_token = EXCLUDED.refresh_token,
-        token_expires_at = EXCLUDED.token_expires_at,
-        granted_scopes = EXCLUDED.granted_scopes,
-        oauth_state = EXCLUDED.oauth_state,
-        state_expires_at = EXCLUDED.state_expires_at,
-        last_used_at = NOW(),
-        updated_at = NOW()
-    RETURNING id, portfolio_id, created_at
-    """
-
-    # Calculate state expiration (10 minutes from now)
-    state_expires_at = None
-    if oauth_state:
-        from datetime import datetime, timezone, timedelta
-        state_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-
-    values = {
-        "portfolio_id": portfolio_id,
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_expires_at": expires_at,
-        "granted_scopes": scopes,
-        "oauth_state": oauth_state,
-        "state_expires_at": state_expires_at
-    }
-
-    result = await database.fetch_one(query, values)
-    return {
-        "id": result["id"],
-        "portfolio_id": str(result["portfolio_id"]),
-        "created_at": (result["created_at"].isoformat()
-                       if result["created_at"] else None)
-    }
-
-
 async def get_google_oauth_tokens(
     portfolio_id: str
 ) -> Optional[Dict[str, Any]]:
@@ -440,6 +390,62 @@ async def get_google_oauth_tokens(
         "updated_at": (result["updated_at"].isoformat()
                        if result["updated_at"] else None)
     }
+
+
+async def save_google_oauth_tokens(
+    portfolio_id: str,
+    token_data: Dict[str, Any],
+    user_info: Dict[str, Any]
+) -> bool:
+    """Save new Google OAuth tokens to the database, deactivating old ones."""
+    from datetime import datetime, timezone
+
+    # Deactivate all previous tokens for this portfolio
+    deactivate_query = """
+    UPDATE google_oauth_tokens
+    SET is_active = false, updated_at = NOW()
+    WHERE portfolio_id = :portfolio_id AND is_active = true
+    """
+    await database.execute(deactivate_query, {"portfolio_id": portfolio_id})
+
+    # Insert the new token as the active one
+    query = """
+    INSERT INTO google_oauth_tokens (
+        portfolio_id,
+        user_email,
+        access_token,
+        refresh_token,
+        token_expires_at,
+        granted_scopes,
+        is_active,
+        created_at,
+        updated_at
+    ) VALUES (
+        :portfolio_id,
+        :user_email,
+        :access_token,
+        :refresh_token,
+        :token_expires_at,
+        :granted_scopes,
+        true,
+        NOW(),
+        NOW()
+    )
+    """
+    
+    expires_at = datetime.fromtimestamp(token_data.get('expires_at'), tz=timezone.utc)
+
+    params = {
+        "portfolio_id": portfolio_id,
+        "user_email": user_info.get("email"),
+        "access_token": token_data.get("access_token"),
+        "refresh_token": token_data.get("refresh_token"),
+        "token_expires_at": expires_at,
+        "granted_scopes": token_data.get("scope"),
+    }
+
+    await database.execute(query, params)
+    return True
 
 
 async def update_google_oauth_token_usage(
