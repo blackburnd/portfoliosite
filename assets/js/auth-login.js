@@ -49,7 +49,17 @@ function initiateLogin() {
         })
         .catch(error => {
             console.error('Error initiating login:', error);
-            alert('An error occurred during login. Please check the console for more details.');
+            
+            // Show a fallback dialog with admin login option
+            const useAdminLogin = confirm(
+                'Google OAuth login failed. Would you like to use admin login instead?'
+            );
+            
+            if (useAdminLogin) {
+                openAdminLoginPopup();
+            } else {
+                alert('An error occurred during login. Please check the console for more details.');
+            }
         });
 }
 
@@ -85,6 +95,44 @@ function openOAuthPopup(url) {
             clearInterval(checkPopup);
             // Optional: could check login status here in case the user
             // completed auth but the message failed. For now, we do nothing.
+        }
+    }, 1000);
+}
+
+/**
+ * Open admin login popup as fallback when OAuth fails
+ */
+function openAdminLoginPopup() {
+    const width = 400;
+    const height = 500;
+    const { top, left } = getPopupPosition(width, height);
+
+    const popup = window.open(
+        '/auth/admin-login',
+        'adminLoginPopup',
+        `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`
+    );
+
+    // Listen for messages from the popup
+    window.addEventListener('message', function(event) {
+        // Ensure the message is from a trusted origin
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+        // Check for the success message
+        if (event.data.type === 'ADMIN_LOGIN_SUCCESS') {
+            if (popup) {
+                popup.close();
+            }
+            window.location.reload(); // Reload the page to reflect login state
+        }
+    }, false);
+
+    // Periodically check if the popup was closed by the user
+    const checkPopup = setInterval(() => {
+        if (popup && popup.closed) {
+            clearInterval(checkPopup);
+            // Optional: could check login status here
         }
     }, 1000);
 }

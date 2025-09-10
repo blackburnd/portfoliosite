@@ -3,7 +3,7 @@ import secrets
 import httpx
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends, HTTPException, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jose import jwt, jwk
@@ -15,13 +15,18 @@ from auth import (
     require_admin_auth,
     SECRET_KEY,
     ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    AUTHORIZED_EMAILS
 )
 from log_capture import log_with_context
 from ttw_oauth_manager import TTWOAuthManager
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+# Admin credentials from environment
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 
 
 # --- Google OAuth Authentication Routes ---
@@ -137,13 +142,15 @@ async def auth_callback(request: Request):
             )
             if callback_state:
                 await update_oauth_session_with_callback(
-                    oauth_state=callback_state, 
-                    code=None, 
+                    oauth_state=callback_state,
+                    code=None,
                     error=error
                 )
-            return HTMLResponse(
-                f"<h1>Authorization Error</h1><p>{error}</p>",
-                status_code=400
+            # Redirect to admin login form as fallback for OAuth errors
+            return RedirectResponse(
+                url="/auth/admin-login?error=Google%20OAuth%20error:%20"
+                    f"{error}",
+                status_code=302
             )
 
         session_state = request.session.get('oauth_state')
@@ -233,14 +240,37 @@ async def auth_callback(request: Request):
             )
 
         try:
+            log_with_context(
+                "DEBUG", "auth_callback",
+                f"About to verify ID token. Token length: "
+                f"{len(id_token) if id_token else 0}", request
+            )
+            
             header = jwt.get_unverified_header(id_token)
             kid = header['kid']
+            
+            log_with_context(
+                "DEBUG", "auth_callback",
+                f"Token header: {header}, Looking for kid: {kid}", request
+            )
 
             key = next((k for k in keys if k['kid'] == kid), None)
             if not key:
+                available_kids = [k.get('kid') for k in keys]
+                log_with_context(
+                    "ERROR", "auth_callback",
+                    f"Public key not found for kid: {kid}. "
+                    f"Available kids: {available_kids}", request
+                )
                 raise JWTError("Public key not found for token.")
 
             public_key = jwk.construct(key)
+            
+            log_with_context(
+                "DEBUG", "auth_callback",
+                f"Attempting JWT decode with client_id: "
+                f"{google_config['client_id']}", request
+            )
 
             user_info = jwt.decode(
                 id_token,
@@ -250,20 +280,29 @@ async def auth_callback(request: Request):
                 issuer='https://accounts.google.com'
             )
             email = user_info.get('email')
+            
+            log_with_context(
+                "DEBUG", "auth_callback",
+                f"Successfully decoded token for email: {email}", request
+            )
 
         except JWTError as e:
+            token_preview = id_token[:100] if id_token else 'None'
             log_with_context(
                 "ERROR", "auth_callback",
-                f"ID Token verification failed: {e}", request
+                f"ID Token verification failed: {e}. "
+                f"Token: {token_preview}...", request
             )
             await update_oauth_session_with_callback(
                 oauth_state=callback_state,
                 code=code,
                 error=f"ID Token verification failed: {str(e)}"
             )
-            return HTMLResponse(
-                "<h1>Security Error</h1><p>Invalid token signature.</p>",
-                status_code=400
+            # Redirect to admin login form as fallback
+            return RedirectResponse(
+                url="/auth/admin-login?error=Google%20OAuth%20failed."
+                    "%20Please%20use%20admin%20login.",
+                status_code=302
             )
 
         # Update OAuth session with user email from successful callback
@@ -481,3 +520,109 @@ async def sync_linkedin_profile_data(
     raise HTTPException(
         status_code=500, detail=result.get("error", "Sync failed.")
     )
+
+
+# --- Admin Fallback Login Routes ---
+
+@router.get("/auth/admin-login")
+async def show_admin_login(request: Request, error: str = None):
+    """Show admin login form as fallback when OAuth fails"""
+    return templates.TemplateResponse(
+        "admin_login.html", 
+        {"request": request, "error": error}
+    )
+
+
+@router.post("/auth/admin-login")
+async def admin_login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    """Handle admin login form submission"""
+    import secrets
+    
+    # Verify credentials using constant-time comparison
+    correct_username = secrets.compare_digest(username, ADMIN_USERNAME)
+    correct_password = secrets.compare_digest(password, ADMIN_PASSWORD)
+    
+    if not (correct_username and correct_password):
+        log_with_context(
+            "WARNING", "admin_login",
+            f"Failed admin login attempt for username: {username}", request
+        )
+        return templates.TemplateResponse(
+            "admin_login.html",
+            {"request": request, "error": "Invalid username or password"}
+        )
+    
+    # Use the first authorized email for admin login token
+    if not AUTHORIZED_EMAILS:
+        log_with_context(
+            "ERROR", "admin_login",
+            "No authorized emails configured for admin login", request
+        )
+        return templates.TemplateResponse(
+            "admin_login.html",
+            {"request": request, "error": "Admin access not configured"}
+        )
+    
+    admin_email = AUTHORIZED_EMAILS[0]  # Use first authorized email
+    
+    log_with_context(
+        "INFO", "admin_login",
+        f"Successful admin login for {admin_email}", request
+    )
+    
+    # Create access token for admin user
+    access_token = create_access_token(
+        data={"sub": admin_email, "name": "Administrator", "iss": "admin"}
+    )
+    
+    # Create a simple success page with token for the popup
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Login Successful</title>
+        <style>
+            body {{ 
+                font-family: Arial, sans-serif; 
+                text-align: center; 
+                padding: 50px;
+                background: #f8f9fa;
+            }}
+            .success {{ 
+                background: #d4edda; 
+                color: #155724; 
+                padding: 20px; 
+                border-radius: 8px;
+                margin: 20px auto;
+                max-width: 400px;
+                border: 1px solid #c3e6cb;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="success">
+            <h2>Login Successful!</h2>
+            <p>Redirecting to admin dashboard...</p>
+        </div>
+        <script>
+            // Store token in localStorage and redirect
+            localStorage.setItem('access_token', '{access_token}');
+            
+            // If this is in a popup, close it and refresh parent
+            if (window.opener) {{
+                window.opener.location.href = '/admin/google-oauth/';
+                window.close();
+            }} else {{
+                // If not in popup, redirect directly
+                window.location.href = '/admin/google-oauth/';
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(content=html_content)

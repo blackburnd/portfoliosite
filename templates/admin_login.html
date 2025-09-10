@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Daniel Blackburn's Portfolio</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <script src="/assets/js/auth-login.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Admin Login</h1>
+                <p>Google OAuth is currently unavailable. Please use admin credentials to continue.</p>
+            </div>
+            
+            {% if error %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="post" action="/auth/admin-login" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="login-button">Login</button>
+            </form>
+            
+            <div class="login-footer">
+                <p><a href="/">← Back to Home</a></p>
+                <p><a href="/auth/login">Try Google OAuth Again</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

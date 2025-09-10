@@ -14,6 +14,8 @@
                 <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
             {% else %}
                 <a href="#" onclick="initiateLogin(); return false;" class="auth-link">Login</a>
+                <span class="auth-separator">|</span>
+                <a href="#" onclick="openAdminLoginPopup(); return false;" class="auth-link admin-login-link">Admin Login</a>
             {% endif %}
         </div>
     </div>
