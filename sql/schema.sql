@@ -98,6 +98,19 @@ CREATE TABLE IF NOT EXISTS app_log (
 CREATE TABLE IF NOT EXISTS google_oauth_tokens (
     id SERIAL PRIMARY KEY,
     portfolio_id UUID NOT NULL REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
+    user_email TEXT,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    token_expires_at TIMESTAMP WITH TIME ZONE,
+    granted_scopes TEXT,
+    oauth_state TEXT,
+    state_expires_at TIMESTAMP WITH TIME ZONE,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(portfolio_id, access_token)
+);
     access_token TEXT,
     refresh_token TEXT,
     token_expires_at TIMESTAMP WITH TIME ZONE,
