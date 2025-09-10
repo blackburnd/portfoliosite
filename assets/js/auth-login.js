@@ -56,8 +56,7 @@ function initiateLogin() {
 function openOAuthPopup(url) {
     const width = 500;
     const height = 600;
-    const left = (window.screen.width / 2) - (width / 2);
-    const top = (window.screen.height / 2) - (height / 2);
+    const { top, left } = getPopupPosition(width, height);
 
     const popup = window.open(
         url,

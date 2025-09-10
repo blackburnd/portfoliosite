@@ -35,43 +35,39 @@ class TTWOAuthManager:
         result = await database.fetch_val(query, {"portfolio_id": portfolio_id})
         return result > 0
     
-    async def get_oauth_app_config(self) -> Optional[Dict[str, Any]]:
-        """Get active LinkedIn OAuth app configuration"""
+    async def get_oauth_app_config(self, provider: str = 'linkedin') -> Optional[Dict[str, Any]]:
+        """Get active OAuth app configuration for a given provider."""
         try:
-            #add_log("DEBUG", "oauth_config_lookup", "Looking up LinkedIn OAuth configuration")
-            
             from database import PORTFOLIO_ID
             portfolio_id = PORTFOLIO_ID
             
             query = """
                 SELECT client_id, client_secret, redirect_uri, scopes, created_at, updated_at
                 FROM oauth_apps 
-                WHERE portfolio_id = :portfolio_id AND provider = 'linkedin'
+                WHERE portfolio_id = :portfolio_id AND provider = :provider
                 ORDER BY updated_at DESC
                 LIMIT 1
             """
-            params = {"portfolio_id": portfolio_id}
-            add_log("DEBUG", "linkedin_oauth_config_query", f"Executing LinkedIn OAuth config query")
-            add_log("DEBUG", "linkedin_oauth_config_params", f"Portfolio ID: {portfolio_id}")
-            add_log("DEBUG", "linkedin_oauth_config_sql", f"SQL: SELECT client_id, client_secret, redirect_uri, scopes, created_at, updated_at FROM oauth_apps WHERE portfolio_id = '{portfolio_id}' AND provider = 'linkedin'")
+            params = {"portfolio_id": portfolio_id, "provider": provider}
+            add_log("DEBUG", f"{provider}_oauth_config_query", f"Executing {provider} OAuth config query")
             result = await database.fetch_one(query, params)
             
             if not result:
-                add_log("ERROR", "oauth_config_not_found", "No LinkedIn OAuth configuration found in database")
+                add_log("ERROR", f"oauth_config_not_found_for_{provider}", f"No {provider} OAuth configuration found in database")
                 return None
             
             return {
                 "client_id": result["client_id"],
                 "client_secret": result["client_secret"],
                 "redirect_uri": result["redirect_uri"],
-                "scopes": result["scopes"],  # Include scopes field
+                "scopes": result["scopes"],
                 "created_at": result["created_at"],
                 "updated_at": result["updated_at"]
             }
             
         except Exception as e:
-            add_log("ERROR", "oauth_config_error", f"Error retrieving OAuth config: {str(e)}")
-            logger.error(f"Failed to retrieve OAuth app config: {e}")
+            add_log("ERROR", "oauth_config_error", f"Error retrieving OAuth config for {provider}: {str(e)}")
+            logger.error(f"Failed to retrieve OAuth app config for {provider}: {e}")
             return None
     
     async def configure_oauth_app(self, app_config: Dict[str, str]) -> bool:

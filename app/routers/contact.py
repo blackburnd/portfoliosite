@@ -46,7 +46,7 @@ async def send_contact_email(
             return False
 
         ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_google_oauth_app_config()
+        google_config = await ttw_manager.get_oauth_app_config(provider='google')
 
         if not google_config:
             logger.warning("Gmail API: No OAuth app configuration found")
