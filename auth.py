@@ -97,10 +97,20 @@ def is_authorized_user(email: str) -> bool:
 
 
 async def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> dict:
-    """Get current authenticated user from JWT token"""
-    if not credentials:
+    """Get current authenticated user from JWT token (from header or cookie)"""
+    token = None
+    
+    # First try to get token from Authorization header
+    if credentials:
+        token = credentials.credentials
+    else:
+        # If no Authorization header, try to get from cookie
+        token = request.cookies.get("access_token")
+    
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
@@ -108,7 +118,7 @@ async def get_current_user(
         )
 
     try:
-        payload = verify_token(credentials.credentials)
+        payload = verify_token(token)
         email = payload.get("sub")
 
         if not email or not is_authorized_user(email):
