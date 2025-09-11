@@ -9,13 +9,13 @@
         <p>Manage all configurable content and settings for your portfolio site</p>
     </div>
 
-    {% if request.args.get('bulk_success') %}
+    {% if request.query_params.get('bulk_success') %}
     <div class="alert alert-success">
-        ✅ Successfully updated {{ request.args.get('updated', '0') }} configuration values!
+        ✅ Successfully updated {{ request.query_params.get('updated', '0') }} configuration values!
     </div>
     {% endif %}
 
-    {% if request.args.get('error') %}
+    {% if request.query_params.get('error') %}
     <div class="alert alert-danger">
         ❌ Error occurred during configuration update. Please try again.
     </div>

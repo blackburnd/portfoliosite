@@ -18,19 +18,19 @@
         </div>
     </div>
 
-    {% if request.args.get('success') %}
+    {% if request.query_params.get('success') %}
     <div class="alert alert-success">
-        ✅ Successfully updated {{ request.args.get('updated', '0') }} configuration values!
+        ✅ Successfully updated {{ request.query_params.get('updated', '0') }} configuration values!
     </div>
     {% endif %}
 
-    {% if request.args.get('reset') %}
+    {% if request.query_params.get('reset') %}
     <div class="alert alert-info">
-        🔄 Reset {{ request.args.get('count', '0') }} configuration values to defaults.
+        🔄 Reset {{ request.query_params.get('count', '0') }} configuration values to defaults.
     </div>
     {% endif %}
 
-    {% if request.args.get('error') %}
+    {% if request.query_params.get('error') %}
     <div class="alert alert-danger">
         ❌ Error occurred during configuration update. Please try again.
     </div>
