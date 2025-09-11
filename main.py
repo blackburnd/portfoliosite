@@ -585,15 +585,6 @@ async def startup_event():
         # Database logging is now handled directly by add_log function
         logger.info("Database logging ready via add_log function")
 
-        # Configure OAuth from database
-        from auth import configure_oauth_from_database
-        logger.info("Attempting to configure OAuth from database...")
-        success = await configure_oauth_from_database()
-        if success:
-            logger.info("✅ OAuth configured successfully from database")
-        else:
-            logger.warning("⚠️ OAuth configuration not found in database")
-
     except Exception as e:
         logger.error(f"❌ Startup error: {str(e)}", exc_info=True)
         # Don't raise to allow app to start even with database issues
