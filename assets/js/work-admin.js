@@ -205,10 +205,16 @@ require([
         
         // Get form values
         const workItem = {
-            portfolio_id: window.PORTFOLIO_ID || "daniel-blackburn", // fallback for safety
+            portfolio_id: window.PORTFOLIO_ID, // This should always be set
             company: company,
             position: position
         };
+        
+        // Ensure portfolio_id is available
+        if (!workItem.portfolio_id) {
+            alert('Portfolio ID not found. Please refresh the page.');
+            return;
+        }
 
         // Add optional fields only if they have values
         const location = dijit.byId("location").get("value");

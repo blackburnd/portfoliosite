@@ -14,7 +14,7 @@ templates = Jinja2Templates(directory="templates")
 
 class Project(BaseModel):
     id: Optional[str] = None
-    portfolio_id: str = "daniel-blackburn"
+    portfolio_id: Optional[str] = None
     title: str
     description: str
     url: Optional[str] = None
@@ -77,7 +77,7 @@ async def list_projects():
             
             project = Project(
                 id=str(row_dict["id"]),
-                portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+                portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
                 title=row_dict.get("title", ""),
                 description=row_dict.get("description", ""),
                 url=row_dict.get("url"),
@@ -112,7 +112,7 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
     
     return Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -153,7 +153,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
     
     return Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -198,7 +198,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
     
     return Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", "daniel-blackburn"),
+        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),

@@ -206,10 +206,16 @@ require([
         
         // Get form values
         const project = {
-            portfolio_id: window.PORTFOLIO_ID || "daniel-blackburn", // fallback for safety
+            portfolio_id: window.PORTFOLIO_ID, // This should always be set
             title: title,
             description: description
         };
+        
+        // Ensure portfolio_id is available
+        if (!project.portfolio_id) {
+            alert('Portfolio ID not found. Please refresh the page.');
+            return;
+        }
 
         // Add optional fields only if they have values
         const url = dijit.byId("url").get("value");

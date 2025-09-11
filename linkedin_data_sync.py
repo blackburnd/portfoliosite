@@ -19,8 +19,9 @@ class LinkedInDataSync:
     """
     
     def __init__(self, admin_email: str):
+        from database import get_portfolio_id
         self.admin_email = admin_email
-        self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
+        self.portfolio_id = get_portfolio_id()  # Get current portfolio ID
         
     async def is_linkedin_available(self) -> bool:
         """Check if LinkedIn data sync is available for this admin"""
