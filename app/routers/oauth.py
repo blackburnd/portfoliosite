@@ -1227,25 +1227,32 @@ async def get_linkedin_oauth_status(
         config = await ttw_manager.get_oauth_app_config(provider='linkedin')
         is_configured = bool(config)
         
-        # Check if LinkedIn is connected (has active tokens)
-        connection = await ttw_manager.get_linkedin_connection()
-        is_connected = bool(connection and connection.get('access_token'))
-        
-        account_email = connection.get('admin_email') if connection else None
-        
-        status_data = {
-            "configured": is_configured,
-            "connected": is_connected,
-            "account_email": account_email
-        }
-        
-        # Add config details if configured
-        if is_configured and config:
-            status_data.update({
+        if is_configured:
+            # Check if LinkedIn is connected (has active tokens)
+            connection = await ttw_manager.get_linkedin_connection()
+            is_connected = bool(connection and connection.get('access_token'))
+            
+            account_email = None
+            if connection:
+                account_email = connection.get('admin_email')
+            
+            status_data = {
+                "configured": True,
+                "connected": is_connected,
+                "account_email": account_email,
                 "client_id": config.get("client_id", ""),
-                "redirect_uri": config.get("redirect_uri", ""),
-                "app_name": config.get("app_name", "")
-            })
+                "client_secret": config.get("client_secret", ""),
+                "redirect_uri": config.get("redirect_uri", "")
+            }
+        else:
+            status_data = {
+                "configured": False,
+                "connected": False,
+                "account_email": None,
+                "client_id": "",
+                "client_secret": "",
+                "redirect_uri": ""
+            }
         
         return JSONResponse(status_data)
         
@@ -1260,6 +1267,136 @@ async def get_linkedin_oauth_status(
             "connected": False,
             "error": str(e)
         }, status_code=500)
+
+
+@router.get("/admin/linkedin/oauth/authorize")
+async def initiate_linkedin_oauth_authorization(
+    request: Request
+):
+    """Handle LinkedIn OAuth authorization - return JSON for AJAX"""
+    try:
+        # Check if this is an AJAX request
+        accept_header = request.headers.get("Accept", "")
+        content_type = request.headers.get("Content-Type", "")
+        is_ajax = (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest" or
+            "application/json" in accept_header or
+            "application/json" in content_type or
+            accept_header == "application/json"
+        )
+        
+        # Check authentication manually to provide better error handling
+        payload = None
+        try:
+            # Get token from cookie (admin users will have this)
+            token = request.cookies.get("access_token")
+            if not token:
+                if is_ajax:
+                    return JSONResponse(
+                        {"detail": "Authentication required. Please log in again."},
+                        status_code=401
+                    )
+                return JSONResponse(
+                    {"detail": "Authentication required"},
+                    status_code=401
+                )
+            
+            # Verify the token manually
+            from auth import verify_token, is_authorized_user
+            try:
+                payload = verify_token(token)
+                email = payload.get("sub")
+                if not email or not is_authorized_user(email):
+                    if is_ajax:
+                        return JSONResponse(
+                            {"detail": "Authentication required. Please log in again."},
+                            status_code=401
+                        )
+                    return JSONResponse(
+                        {"detail": "Authentication required"},
+                        status_code=401
+                    )
+            except Exception:
+                if is_ajax:
+                    return JSONResponse(
+                        {"detail": "Authentication required. Please log in again."},
+                        status_code=401
+                    )
+                return JSONResponse(
+                    {"detail": "Authentication required"},
+                    status_code=401
+                )
+        except Exception:
+            if is_ajax:
+                return JSONResponse(
+                    {"detail": "Authentication required. Please log in again."},
+                    status_code=401
+                )
+            return JSONResponse(
+                {"detail": "Authentication required"},
+                status_code=401
+            )
+        
+        # For AJAX requests, generate OAuth URL and return it directly
+        ttw_manager = TTWOAuthManager()
+        
+        # Get the authorization URL for LinkedIn scopes
+        auth_url, state = await ttw_manager.get_linkedin_authorization_url(
+            requested_scopes=[
+                'openid',
+                'email',
+                'profile',
+                'w_member_social'  # LinkedIn posting permission
+            ]
+        )
+        
+        if not auth_url:
+            return JSONResponse(
+                {"detail": "LinkedIn OAuth is not configured."},
+                status_code=503
+            )
+
+        # Store state in session for verification
+        request.session['linkedin_oauth_state'] = state
+
+        # Create OAuth session record
+        from database import create_oauth_session, get_portfolio_id
+        
+        linkedin_config = await ttw_manager.get_oauth_app_config(
+            provider='linkedin'
+        )
+        scope_string = 'openid email profile w_member_social'
+        
+        session_id = await create_oauth_session(
+            portfolio_id=get_portfolio_id(),
+            provider='linkedin',
+            state=state,
+            scopes=scope_string,
+            client_id=linkedin_config.get('client_id') if linkedin_config else None
+        )
+        
+        log_with_context(
+            "INFO", "initiate_linkedin_oauth_authorization",
+            f"Created LinkedIn OAuth session {session_id} with state {state}",
+            request
+        )
+        
+        return JSONResponse({
+            "auth_url": auth_url,
+            "state": state
+        })
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "initiate_linkedin_oauth_authorization",
+            f"Failed to initiate LinkedIn OAuth: {e}",
+            request
+        )
+        return JSONResponse({
+            "detail": "Failed to initiate LinkedIn OAuth authorization",
+            "error": str(e)
+        }, status_code=500)
+
 
 
 @router.get("/admin/linkedin/oauth/callback")

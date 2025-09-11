@@ -211,23 +211,51 @@ class LinkedInOAuthAdmin {
 
     async initiateLinkedInAuth() {
         try {
-            console.log('LinkedIn OAuth: Starting authorization request...');
+            this.showMessage('Initiating LinkedIn authorization...', 'info');
             
-            const response = await fetch('/admin/linkedin/oauth/authorize');
-            console.log('LinkedIn OAuth: Response received, status:', response.status);
+            const response = await fetch('/admin/linkedin/oauth/authorize', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'  // Explicit AJAX marker
+                },
+                credentials: 'same-origin'  // Include cookies for authentication
+            });
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('LinkedIn OAuth: Authorization URL received, redirecting...');
-                window.location.href = data.auth_url;
+                if (data.auth_url) {
+                    this.showMessage('Opening LinkedIn authorization window...', 'info');
+                    this.openOAuthPopup(data.auth_url);
+                } else {
+                    this.showMessage('❌ No authorization URL received from server', 'error');
+                }
             } else {
-                const error = await response.json();
-                console.error('LinkedIn OAuth: Authorization failed:', error);
-                this.showMessage(`Failed to initiate LinkedIn authorization: ${error.detail || error.error}`, 'error');
+                // Try to parse error response
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    // If response is not JSON, try to get text
+                    try {
+                        const errorText = await response.text();
+                        if (errorText.includes('<!DOCTYPE')) {
+                            errorMessage = 'Server returned HTML instead of JSON. Please check server logs.';
+                        } else {
+                            errorMessage = errorText.substring(0, 100) + '...';
+                        }
+                    } catch (e2) {
+                        // Fallback to status code
+                        errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+                    }
+                }
+                this.showMessage(`❌ Failed to initiate LinkedIn authorization: ${errorMessage}`, 'error');
             }
         } catch (error) {
-            console.error('LinkedIn OAuth: Network/JS error during authorization:', error);
-            this.showMessage(`Error initiating LinkedIn authorization: ${error.message}`, 'error');
+            console.error('Error initiating LinkedIn auth:', error);
+            this.showMessage(`❌ Network error: ${error.message}`, 'error');
         }
     }
 
@@ -449,6 +477,82 @@ class LinkedInOAuthAdmin {
             console.error('Error testing Member Data Portability API:', error);
             resultsDiv.innerHTML = '<div class="test-error">❌ Member Data Portability API test failed: Network error</div>';
         }
+    }
+
+    getPopupPosition(width = 500, height = 600) {
+        const screenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+        const screenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+        
+        const windowWidth = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
+        const windowHeight = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+        
+        const left = ((windowWidth / 2) - (width / 2)) + screenLeft;
+        const top = ((windowHeight / 2) - (height / 2)) + screenTop;
+        
+        return {
+            left: Math.max(0, Math.floor(left)),
+            top: Math.max(0, Math.floor(top)),
+            width: width,
+            height: height
+        };
+    }
+
+    openOAuthPopup(authUrl) {
+        // Calculate popup dimensions and position using proper centering
+        const width = 500;
+        const height = 600;
+        const { top, left } = this.getPopupPosition(width, height);
+        
+        // Open popup window
+        const popup = window.open(
+            authUrl,
+            'linkedinOAuth',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,status=yes,location=yes`
+        );
+        
+        if (!popup) {
+            this.showMessage('Popup blocked! Please allow popups for this site and try again.', 'error');
+            return;
+        }
+        
+        // Monitor popup for completion
+        this.monitorOAuthPopup(popup);
+    }
+
+    monitorOAuthPopup(popup) {
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                // Popup was closed, but we'll rely on postMessage for success notification
+                // Only show this message if we haven't received a postMessage
+                setTimeout(() => {
+                    // Check if status has been updated, if not show generic message
+                    this.loadLinkedInStatus();
+                }, 1000);
+                return;
+            }
+            
+            try {
+                // Check if popup has navigated back to our domain (indicates completion)
+                const popupUrl = popup.location.href;
+                if (popupUrl.includes(window.location.origin)) {
+                    // We're back on our domain, the callback should handle the rest
+                    // Keep monitoring as the popup should close itself
+                }
+            } catch (e) {
+                // Cross-origin error is expected while on LinkedIn's domain
+                // Continue monitoring
+            }
+        }, 1000);
+        
+        // Set a timeout to stop monitoring after 10 minutes
+        setTimeout(() => {
+            if (!popup.closed) {
+                clearInterval(checkClosed);
+                popup.close();
+                this.showMessage('OAuth process timed out. Please try again.', 'warning');
+            }
+        }, 600000); // 10 minutes
     }
 
     showMessage(message, type) {

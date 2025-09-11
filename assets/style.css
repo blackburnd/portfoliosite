@@ -55,6 +55,13 @@ body {
     margin: 0 auto;
 }
 
+/* Full width layout for logs page */
+.logs .wrap {
+    max-width: none;
+    margin: 0;
+    padding: 0 20px;
+}
+
 /* Site Header Styles */
 .site-header {
     margin-bottom: 30px;
