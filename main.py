@@ -640,12 +640,24 @@ app.include_router(site_config_migration_router, tags=["migration"])
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    from auth import get_user_info
+    from auth import verify_token, is_authorized_user
     
     # Get user authentication data for navigation
-    user_info = await get_user_info(request)
-    user_authenticated = user_info is not None
-    user_email = user_info.get('email') if user_info else None
+    user_authenticated = False
+    user_email = None
+    user_info = None
+    
+    try:
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+                user_info = {"email": email}
+    except Exception:
+        pass
     
     return templates.TemplateResponse("index.html", {
         "request": request,
