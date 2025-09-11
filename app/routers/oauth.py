@@ -1359,25 +1359,9 @@ async def initiate_linkedin_oauth_authorization(
         # Store state in session for verification
         request.session['linkedin_oauth_state'] = state
 
-        # Create OAuth session record
-        from database import create_oauth_session, get_portfolio_id
-        
-        linkedin_config = await ttw_manager.get_oauth_app_config(
-            provider='linkedin'
-        )
-        scope_string = 'openid email profile w_member_social'
-        
-        session_id = await create_oauth_session(
-            portfolio_id=get_portfolio_id(),
-            provider='linkedin',
-            state=state,
-            scopes=scope_string,
-            client_id=linkedin_config.get('client_id') if linkedin_config else None
-        )
-        
         log_with_context(
             "INFO", "initiate_linkedin_oauth_authorization",
-            f"Created LinkedIn OAuth session {session_id} with state {state}",
+            f"Created LinkedIn OAuth authorization with state {state}",
             request
         )
         
