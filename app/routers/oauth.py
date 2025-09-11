@@ -620,8 +620,9 @@ async def get_google_oauth_status(
             })
     except Exception as e:
         log_with_context(
-            request, "ERROR", "get_google_oauth_status",
-            f"Failed to get Google OAuth status: {e}"
+            "ERROR", "get_google_oauth_status",
+            f"Failed to get Google OAuth status: {e}",
+            request
         )
         return JSONResponse({
             "configured": False,
@@ -697,9 +698,10 @@ async def initiate_oauth_with_selected_scopes(
         )
 
         log_with_context(
-            request, "INFO", "oauth_authorization_with_scopes",
+            "INFO", "oauth_authorization_with_scopes",
             f"OAuth session created with selected scopes: {selected_scopes} "
-            f"for user: {admin.get('email')}"
+            f"for user: {admin.get('email')}",
+            request
         )
         
         return JSONResponse({
@@ -709,8 +711,9 @@ async def initiate_oauth_with_selected_scopes(
         
     except Exception as e:
         log_with_context(
-            request, "ERROR", "initiate_oauth_with_selected_scopes",
-            f"Failed to initiate OAuth with selected scopes: {e}"
+            "ERROR", "initiate_oauth_with_selected_scopes",
+            f"Failed to initiate OAuth with selected scopes: {e}",
+            request
         )
         return JSONResponse(
             {"detail": f"Server error: {str(e)}"},
@@ -828,9 +831,10 @@ async def initiate_google_oauth_authorization(
             )
 
             log_with_context(
-                request, "INFO", "admin_oauth_authorization_ajax",
+                "INFO", "admin_oauth_authorization_ajax",
                 f"Admin OAuth session created with state: {state} "
-                f"for user: {payload.get('email')}"
+                f"for user: {payload.get('email')}",
+                request
             )
             
             return JSONResponse({
@@ -845,8 +849,9 @@ async def initiate_google_oauth_authorization(
         
     except Exception as e:
         log_with_context(
-            request, "ERROR", "initiate_google_oauth_authorization",
-            f"Failed to handle OAuth authorization: {e}"
+            "ERROR", "initiate_google_oauth_authorization",
+            f"Failed to handle OAuth authorization: {e}",
+            request
         )
         if is_ajax:
             return JSONResponse(
@@ -1360,16 +1365,19 @@ async def view_oauth_tokens_graphql(
         }
         
         log_with_context(
-            request, "INFO", "view_oauth_tokens",
-            f"Returned {len(token_data)} OAuth tokens for admin: {admin.get('email')}"
+            "INFO", "view_oauth_tokens",
+            f"Returned {len(token_data)} OAuth tokens for admin: "
+            f"{admin.get('email')}",
+            request
         )
         
         return JSONResponse(graphql_response)
         
     except Exception as e:
         log_with_context(
-            request, "ERROR", "view_oauth_tokens",
-            f"Failed to retrieve OAuth tokens: {e}"
+            "ERROR", "view_oauth_tokens",
+            f"Failed to retrieve OAuth tokens: {e}",
+            request
         )
         
         error_response = {
