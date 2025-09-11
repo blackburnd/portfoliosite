@@ -78,6 +78,9 @@ class GoogleOAuthAdmin {
         const testProfileBtn = document.getElementById('test-profile-access');
         if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
 
+        const saveSiteConfigBtn = document.getElementById('save-google-site-config');
+        if (saveSiteConfigBtn) saveSiteConfigBtn.addEventListener('click', () => this.saveGoogleSiteConfig());
+
         const viewTokensBtn = document.getElementById('view-oauth-tokens');
         if (viewTokensBtn) viewTokensBtn.addEventListener('click', () => this.viewOAuthTokens());
     }
@@ -541,6 +544,9 @@ class GoogleOAuthAdmin {
             if (response.ok && result.status === 'success') {
                 const data = result.data;
                 
+                // Store the fetched data for later use
+                this.fetchedGoogleData = data;
+                
                 // Update permission status indicators based on returned data
                 this.updatePermissionStatus(data);
                 
@@ -550,16 +556,21 @@ class GoogleOAuthAdmin {
                 // Populate the scope data fields with actual values
                 this.updateScopeDataFields(data);
                 
+                // Show the save site config button if we have useful data
+                this.showSaveConfigButton(data);
+                
                 this.showMessage('✅ Google data fetched successfully!', 'success');
             } else {
                 // Reset permission status on failure and check actual scopes
                 this.resetPermissionStatus();
                 this.checkGrantedScopes();
+                this.hideSaveConfigButton();
                 this.showMessage(`❌ Failed to fetch Google data: ${result.message || result.detail}`, 'error');
             }
         } catch (error) {
             console.error('Error testing profile access:', error);
             this.resetPermissionStatus();
+            this.hideSaveConfigButton();
             this.showMessage('❌ Failed to fetch Google data: Network error', 'error');
         }
     }
@@ -611,6 +622,74 @@ class GoogleOAuthAdmin {
             } else {
                 gmailData.innerHTML = 'Gmail API access enabled for sending emails';
             }
+        }
+    }
+
+    showSaveConfigButton(data) {
+        const saveButton = document.getElementById('save-google-site-config');
+        if (saveButton && (data.name || data.email)) {
+            saveButton.style.display = 'inline-block';
+            
+            // Update button text to show what will be saved
+            let configItems = [];
+            if (data.name) configItems.push('name');
+            if (data.email) configItems.push('email');
+            saveButton.title = `Save ${configItems.join(' and ')} to site configuration`;
+        }
+    }
+
+    hideSaveConfigButton() {
+        const saveButton = document.getElementById('save-google-site-config');
+        if (saveButton) {
+            saveButton.style.display = 'none';
+        }
+        // Clear stored data
+        this.fetchedGoogleData = null;
+    }
+
+    async saveGoogleSiteConfig() {
+        if (!this.fetchedGoogleData) {
+            this.showMessage('❌ No Google data available. Please fetch Google data first.', 'error');
+            return;
+        }
+
+        const data = this.fetchedGoogleData;
+        const full_name = data.name || '';
+        const email = data.email || '';
+
+        if (!full_name && !email) {
+            this.showMessage('❌ No name or email data found to save.', 'error');
+            return;
+        }
+
+        try {
+            this.showMessage('Saving Google data to site configuration...', 'info');
+
+            const response = await fetch('/admin/google/oauth/save-site-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    full_name: full_name,
+                    email: email
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                this.showMessage(`✅ Successfully saved: ${result.saved_configs.join(', ')}`, 'success');
+                
+                // Hide the save button after successful save
+                this.hideSaveConfigButton();
+            } else {
+                this.showMessage(`❌ Failed to save site config: ${result.message || result.detail}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving Google site config:', error);
+            this.showMessage('❌ Failed to save site config: Network error', 'error');
         }
     }
 

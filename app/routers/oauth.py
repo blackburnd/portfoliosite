@@ -1804,3 +1804,83 @@ async def fetch_google_profile_data(
             "status": "error",
             "message": f"Failed to fetch Google profile data: {str(e)}"
         }, status_code=500)
+
+
+@router.post("/admin/google/oauth/save-site-config")
+async def save_google_site_config(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Save Google name and email data to site configuration"""
+    try:
+        from site_config import SiteConfigManager
+        import json
+        
+        # Get the JSON data from request body
+        body = await request.body()
+        data = json.loads(body) if body else {}
+        
+        full_name = data.get("full_name", "").strip()
+        email = data.get("email", "").strip()
+        
+        if not full_name and not email:
+            return JSONResponse({
+                "status": "error",
+                "message": "No name or email data provided to save"
+            }, status_code=400)
+        
+        # Save to site configuration
+        saved_configs = []
+        
+        if full_name:
+            await SiteConfigManager.set_config(
+                "full_name",
+                full_name,
+                "Full name imported from Google profile"
+            )
+            saved_configs.append(f"full_name: {full_name}")
+        
+        if email:
+            await SiteConfigManager.set_config(
+                "email",
+                email,
+                "Email address imported from Google profile"
+            )
+            saved_configs.append(f"email: {email}")
+        
+        log_with_context(
+            "INFO", "save_google_site_config",
+            f"Successfully saved Google data to site config: "
+            f"{', '.join(saved_configs)} for admin: "
+            f"{admin.get('email')}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"Successfully saved {len(saved_configs)} "
+                      f"configuration(s) from Google data",
+            "saved_configs": saved_configs,
+            "data": {
+                "full_name": full_name,
+                "email": email
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JSONResponse({
+            "status": "error",
+            "message": "Invalid JSON data in request"
+        }, status_code=400)
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "save_google_site_config",
+            f"Failed to save Google data to site config: {e}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to save Google data to site config: {str(e)}"
+        }, status_code=500)

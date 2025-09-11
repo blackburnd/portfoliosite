@@ -2452,6 +2452,24 @@ td[style*="#abd6ff"] {
     background-color: #c82333;
 }
 
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+
 .results-container {
     margin: 20px 0;
 }
