@@ -1,7 +1,105 @@
 """
-Site Configuration Manager
-Handles retrieving and caching site-wide configuration values from the database
+Site Configuration Management System
+Centralized configuration management for portfolio site customization
 """
+import os
+from typing import Dict, Any, Optional
+from database import database, get_portfolio_id
+
+
+class SiteConfigManager:
+    """Manages site configuration stored in database with fallback to env vars"""
+    
+    _config_cache: Dict[str, Any] = {}
+    _cache_loaded = False
+    
+    @classmethod
+    async def get_config(cls, key: str, default: str = "") -> str:
+        """Get a configuration value by key"""
+        if not cls._cache_loaded:
+            await cls._load_config()
+        
+        # Check cache first
+        if key in cls._config_cache:
+            return cls._config_cache[key]
+        
+        # Check environment variables as fallback
+        env_value = os.environ.get(f"SITE_{key.upper()}")
+        if env_value:
+            return env_value
+        
+        return default
+    
+    @classmethod
+    async def get_all_config(cls) -> Dict[str, str]:
+        """Get all configuration values as a dictionary"""
+        if not cls._cache_loaded:
+            await cls._load_config()
+        
+        return cls._config_cache.copy()
+    
+    @classmethod
+    async def set_config(cls, key: str, value: str, description: str = ""):
+        """Set a configuration value"""
+        portfolio_id = get_portfolio_id()
+        
+        # Insert or update in database
+        query = """
+        INSERT INTO site_config (portfolio_id, config_key, config_value, description, updated_at)
+        VALUES (:portfolio_id, :key, :value, :description, NOW())
+        ON CONFLICT (portfolio_id, config_key)
+        DO UPDATE SET 
+            config_value = EXCLUDED.config_value,
+            description = EXCLUDED.description,
+            updated_at = NOW()
+        """
+        
+        await database.execute(query, {
+            "portfolio_id": portfolio_id,
+            "key": key,
+            "value": value,
+            "description": description
+        })
+        
+        # Update cache
+        cls._config_cache[key] = value
+    
+    @classmethod
+    async def _load_config(cls):
+        """Load all configuration from database into cache"""
+        portfolio_id = get_portfolio_id()
+        
+        query = """
+        SELECT config_key, config_value 
+        FROM site_config 
+        WHERE portfolio_id = :portfolio_id
+        ORDER BY config_key
+        """
+        
+        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
+        
+        cls._config_cache = {}
+        for row in rows:
+            cls._config_cache[row['config_key']] = row['config_value']
+        
+        cls._cache_loaded = True
+    
+    @classmethod
+    def clear_cache(cls):
+        """Clear the configuration cache to force reload"""
+        cls._config_cache = {}
+        cls._cache_loaded = False
+    
+    @classmethod
+    async def get_config_with_env_fallback(cls, key: str, env_key: str = None, default: str = "") -> str:
+        """Get config with specific environment variable fallback"""
+        config_value = await cls.get_config(key, "")
+        if config_value:
+            return config_value
+        
+        # Use specific env key or construct from config key
+        env_var = env_key or f"SITE_{key.upper()}"
+        return os.environ.get(env_var, default)
 import os
 from typing import Dict, Optional, Any
 from database import database, get_portfolio_id

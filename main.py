@@ -25,7 +25,10 @@ from strawberry.fastapi import GraphQLRouter
 from app.resolvers import schema
 from app.routers import contact, projects, work, showcase, logs, sql
 from app.routers.oauth import router as google_oauth_router
-from app.routers.site_config_migration import router as site_config_migration_router
+from app.routers.site_config import router as site_config_router
+from app.routers.site_config_migration import (
+    router as site_config_migration_router
+)
 from database import close_database, database, init_database
 from log_capture import add_log
 from ttw_oauth_manager import TTWOAuthManager
@@ -605,6 +608,7 @@ app.include_router(work.router, tags=["work"])
 app.include_router(showcase.router, tags=["showcase"])
 app.include_router(logs.router, tags=["logs"])
 app.include_router(sql.router, tags=["sql"])
+app.include_router(site_config_router, tags=["config"])
 app.include_router(site_config_migration_router, tags=["migration"])
 
 
