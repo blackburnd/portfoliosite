@@ -4,7 +4,7 @@ import httpx
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request, Depends, HTTPException, Form
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jose import jwt, jwk
 from jose.exceptions import JWTError
@@ -632,8 +632,148 @@ async def get_google_oauth_status(
         })
 
 
+@router.get("/admin/google/oauth/select-scopes")
+async def show_scope_selection(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Show scope selection page for OAuth authorization"""
+    return templates.TemplateResponse("google_oauth_scope_selection.html", {
+        "request": request,
+        "current_page": "google_oauth_admin",
+        "user_info": admin
+    })
+
+
+@router.post("/admin/google/oauth/authorize-with-scopes")
+async def initiate_oauth_with_selected_scopes(
+    request: Request,
+    scope_data: dict,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Initiate Google OAuth authorization with user-selected scopes"""
+    try:
+        selected_scopes = scope_data.get('scopes', [])
+        
+        # Validate required scopes
+        required_scopes = ['openid', 'email', 'profile']
+        if not all(scope in selected_scopes for scope in required_scopes):
+            return JSONResponse(
+                {"detail": "Required scopes (openid, email, profile) must be selected"},
+                status_code=400
+            )
+        
+        # Generate state token and store in session
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        
+        ttw_manager = TTWOAuthManager()
+        
+        # Get the authorization URL with selected scopes
+        auth_url = await ttw_manager.get_google_auth_url(
+            scopes=selected_scopes,
+            state=state
+        )
+        
+        if not auth_url:
+            return JSONResponse(
+                {"detail": "Google OAuth is not configured."},
+                status_code=503
+            )
+
+        # Create OAuth session record
+        from database import create_oauth_session, get_portfolio_id
+        
+        google_config = await ttw_manager.get_google_oauth_credentials()
+        scope_string = ' '.join(selected_scopes)
+        
+        await create_oauth_session(
+            portfolio_id=get_portfolio_id(),
+            state=state,
+            scopes=scope_string,
+            auth_url=auth_url,
+            redirect_uri=google_config['redirect_uri'],
+            admin_email=admin.get('email')
+        )
+
+        log_with_context(
+            request, "INFO", "oauth_authorization_with_scopes",
+            f"OAuth session created with selected scopes: {selected_scopes} "
+            f"for user: {admin.get('email')}"
+        )
+        
+        return JSONResponse({
+            "auth_url": auth_url,
+            "selected_scopes": selected_scopes
+        })
+        
+    except Exception as e:
+        log_with_context(
+            request, "ERROR", "initiate_oauth_with_selected_scopes",
+            f"Failed to initiate OAuth with selected scopes: {e}"
+        )
+        return JSONResponse(
+            {"detail": f"Server error: {str(e)}"},
+            status_code=500
+        )
+
+
 @router.get("/admin/google/oauth/authorize")
 async def initiate_google_oauth_authorization(
+    request: Request
+):
+    """Redirect to scope selection page instead of direct OAuth"""
+    try:
+        # Check authentication manually to provide better error handling
+        try:
+            # Get token from cookie (admin users will have this)
+            token = request.cookies.get("access_token")
+            if not token:
+                return RedirectResponse(
+                    url="/admin/google/oauth?error=auth_required",
+                    status_code=302
+                )
+            
+            # Verify the token manually
+            from auth import verify_token, is_authorized_user
+            try:
+                payload = verify_token(token)
+                email = payload.get("sub")
+                if not email or not is_authorized_user(email):
+                    return RedirectResponse(
+                        url="/admin/google/oauth?error=auth_required",
+                        status_code=302
+                    )
+            except Exception:
+                return RedirectResponse(
+                    url="/admin/google/oauth?error=auth_required",
+                    status_code=302
+                )
+        except Exception:
+            return RedirectResponse(
+                url="/admin/google/oauth?error=auth_required",
+                status_code=302
+            )
+        
+        # Redirect to scope selection page
+        return RedirectResponse(
+            url="/admin/google/oauth/select-scopes",
+            status_code=302
+        )
+        
+    except Exception as e:
+        log_with_context(
+            request, "ERROR", "initiate_google_oauth_authorization_redirect",
+            f"Failed to redirect to scope selection: {e}"
+        )
+        return RedirectResponse(
+            url="/admin/google/oauth?error=server_error",
+            status_code=302
+        )
+
+
+@router.get("/admin/google/oauth/authorize-direct")
+async def initiate_google_oauth_authorization_direct(
     request: Request
 ):
     """Initiate Google OAuth authorization flow for admin permissions"""
@@ -1067,3 +1207,95 @@ async def admin_login(
     """
     
     return HTMLResponse(content=html_content)
+
+
+@router.get("/admin/google/oauth/tokens")
+async def view_oauth_tokens_graphql(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """View OAuth tokens in GraphQL format"""
+    try:
+        from database import get_google_oauth_tokens, get_portfolio_id
+        
+        # Get all OAuth tokens for this portfolio
+        tokens = await get_google_oauth_tokens(
+            portfolio_id=get_portfolio_id()
+        )
+        
+        if not tokens:
+            graphql_response = {
+                "data": {
+                    "oauthTokens": []
+                },
+                "extensions": {
+                    "message": "No OAuth tokens found"
+                }
+            }
+            return JSONResponse(graphql_response)
+        
+        # Format tokens in GraphQL-style response
+        token_data = []
+        for token in tokens:
+            token_entry = {
+                "id": token.get('id'),
+                "provider": token.get('provider', 'google'),
+                "createdAt": token.get('created_at'),
+                "updatedAt": token.get('updated_at'),
+                "adminEmail": token.get('admin_email'),
+                "scopes": {
+                    "granted": token.get('scopes', '').split(' ') if token.get('scopes') else [],
+                    "count": len(token.get('scopes', '').split(' ')) if token.get('scopes') else 0
+                },
+                "tokenInfo": {
+                    "hasAccessToken": bool(token.get('access_token')),
+                    "hasRefreshToken": bool(token.get('refresh_token')),
+                    "expiresAt": token.get('expires_at'),
+                    "tokenType": token.get('token_type', 'Bearer')
+                },
+                "status": {
+                    "isActive": bool(token.get('access_token')),
+                    "isExpired": False  # We'd need to check expiry logic here
+                }
+            }
+            token_data.append(token_entry)
+        
+        graphql_response = {
+            "data": {
+                "oauthTokens": token_data,
+                "totalCount": len(token_data)
+            },
+            "extensions": {
+                "query": "query GetOAuthTokens { oauthTokens { id provider createdAt scopes { granted count } tokenInfo { hasAccessToken hasRefreshToken } status { isActive } } }",
+                "executionTime": "0ms",
+                "source": "Blackburn Systems OAuth API"
+            }
+        }
+        
+        log_with_context(
+            request, "INFO", "view_oauth_tokens",
+            f"Returned {len(token_data)} OAuth tokens for admin: {admin.get('email')}"
+        )
+        
+        return JSONResponse(graphql_response)
+        
+    except Exception as e:
+        log_with_context(
+            request, "ERROR", "view_oauth_tokens",
+            f"Failed to retrieve OAuth tokens: {e}"
+        )
+        
+        error_response = {
+            "data": None,
+            "errors": [
+                {
+                    "message": f"Failed to retrieve OAuth tokens: {str(e)}",
+                    "extensions": {
+                        "code": "INTERNAL_ERROR",
+                        "timestamp": "2024-09-11T14:39:00Z"
+                    }
+                }
+            ]
+        }
+        
+        return JSONResponse(error_response, status_code=500)

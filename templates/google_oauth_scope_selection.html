@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Select OAuth Permissions - Blackburn Systems{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Select Google OAuth Permissions
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Please select which permissions you want to grant to Blackburn Systems portfolio application.
+                        You can always revoke these permissions later from the admin panel.
+                    </div>
+
+                    <form id="scope-selection-form">
+                        <div class="scope-list">
+                            <div class="scope-item mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scope_openid" name="scopes" value="openid" checked disabled>
+                                    <label class="form-check-label fw-bold" for="scope_openid">
+                                        Basic Identity (Required)
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Allows the application to verify your identity through Google.
+                                </small>
+                            </div>
+
+                            <div class="scope-item mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scope_email" name="scopes" value="email" checked disabled>
+                                    <label class="form-check-label fw-bold" for="scope_email">
+                                        Email Address (Required)
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Allows the application to access your email address for authentication.
+                                </small>
+                            </div>
+
+                            <div class="scope-item mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scope_profile" name="scopes" value="profile" checked disabled>
+                                    <label class="form-check-label fw-bold" for="scope_profile">
+                                        Basic Profile (Required)
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Allows the application to access your basic profile information (name, picture).
+                                </small>
+                            </div>
+
+                            <div class="scope-item mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="scope_gmail_send" name="scopes" value="https://www.googleapis.com/auth/gmail.send">
+                                    <label class="form-check-label fw-bold" for="scope_gmail_send">
+                                        Send Emails via Gmail
+                                    </label>
+                                    <span class="badge bg-warning text-dark ms-2">Optional</span>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Allows the application to send emails on your behalf through Gmail. This is used for contact form responses and administrative notifications.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Note:</strong> The basic permissions (Identity, Email, Profile) are required for the application to function properly. The Gmail send permission is optional but recommended for full functionality.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="/admin/google/oauth" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-2"></i>Continue with Selected Permissions
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('scope-selection-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Get selected scopes
+    const selectedScopes = [];
+    const checkboxes = document.querySelectorAll('input[name="scopes"]:checked');
+    checkboxes.forEach(checkbox => {
+        selectedScopes.push(checkbox.value);
+    });
+    
+    // Validate required scopes
+    const requiredScopes = ['openid', 'email', 'profile'];
+    const hasAllRequired = requiredScopes.every(scope => selectedScopes.includes(scope));
+    
+    if (!hasAllRequired) {
+        alert('Basic permissions are required for the application to function.');
+        return;
+    }
+    
+    try {
+        // Submit selected scopes to the server
+        const response = await fetch('/admin/google/oauth/authorize-with-scopes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                scopes: selectedScopes
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.auth_url) {
+            // Redirect to Google OAuth with selected scopes
+            window.location.href = result.auth_url;
+        } else {
+            throw new Error(result.detail || 'Failed to initiate authorization');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

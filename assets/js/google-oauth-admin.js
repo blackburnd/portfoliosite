@@ -77,6 +77,9 @@ class GoogleOAuthAdmin {
 
         const testProfileBtn = document.getElementById('test-profile-access');
         if (testProfileBtn) testProfileBtn.addEventListener('click', () => this.testProfileAccess());
+
+        const viewTokensBtn = document.getElementById('view-oauth-tokens');
+        if (viewTokensBtn) viewTokensBtn.addEventListener('click', () => this.viewOAuthTokens());
     }
 
     async loadGoogleStatus() {
@@ -525,6 +528,112 @@ class GoogleOAuthAdmin {
         const gmailData = document.getElementById('gmail-send-data');
         if (gmailData) {
             gmailData.innerHTML = 'Gmail API access enabled for sending emails';
+        }
+    }
+
+    async viewOAuthTokens() {
+        try {
+            this.showMessage('Loading OAuth tokens...', 'info');
+            
+            const response = await fetch('/admin/google/oauth/tokens');
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Create a modal or new window to display the GraphQL formatted data
+                const tokenWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>OAuth Tokens - GraphQL Format</title>
+                        <style>
+                            body { 
+                                font-family: 'Monaco', 'Consolas', monospace; 
+                                margin: 20px; 
+                                background: #1e1e1e; 
+                                color: #f8f8f2;
+                            }
+                            .header {
+                                background: #2d2d2d;
+                                padding: 15px;
+                                border-radius: 5px;
+                                margin-bottom: 20px;
+                            }
+                            .header h1 {
+                                margin: 0;
+                                color: #50fa7b;
+                            }
+                            .json-container {
+                                background: #282a36;
+                                padding: 20px;
+                                border-radius: 5px;
+                                border: 1px solid #44475a;
+                                white-space: pre-wrap;
+                                font-size: 14px;
+                                line-height: 1.5;
+                                overflow-x: auto;
+                            }
+                            .copy-btn {
+                                background: #50fa7b;
+                                color: #282a36;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                margin-bottom: 20px;
+                                font-weight: bold;
+                            }
+                            .copy-btn:hover {
+                                background: #70fa9b;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>🔑 OAuth Tokens - GraphQL Format</h1>
+                            <p>Your OAuth tokens and configuration in GraphQL response format</p>
+                        </div>
+                        
+                        <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                        
+                        <div class="json-container" id="json-content">${JSON.stringify(result, null, 2)}</div>
+                        
+                        <script>
+                            function copyToClipboard() {
+                                const content = document.getElementById('json-content').textContent;
+                                navigator.clipboard.writeText(content).then(() => {
+                                    alert('OAuth tokens copied to clipboard!');
+                                }).catch(() => {
+                                    // Fallback for older browsers
+                                    const textArea = document.createElement('textarea');
+                                    textArea.value = content;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand('copy');
+                                    document.body.removeChild(textArea);
+                                    alert('OAuth tokens copied to clipboard!');
+                                });
+                            }
+                        </script>
+                    </body>
+                    </html>
+                `;
+                
+                tokenWindow.document.write(htmlContent);
+                tokenWindow.document.close();
+                
+                this.showMessage('✅ OAuth tokens displayed in new window!', 'success');
+            } else {
+                if (result.errors && result.errors.length > 0) {
+                    this.showMessage(`❌ Error: ${result.errors[0].message}`, 'error');
+                } else {
+                    this.showMessage(`❌ Failed to load OAuth tokens: ${result.detail || 'Unknown error'}`, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error viewing OAuth tokens:', error);
+            this.showMessage('❌ Failed to load OAuth tokens: Network error', 'error');
         }
     }
 
