@@ -401,12 +401,32 @@ class GoogleOAuthAdmin {
         }
     }
 
+    /**
+     * Calculate centered popup position
+     */
+    getPopupPosition(width = 500, height = 600) {
+        const screenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+        const screenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+        
+        const windowWidth = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
+        const windowHeight = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+        
+        const left = ((windowWidth / 2) - (width / 2)) + screenLeft;
+        const top = ((windowHeight / 2) - (height / 2)) + screenTop;
+        
+        return {
+            left: Math.max(0, Math.floor(left)),
+            top: Math.max(0, Math.floor(top)),
+            width: width,
+            height: height
+        };
+    }
+
     openOAuthPopup(authUrl) {
-        // Calculate popup dimensions and position
+        // Calculate popup dimensions and position using proper centering
         const width = 500;
         const height = 600;
-        const left = (window.screen.width / 2) - (width / 2);
-        const top = (window.screen.height / 2) - (height / 2);
+        const { top, left } = this.getPopupPosition(width, height);
         
         // Open popup window
         const popup = window.open(
@@ -610,7 +630,8 @@ class GoogleOAuthAdmin {
                 const result = await response.json();
                 
                 // Create a modal or new window to display the GraphQL formatted data
-                const tokenWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                const { top, left } = this.getPopupPosition(800, 600);
+                const tokenWindow = window.open('', '_blank', `width=800,height=600,left=${left},top=${top},scrollbars=yes,resizable=yes`);
                 
                 if (!tokenWindow) {
                     this.showMessage('❌ Popup blocked! Please allow popups for this site and try again.', 'error');
