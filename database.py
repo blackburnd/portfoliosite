@@ -613,3 +613,22 @@ async def update_google_oauth_token_usage(
         query, {"portfolio_id": portfolio_id, "email": email}
     )
     return result > 0
+
+
+async def revoke_oauth_tokens(
+    portfolio_id: str, reason: str = None
+) -> bool:
+    """Mark OAuth tokens as revoked and inactive"""
+    query = """
+    UPDATE google_oauth_tokens
+    SET is_active = false,
+        workflow_status = 'revoked',
+        callback_error = :reason,
+        updated_at = NOW()
+    WHERE portfolio_id = :portfolio_id AND is_active = true
+    """
+
+    result = await database.execute(
+        query, {"portfolio_id": portfolio_id, "reason": reason}
+    )
+    return result > 0

@@ -593,8 +593,20 @@ async def get_google_oauth_status(
             credentials = await ttw_manager.get_google_oauth_credentials()
             client_secret = credentials.get("client_secret", "") if credentials else ""
             
+            # Check if we have active OAuth tokens (user connected)
+            from database import get_google_oauth_tokens, get_portfolio_id
+            tokens = await get_google_oauth_tokens(
+                portfolio_id=get_portfolio_id(),
+                active_only=True
+            )
+            
+            connected = bool(tokens and tokens.get('access_token'))
+            account_email = tokens.get('admin_email') if tokens else None
+            
             return JSONResponse({
                 "configured": True,
+                "connected": connected,
+                "account_email": account_email,
                 "client_id": config.get("client_id", ""),
                 "client_secret": client_secret,
                 "redirect_uri": config.get("redirect_uri", "")
@@ -719,6 +731,153 @@ async def initiate_google_oauth_authorization(
             {"detail": f"Server error: {str(e)}"},
             status_code=500
         )
+
+
+@router.get("/admin/google/oauth/scopes")
+async def get_google_oauth_scopes(
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get current Google OAuth scopes status"""
+    try:
+        from database import get_google_oauth_tokens, get_portfolio_id
+        
+        # Get the most recent active OAuth tokens
+        tokens = await get_google_oauth_tokens(
+            portfolio_id=get_portfolio_id(),
+            active_only=True
+        )
+        
+        if not tokens:
+            return JSONResponse({
+                "status": "error",
+                "message": "No active OAuth tokens found",
+                "scopes": {
+                    "openid": False,
+                    "email": False,
+                    "profile": False,
+                    "https://www.googleapis.com/auth/gmail.send": False
+                }
+            })
+        
+        # Parse the granted scopes string
+        granted_scopes_str = tokens.get('granted_scopes', '')
+        granted_scopes = (granted_scopes_str.split()
+                          if granted_scopes_str else [])
+        
+        # Check each required scope
+        scope_status = {
+            "openid": "openid" in granted_scopes,
+            "email": "email" in granted_scopes,
+            "profile": "profile" in granted_scopes,
+            "https://www.googleapis.com/auth/gmail.send":
+                "https://www.googleapis.com/auth/gmail.send" in granted_scopes
+        }
+        
+        return JSONResponse({
+            "status": "success",
+            "scopes": scope_status,
+            "granted_scopes": granted_scopes,
+            "last_updated": tokens.get('completed_at'),
+            "token_expires_at": tokens.get('token_expires_at')
+        })
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "get_google_oauth_scopes",
+            f"Failed to get Google OAuth scopes: {e}"
+        )
+        return JSONResponse({
+            "status": "error",
+            "message": f"Server error: {str(e)}",
+            "scopes": {
+                "openid": False,
+                "email": False,
+                "profile": False,
+                "https://www.googleapis.com/auth/gmail.send": False
+            }
+        }, status_code=500)
+
+
+@router.post("/admin/google/oauth/revoke-scope")
+async def revoke_google_oauth_scope(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Revoke a specific Google OAuth scope"""
+    try:
+        data = await request.json()
+        scope_to_revoke = data.get('scope')
+        
+        if not scope_to_revoke:
+            return JSONResponse({
+                "status": "error",
+                "message": "Scope parameter is required"
+            }, status_code=400)
+        
+        from database import get_google_oauth_tokens, get_portfolio_id
+        
+        # Get current tokens
+        tokens = await get_google_oauth_tokens(
+            portfolio_id=get_portfolio_id(),
+            active_only=True
+        )
+        
+        if not tokens:
+            return JSONResponse({
+                "status": "error",
+                "message": "No active OAuth tokens found"
+            }, status_code=404)
+        
+        access_token = tokens.get('access_token')
+        if not access_token:
+            return JSONResponse({
+                "status": "error",
+                "message": "No access token available"
+            }, status_code=404)
+        
+        # Revoke the specific scope with Google
+        revoke_url = "https://oauth2.googleapis.com/revoke"
+        revoke_data = {"token": access_token}
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(revoke_url, data=revoke_data)
+            
+        if response.status_code == 200:
+            # Update database to mark tokens as revoked
+            from database import revoke_oauth_tokens
+            await revoke_oauth_tokens(
+                portfolio_id=get_portfolio_id(),
+                reason=f"Scope {scope_to_revoke} revoked by admin"
+            )
+            
+            log_with_context(
+                "INFO", "revoke_google_oauth_scope",
+                f"Successfully revoked Google OAuth scope: {scope_to_revoke}",
+                request
+            )
+            
+            return JSONResponse({
+                "status": "success",
+                "message": f"Successfully revoked {scope_to_revoke}",
+                "revoked_scope": scope_to_revoke
+            })
+        else:
+            return JSONResponse({
+                "status": "error",
+                "message": (f"Failed to revoke scope with Google: "
+                            f"{response.text}")
+            }, status_code=response.status_code)
+            
+    except Exception as e:
+        log_with_context(
+            "ERROR", "revoke_google_oauth_scope",
+            f"Failed to revoke Google OAuth scope: {e}",
+            request
+        )
+        return JSONResponse({
+            "status": "error",
+            "message": f"Server error: {str(e)}"
+        }, status_code=500)
 
 
 @router.post("/admin/google/oauth/config")
