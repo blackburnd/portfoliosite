@@ -596,8 +596,7 @@ async def get_google_oauth_status(
             # Check if we have active OAuth tokens (user connected)
             from database import get_google_oauth_tokens, get_portfolio_id
             tokens = await get_google_oauth_tokens(
-                portfolio_id=get_portfolio_id(),
-                active_only=True
+                portfolio_id=get_portfolio_id()
             )
             
             connected = bool(tokens and tokens.get('access_token'))
@@ -743,8 +742,7 @@ async def get_google_oauth_scopes(
         
         # Get the most recent active OAuth tokens
         tokens = await get_google_oauth_tokens(
-            portfolio_id=get_portfolio_id(),
-            active_only=True
+            portfolio_id=get_portfolio_id()
         )
         
         if not tokens:
@@ -818,8 +816,7 @@ async def revoke_google_oauth_scope(
         
         # Get current tokens
         tokens = await get_google_oauth_tokens(
-            portfolio_id=get_portfolio_id(),
-            active_only=True
+            portfolio_id=get_portfolio_id()
         )
         
         if not tokens:
