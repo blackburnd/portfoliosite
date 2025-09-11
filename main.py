@@ -640,5 +640,19 @@ app.include_router(site_config_migration_router, tags=["migration"])
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    from auth import get_user_info
+    
+    # Get user authentication data for navigation
+    user_info = await get_user_info(request)
+    user_authenticated = user_info is not None
+    user_email = user_info.get('email') if user_info else None
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "title": "Daniel Blackburn - Software Developer & Solution Architect",
+        "current_page": "home",
+        "user_info": user_info,
+        "user_authenticated": user_authenticated,
+        "user_email": user_email
+    })
 
