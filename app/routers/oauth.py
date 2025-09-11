@@ -722,13 +722,26 @@ async def initiate_oauth_with_selected_scopes(
 async def initiate_google_oauth_authorization(
     request: Request
 ):
-    """Redirect to scope selection page instead of direct OAuth"""
+    """Handle OAuth authorization - redirect to scope selection or return JSON for AJAX"""
     try:
+        # Check if this is an AJAX request
+        is_ajax = (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest" or
+            request.headers.get("Accept", "").startswith("application/json") or
+            "application/json" in request.headers.get("Content-Type", "")
+        )
+        
         # Check authentication manually to provide better error handling
+        payload = None
         try:
             # Get token from cookie (admin users will have this)
             token = request.cookies.get("access_token")
             if not token:
+                if is_ajax:
+                    return JSONResponse(
+                        {"detail": "Authentication required. Please log in again."},
+                        status_code=401
+                    )
                 return RedirectResponse(
                     url="/admin/google/oauth?error=auth_required",
                     status_code=302
@@ -740,32 +753,103 @@ async def initiate_google_oauth_authorization(
                 payload = verify_token(token)
                 email = payload.get("sub")
                 if not email or not is_authorized_user(email):
+                    if is_ajax:
+                        return JSONResponse(
+                            {"detail": "Authentication required. Please log in again."},
+                            status_code=401
+                        )
                     return RedirectResponse(
                         url="/admin/google/oauth?error=auth_required",
                         status_code=302
                     )
             except Exception:
+                if is_ajax:
+                    return JSONResponse(
+                        {"detail": "Authentication required. Please log in again."},
+                        status_code=401
+                    )
                 return RedirectResponse(
                     url="/admin/google/oauth?error=auth_required",
                     status_code=302
                 )
         except Exception:
+            if is_ajax:
+                return JSONResponse(
+                    {"detail": "Authentication required. Please log in again."},
+                    status_code=401
+                )
             return RedirectResponse(
                 url="/admin/google/oauth?error=auth_required",
                 status_code=302
             )
         
-        # Redirect to scope selection page
-        return RedirectResponse(
-            url="/admin/google/oauth/select-scopes",
-            status_code=302
-        )
+        if is_ajax:
+            # For AJAX requests, generate OAuth URL and return it directly
+            # Generate state token and store in session
+            state = secrets.token_urlsafe(32)
+            request.session['oauth_state'] = state
+            
+            ttw_manager = TTWOAuthManager()
+            
+            # Get the authorization URL for admin scopes (including Gmail send)
+            auth_url = await ttw_manager.get_google_auth_url(
+                scopes=[
+                    'openid',
+                    'email',
+                    'profile',
+                    'https://www.googleapis.com/auth/gmail.send'
+                ],
+                state=state
+            )
+            
+            if not auth_url:
+                return JSONResponse(
+                    {"detail": "Google OAuth is not configured."},
+                    status_code=503
+                )
+
+            # Create OAuth session record
+            from database import create_oauth_session, get_portfolio_id
+            
+            google_config = await ttw_manager.get_google_oauth_credentials()
+            scope_string = ('openid email profile '
+                            'https://www.googleapis.com/auth/gmail.send')
+            
+            await create_oauth_session(
+                portfolio_id=get_portfolio_id(),
+                state=state,
+                scopes=scope_string,
+                auth_url=auth_url,
+                redirect_uri=google_config['redirect_uri'],
+                admin_email=payload.get('email')
+            )
+
+            log_with_context(
+                request, "INFO", "admin_oauth_authorization_ajax",
+                f"Admin OAuth session created with state: {state} "
+                f"for user: {payload.get('email')}"
+            )
+            
+            return JSONResponse({
+                "auth_url": auth_url
+            })
+        else:
+            # For direct browser requests, redirect to scope selection page
+            return RedirectResponse(
+                url="/admin/google/oauth/select-scopes",
+                status_code=302
+            )
         
     except Exception as e:
         log_with_context(
-            request, "ERROR", "initiate_google_oauth_authorization_redirect",
-            f"Failed to redirect to scope selection: {e}"
+            request, "ERROR", "initiate_google_oauth_authorization",
+            f"Failed to handle OAuth authorization: {e}"
         )
+        if is_ajax:
+            return JSONResponse(
+                {"detail": f"Server error: {str(e)}"},
+                status_code=500
+            )
         return RedirectResponse(
             url="/admin/google/oauth?error=server_error",
             status_code=302
