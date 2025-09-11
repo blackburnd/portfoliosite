@@ -934,7 +934,7 @@ class TTWOAuthManager:
                                       client_id, client_secret, redirect_uri, 
                                       scopes, is_active)
                 VALUES (:portfolio_id, :provider, :client_id, 
-                       :client_secret, :redirect_uri, :scopes, ::is_active)
+                       :client_secret, :redirect_uri, :scopes, :is_active)
                 ON CONFLICT (portfolio_id, provider) 
                 DO UPDATE SET 
                     client_id = EXCLUDED.client_id,

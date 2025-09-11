@@ -67,7 +67,7 @@ class LinkedInOAuthAdmin {
 
     async loadLinkedInConfig() {
         try {
-            const response = await fetch('/admin/linkedin/config');
+            const response = await fetch('/admin/linkedin/oauth/status');
             if (response.ok) {
                 const data = await response.json();
                 this.updateLinkedInConfigForm(data);
