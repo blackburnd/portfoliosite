@@ -212,15 +212,34 @@ function updateDisplay() {
     filteredLogs.forEach((log, index) => {
         console.log('Processing log', index, ':', log);
         const row = document.createElement('tr');
+        // Compute age
+        const now = Date.now();
+        const logTime = new Date(log.timestamp).getTime();
+        let ageMs = now - logTime;
+        let ageStr = '';
+        if (ageMs < 60000) {
+            ageStr = Math.floor(ageMs / 1000) + ' sec.';
+        } else if (ageMs < 3600000) {
+            ageStr = Math.floor(ageMs / 60000) + ' min.';
+        } else if (ageMs < 86400000) {
+            ageStr = Math.floor(ageMs / 3600000) + ' hr.';
+        } else {
+            const days = Math.floor(ageMs / 86400000);
+            const hours = Math.floor((ageMs % 86400000) / 3600000);
+            ageStr = days + ' d.' + (hours > 0 ? ' ' + hours + ' hr.' : '');
+        }
+        // Show only date in Time column
+        const dateStr = new Date(log.timestamp).toLocaleDateString();
         row.innerHTML = `
-            <td class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</td>
+            <td class="log-timestamp">${dateStr}</td>
+            <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
             <td class="log-message">
                 <div class="message-content">
                     <span class="message-text">${escapeHtml(log.message || '')}</span>
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                        <span class="copy-icon">⧉</span>
+                        <span class="copy-icon">649</span>
                     </button>
                 </div>
             </td>
