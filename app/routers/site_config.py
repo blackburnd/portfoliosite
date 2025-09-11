@@ -80,8 +80,23 @@ CONFIG_CATEGORIES = {
 async def config_overview(request: Request, _=Depends(require_admin_auth)):
     """Configuration overview page showing all categories"""
     try:
+        # Add debug logging
+        from database import get_portfolio_id
+        portfolio_id = get_portfolio_id()
+        logger.info(f"Portfolio ID for config: {portfolio_id}")
+        
+        if not portfolio_id:
+            logger.error("Portfolio ID is None, cannot load configuration")
+            raise HTTPException(
+                status_code=500,
+                detail="Portfolio ID not available"
+            )
+        
         config_manager = SiteConfigManager()
+        logger.info("SiteConfigManager created successfully")
+        
         all_config = await config_manager.get_all_config()
+        logger.info(f"Loaded {len(all_config)} configuration values")
 
         # Organize config by categories
         categorized_config = {}
@@ -95,6 +110,8 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
                     all_config.get(config_key, "")
                 )
 
+        logger.info("Configuration data organized successfully")
+        
         return templates.TemplateResponse(
             "admin/config_overview.html",
             {
@@ -105,8 +122,10 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
         )
     except Exception as e:
         logger.error(f"Error loading config overview: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(
-            status_code=500, detail="Failed to load configuration"
+            status_code=500, detail=f"Failed to load configuration: {str(e)}"
         )
 
 
