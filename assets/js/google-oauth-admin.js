@@ -84,16 +84,34 @@ class GoogleOAuthAdmin {
 
     async loadGoogleStatus() {
         try {
-            const response = await fetch('/admin/google/oauth/status');
+            const response = await fetch('/admin/google/oauth/status', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            
             if (response.ok) {
                 const data = await response.json();
                 this.updateGoogleStatus(data);
+            } else if (response.status === 401) {
+                this.showMessage('Authentication required. Please log in to view OAuth status.', 'warning');
+                // Clear any stored status
+                this.updateGoogleStatus({ configured: false, authenticated: false });
             } else {
-                this.showMessage('Failed to load Google OAuth status', 'error');
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+                }
+                this.showMessage(`Failed to load Google OAuth status: ${errorMessage}`, 'error');
             }
         } catch (error) {
-            console.error('Error loading Google status:', error);
-            this.showMessage('Error loading Google OAuth status', 'error');
+            console.error('Error loading Google OAuth status:', error);
+            this.showMessage(`Network error loading OAuth status: ${error.message}`, 'error');
         }
     }
 
@@ -335,17 +353,51 @@ class GoogleOAuthAdmin {
 
     async initiateGoogleAuth() {
         try {
-            const response = await fetch('/admin/google/oauth/authorize');
+            this.showMessage('Initiating Google authorization...', 'info');
+            
+            const response = await fetch('/admin/google/oauth/authorize', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'  // Explicit AJAX marker
+                },
+                credentials: 'same-origin'  // Include cookies for authentication
+            });
+            
             if (response.ok) {
                 const data = await response.json();
-                this.openOAuthPopup(data.auth_url);
+                if (data.auth_url) {
+                    this.showMessage('Opening Google authorization window...', 'info');
+                    this.openOAuthPopup(data.auth_url);
+                } else {
+                    this.showMessage('❌ No authorization URL received from server', 'error');
+                }
             } else {
-                const error = await response.json();
-                this.showMessage(`Failed to initiate Google authorization: ${error.detail}`, 'error');
+                // Try to parse error response
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorData.message || errorMessage;
+                } catch (e) {
+                    // If response is not JSON, try to get text
+                    try {
+                        const errorText = await response.text();
+                        if (errorText.includes('<!DOCTYPE')) {
+                            errorMessage = 'Server returned HTML instead of JSON. Please check server logs.';
+                        } else {
+                            errorMessage = errorText.substring(0, 100) + '...';
+                        }
+                    } catch (e2) {
+                        // Fallback to status code
+                        errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+                    }
+                }
+                this.showMessage(`❌ Failed to initiate Google authorization: ${errorMessage}`, 'error');
             }
         } catch (error) {
             console.error('Error initiating Google auth:', error);
-            this.showMessage('Error initiating Google authorization', 'error');
+            this.showMessage(`❌ Network error: ${error.message}`, 'error');
         }
     }
 
@@ -535,12 +587,24 @@ class GoogleOAuthAdmin {
         try {
             this.showMessage('Loading OAuth tokens...', 'info');
             
-            const response = await fetch('/admin/google/oauth/tokens');
-            const result = await response.json();
+            const response = await fetch('/admin/google/oauth/tokens', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
             
             if (response.ok) {
+                const result = await response.json();
+                
                 // Create a modal or new window to display the GraphQL formatted data
                 const tokenWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                
+                if (!tokenWindow) {
+                    this.showMessage('❌ Popup blocked! Please allow popups for this site and try again.', 'error');
+                    return;
+                }
                 
                 const htmlContent = `
                     <!DOCTYPE html>
@@ -624,16 +688,26 @@ class GoogleOAuthAdmin {
                 tokenWindow.document.close();
                 
                 this.showMessage('✅ OAuth tokens displayed in new window!', 'success');
+            } else if (response.status === 401) {
+                this.showMessage('❌ Authentication required. Please log in to view OAuth tokens.', 'error');
             } else {
-                if (result.errors && result.errors.length > 0) {
-                    this.showMessage(`❌ Error: ${result.errors[0].message}`, 'error');
-                } else {
-                    this.showMessage(`❌ Failed to load OAuth tokens: ${result.detail || 'Unknown error'}`, 'error');
+                // Try to parse error response
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const result = await response.json();
+                    if (result.errors && result.errors.length > 0) {
+                        errorMessage = result.errors[0].message;
+                    } else {
+                        errorMessage = result.detail || result.message || errorMessage;
+                    }
+                } catch (e) {
+                    errorMessage = `HTTP ${response.status} - ${response.statusText}`;
                 }
+                this.showMessage(`❌ Failed to load OAuth tokens: ${errorMessage}`, 'error');
             }
         } catch (error) {
             console.error('Error viewing OAuth tokens:', error);
-            this.showMessage('❌ Failed to load OAuth tokens: Network error', 'error');
+            this.showMessage(`❌ Network error loading OAuth tokens: ${error.message}`, 'error');
         }
     }
 
