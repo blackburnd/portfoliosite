@@ -564,13 +564,17 @@ async def get_google_oauth_status(
     """Get current Google OAuth configuration status"""
     try:
         ttw_manager = TTWOAuthManager()
-        config = await ttw_manager.get_google_oauth_config()
+        config = await ttw_manager.get_google_oauth_app_config()
         
         if config:
+            # Also get credentials to include client_secret
+            credentials = await ttw_manager.get_google_oauth_credentials()
+            client_secret = credentials.get("client_secret", "") if credentials else ""
+            
             return JSONResponse({
                 "configured": True,
                 "client_id": config.get("client_id", ""),
-                "client_secret": config.get("client_secret", ""),
+                "client_secret": client_secret,
                 "redirect_uri": config.get("redirect_uri", "")
             })
         else:
