@@ -352,21 +352,134 @@ async def auth_callback(request: Request):
         )
 
         response = HTMLResponse(f"""
-            <html><head><title>Authentication Successful</title><script>
-                if (window.opener) {{
-                    // Send the token to the parent window
-                    window.opener.postMessage({{
-                        type: 'OAUTH_SUCCESS',
-                        token: '{access_token}'
-                    }}, window.location.origin);
-                    window.close();
-                }} else {{ 
-                    // If not in popup, set cookie and redirect
-                    document.cookie = 'access_token={access_token}; path=/; max-age={int(ACCESS_TOKEN_EXPIRE_MINUTES * 60)}; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
-                    window.location.href = '/workadmin'; 
-                }}
-            </script></head><body><p>Auth successful. Closing...</p></body>
-        </html>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Authentication Successful</title>
+                <style>
+                    body {{
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        color: white;
+                    }}
+                    .success-container {{
+                        background: rgba(255, 255, 255, 0.95);
+                        color: #333;
+                        padding: 2rem;
+                        border-radius: 12px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        text-align: center;
+                        max-width: 400px;
+                        width: 90%;
+                    }}
+                    .success-icon {{
+                        font-size: 3rem;
+                        color: #28a745;
+                        margin-bottom: 1rem;
+                    }}
+                    .success-title {{
+                        font-size: 1.5rem;
+                        font-weight: 600;
+                        margin-bottom: 0.5rem;
+                        color: #28a745;
+                    }}
+                    .user-info {{
+                        background: #f8f9fa;
+                        padding: 1rem;
+                        border-radius: 8px;
+                        margin: 1rem 0;
+                        border-left: 4px solid #28a745;
+                    }}
+                    .user-email {{
+                        font-weight: 500;
+                        color: #495057;
+                    }}
+                    .countdown {{
+                        font-size: 0.9rem;
+                        color: #6c757d;
+                        margin-top: 1rem;
+                    }}
+                    .countdown-number {{
+                        font-weight: bold;
+                        color: #28a745;
+                    }}
+                    .spinner {{
+                        border: 2px solid #f3f3f3;
+                        border-top: 2px solid #28a745;
+                        border-radius: 50%;
+                        width: 20px;
+                        height: 20px;
+                        animation: spin 1s linear infinite;
+                        display: inline-block;
+                        margin-right: 8px;
+                    }}
+                    @keyframes spin {{
+                        0% {{ transform: rotate(0deg); }}
+                        100% {{ transform: rotate(360deg); }}
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="success-container">
+                    <div class="success-icon">✓</div>
+                    <div class="success-title">Authentication Successful!</div>
+                    <p>You have successfully logged in to Blackburn Systems portfolio.</p>
+                    
+                    <div class="user-info">
+                        <div class="user-email">Logged in as: {email}</div>
+                    </div>
+                    
+                    <div class="countdown">
+                        <span class="spinner"></span>
+                        This window will close automatically in <span class="countdown-number" id="countdown">3</span> seconds
+                    </div>
+                </div>
+                
+                <script>
+                    let countdownValue = 3;
+                    const countdownElement = document.getElementById('countdown');
+                    
+                    const countdownTimer = setInterval(() => {{
+                        countdownValue--;
+                        countdownElement.textContent = countdownValue;
+                        
+                        if (countdownValue <= 0) {{
+                            clearInterval(countdownTimer);
+                            closeWindow();
+                        }}
+                    }}, 1000);
+                    
+                    function closeWindow() {{
+                        if (window.opener) {{
+                            // Send the token to the parent window
+                            window.opener.postMessage({{
+                                type: 'OAUTH_SUCCESS',
+                                token: '{access_token}',
+                                user: {{
+                                    email: '{email}'
+                                }}
+                            }}, window.location.origin);
+                            window.close();
+                        }} else {{ 
+                            // If not in popup, set cookie and redirect
+                            document.cookie = 'access_token={access_token}; path=/; max-age={int(ACCESS_TOKEN_EXPIRE_MINUTES * 60)}; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
+                            window.location.href = '/workadmin'; 
+                        }}
+                    }}
+                    
+                    // Also allow manual closing by clicking anywhere
+                    document.addEventListener('click', closeWindow);
+                </script>
+            </body>
+            </html>
         """)
 
         response.set_cookie(

@@ -93,7 +93,13 @@ function openOAuthPopup(url) {
                 document.cookie = `access_token=${event.data.token}; path=/; max-age=${8*60*60}; SameSite=Lax${securePart}`;
             }
             
-            window.location.reload(); // Reload the page to reflect login state
+            // Show success notification
+            showLoginSuccessNotification(event.data.user);
+            
+            // Reload the page after a short delay to show the notification
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     }, false);
 
@@ -206,3 +212,77 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Login popup functionality initialized');
 });
+
+/**
+ * Show a success notification when login is completed
+ */
+function showLoginSuccessNotification(user) {
+    // Remove any existing notifications
+    const existingNotification = document.getElementById('login-success-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'login-success-notification';
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.2rem; margin-right: 0.5rem;">✓</div>
+                <div style="font-weight: 600;">Login Successful!</div>
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                Welcome back${user && user.email ? ', ' + user.email.split('@')[0] : ''}!
+            </div>
+            <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">
+                Page will refresh automatically...
+            </div>
+        </div>
+    `;
+    
+    // Add CSS animation
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+    }, 3000);
+}
