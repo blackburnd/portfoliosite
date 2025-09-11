@@ -763,7 +763,8 @@ class TTWOAuthManager:
             add_log("ERROR", "database_error_oauth_credentials", f"Database error getting OAuth credentials: {str(e)}")
             return None
 
-    async def get_google_auth_url(self, scopes: list = None) -> Optional[str]:
+    async def get_google_auth_url(self, scopes: list = None, 
+                                  state: str = None) -> Optional[str]:
         """Generate Google OAuth authorization URL with specified scopes"""
         try:
             import secrets
@@ -784,7 +785,10 @@ class TTWOAuthManager:
                 ]
             
             scope_string = ' '.join(scopes)
-            state = secrets.token_urlsafe(32)
+            
+            # Use provided state or generate a new one
+            if not state:
+                state = secrets.token_urlsafe(32)
 
             params = {
                 "client_id": google_config['client_id'],
