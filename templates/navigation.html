@@ -44,7 +44,9 @@
         
         <!-- Admin Navigation (same level when authenticated) -->
         {% if user_authenticated %}
-        <ul class="admin-nav">
+        <div class="admin-section">
+            <div class="admin-section-label">Administration</div>
+            <ul class="admin-nav">
             <li class="workadmin {{ 'active' if current_page == 'workadmin' else '' }}">
                 <a href="/workadmin">Work Admin</a>
             </li>
@@ -63,7 +65,8 @@
             <li class="sql-admin {{ 'active' if current_page == 'sql_admin' else '' }}">
                 <a href="/admin/sql">SQL Admin</a>
             </li>
-        </ul>
+            </ul>
+        </div>
         {% endif %}
     </nav>
 </header>

@@ -241,6 +241,49 @@ nav ul {
     padding-bottom: 10px;
 }
 
+/* Admin Navigation Styling */
+.admin-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 2px solid #007bff;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.admin-section-label {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #007bff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.admin-nav {
+    margin: 0;
+    padding: 0;
+}
+
+.admin-nav a {
+    color: #007bff;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.admin-nav a:hover {
+    color: #0056b3;
+    background-color: #e7f3ff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-decoration: none;
+}
+
+.admin-nav li.active a {
+    background-color: #007bff;
+    color: white;
+}
+
 nav a {
     text-decoration: none;
     color: #333;
