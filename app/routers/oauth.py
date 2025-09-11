@@ -1151,6 +1151,8 @@ async def linkedin_oauth_admin_page(
     return templates.TemplateResponse("linkedin_oauth_admin.html", {
         "request": request,
         "current_page": "linkedin_oauth_admin",
+        "user_authenticated": True,
+        "user_email": admin.get("email"),
         "user_info": admin
     })
 
@@ -1160,18 +1162,104 @@ async def save_linkedin_oauth_config(
     request: Request,
     admin: dict = Depends(require_admin_auth)
 ):
-    config = await request.json()
-    ttw_manager = TTWOAuthManager()
-    success = await ttw_manager.configure_linkedin_oauth_app(config)
-    if success:
-        return JSONResponse(
-            {"status": "success",
-             "message": "LinkedIn OAuth configuration saved."}
+    try:
+        # Get JSON data from request
+        config = await request.json()
+        log_with_context(
+            "INFO", "save_linkedin_oauth_config",
+            f"Received LinkedIn config: {list(config.keys())}",
+            request
         )
-    raise HTTPException(
-        status_code=500,
-        detail="Failed to save LinkedIn OAuth configuration."
-    )
+        
+        # Validate required fields
+        required_fields = ['client_id', 'client_secret', 'redirect_uri']
+        missing_fields = [field for field in required_fields if not config.get(field)]
+        
+        if missing_fields:
+            return JSONResponse(
+                {"status": "error",
+                 "detail": f"Missing required fields: {', '.join(missing_fields)}"},
+                status_code=400
+            )
+        
+        ttw_manager = TTWOAuthManager()
+        success = await ttw_manager.configure_linkedin_oauth_app(config)
+        
+        if success:
+            log_with_context(
+                "INFO", "save_linkedin_oauth_config",
+                "LinkedIn OAuth configuration saved successfully",
+                request
+            )
+            return JSONResponse(
+                {"status": "success",
+                 "message": "LinkedIn OAuth configuration saved."}
+            )
+        else:
+            return JSONResponse(
+                {"status": "error",
+                 "detail": "Failed to save LinkedIn OAuth configuration - configuration rejected"},
+                status_code=400
+            )
+    except Exception as e:
+        log_with_context(
+            "ERROR", "save_linkedin_oauth_config",
+            f"Failed to save LinkedIn OAuth config: {e}",
+            request
+        )
+        return JSONResponse(
+            {"status": "error",
+             "detail": f"Failed to save LinkedIn OAuth configuration: {str(e)}"},
+            status_code=500
+        )
+
+
+@router.get("/admin/linkedin/oauth/status")
+async def get_linkedin_oauth_status(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get current LinkedIn OAuth configuration status"""
+    try:
+        ttw_manager = TTWOAuthManager()
+        
+        # Check if LinkedIn OAuth app is configured
+        config = await ttw_manager.get_oauth_app_config(provider='linkedin')
+        is_configured = bool(config)
+        
+        # Check if LinkedIn is connected (has active tokens)
+        connection = await ttw_manager.get_linkedin_connection()
+        is_connected = bool(connection and connection.get('access_token'))
+        
+        account_email = connection.get('admin_email') if connection else None
+        
+        status_data = {
+            "configured": is_configured,
+            "connected": is_connected,
+            "account_email": account_email
+        }
+        
+        # Add config details if configured
+        if is_configured and config:
+            status_data.update({
+                "client_id": config.get("client_id", ""),
+                "redirect_uri": config.get("redirect_uri", ""),
+                "app_name": config.get("app_name", "")
+            })
+        
+        return JSONResponse(status_data)
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "get_linkedin_oauth_status",
+            f"Failed to get LinkedIn OAuth status: {e}",
+            request
+        )
+        return JSONResponse({
+            "configured": False,
+            "connected": False,
+            "error": str(e)
+        }, status_code=500)
 
 
 @router.get("/admin/linkedin/oauth/callback")
