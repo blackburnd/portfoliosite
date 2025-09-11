@@ -16,7 +16,8 @@ function getPopupPosition(width = 500, height = 600) {
     const windowHeight = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
     
     const left = ((windowWidth / 2) - (width / 2)) + screenLeft;
-    const top = ((windowHeight / 2) - (height / 2)) + screenTop;
+    // Position popup 50% higher than center by reducing top by 25% of window height
+    const top = ((windowHeight / 2) - (height / 2)) - (windowHeight * 0.25) + screenTop;
     
     return {
         left: Math.max(0, Math.floor(left)),
