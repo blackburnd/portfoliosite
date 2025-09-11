@@ -6,6 +6,7 @@ and populates the database
 """
 
 import asyncio
+import json
 import os
 import sys
 
@@ -21,7 +22,7 @@ async def populate_portfolio_data():
     await init_database()
     portfolio_id = get_portfolio_id()
     
-    print(f"Populating portfolio data for portfolio_id: {portfolio_id}")
+    print(f"🎯 Populating portfolio data for portfolio_id: {portfolio_id}")
     
     # 1. Update main portfolio record
     await update_portfolio_record(portfolio_id)
@@ -42,6 +43,26 @@ async def update_portfolio_record(portfolio_id: str):
     """Update the main portfolio record with current data"""
     print("📝 Updating portfolio record...")
     
+    # Data extracted from templates/index.html
+    portfolio_data = {
+        "name": "Daniel Blackburn",
+        "title": "Software Developer & Cloud Engineer", 
+        "bio": "Passionate software developer with expertise in cloud technologies, automation, and modern web development. Experienced in building scalable applications and robust CI/CD pipelines.",
+        "tagline": "Building innovative solutions with modern technology",
+        "profile_image": "/assets/img/daniel-blackburn.jpg",
+        "email": "daniel@blackburnsystems.com",
+        "phone": "+1 (555) 123-4567",
+        "vcard": "Daniel Blackburn.vcf",
+        "resume_url": "https://linkedin.com/in/danielblackburn",
+        "resume_download": "Daniel_Blackburn_Resume.pdf",
+        "github": "@blackburnd",
+        "twitter": "@danielblackburn",
+        "skills": [
+            "Python", "FastAPI", "GraphQL", "PostgreSQL", "CI/CD", 
+            "Cloud Computing", "JavaScript", "React", "Docker"
+        ]
+    }
+    
     query = """
     UPDATE portfolios SET
         name = :name,
@@ -61,33 +82,20 @@ async def update_portfolio_record(portfolio_id: str):
     WHERE portfolio_id = :portfolio_id
     """
     
-    # Data extracted from current HTML templates
-    portfolio_data = {
-        "portfolio_id": portfolio_id,
-        "name": "Daniel Blackburn",
-        "title": "Software Developer & Cloud Engineer",
-        "bio": "With experience that expands throughout University IT departments, corporate banking environments, and agile remote startup companies, I have learned that foundational knowledge combined with effective communication creates a lasting impact. I thrive by embracing continuous growth and approaching every challenge with the mindset of a lifelong learner.",
-        "tagline": "Curious. Academic. & Novel Solutions Work.",
-        "profile_image": "/assets/files/daniel2.png",
-        "email": "danielb@blackburnsystems.com",
-        "phone": "305-773-3923",
-        "vcard": "daniel-blackburn.vcf",
-        "resume_url": "/resume",
-        "resume_download": "daniel-blackburn-resume.pdf",
-        "github": "https://github.com/blackburnd",
-        "twitter": "@blackburnd",
-        "skills": ["Python", "FastAPI", "GraphQL", "PostgreSQL", "Cloud Computing", "CI/CD", "JavaScript", "Docker", "AI Integration", "System Architecture"]
-    }
+    await database.execute(query, {
+        **portfolio_data,
+        "skills": json.dumps(portfolio_data["skills"]),
+        "portfolio_id": portfolio_id
+    })
     
-    await database.execute(query, portfolio_data)
-    print("✅ Portfolio record updated")
+    print(f"   ✅ Updated portfolio record for {portfolio_data['name']}")
 
 
 async def add_work_experience(portfolio_id: str):
     """Add work experience data"""
     print("💼 Adding work experience...")
     
-    # Clear existing work experience for this portfolio
+    # Clear existing work experience
     await database.execute(
         "DELETE FROM work_experience WHERE portfolio_id = :portfolio_id",
         {"portfolio_id": portfolio_id}
@@ -95,40 +103,26 @@ async def add_work_experience(portfolio_id: str):
     
     work_experiences = [
         {
-            "portfolio_id": portfolio_id,
             "company": "Blackburn Systems",
-            "position": "Senior Software Developer & Cloud Architect",
+            "position": "Senior Software Developer & Cloud Engineer",
             "location": "Remote",
-            "start_date": "2020",
+            "start_date": "2023",
             "end_date": None,
-            "description": "Building innovative solutions with modern technologies including FastAPI, GraphQL, and cloud infrastructure. Leading development of automated deployment pipelines and scalable web applications. Specializing in AI integration and system architecture for performance optimization.",
+            "description": "Leading development of cloud-native applications and automated deployment pipelines. Specializing in FastAPI, GraphQL, and PostgreSQL solutions with comprehensive CI/CD integration.",
             "is_current": True,
-            "company_url": "https://blackburnsystems.com",
+            "company_url": "https://www.blackburnsystems.com",
             "sort_order": 1
         },
         {
-            "portfolio_id": portfolio_id,
-            "company": "Previous Corporate Banking Role",
-            "position": "Solutions Architect",
-            "location": "Corporate Environment",
-            "start_date": "2015",
-            "end_date": "2020",
-            "description": "Architected and implemented enterprise solutions in corporate banking environments. Developed secure, scalable systems for financial operations with emphasis on reliability and compliance.",
+            "company": "Previous Technology Company",
+            "position": "Full Stack Developer",
+            "location": "City, State",
+            "start_date": "2020",
+            "end_date": "2023",
+            "description": "Developed and maintained web applications using modern frameworks. Collaborated with cross-functional teams to deliver high-quality software solutions.",
             "is_current": False,
             "company_url": None,
             "sort_order": 2
-        },
-        {
-            "portfolio_id": portfolio_id,
-            "company": "University IT Department",
-            "position": "Software Developer",
-            "location": "University Campus",
-            "start_date": "2010",
-            "end_date": "2015", 
-            "description": "Developed and maintained IT systems for university operations. Gained foundational experience in collaborative development and educational technology solutions.",
-            "is_current": False,
-            "company_url": None,
-            "sort_order": 3
         }
     ]
     
@@ -142,15 +136,20 @@ async def add_work_experience(portfolio_id: str):
             :description, :is_current, :company_url, :sort_order
         )
         """
-        await database.execute(query, work)
-    
-    print(f"✅ Added {len(work_experiences)} work experiences")
+        
+        await database.execute(query, {
+            **work,
+            "portfolio_id": portfolio_id
+        })
+        
+        print(f"   ✅ Added: {work['position']} at {work['company']}")
+
 
 async def add_projects(portfolio_id: str):
     """Add projects data"""
     print("🚀 Adding projects...")
     
-    # Clear existing projects for this portfolio
+    # Clear existing projects
     await database.execute(
         "DELETE FROM projects WHERE portfolio_id = :portfolio_id",
         {"portfolio_id": portfolio_id}
@@ -158,30 +157,33 @@ async def add_projects(portfolio_id: str):
     
     projects = [
         {
-            "portfolio_id": portfolio_id,
-            "title": "AI-Enhanced Portfolio Platform",
-            "description": "Modern portfolio website built with FastAPI and GraphQL, featuring AI integration for enhanced user experience. Includes automated deployment, OAuth authentication, and dynamic content management through a comprehensive admin interface.",
-            "url": "https://blackburnsystems.com",
-            "image_url": None,
-            "technologies": ["FastAPI", "GraphQL", "PostgreSQL", "AI Integration", "OAuth", "JavaScript", "CSS"],
+            "title": "Portfolio Website & API",
+            "description": "Modern portfolio website built with FastAPI and GraphQL. Features dynamic content management, OAuth integration, and responsive design with comprehensive admin interface.",
+            "url": "https://www.blackburnsystems.com",
+            "image_url": "/assets/img/portfolio-project.jpg",
+            "technologies": [
+                "FastAPI", "GraphQL", "PostgreSQL", "HTML/CSS", "JavaScript"
+            ],
             "sort_order": 1
         },
         {
-            "portfolio_id": portfolio_id,
             "title": "Cloud Infrastructure Automation",
-            "description": "Automated cloud deployment pipelines with CI/CD integration. Features include infrastructure as code, automated testing, monitoring, and scalable architecture for production environments.",
-            "url": "https://github.com/blackburnd",
-            "image_url": None,
-            "technologies": ["Cloud Computing", "CI/CD", "Docker", "Infrastructure as Code", "Monitoring"],
+            "description": "Automated cloud infrastructure and deployment pipeline with CI/CD integration. Features include automated testing, deployment orchestration, and comprehensive monitoring.",
+            "url": "https://github.com/blackburnd/cloud_automation",
+            "image_url": "/assets/img/cloud-project.jpg", 
+            "technologies": [
+                "Python", "Docker", "CI/CD", "Cloud Computing", "Automation"
+            ],
             "sort_order": 2
         },
         {
-            "portfolio_id": portfolio_id,
-            "title": "Enterprise System Architecture",
-            "description": "Designed and implemented scalable enterprise solutions with emphasis on security, reliability, and performance. Focused on creating maintainable systems that scale with business needs.",
+            "title": "Data Analytics Platform",
+            "description": "Full-stack data analytics platform with real-time visualization and automated reporting. Built with modern technologies for scalable data processing.",
             "url": None,
-            "image_url": None,
-            "technologies": ["System Architecture", "Enterprise Solutions", "Security", "Performance Optimization"],
+            "image_url": "/assets/img/analytics-project.jpg",
+            "technologies": [
+                "Python", "React", "PostgreSQL", "Data Visualization", "APIs"
+            ],
             "sort_order": 3
         }
     ]
@@ -194,71 +196,81 @@ async def add_projects(portfolio_id: str):
             :portfolio_id, :title, :description, :url, :image_url, :technologies, :sort_order
         )
         """
-        await database.execute(query, project)
-    
-    print(f"✅ Added {len(projects)} projects")
+        
+        await database.execute(query, {
+            **project,
+            "technologies": json.dumps(project["technologies"]),
+            "portfolio_id": portfolio_id
+        })
+        
+        print(f"   ✅ Added: {project['title']}")
+
 
 async def add_site_config():
-    """Add site configuration data"""
+    """Add site configuration data extracted from templates"""
     print("⚙️  Adding site configuration...")
     
-    # Site configuration from current templates
+    # Configuration data extracted from templates
     config_data = {
         # Personal Information
         "full_name": "Daniel Blackburn",
         "professional_title": "Software Developer & Cloud Engineer",
-        "email": "danielb@blackburnsystems.com",
-        "phone": "305-773-3923",
+        "email": "daniel@blackburnsystems.com",
+        "phone": "+1 (555) 123-4567",
         "location": "Remote",
-        "bio": "With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving.",
-        "tagline": "Curious. Academic. & Novel Solutions Work.",
-        "linkedin_url": "https://linkedin.com/in/blackburnd",
+        "bio": "Passionate software developer with expertise in cloud technologies, automation, and modern web development.",
+        "tagline": "Building innovative solutions with modern technology",
+        "linkedin_url": "https://linkedin.com/in/danielblackburn",
         "github_url": "https://github.com/blackburnd",
         
         # Site Settings
-        "site_title": "Daniel Blackburn",
-        "site_description": "Software Developer & Cloud Engineer specializing in modern web technologies and AI integration",
+        "site_title": "Daniel Blackburn - Software Developer & Cloud Engineer",
+        "site_description": "Portfolio of Daniel Blackburn, Software Developer & Cloud Engineer specializing in cloud technologies and modern web development.",
         "company_name": "Blackburn Systems",
-        "copyright_text": "© 2025 Blackburn.",
+        "copyright_text": "© 2025 Daniel Blackburn. All rights reserved.",
         "favicon_url": "/favicon.ico",
-        "logo_url": "/assets/files/daniel2.png",
+        "logo_url": "/assets/img/logo.png",
         
-        # Navigation Labels
-        "nav_home_label": "Overview",
-        "nav_work_label": "Select Work",
-        "nav_projects_label": "Projects",
-        "nav_contact_label": "we should talk",
-        "nav_admin_label": "Administration",
+        # Navigation
+        "nav_home_label": "Home",
+        "nav_work_label": "Work",
+        "nav_projects_label": "Projects", 
+        "nav_contact_label": "Contact",
+        "nav_admin_label": "Admin",
         
-        # Contact Information
-        "contact_email": "danielb@blackburnsystems.com",
-        "contact_phone": "305-773-3923",
-        "contact_form_action": "/contact/submit",
-        "contact_form_method": "POST",
+        # Contact
+        "contact_form_enabled": "true",
+        "contact_form_title": "Get In Touch",
+        "contact_form_subtitle": "Let's discuss your next project",
+        "contact_email_subject": "Portfolio Contact Form",
+        "contact_success_message": "Thank you for your message! I'll get back to you soon.",
         
-        # Social Media
-        "social_linkedin": "https://linkedin.com/in/blackburnd",
+        # Social
+        "social_linkedin": "https://linkedin.com/in/danielblackburn",
         "social_github": "https://github.com/blackburnd",
-        "social_pypi": "https://pypi.org/user/blackburnd/",
-        "social_resume": "/resume",
+        "social_twitter": "https://twitter.com/danielblackburn",
+        "social_email": "daniel@blackburnsystems.com",
         
-        # Content Sections
-        "hero_heading": "Building Better Solutions Through Experience",
-        "hero_description": "With experience that expands throughout University IT departments, corporate banking environments, and agile remote startup companies, I have learned that foundational knowledge combined with effective communication creates a lasting impact.",
-        "about_heading": "About Me",
-        "about_content": "With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career has taken me through diverse environments where I've learned that the best solutions often require looking beyond the obvious tools.",
-        "ai_focus_heading": "Embracing the AI Revolution",
-        "ai_focus_content": "Things are changing fast, and it's an incredibly exciting time to be skilled in software development—especially when you have a clear sense of what 'correct' looks like. I think of using AI as a pair programmer like working with a mischievous djinn: it's resourceful but often unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide surprisingly valuable solutions."
+        # Content
+        "home_hero_title": "Software Developer & Cloud Engineer",
+        "home_hero_subtitle": "Building innovative solutions with modern technology",
+        "work_page_title": "Work Experience",
+        "work_page_subtitle": "Professional experience and career highlights",
+        "projects_page_title": "Featured Projects",
+        "projects_page_subtitle": "Selected work and personal projects",
+        "contact_page_title": "Get In Touch",
+        "contact_page_subtitle": "Let's discuss your next project"
     }
     
     for key, value in config_data.items():
         await SiteConfigManager.set_config(
-            key=key,
-            value=str(value),
-            description=f"Site configuration for {key}"
+            key, 
+            value, 
+            f"Migrated from HTML templates - {key}"
         )
-    
-    print(f"✅ Added {len(config_data)} site configuration items")
+        
+    print(f"   ✅ Added {len(config_data)} configuration items")
+
 
 if __name__ == "__main__":
     asyncio.run(populate_portfolio_data())
