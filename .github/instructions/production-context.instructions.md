@@ -11,6 +11,7 @@ This is a PRODUCTION application running on Google Cloud Platform, NOT a local a
 - Database is PostgreSQL running on Google Cloud SQL
 - Uses systemd service (portfolio.service) to run the FastAPI application
 - Nginx reverse proxy serves the application
+- Reuse code where possible, component based architecture is preferred.
 
 ## Debugging Guidelines:
 - DO NOT try to run local Python commands to debug production issues

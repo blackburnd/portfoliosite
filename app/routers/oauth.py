@@ -658,6 +658,29 @@ async def initiate_google_oauth_authorization(
                 {"detail": "Google OAuth is not configured."},
                 status_code=503
             )
+
+        # Create OAuth session record like the regular login flow
+        from database import create_oauth_session, get_portfolio_id
+        
+        google_config = await ttw_manager.get_google_oauth_credentials()
+        scope_string = ('openid email profile '
+                        'https://www.googleapis.com/auth/gmail.send')
+        
+        await create_oauth_session(
+            portfolio_id=get_portfolio_id(),
+            state=state,
+            scopes=scope_string,
+            auth_url=auth_url,
+            redirect_uri=google_config['redirect_uri'],
+            admin_email=user.get('email')
+        )
+
+        log_with_context(
+            "INFO", "admin_oauth_authorization",
+            f"Admin OAuth session created with state: {state} "
+            f"for user: {user.get('email')}",
+            request
+        )
         
         return JSONResponse({
             "auth_url": auth_url

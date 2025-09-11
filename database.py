@@ -407,7 +407,7 @@ async def get_database():
 
 async def create_oauth_session(
     portfolio_id: str, state: str, scopes: str,
-    auth_url: str, redirect_uri: str
+    auth_url: str, redirect_uri: str, admin_email: str = None
 ) -> Dict[str, Any]:
     """
     Create an OAuth session record at the start of the workflow.
@@ -416,9 +416,9 @@ async def create_oauth_session(
     query = """
     INSERT INTO google_oauth_tokens
     (portfolio_id, oauth_state, requested_scopes, auth_url, redirect_uri,
-     workflow_status, is_active)
+     admin_email, workflow_status, is_active)
     VALUES (:portfolio_id, :oauth_state, :requested_scopes, :auth_url,
-            :redirect_uri, 'initiated', false)
+            :redirect_uri, :admin_email, 'initiated', false)
     RETURNING id, portfolio_id, oauth_state, created_at
     """
 
@@ -427,7 +427,8 @@ async def create_oauth_session(
         "oauth_state": state,
         "requested_scopes": scopes,
         "auth_url": auth_url,
-        "redirect_uri": redirect_uri
+        "redirect_uri": redirect_uri,
+        "admin_email": admin_email
     }
 
     result = await database.fetch_one(query, values)
