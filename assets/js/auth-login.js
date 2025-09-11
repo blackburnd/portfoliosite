@@ -97,9 +97,9 @@ function openOAuthPopup(url) {
             // Show success notification
             showLoginSuccessNotification(event.data.user);
             
-            // Reload the page after a short delay to show the notification
+            // Redirect to /work page after a short delay to show the notification
             setTimeout(() => {
-                window.location.reload();
+                window.location.href = '/work';
             }, 2000);
         }
     }, false);
@@ -139,7 +139,7 @@ function openAdminLoginPopup() {
             if (popup) {
                 popup.close();
             }
-            window.location.reload(); // Reload the page to reflect login state
+            window.location.href = '/work'; // Redirect to work page to show admin links
         }
     }, false);
 
