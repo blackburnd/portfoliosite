@@ -725,10 +725,13 @@ async def initiate_google_oauth_authorization(
     """Handle OAuth authorization - redirect to scope selection or return JSON for AJAX"""
     try:
         # Check if this is an AJAX request
+        accept_header = request.headers.get("Accept", "")
+        content_type = request.headers.get("Content-Type", "")
         is_ajax = (
             request.headers.get("X-Requested-With") == "XMLHttpRequest" or
-            request.headers.get("Accept", "").startswith("application/json") or
-            "application/json" in request.headers.get("Content-Type", "")
+            "application/json" in accept_header or
+            "application/json" in content_type or
+            accept_header == "application/json"
         )
         
         # Check authentication manually to provide better error handling
