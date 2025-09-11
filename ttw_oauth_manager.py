@@ -764,7 +764,8 @@ class TTWOAuthManager:
             return None
 
     async def get_google_auth_url(self, scopes: list = None, 
-                                  state: str = None) -> Optional[str]:
+                                  state: str = None, 
+                                  force_consent: bool = False) -> Optional[str]:
         """Generate Google OAuth authorization URL with specified scopes"""
         try:
             import secrets
@@ -797,14 +798,19 @@ class TTWOAuthManager:
                 "scope": scope_string,
                 "state": state,
                 "access_type": "offline",
-                "prompt": "select_account"
+                "prompt": "consent" if force_consent else "select_account"
             }
+
+            # For incremental authorization, include granted scopes
+            if force_consent:
+                params["include_granted_scopes"] = "true"
 
             auth_url = ("https://accounts.google.com/o/oauth2/v2/auth?" +
                         urlencode(params))
             
             add_log("INFO", "google_auth_url_generated",
-                    f"Generated Google auth URL with scopes: {scope_string}")
+                    f"Generated Google auth URL with scopes: {scope_string}, "
+                    f"force_consent: {force_consent}")
             return auth_url
             
         except Exception as e:

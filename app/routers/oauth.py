@@ -81,7 +81,7 @@ async def auth_login(request: Request):
         state = secrets.token_urlsafe(32)
         request.session['oauth_state'] = state
 
-        scope = 'openid email profile https://www.googleapis.com/auth/gmail.send'
+        scope = 'openid email profile'
 
         params = {
             "client_id": google_config['client_id'],
@@ -575,6 +575,8 @@ async def google_oauth_admin_page(
     return templates.TemplateResponse("google_oauth_admin.html", {
         "request": request,
         "current_page": "google_oauth_admin",
+        "user_authenticated": True,
+        "user_email": admin.get("email"),
         "user_info": admin
     })
 
@@ -798,14 +800,17 @@ async def initiate_google_oauth_authorization(
             ttw_manager = TTWOAuthManager()
             
             # Get the authorization URL for admin scopes (including Gmail send)
+            # Force consent screen to show additional permissions
             auth_url = await ttw_manager.get_google_auth_url(
                 scopes=[
                     'openid',
                     'email',
                     'profile',
-                    'https://www.googleapis.com/auth/gmail.send'
+                    'https://www.googleapis.com/auth/gmail.send',
+                    'https://www.googleapis.com/auth/gmail.readonly'
                 ],
-                state=state
+                state=state,
+                force_consent=True  # This will force the consent screen
             )
             
             if not auth_url:
@@ -819,7 +824,8 @@ async def initiate_google_oauth_authorization(
             
             google_config = await ttw_manager.get_google_oauth_credentials()
             scope_string = ('openid email profile '
-                            'https://www.googleapis.com/auth/gmail.send')
+                            'https://www.googleapis.com/auth/gmail.send '
+                            'https://www.googleapis.com/auth/gmail.readonly')
             
             await create_oauth_session(
                 portfolio_id=get_portfolio_id(),
@@ -915,9 +921,11 @@ async def initiate_google_oauth_authorization_direct(
                 'openid',
                 'email',
                 'profile',
-                'https://www.googleapis.com/auth/gmail.send'
+                'https://www.googleapis.com/auth/gmail.send',
+                'https://www.googleapis.com/auth/gmail.readonly'
             ],
-            state=state  # Pass the state we generated
+            state=state,  # Pass the state we generated
+            force_consent=True  # Force consent for admin authorization
         )
         
         if not auth_url:
@@ -931,7 +939,8 @@ async def initiate_google_oauth_authorization_direct(
         
         google_config = await ttw_manager.get_google_oauth_credentials()
         scope_string = ('openid email profile '
-                        'https://www.googleapis.com/auth/gmail.send')
+                        'https://www.googleapis.com/auth/gmail.send '
+                        'https://www.googleapis.com/auth/gmail.readonly')
         
         await create_oauth_session(
             portfolio_id=get_portfolio_id(),
