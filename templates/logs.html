@@ -18,74 +18,47 @@
             
             <div id="bw" aria-live="polite">
                 <div class="logs-container">
-                    <div class="logs-controls-row">
-                        <input type="text" id="searchBox" placeholder="Search logs..." />
-                        
-                        <div class="filter-group">
-                            <label for="levelFilter">Level:</label>
-                            <select id="levelFilter">
-                                <option value="">All Levels</option>
-                                <option value="debug">Debug</option>
-                                <option value="info">Info</option>
-                                <option value="warning">Warning</option>
-                                <option value="error">Error</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="moduleFilter">Module:</label>
-                            <select id="moduleFilter">
-                                <option value="">All Modules</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="timeFilter">Time Range:</label>
-                            <select id="timeFilter">
-                                <option value="">All Time</option>
-                                <option value="1h">Last Hour</option>
-                                <option value="24h">Last 24 Hours</option>
-                                <option value="7d">Last 7 Days</option>
-                            </select>
-                        </div>
-                        
-                        <button id="clearFiltersBtn" style="display: none;" onclick="clearFilters()">Clear Filters</button>
+                    <div class="logs-controls-row compact-controls">
+                        <input type="text" id="searchBox" placeholder="Search..." class="compact-input" />
+                        <select id="levelFilter" class="compact-select" title="Level">
+                            <option value="">Level</option>
+                            <option value="debug">Debug</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <select id="moduleFilter" class="compact-select" title="Module">
+                            <option value="">Module</option>
+                        </select>
+                        <select id="timeFilter" class="compact-select" title="Time">
+                            <option value="">Time</option>
+                            <option value="1h">1h</option>
+                            <option value="24h">24h</option>
+                            <option value="7d">7d</option>
+                        </select>
+                        <button id="clearFiltersBtn" style="display: none;" class="compact-btn" onclick="clearFilters()" title="Clear">✕</button>
                     </div>
                     
                     <div id="searchStatus" class="search-status" style="display: none;"></div>
                     
-                    <div class="logs-stats" id="logsStats">
+                    <div class="logs-stats compact-stats" id="logsStats">
                         <span id="totalCount">Total: 0</span>
-                        <span id="filteredLogs">Showing: 0</span>
+                        <span id="filteredLogs">Loaded: 0</span>
                         <span id="errorCount">Errors: 0</span>
                         <span id="warningCount">Warnings: 0</span>
                     </div>
                     
                     <div class="logs-table-container">
-                        <table class="logs-table">
+                        <table class="logs-table compact-table">
                             <thead>
                                 <tr>
-                                    <th data-sort="timestamp" class="sortable" style="width: 180px;">
-                                        Timestamp <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="level" class="sortable" style="width: 80px;">
-                                        Level <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="module" class="sortable" style="width: 150px;">
-                                        Module <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="message" class="sortable">
-                                        Message <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="function" class="sortable" style="width: 120px;">
-                                        Function <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="line" class="sortable" style="width: 60px;">
-                                        Line <span class="sort-indicator"></span>
-                                    </th>
-                                    <th data-sort="ip_address" class="sortable" style="width: 120px;">
-                                        IP Address <span class="sort-indicator"></span>
-                                    </th>
+                                    <th data-sort="timestamp" class="sortable compact-th" style="width: 120px;">Time <span class="sort-indicator"></span></th>
+                                    <th data-sort="level" class="sortable compact-th" style="width: 60px;">Lvl <span class="sort-indicator"></span></th>
+                                    <th data-sort="module" class="sortable compact-th" style="width: 100px;">Mod <span class="sort-indicator"></span></th>
+                                    <th data-sort="message" class="sortable compact-th">Msg <span class="sort-indicator"></span></th>
+                                    <th data-sort="function" class="sortable compact-th" style="width: 80px;">Func <span class="sort-indicator"></span></th>
+                                    <th data-sort="line" class="sortable compact-th" style="width: 40px;">Ln <span class="sort-indicator"></span></th>
+                                    <th data-sort="ip_address" class="sortable compact-th" style="width: 80px;">IP <span class="sort-indicator"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="logsTableBody">
