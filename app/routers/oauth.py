@@ -337,12 +337,15 @@ async def auth_callback(request: Request):
         expires_in = token_payload.get('expires_in', 3600)
         expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
 
+        # Get granted scopes from callback URL (more reliable than token)
+        granted_scopes = request.query_params.get('scope', '')
+
         await complete_oauth_session(
             oauth_state=callback_state,
             access_token=token_payload['access_token'],
             refresh_token=token_payload.get('refresh_token'),
             expires_at=expires_at,
-            scopes=token_payload.get('scope')
+            scopes=granted_scopes
         )
 
         access_token = create_access_token(data={"sub": email})
