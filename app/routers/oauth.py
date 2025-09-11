@@ -581,6 +581,7 @@ async def google_oauth_admin_page(
 
 @router.get("/admin/google/oauth/status")
 async def get_google_oauth_status(
+    request: Request,
     admin: dict = Depends(require_admin_auth)
 ):
     """Get current Google OAuth configuration status"""
@@ -619,7 +620,7 @@ async def get_google_oauth_status(
             })
     except Exception as e:
         log_with_context(
-            "ERROR", "get_google_oauth_status",
+            request, "ERROR", "get_google_oauth_status",
             f"Failed to get Google OAuth status: {e}"
         )
         return JSONResponse({
