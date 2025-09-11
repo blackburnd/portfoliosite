@@ -1,357 +1,180 @@
 {% extends "base.html" %}
 
-{% block title %}Site Configuration - Admin{% endblock %}
+{% block title %}Site Configuration - {{ config.get('site_title', 'Portfolio Site') }}{% endblock %}
 
-{% block content %}
-<div class="admin-container">
-    <div class="admin-header">
-        <h1>🛠️ Site Configuration</h1>
-        <p>Manage all configurable content and settings for your portfolio site</p>
-    </div>
-
-    {% if request.query_params.get('bulk_success') %}
-    <div class="alert alert-success">
-        ✅ Successfully updated {{ request.query_params.get('updated', '0') }} configuration values!
-    </div>
-    {% endif %}
-
-    {% if request.query_params.get('error') %}
-    <div class="alert alert-danger">
-        ❌ Error occurred during configuration update. Please try again.
-    </div>
-    {% endif %}
-
-    <div class="config-categories">
-        {% for category_key, category_data in categories.items() %}
-        <div class="config-category-card">
-            <div class="category-header">
-                <div class="category-icon">{{ category_data.info.icon }}</div>
-                <div class="category-title">
-                    <h3>{{ category_data.info.title }}</h3>
-                    <p>{{ category_data.info.description }}</p>
-                </div>
-                <div class="category-actions">
-                    <a href="/admin/config/{{ category_key }}" class="btn btn-primary">
-                        Configure
-                    </a>
-                </div>
-            </div>
-            
-            <div class="category-preview">
-                <div class="config-count">
-                    {{ category_data.config_values.items()|length }} settings
-                </div>
-                
-                <div class="config-samples">
-                    {% for key, value in category_data.config_values.items() %}
-                        {% if loop.index <= 3 %}
-                        <div class="config-sample">
-                            <span class="config-key">{{ key.replace('_', ' ').title() }}:</span>
-                            <span class="config-value">
-                                {% if value %}
-                                    {{ value[:50] }}{% if value|length > 50 %}...{% endif %}
-                                {% else %}
-                                    <em>Not set</em>
-                                {% endif %}
-                            </span>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if category_data.config_values.items()|length > 3 %}
-                    <div class="config-sample more">
-                        <em>+ {{ category_data.config_values.items()|length - 3 }} more settings...</em>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class="admin-actions">
-        <div class="action-group">
-            <h4>🔧 Advanced Actions</h4>
-            <button class="btn btn-outline" onclick="exportConfig()">
-                📥 Export Configuration
-            </button>
-            <button class="btn btn-outline" onclick="importConfig()">
-                📤 Import Configuration
-            </button>
-            <button class="btn btn-danger" onclick="resetAllConfig()">
-                🗑️ Reset All Settings
-            </button>
-        </div>
-    </div>
-
-    <div class="config-stats">
-        <div class="stat-card">
-            <div class="stat-number">{{ total_configs }}</div>
-            <div class="stat-label">Total Configurations</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-number">{{ categories|length }}</div>
-            <div class="stat-label">Configuration Categories</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-number">
-                {% set configured_count = 0 %}
-                {% for category_data in categories.values() %}
-                    {% for value in category_data.config_values.values() %}
-                        {% if value %}
-                            {% set configured_count = configured_count + 1 %}
-                        {% endif %}
-                    {% endfor %}
-                {% endfor %}
-                {{ configured_count }}
-            </div>
-            <div class="stat-label">Configured Settings</div>
-        </div>
-    </div>
-</div>
-
+{% block head %}
 <style>
-.admin-container {
+.config-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #007bff;
+}
+
+.config-card h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.config-card p {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.btn-config {
+    background: #007bff;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.3s;
+}
+
+.btn-config:hover {
+    background: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
+.config-overview {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 2rem;
 }
 
-.admin-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.admin-header h1 {
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
-
-.admin-header p {
-    color: #7f8c8d;
-    font-size: 1.1em;
-}
-
-.config-categories {
+.config-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
 }
 
-.config-category-card {
-    border: 1px solid #e1e8ed;
-    border-radius: 12px;
-    background: white;
-    overflow: hidden;
-    transition: all 0.3s ease;
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
 }
 
-.config-category-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
+.status-configured {
+    background: #28a745;
 }
 
-.category-header {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e1e8ed;
-}
-
-.category-icon {
-    font-size: 2em;
-    margin-right: 15px;
-}
-
-.category-title {
-    flex: 1;
-}
-
-.category-title h3 {
-    margin: 0 0 5px 0;
-    color: #2c3e50;
-}
-
-.category-title p {
-    margin: 0;
-    color: #7f8c8d;
-    font-size: 0.9em;
-}
-
-.category-actions .btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 0.9em;
-    font-weight: 500;
-}
-
-.btn-primary {
-    background: #3498db;
-    color: white;
-    border: 1px solid #3498db;
-}
-
-.btn-primary:hover {
-    background: #2980b9;
-    border-color: #2980b9;
-}
-
-.category-preview {
-    padding: 20px;
-}
-
-.config-count {
-    font-weight: 600;
-    color: #3498db;
-    margin-bottom: 15px;
-}
-
-.config-samples {
-    margin-top: 10px;
-}
-
-.config-sample {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.config-sample:last-child {
-    border-bottom: none;
-}
-
-.config-key {
-    font-weight: 500;
-    color: #2c3e50;
-    font-size: 0.9em;
-}
-
-.config-value {
-    color: #7f8c8d;
-    font-size: 0.85em;
-    text-align: right;
-    max-width: 200px;
-    word-break: break-word;
-}
-
-.config-sample.more {
-    justify-content: center;
-    font-style: italic;
-    color: #95a5a6;
-}
-
-.admin-actions {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-}
-
-.action-group h4 {
-    margin: 0 0 20px 0;
-    color: #2c3e50;
-}
-
-.btn-outline {
-    background: white;
-    color: #3498db;
-    border: 1px solid #3498db;
-    margin-right: 10px;
-    margin-bottom: 10px;
-}
-
-.btn-outline:hover {
-    background: #3498db;
-    color: white;
-}
-
-.btn-danger {
-    background: #e74c3c;
-    color: white;
-    border: 1px solid #e74c3c;
-}
-
-.btn-danger:hover {
-    background: #c0392b;
-    border-color: #c0392b;
+.status-default {
+    background: #ffc107;
 }
 
 .config-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.stat-card {
-    background: white;
-    border: 1px solid #e1e8ed;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.stat-number {
-    font-size: 2.5em;
-    font-weight: 700;
-    color: #3498db;
-    margin-bottom: 10px;
-}
-
-.stat-label {
-    color: #7f8c8d;
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.8em;
-    letter-spacing: 1px;
-}
-
-.alert {
-    padding: 15px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-weight: 500;
-}
-
-.alert-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
 }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="config-overview">
+    <h1>Site Configuration</h1>
+    <p>Manage all aspects of your portfolio site through these configuration panels.</p>
+    
+    <div class="config-stats">
+        <h4>Configuration Status</h4>
+        <p><span class="status-indicator status-configured"></span> Configured values: {{ config|length }}</p>
+        <p><span class="status-indicator status-default"></span> Using defaults where not configured</p>
+    </div>
+
+    <!-- Template Data Extraction Section -->
+    <div class="config-card" style="background: #e8f5e8; border-left-color: #28a745;">
+        <h3>🔄 Populate From Templates</h3>
+        <p>Extract your personal data from existing HTML templates and populate the database. This will read your actual content from index.html, work.html, and contact.html to populate your portfolio, work experience, and site configuration.</p>
+        <button onclick="extractTemplateData()" class="btn-config" style="background: #28a745;">
+            Extract My Data From Templates
+        </button>
+        <div id="extract-status" style="margin-top: 1rem; display: none;"></div>
+    </div>
+    
+    <div class="config-grid">
+        <div class="config-card">
+            <h3>Site Branding</h3>
+            <p>Configure your site title, tagline, company name, and copyright information.</p>
+            <a href="/admin/site-config/branding" class="btn-config">Configure Branding</a>
+        </div>
+        
+        <div class="config-card">
+            <h3>Site Content</h3>
+            <p>Edit hero section, about content, focus areas, and main page content.</p>
+            <a href="/admin/site-config/content" class="btn-config">Configure Content</a>
+        </div>
+        
+        <div class="config-card">
+            <h3>Page Settings</h3>
+            <p>Configure page titles, navigation labels, and page-specific settings.</p>
+            <a href="/admin/site-config/pages" class="btn-config">Configure Pages</a>
+        </div>
+        
+        <div class="config-card">
+            <h3>Assets & Files</h3>
+            <p>Manage profile images, resume files, and other downloadable assets.</p>
+            <a href="/admin/site-config/assets" class="btn-config">Configure Assets</a>
+        </div>
+    </div>
+    
+    {% if config %}
+    <div style="margin-top: 3rem;">
+        <h4>Current Configuration Values</h4>
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; font-family: monospace; max-height: 300px; overflow-y: auto;">
+            {% for key, value in config.items() %}
+            <div style="margin-bottom: 0.5rem;">
+                <strong>{{ key }}:</strong> {{ value[:100] }}{% if value|length > 100 %}...{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
 
 <script>
-function exportConfig() {
-    // TODO: Implement configuration export
-    alert('Configuration export feature coming soon!');
-}
-
-function importConfig() {
-    // TODO: Implement configuration import
-    alert('Configuration import feature coming soon!');
-}
-
-function resetAllConfig() {
-    if (confirm('Are you sure you want to reset ALL configuration settings? This cannot be undone.')) {
-        // TODO: Implement reset all functionality
-        alert('Reset all functionality coming soon!');
+async function extractTemplateData() {
+    const button = document.querySelector('button[onclick="extractTemplateData()"]');
+    const statusDiv = document.getElementById('extract-status');
+    
+    // Show loading state
+    button.disabled = true;
+    button.textContent = 'Extracting Data...';
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = '<p style="color: #007bff;">🔄 Extracting data from templates...</p>';
+    
+    try {
+        const response = await fetch('/admin/extract-template-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            statusDiv.innerHTML = '<p style="color: #28a745;">✅ ' + result.message + '</p>';
+            
+            // Reload page after 2 seconds to show new data
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            statusDiv.innerHTML = '<p style="color: #dc3545;">❌ ' + result.message + '</p>';
+        }
+    } catch (error) {
+        statusDiv.innerHTML = '<p style="color: #dc3545;">❌ Error: ' + error.message + '</p>';
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Extract My Data From Templates';
     }
 }
 </script>
