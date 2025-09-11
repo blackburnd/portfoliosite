@@ -1,119 +1,101 @@
-<!DOCTYPE html>
-<html
-    class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ title }}</title>
-    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
-    <link rel="stylesheet" href="/assets/style.css">
+{% block title %}{{ title }}{% endblock %}
 
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'UA-27877508-5');
-    </script>
-</head>
+{% block extra_css %}
+<script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+{% endblock %}
 
-<body class="me">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component with current page set to 'home' -->
-            {% with current_page='home', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            <div id="bw" aria-live="polite">
-                <article class="bc clearfix">
-                    <section class="about">
-                        <div class="intro-flex">
-                            <figure class="profile-image">
-                                <img alt="Daniel Blackburn" src="/assets/files/daniel2.png" onerror="this.style.display='none'">
-                            </figure>
+{% block content %}
+<div id="bw" aria-live="polite">
+    <article class="bc clearfix">
+        <section class="about">
+            <div class="intro-flex">
+                <figure class="profile-image">
+                    <img alt="Daniel Blackburn" src="/assets/files/daniel2.png" onerror="this.style.display='none'">
+                </figure>
 
-                            <div class="hero-content">
-                                <h2>Building Better Solutions Through Experience</h2>
-                                <p>With experience that expands throughout University IT departments, corporate banking
+                <div class="hero-content">
+                    <h2>Building Better Solutions Through Experience</h2>
+                    <p>With experience that expands throughout University IT departments, corporate banking
 environments, and agile remote startup companies, I have learned that foundational
 knowledge combined with effective communication creates a lasting impact. I thrive by
 embracing continuous growth and approaching every challenge with the mindset of a lifelong
 learner.</p>
-                                <p><em>Building is easy. Building better is rewarding. Evidence-based performance enhancements are
+                    <p><em>Building is easy. Building better is rewarding. Evidence-based performance enhancements are
 the ultimate motivator.</em></p>
-                            </div>
-                        </div>
-                        <div class="main-content">
-                            <!-- About Me Section -->
-                            <h3>About Me</h3>
-                            <p>With over two decades of experience solving problems and architecting solutions, I appreciate
+                </div>
+            </div>
+            <div class="main-content">
+                <!-- About Me Section -->
+                <h3>About Me</h3>
+                <p>With over two decades of experience solving problems and architecting solutions, I appreciate
 the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career
 has taken me through diverse environments where I&#39;ve learned that the best solutions often
 require looking beyond the obvious tools.</p>
-                            
-                            <p>I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and
+                
+                <p>I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and
 validate confidence through comprehensive test coverage. Practicing continuous improvement
 with clear communication, kindness, and empathy helps me work smarter and more
 sustainably. Equally important is appreciating the strengths and limitations of my environment
 and team, which provides invaluable perspective.</p>
 
-                            <!-- Current Focus Section -->
-                            <h3>Embracing the AI Revolution</h3>
-                            <p>Things are changing fast, and it’s an incredibly exciting time to be skilled in software
-development—especially when you have a clear sense of what ‘correct’ looks like. I think of
-using AI as a pair programmer like working with a mischievous djinn: it’s resourceful but often
+                <!-- Current Focus Section -->
+                <h3>Embracing the AI Revolution</h3>
+                <p>Things are changing fast, and it's an incredibly exciting time to be skilled in software
+development—especially when you have a clear sense of what 'correct' looks like. I think of
+using AI as a pair programmer like working with a mischievous djinn: it's resourceful but often
 unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide
 surprisingly valuable solutions.
 </p>
 
-                            <p>With the right constraints, I’ve found AI can help create some genuinely useful solutions, but
+                <p>With the right constraints, I've found AI can help create some genuinely useful solutions, but
 only when kept on a short leash. Letting it run unchecked quickly turns into a new kind of
-frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I’m
-excited to keep exploring how to use AI more effectively; it’s a tool I’m still learning from, and
+frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I'm
+excited to keep exploring how to use AI more effectively; it's a tool I'm still learning from, and
 the journey itself is part of the reward.
-                              
-                            </p>
+                  
+                </p>
 
-                            <!-- Call to Action Section -->
-                            <h3>Let's Work Together</h3>
-                            <p>Ready to discuss technical challenges and solutions? </p>
-                            <p><strong><a href="/work/">View My Technical Showcase →</a></strong><br>
-                            <em>(Featured case studies and technical implementations)</em></p>
-                        </div>
-                    </section>
-                </article><!-- barba container -->
-            </div><!-- barba wrapper -->
-            <footer class="footer" role="contentinfo">
-                <p class="copyright">© 2025 Blackburn.</p>
-            </footer>
-        </div><!-- #fg -->
-    </div><!-- .wrap -->
+                <!-- Call to Action Section -->
+                <h3>Let's Work Together</h3>
+                <p>Ready to discuss technical challenges and solutions? </p>
+                <p><strong><a href="/work/">View My Technical Showcase →</a></strong><br>
+                <em>(Featured case studies and technical implementations)</em></p>
+            </div>
+        </section>
+    </article><!-- barba container -->
+</div><!-- barba wrapper -->
+{% endblock %}
 
-    <!-- Debug script to check if files exist -->
-    <script>
-        // Check if assets are loading properly
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('Page loaded, checking assets...');
+{% block extra_js %}
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-27877508-5');
+</script>
 
-            // Test asset availability
-            fetch('/assets/files/')
-                .then(response => {
-                    if (response.ok) {
-                        console.log('✓ Assets directory accessible');
-                        return response.text();
-                    } else {
-                        console.error('✗ Assets directory not accessible:', response.status);
-                    }
-                })
-                .then(html => {
-                    if (html) {
-                        console.log('Available files:', html.match(/href="[^"]+"/g) || []);
-                    }
-                })
-                .catch(error => console.error('Asset check failed:', error));
-        });
-    </script>
-    <script src="/assets/js/auth-login.js"></script>
-</body>
-
-</html>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page loaded, checking assets...');
+        
+        // Check if assets directory is accessible
+        fetch('/assets/files/')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✓ Assets directory accessible');
+                    return response.text();
+                } else {
+                    console.error('✗ Assets directory not accessible:', response.status);
+                }
+            })
+            .then(html => {
+                if (html) {
+                    console.log('Available files:', html.match(/href="[^"]+"/g) || []);
+                }
+            })
+            .catch(error => console.error('Asset check failed:', error));
+    });
+</script>
+{% endblock %}

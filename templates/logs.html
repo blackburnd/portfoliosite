@@ -1,85 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Application Logs - Daniel Blackburn</title>
-    <link rel="stylesheet" href="/assets/style.css">
+{% extends "base.html" %}
 
-</head>
+{% block title %}Application Logs - Daniel Blackburn{% endblock %}
 
-<body class="logs claro">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component with current page set to 'logs' -->
-            {% with current_page='logs', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            
-            <div id="bw" aria-live="polite">
-                <div class="logs-container">
-                    <div class="logs-controls-row compact-controls">
-                        <input type="text" id="searchBox" placeholder="Search..." class="compact-input" />
-                        <select id="levelFilter" class="compact-select" title="Level">
-                            <option value="">Level</option>
-                            <option value="debug">Debug</option>
-                            <option value="info">Info</option>
-                            <option value="warning">Warning</option>
-                            <option value="error">Error</option>
-                        </select>
-                        <select id="moduleFilter" class="compact-select" title="Module">
-                            <option value="">Module</option>
-                        </select>
-                        <select id="timeFilter" class="compact-select" title="Time">
-                            <option value="">Time</option>
-                            <option value="1h">1h</option>
-                            <option value="24h">24h</option>
-                            <option value="7d">7d</option>
-                        </select>
-                        <button id="clearFiltersBtn" style="display: none;" class="compact-btn" onclick="clearFilters()" title="Clear">✕</button>
-                    </div>
-                    
-                    <div id="searchStatus" class="search-status" style="display: none;"></div>
-                    
-                    <div class="logs-stats compact-stats" id="logsStats">
-                        <span id="totalCount">Total: 0</span>
-                        <span id="filteredLogs">Loaded: 0</span>
-                        <span id="errorCount">Errors: 0</span>
-                        <span id="warningCount">Warnings: 0</span>
-                    </div>
-                    
-                    <div class="logs-table-container">
-                        <table class="logs-table compact-table">
-                            <thead>
-                                <tr>
-                                    <th data-sort="timestamp" class="sortable compact-th" style="width: 90px;">Date <span class="sort-indicator"></span></th>
-                                    <th class="compact-th" style="width: 60px;">Age</th>
-                                    <th data-sort="level" class="sortable compact-th" style="width: 60px;">Level <span class="sort-indicator"></span></th>
-                                    <th data-sort="module" class="sortable compact-th" style="width: 100px;">Mod <span class="sort-indicator"></span></th>
-                                    <th data-sort="message" class="sortable compact-th">Msg <span class="sort-indicator"></span></th>
-                                    <th data-sort="function" class="sortable compact-th" style="width: 80px;">Func <span class="sort-indicator"></span></th>
-                                    <th data-sort="line" class="sortable compact-th" style="width: 40px;">Ln <span class="sort-indicator"></span></th>
-                                    <th data-sort="ip_address" class="sortable compact-th" style="width: 80px;">IP <span class="sort-indicator"></span></th>
-                                </tr>
-                            </thead>
-                            <tbody id="logsTableBody">
-                                <tr>
-                                    <td colspan="7" class="loading">Loading logs...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div id="loadingIndicator" class="loading" style="display: none;">Loading more logs...</div>
-                        <div id="noMoreLogs" class="no-more-logs" style="display: none;">No more logs to load</div>
-                        <div id="errorMessage" class="error" style="display: none;"></div>
-                        <div id="scrollTrigger" class="scroll-trigger"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% block body_class %}logs claro{% endblock %}
+
+{% block extra_head %}
+<script src="/assets/js/logs.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <div class="logs-controls-row compact-controls">
+        <input type="text" id="searchBox" placeholder="Search..." class="compact-input" />
+        <select id="levelFilter" class="compact-select" title="Level">
+            <option value="">Level</option>
+            <option value="debug">Debug</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+        </select>
+        <select id="moduleFilter" class="compact-select" title="Module">
+            <option value="">Module</option>
+        </select>
+        <select id="timeFilter" class="compact-select" title="Time">
+            <option value="">Time</option>
+            <option value="1h">1h</option>
+            <option value="24h">24h</option>
+            <option value="7d">7d</option>
+        </select>
+        <button id="clearFiltersBtn" style="display: none;" class="compact-btn" onclick="clearFilters()" title="Clear">✕</button>
     </div>
-
     
-    <!-- Use external logs JavaScript file with proper has_more handling -->
-    <script src="/assets/js/logs.js"></script>
-</body>
-</html>
+    <div id="searchStatus" class="search-status" style="display: none;"></div>
+    
+    <div class="logs-stats compact-stats" id="logsStats">
+        <span id="totalCount">Total: 0</span>
+        <span id="filteredLogs">Loaded: 0</span>
+        <span id="errorCount">Errors: 0</span>
+        <span id="warningCount">Warnings: 0</span>
+    </div>
+    
+    <div class="logs-table-container">
+        <table class="logs-table compact-table">
+            <thead>
+                <tr>
+                    <th data-sort="timestamp" class="sortable compact-th" style="width: 90px;">Date <span class="sort-indicator"></span></th>
+                    <th class="compact-th" style="width: 60px;">Age</th>
+                    <th data-sort="level" class="sortable compact-th" style="width: 60px;">Level <span class="sort-indicator"></span></th>
+                    <th data-sort="module" class="sortable compact-th" style="width: 100px;">Mod <span class="sort-indicator"></span></th>
+                    <th data-sort="message" class="sortable compact-th">Msg <span class="sort-indicator"></span></th>
+                    <th data-sort="function" class="sortable compact-th" style="width: 80px;">Func <span class="sort-indicator"></span></th>
+                    <th data-sort="line" class="sortable compact-th" style="width: 40px;">Ln <span class="sort-indicator"></span></th>
+                    <th data-sort="ip_address" class="sortable compact-th" style="width: 80px;">IP <span class="sort-indicator"></span></th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <tr>
+                    <td colspan="7" class="loading">Loading logs...</td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="loadingIndicator" class="loading" style="display: none;">Loading more logs...</div>
+        <div id="noMoreLogs" class="no-more-logs" style="display: none;">No more logs to load</div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="scrollTrigger" class="scroll-trigger"></div>
+    </div>
+</div>
+{% endblock %}

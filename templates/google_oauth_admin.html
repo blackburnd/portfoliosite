@@ -1,30 +1,15 @@
-<!DOCTYPE html>
-<html class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Google OAuth Administration - Daniel Blackburn</title>
-    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
-    <link rel="stylesheet" href="/assets/style.css">
+{% block title %}Google OAuth Administration - Daniel Blackburn{% endblock %}
 
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'UA-27877508-5');
-    </script>
-</head>
+{% block body_class %}google-oauth-admin{% endblock %}
 
-<body class="google-oauth-admin">
-    <div class="wrap">
-        <div class="fg">
-            <!-- Include the navigation component -->
-            {% with current_page='google_oauth_admin', user=user_info, user_authenticated=user_authenticated, user_email=user_email %}
-                {% include 'navigation.html' %}
-            {% endwith %}
-            
-            <div class="oauth-admin-content">
+{% block extra_head %}
+<script src="/assets/js/google-oauth-admin.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="oauth-admin-content">
     <h2>Google OAuth Configuration</h2>
     
     <div class="admin-nav" style="margin-bottom: 20px;">
@@ -137,7 +122,7 @@
             </div>
         </div>
         
-                        <div class="config-actions">
+        <div class="config-actions">
             <button type="button" class="btn-primary" id="test-profile-access">Fetch Google Data</button>
             <button type="button" class="btn-secondary" id="initiate-google-oauth" title="Click to grant Google OAuth permissions">Authorize Google Access</button>
             <button type="button" class="btn-info" id="view-oauth-tokens" title="View OAuth tokens in GraphQL format">View OAuth Tokens</button>
@@ -151,9 +136,4 @@
 
 <!-- Result Messages -->
 <div class="result-messages" id="result-messages"></div>
-
-<script src="/assets/js/google-oauth-admin.js"></script>
-        </div>
-    </div>
-</body>
-</html>
+{% endblock %}
