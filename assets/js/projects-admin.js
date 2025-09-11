@@ -206,7 +206,7 @@ require([
         
         // Get form values
         const project = {
-            portfolio_id: "daniel-blackburn",
+            portfolio_id: window.PORTFOLIO_ID || "daniel-blackburn", // fallback for safety
             title: title,
             description: description
         };

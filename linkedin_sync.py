@@ -22,7 +22,8 @@ class LinkedInSync:
     """
     
         # OAuth-based authentication
-        self.portfolio_id = "daniel-blackburn"  # Target portfolio to update
+        from database import get_portfolio_id
+        self.portfolio_id = get_portfolio_id()  # Target portfolio to update
         
         # Legacy environment variable support (deprecated)
         self.linkedin_username = os.getenv("LINKEDIN_USERNAME") 

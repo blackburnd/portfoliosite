@@ -6,7 +6,7 @@ from typing import Optional, List
 import json
 
 from auth import require_admin_auth
-from database import database, PORTFOLIO_ID
+from database import database, PORTFOLIO_ID, get_portfolio_id
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -43,7 +43,8 @@ async def projects_admin_page(
         "current_page": "projectsadmin",
         "user_info": admin,
         "user_authenticated": True,
-        "user_email": admin.get("email", "")
+        "user_email": admin.get("email", ""),
+        "portfolio_id": get_portfolio_id()
     })
 
 

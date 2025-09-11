@@ -125,9 +125,12 @@ async def close_database():
 class PortfolioDatabase:
     @staticmethod
     async def get_portfolio(
-        portfolio_id: str = "daniel-blackburn"
+        portfolio_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Get portfolio data with related work experience and projects"""
+        
+        if portfolio_id is None:
+            portfolio_id = get_portfolio_id()
 
         # Get main portfolio data
         portfolio_query = """
@@ -360,9 +363,12 @@ class PortfolioDatabase:
     
     @staticmethod
     async def get_messages(
-        portfolio_id: str = "daniel-blackburn"
+        portfolio_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Get all contact messages for a portfolio"""
+        
+        if portfolio_id is None:
+            portfolio_id = get_portfolio_id()
 
         query = """
         SELECT id, name, email, message, source_ip, user_agent, status,

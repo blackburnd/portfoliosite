@@ -6,7 +6,7 @@ from typing import Optional, List
 import json
 
 from auth import require_admin_auth, verify_token, is_authorized_user
-from database import database
+from database import database, get_portfolio_id
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -90,7 +90,8 @@ async def work_admin_page(
         "current_page": "workadmin",
         "user_info": admin,
         "user_authenticated": True,
-        "user_email": admin.get("email", "")
+        "user_email": admin.get("email", ""),
+        "portfolio_id": get_portfolio_id()
     })
 
 @router.get("/workitems", response_model=List[WorkItem])
@@ -106,7 +107,7 @@ async def list_workitems():
             row_dict = dict(row)
             work_item_data = {
                 "id": str(row_dict.get("id", "")),
-                "portfolio_id": str(row_dict.get("portfolio_id", "daniel-blackburn")),
+                "portfolio_id": str(row_dict.get("portfolio_id", get_portfolio_id())),
                 "company": row_dict.get("company", ""),
                 "position": row_dict.get("position", ""),
                 "location": row_dict.get("location"),
