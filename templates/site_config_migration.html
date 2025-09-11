@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Site Configuration Migration{% endblock %}
+
+{% block content %}
+<div id="bw">
+    <article class="bc clearfix">
+        <section class="migration-section">
+            <h1>Site Configuration Migration</h1>
+            <p>This tool will extract existing content from your templates and code, then create and populate the site configuration tables. This ensures no content is lost during the de-personalization process.</p>
+            
+            <div class="migration-steps">
+                <div class="step">
+                    <h3>Step 1: Extract Current Content</h3>
+                    <p>Scan templates and code files to extract existing text, titles, and configuration.</p>
+                    <button id="extract-btn" class="btn btn-primary">Extract Current Content</button>
+                    <div id="extract-results" class="results-container" style="display: none;"></div>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 2: Apply Migration</h3>
+                    <p>Create the site_config table and populate it with extracted content.</p>
+                    <button id="migrate-btn" class="btn btn-success" disabled>Apply Migration</button>
+                    <div id="migrate-results" class="results-container" style="display: none;"></div>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 3: Verify Results</h3>
+                    <p>Review the configuration that was created and make any necessary adjustments.</p>
+                    <div id="config-preview" class="config-preview" style="display: none;"></div>
+                </div>
+            </div>
+        </section>
+    </article>
+</div>
+
+<style>
+.migration-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.migration-steps {
+    margin-top: 30px;
+}
+
+.step {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.step h3 {
+    color: #495057;
+    margin-top: 0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #1e7e34;
+}
+
+.btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.results-container {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.results-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.results-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.config-preview {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.config-item {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-left: 3px solid #007bff;
+}
+
+.config-key {
+    font-weight: bold;
+    color: #495057;
+}
+
+.config-value {
+    margin-top: 5px;
+    color: #6c757d;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.status-info {
+    margin-top: 10px;
+    padding: 10px;
+    background: #e2e3e5;
+    border-radius: 4px;
+    font-size: 14px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const extractBtn = document.getElementById('extract-btn');
+    const migrateBtn = document.getElementById('migrate-btn');
+    const extractResults = document.getElementById('extract-results');
+    const migrateResults = document.getElementById('migrate-results');
+    const configPreview = document.getElementById('config-preview');
+    
+    let extractedContent = null;
+    
+    // Extract current content
+    extractBtn.addEventListener('click', async function() {
+        extractBtn.innerHTML = 'Extracting... <span class="loading"></span>';
+        extractBtn.disabled = true;
+        extractResults.style.display = 'none';
+        
+        try {
+            const response = await fetch('/admin/migrate-site-config/extract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                extractedContent = result.extracted_content;
+                showResults(extractResults, 'success', 
+                    `Successfully extracted ${result.total_items} configuration items from your existing templates and code.`);
+                
+                // Show preview
+                showConfigPreview(extractedContent);
+                
+                // Enable migration button
+                migrateBtn.disabled = false;
+            } else {
+                showResults(extractResults, 'error', result.message || 'Failed to extract content');
+            }
+        } catch (error) {
+            showResults(extractResults, 'error', `Error: ${error.message}`);
+        }
+        
+        extractBtn.innerHTML = 'Extract Current Content';
+        extractBtn.disabled = false;
+    });
+    
+    // Apply migration
+    migrateBtn.addEventListener('click', async function() {
+        if (!confirm('This will create database tables and populate them with configuration. Continue?')) {
+            return;
+        }
+        
+        migrateBtn.innerHTML = 'Applying Migration... <span class="loading"></span>';
+        migrateBtn.disabled = true;
+        migrateResults.style.display = 'none';
+        
+        try {
+            const response = await fetch('/admin/migrate-site-config/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                showResults(migrateResults, 'success', result.message);
+                
+                // Show status info
+                const statusInfo = document.createElement('div');
+                statusInfo.className = 'status-info';
+                statusInfo.innerHTML = `
+                    <strong>Migration Details:</strong><br>
+                    Portfolio ID: ${result.portfolio_id}<br>
+                    Configuration Items: ${result.inserted_count}<br>
+                    Status: Complete
+                `;
+                migrateResults.appendChild(statusInfo);
+                
+                // Update config preview with final data
+                showConfigPreview(result.extracted_content);
+                
+            } else {
+                showResults(migrateResults, 'error', result.message || 'Migration failed');
+            }
+        } catch (error) {
+            showResults(migrateResults, 'error', `Error: ${error.message}`);
+        }
+        
+        migrateBtn.innerHTML = 'Apply Migration';
+        migrateBtn.disabled = false;
+    });
+    
+    function showResults(container, type, message) {
+        container.innerHTML = `<div class="results-${type}">${message}</div>`;
+        container.style.display = 'block';
+    }
+    
+    function showConfigPreview(content) {
+        if (!content) return;
+        
+        let html = '<h4>Configuration Preview:</h4>';
+        
+        Object.keys(content).sort().forEach(key => {
+            html += `
+                <div class="config-item">
+                    <div class="config-key">${key}</div>
+                    <div class="config-value">${content[key] || '(empty)'}</div>
+                </div>
+            `;
+        });
+        
+        configPreview.innerHTML = html;
+        configPreview.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}
