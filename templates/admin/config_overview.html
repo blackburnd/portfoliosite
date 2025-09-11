@@ -39,7 +39,7 @@
             
             <div class="category-preview">
                 <div class="config-count">
-                    {{ category_data.values|length }} settings
+                    {{ category_data.values.items()|length }} settings
                 </div>
                 
                 <div class="config-samples">
@@ -58,9 +58,9 @@
                         {% endif %}
                     {% endfor %}
                     
-                    {% if category_data.values|length > 3 %}
+                    {% if category_data.values.items()|length > 3 %}
                     <div class="config-sample more">
-                        <em>+ {{ category_data.values|length - 3 }} more settings...</em>
+                        <em>+ {{ category_data.values.items()|length - 3 }} more settings...</em>
                     </div>
                     {% endif %}
                 </div>
