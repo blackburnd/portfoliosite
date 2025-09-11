@@ -763,6 +763,51 @@ class TTWOAuthManager:
             add_log("ERROR", "database_error_oauth_credentials", f"Database error getting OAuth credentials: {str(e)}")
             return None
 
+    async def get_google_auth_url(self, scopes: list = None) -> Optional[str]:
+        """Generate Google OAuth authorization URL with specified scopes"""
+        try:
+            import secrets
+            from urllib.parse import urlencode
+            
+            google_config = await self.get_google_oauth_credentials()
+            
+            if not google_config:
+                add_log("ERROR", "google_auth_url_no_config",
+                        "Google OAuth is not configured")
+                return None
+
+            # Default scopes if none provided
+            if not scopes:
+                scopes = [
+                    'openid', 'email', 'profile',
+                    'https://www.googleapis.com/auth/gmail.send'
+                ]
+            
+            scope_string = ' '.join(scopes)
+            state = secrets.token_urlsafe(32)
+
+            params = {
+                "client_id": google_config['client_id'],
+                "redirect_uri": google_config['redirect_uri'],
+                "response_type": "code",
+                "scope": scope_string,
+                "state": state,
+                "access_type": "offline",
+                "prompt": "select_account"
+            }
+
+            auth_url = ("https://accounts.google.com/o/oauth2/v2/auth?" +
+                        urlencode(params))
+            
+            add_log("INFO", "google_auth_url_generated",
+                    f"Generated Google auth URL with scopes: {scope_string}")
+            return auth_url
+            
+        except Exception as e:
+            add_log("ERROR", "google_auth_url_error",
+                    f"Error generating Google auth URL: {str(e)}")
+            return None
+
     async def remove_linkedin_oauth_app(self) -> bool:
         """Remove LinkedIn OAuth app configuration"""
         try:

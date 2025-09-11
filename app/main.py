@@ -68,6 +68,41 @@ graphql_app = GraphQLRouter(resolvers.schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 
+# --- Home Route ---
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Serve the home page with authentication status"""
+    user_authenticated = False
+    user_email = None
+    user_info = None
+    
+    try:
+        # Import auth functions locally to avoid circular imports
+        from auth import verify_token, is_authorized_user
+        
+        token = request.cookies.get("access_token")
+        if token:
+            payload = verify_token(token)
+            email = payload.get("sub")
+            if email and is_authorized_user(email):
+                user_authenticated = True
+                user_email = email
+                user_info = {
+                    "email": email,
+                    "name": payload.get("name", email.split("@")[0])
+                }
+    except Exception:
+        pass  # Continue with unauthenticated state
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "current_page": "home",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email,
+        "user_info": user_info
+    })
+
+
 # --- Legacy Routes (to be phased out) ---
 
 @app.get("/profile")

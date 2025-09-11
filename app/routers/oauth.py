@@ -620,6 +620,36 @@ async def get_google_oauth_status(
         })
 
 
+@router.get("/admin/google/oauth/authorize")
+async def initiate_google_oauth_authorization(
+    admin: dict = Depends(require_admin_auth)
+):
+    """Initiate Google OAuth authorization flow for admin permissions"""
+    try:
+        ttw_manager = TTWOAuthManager()
+        
+        # Get the authorization URL for admin scopes (including Gmail send)
+        auth_url = await ttw_manager.get_google_auth_url(
+            scopes=[
+                'openid',
+                'email',
+                'profile',
+                'https://www.googleapis.com/auth/gmail.send'
+            ]
+        )
+        
+        return JSONResponse({
+            "auth_url": auth_url
+        })
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "initiate_google_oauth_authorization",
+            f"Failed to initiate Google OAuth authorization: {e}"
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/admin/google/oauth/config")
 async def save_google_oauth_config(
     request: Request,
