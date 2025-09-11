@@ -128,6 +128,8 @@
                         const startDate = work.startDate ? new Date(work.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
                         const endDate = work.isCurrent ? 'Present' : (work.endDate ? new Date(work.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown');
                         const companyLink = work.companyUrl ? `<a href="${work.companyUrl}" target="_blank">${work.company}</a>` : work.company;
+                        const currentBadge = work.isCurrent ? ' <span class="current-badge">Current</span>' : '';
+                        const dateRange = `${startDate} - ${endDate}`;
                         
                         html += `
                             <div class="work-item">

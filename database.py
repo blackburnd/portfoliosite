@@ -156,7 +156,7 @@ class PortfolioDatabase:
         ORDER BY sort_order, start_date DESC
         """
         work_exp = await database.fetch_all(
-            work_query, {"portfolio_id": portfolio["id"]}
+            work_query, {"portfolio_id": portfolio_id}
         )
 
         # Get projects
@@ -168,7 +168,7 @@ class PortfolioDatabase:
         ORDER BY sort_order, created_at DESC
         """
         projects = await database.fetch_all(
-            projects_query, {"portfolio_id": portfolio["id"]}
+            projects_query, {"portfolio_id": portfolio_id}
         )
 
         # Format the response
