@@ -13,6 +13,7 @@ from auth import (
     is_authorized_user,
     create_access_token,
     require_admin_auth,
+    get_current_user,
     SECRET_KEY,
     ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -622,10 +623,23 @@ async def get_google_oauth_status(
 
 @router.get("/admin/google/oauth/authorize")
 async def initiate_google_oauth_authorization(
-    admin: dict = Depends(require_admin_auth)
+    request: Request
 ):
     """Initiate Google OAuth authorization flow for admin permissions"""
     try:
+        # Check authentication manually to provide better error handling
+        try:
+            user = await get_current_user(request)
+        except HTTPException as auth_error:
+            return JSONResponse(
+                {"detail": "Authentication required. Please log in again."},
+                status_code=401
+            )
+        
+        # Generate state token and store in session like regular login flow
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        
         ttw_manager = TTWOAuthManager()
         
         # Get the authorization URL for admin scopes (including Gmail send)
@@ -635,8 +649,15 @@ async def initiate_google_oauth_authorization(
                 'email',
                 'profile',
                 'https://www.googleapis.com/auth/gmail.send'
-            ]
+            ],
+            state=state  # Pass the state we generated
         )
+        
+        if not auth_url:
+            return JSONResponse(
+                {"detail": "Google OAuth is not configured."},
+                status_code=503
+            )
         
         return JSONResponse({
             "auth_url": auth_url
@@ -645,9 +666,13 @@ async def initiate_google_oauth_authorization(
     except Exception as e:
         log_with_context(
             "ERROR", "initiate_google_oauth_authorization",
-            f"Failed to initiate Google OAuth authorization: {e}"
+            f"Failed to initiate Google OAuth authorization: {e}",
+            request
         )
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            {"detail": f"Server error: {str(e)}"},
+            status_code=500
+        )
 
 
 @router.post("/admin/google/oauth/config")
