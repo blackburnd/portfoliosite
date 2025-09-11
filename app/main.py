@@ -156,7 +156,12 @@ async def list_workitems():
     from database import PORTFOLIO_ID
     query = "SELECT * FROM work_experience WHERE portfolio_id = :portfolio_id ORDER BY sort_order, start_date DESC"
     rows = await database.fetch_all(query, {"portfolio_id": PORTFOLIO_ID})
-    return [WorkItem(**dict(row)) for row in rows]
+    # Convert UUID fields to strings for Pydantic model
+    return [WorkItem(**{
+        **dict(row),
+        'id': str(row['id']),
+        'portfolio_id': str(row['portfolio_id'])
+    }) for row in rows]
 
 
 @app.post("/workitems", response_model=WorkItem)

@@ -106,7 +106,7 @@ async def list_workitems():
             row_dict = dict(row)
             work_item_data = {
                 "id": str(row_dict.get("id", "")),
-                "portfolio_id": row_dict.get("portfolio_id", "daniel-blackburn"),
+                "portfolio_id": str(row_dict.get("portfolio_id", "daniel-blackburn")),
                 "company": row_dict.get("company", ""),
                 "position": row_dict.get("position", ""),
                 "location": row_dict.get("location"),

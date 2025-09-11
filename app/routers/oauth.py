@@ -1319,55 +1319,51 @@ async def view_oauth_tokens_graphql(
     try:
         from database import get_google_oauth_tokens, get_portfolio_id
         
-        # Get all OAuth tokens for this portfolio
-        tokens = await get_google_oauth_tokens(
+        # Get OAuth token for this portfolio (returns single token, not list)
+        token = await get_google_oauth_tokens(
             portfolio_id=get_portfolio_id()
         )
         
-        if not tokens:
+        if not token:
             graphql_response = {
                 "data": {
-                    "oauthTokens": []
+                    "oauthToken": None
                 },
                 "extensions": {
-                    "message": "No OAuth tokens found"
+                    "message": "No OAuth token found"
                 }
             }
             return JSONResponse(graphql_response)
         
-        # Format tokens in GraphQL-style response
-        token_data = []
-        for token in tokens:
-            token_entry = {
-                "id": token.get('id'),
-                "provider": token.get('provider', 'google'),
-                "createdAt": token.get('created_at'),
-                "updatedAt": token.get('updated_at'),
-                "adminEmail": token.get('admin_email'),
-                "scopes": {
-                    "granted": token.get('scopes', '').split(' ') if token.get('scopes') else [],
-                    "count": len(token.get('scopes', '').split(' ')) if token.get('scopes') else 0
-                },
-                "tokenInfo": {
-                    "hasAccessToken": bool(token.get('access_token')),
-                    "hasRefreshToken": bool(token.get('refresh_token')),
-                    "expiresAt": token.get('expires_at'),
-                    "tokenType": token.get('token_type', 'Bearer')
-                },
-                "status": {
-                    "isActive": bool(token.get('access_token')),
-                    "isExpired": False  # We'd need to check expiry logic here
-                }
+        # Format token in GraphQL-style response
+        token_entry = {
+            "id": token.get('id'),
+            "provider": token.get('provider', 'google'),
+            "createdAt": token.get('created_at'),
+            "updatedAt": token.get('updated_at'),
+            "adminEmail": token.get('admin_email'),
+            "scopes": {
+                "granted": token.get('granted_scopes', '').split(' ') if token.get('granted_scopes') else [],
+                "count": len(token.get('granted_scopes', '').split(' ')) if token.get('granted_scopes') else 0
+            },
+            "tokenInfo": {
+                "hasAccessToken": bool(token.get('access_token')),
+                "hasRefreshToken": bool(token.get('refresh_token')),
+                "expiresAt": token.get('token_expires_at'),
+                "tokenType": token.get('token_type', 'Bearer')
+            },
+            "status": {
+                "isActive": bool(token.get('access_token')),
+                "isExpired": False  # We'd need to check expiry logic here
             }
-            token_data.append(token_entry)
+        }
         
         graphql_response = {
             "data": {
-                "oauthTokens": token_data,
-                "totalCount": len(token_data)
+                "oauthToken": token_entry
             },
             "extensions": {
-                "query": "query GetOAuthTokens { oauthTokens { id provider createdAt scopes { granted count } tokenInfo { hasAccessToken hasRefreshToken } status { isActive } } }",
+                "query": "query GetOAuthToken { oauthToken { id provider createdAt scopes { granted count } tokenInfo { hasAccessToken hasRefreshToken } status { isActive } } }",
                 "executionTime": "0ms",
                 "source": "Blackburn Systems OAuth API"
             }
@@ -1375,8 +1371,7 @@ async def view_oauth_tokens_graphql(
         
         log_with_context(
             "INFO", "view_oauth_tokens",
-            f"Returned {len(token_data)} OAuth tokens for admin: "
-            f"{admin.get('email')}",
+            f"Returned OAuth token for admin: {admin.get('email')}",
             request
         )
         
