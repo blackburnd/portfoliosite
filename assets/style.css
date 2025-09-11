@@ -1473,164 +1473,98 @@ td[style*="#abd6ff"] {
 .logs-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
 }
 
-/* New horizontal controls row */
-.logs-controls-row {
+/* Compact horizontal controls row */
+.logs-controls-compact {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(44, 62, 80, 0.5); /* Reduced opacity by half for better contrast */
-    border-radius: 8px;
-    color: white;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(248, 249, 250, 0.8);
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    font-size: 13px;
     flex-wrap: wrap;
 }
 
-.logs-controls-row input[type="text"] {
-    padding: 8px;
-    border: none;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.9);
-    min-width: 200px;
+.logs-controls-compact input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    background: white;
+    min-width: 180px;
     flex: 1;
-    max-width: 300px;
-}
-
-.logs-controls-row button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    background: #3498db;
-    color: white;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.logs-controls-row button:hover {
-    background: #2980b9;
-}
-
-.logs-controls-row .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 120px;
-}
-
-.logs-controls-row .filter-group label {
-    font-weight: bold;
-    font-size: 11px;
-    color: white;
-    margin: 0;
-}
-
-.logs-controls-row .filter-group select {
-    padding: 6px;
-    border: 1px solid #bdc3c7;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.9);
+    max-width: 250px;
     font-size: 13px;
 }
 
-.logs-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: #2c3e50;
-    border-radius: 8px;
-    color: white;
+.logs-controls-compact select {
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    background: white;
+    font-size: 13px;
+    min-width: 90px;
 }
 
-.logs-controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.logs-controls input[type="text"] {
-    padding: 8px;
-    border: none;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.9);
-    min-width: 200px;
-}
-
-.logs-controls button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    background: #3498db;
+.logs-controls-compact button {
+    padding: 6px 10px;
+    border: 1px solid #6c757d;
+    border-radius: 3px;
+    background: #6c757d;
     color: white;
     cursor: pointer;
+    font-size: 12px;
+}
+
+.logs-controls-compact button:hover {
+    background: #5a6268;
+    border-color: #545b62;
+}
+
+.logs-stats-inline {
+    margin-left: auto;
+    font-size: 11px;
+    color: #6c757d;
     white-space: nowrap;
 }
 
-.logs-controls button:hover {
-    background: #2980b9;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.filter-group label {
-    font-weight: bold;
+.search-status {
+    padding: 6px 12px;
+    background: #e8f5e8;
+    border-radius: 3px;
+    margin-bottom: 8px;
     font-size: 12px;
-    color: white;
-    margin: 0;
-}
-
-.filter-group select,
-.filter-group input {
-    padding: 6px;
-    border: 1px solid #bdc3c7;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.9);
-    min-width: 120px;
-}
-
-.logs-stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    font-size: 14px;
-    flex-wrap: wrap;
+    color: #27ae60;
+    border: 1px solid #c3e6cb;
 }
 
 .logs-table-container {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: auto; /* Allow both horizontal and vertical scrolling */
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: auto;
     background: white;
-    height: calc(85vh - var(--header-height, 280px)); /* Reduced from 95% to 85% to prevent page scrollbar */
-    min-height: 400px; /* Minimum height fallback */
+    height: calc(90vh - var(--header-height, 200px));
+    min-height: 450px;
 }
 
 .logs-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px; /* Ensure table has minimum width to show all columns */
+    min-width: 800px;
 }
 
 .logs-table th {
-    background: rgba(52, 73, 94, 0.5); /* Reduced opacity by half for better contrast */
-    color: white;
-    padding: 12px 8px;
+    background: #f8f9fa;
+    color: #495057;
+    padding: 8px 6px;
     text-align: left;
-    font-weight: bold;
+    font-weight: 500;
+    font-size: 12px;
+    border-bottom: 2px solid #dee2e6;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1639,21 +1573,23 @@ td[style*="#abd6ff"] {
 }
 
 .logs-table th:hover {
-    background: rgba(44, 62, 80, 0.6); /* Reduced opacity for hover state */
+    background: #e9ecef;
 }
 
 .logs-table th .sort-indicator {
-    margin-left: 5px;
-    font-size: 12px;
-    opacity: 0.7;
+    margin-left: 3px;
+    font-size: 10px;
+    opacity: 0.6;
 }
 
 .logs-table th.sorted-asc .sort-indicator::after {
     content: "▲";
+    opacity: 0.8;
 }
 
 .logs-table th.sorted-desc .sort-indicator::after {
     content: "▼";
+    opacity: 0.8;
 }
 
 .logs-table th:not(.sorted-asc):not(.sorted-desc) .sort-indicator::after {
@@ -1770,37 +1706,32 @@ td[style*="#abd6ff"] {
 
 /* Responsive logs styling */
 @media (max-width: 768px) {
-    .logs-controls-row {
+    .logs-controls-compact {
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
+        gap: 6px;
+        padding: 8px;
     }
     
-    .logs-controls-row input[type="text"] {
+    .logs-controls-compact input[type="text"] {
         max-width: none;
         min-width: 100%;
+        order: 1;
     }
     
-    .logs-controls-row .filter-group {
-        min-width: 100px;
+    .logs-controls-compact select {
+        min-width: 100%;
+        order: 2;
     }
     
-    .logs-header {
-        flex-direction: column;
-        align-items: stretch;
+    .logs-controls-compact button {
+        order: 3;
     }
     
-    .logs-controls {
-        justify-content: center;
-    }
-    
-    .logs-stats {
-        flex-direction: column;
-        gap: 5px;
-    }
-    
-    .filter-group {
-        min-width: 100px;
+    .logs-stats-inline {
+        margin-left: 0;
+        order: 4;
+        text-align: center;
     }
     
     /* Ensure table is horizontally scrollable on small screens */

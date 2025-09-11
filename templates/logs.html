@@ -18,48 +18,31 @@
             
             <div id="bw" aria-live="polite">
                 <div class="logs-container">
-                    <div class="logs-controls-row">
+                    <div class="logs-controls-compact">
                         <input type="text" id="searchBox" placeholder="Search logs..." />
-                        
-                        <div class="filter-group">
-                            <label for="levelFilter">Level:</label>
-                            <select id="levelFilter">
-                                <option value="">All Levels</option>
-                                <option value="debug">Debug</option>
-                                <option value="info">Info</option>
-                                <option value="warning">Warning</option>
-                                <option value="error">Error</option>
-                            </select>
+                        <select id="levelFilter" title="Filter by level">
+                            <option value="">All Levels</option>
+                            <option value="debug">Debug</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <select id="moduleFilter" title="Filter by module">
+                            <option value="">All Modules</option>
+                        </select>
+                        <select id="timeFilter" title="Filter by time range">
+                            <option value="">All Time</option>
+                            <option value="1h">Last Hour</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                        </select>
+                        <button id="clearFiltersBtn" style="display: none;" onclick="clearFilters()" title="Clear all filters">Clear</button>
+                        <div class="logs-stats-inline" id="logsStats">
+                            <span id="totalCount">0</span> | <span id="filteredLogs">0</span> | <span id="errorCount">0 err</span> | <span id="warningCount">0 warn</span>
                         </div>
-                        
-                        <div class="filter-group">
-                            <label for="moduleFilter">Module:</label>
-                            <select id="moduleFilter">
-                                <option value="">All Modules</option>
-                            </select>
-                        </div>
-
-                        <div class="filter-group">
-                            <label for="timeFilter">Time Range:</label>
-                            <select id="timeFilter">
-                                <option value="">All Time</option>
-                                <option value="1h">Last Hour</option>
-                                <option value="24h">Last 24 Hours</option>
-                                <option value="7d">Last 7 Days</option>
-                            </select>
-                        </div>
-                        
-                        <button id="clearFiltersBtn" style="display: none;" onclick="clearFilters()">Clear Filters</button>
                     </div>
                     
                     <div id="searchStatus" class="search-status" style="display: none;"></div>
-                    
-                    <div class="logs-stats" id="logsStats">
-                        <span id="totalCount">Total: 0</span>
-                        <span id="filteredLogs">Showing: 0</span>
-                        <span id="errorCount">Errors: 0</span>
-                        <span id="warningCount">Warnings: 0</span>
-                    </div>
                     
                     <div class="logs-table-container">
                         <table class="logs-table">

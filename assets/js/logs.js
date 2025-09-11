@@ -486,8 +486,8 @@ function sortAndRenderLogs() {
 function calculateAndSetTableHeight() {
     // Calculate the height of all elements above the table
     const navigation = document.querySelector('.site-header');
-    const logsControls = document.querySelector('.logs-controls-row');
-    const logsStats = document.querySelector('.logs-stats');
+    const logsControls = document.querySelector('.logs-controls-compact');
+    const searchStatus = document.querySelector('#searchStatus');
     
     let headerHeight = 20; // Base padding
     
@@ -495,10 +495,10 @@ function calculateAndSetTableHeight() {
         headerHeight += navigation.offsetHeight;
     }
     if (logsControls) {
-        headerHeight += logsControls.offsetHeight + 20; // Add margin
+        headerHeight += logsControls.offsetHeight + 12; // Add margin (was 20, now 12 for compact design)
     }
-    if (logsStats) {
-        headerHeight += logsStats.offsetHeight + 20; // Add margin
+    if (searchStatus && searchStatus.style.display !== 'none') {
+        headerHeight += searchStatus.offsetHeight + 8; // Add margin for search status
     }
     
     // Set the CSS custom property
