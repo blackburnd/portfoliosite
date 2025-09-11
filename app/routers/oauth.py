@@ -13,7 +13,6 @@ from auth import (
     is_authorized_user,
     create_access_token,
     require_admin_auth,
-    get_current_user,
     SECRET_KEY,
     ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -629,8 +628,32 @@ async def initiate_google_oauth_authorization(
     try:
         # Check authentication manually to provide better error handling
         try:
-            user = await get_current_user(request)
-        except HTTPException as auth_error:
+            # Get token from cookie (admin users will have this)
+            token = request.cookies.get("access_token")
+            if not token:
+                return JSONResponse(
+                    {"detail": "Authentication required. Please log in again."},
+                    status_code=401
+                )
+            
+            # Verify the token manually
+            from auth import verify_token, is_authorized_user
+            try:
+                payload = verify_token(token)
+                email = payload.get("sub")
+                if not email or not is_authorized_user(email):
+                    return JSONResponse(
+                        {"detail": "Authentication required. "
+                         "Please log in again."},
+                        status_code=401
+                    )
+                user = payload
+            except Exception:
+                return JSONResponse(
+                    {"detail": "Authentication required. Please log in again."},
+                    status_code=401
+                )
+        except Exception:
             return JSONResponse(
                 {"detail": "Authentication required. Please log in again."},
                 status_code=401
