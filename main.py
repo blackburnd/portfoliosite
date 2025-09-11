@@ -23,7 +23,7 @@ from strawberry.fastapi import GraphQLRouter
 
 # --- Local Application Imports ---
 from app.resolvers import schema
-from app.routers import contact, projects, work, showcase
+from app.routers import contact, projects, work, showcase, logs, sql
 from app.routers.oauth import router as google_oauth_router
 from database import close_database, database, init_database
 from log_capture import add_log
@@ -611,6 +611,8 @@ app.include_router(projects.router, tags=["projects"])
 app.include_router(google_oauth_router, tags=["oauth"])
 app.include_router(work.router, tags=["work"])
 app.include_router(showcase.router, tags=["showcase"])
+app.include_router(logs.router, tags=["logs"])
+app.include_router(sql.router, tags=["sql"])
 
 
 @app.get("/", response_class=HTMLResponse)

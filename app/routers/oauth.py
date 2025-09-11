@@ -444,6 +444,43 @@ async def google_oauth_admin_page(
     })
 
 
+@router.get("/admin/google/oauth/status")
+async def get_google_oauth_status(
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get current Google OAuth configuration status"""
+    try:
+        ttw_manager = TTWOAuthManager()
+        config = await ttw_manager.get_google_oauth_config()
+        
+        if config:
+            return JSONResponse({
+                "configured": True,
+                "client_id": config.get("client_id", ""),
+                "client_secret": config.get("client_secret", ""),
+                "redirect_uri": config.get("redirect_uri", "")
+            })
+        else:
+            return JSONResponse({
+                "configured": False,
+                "client_id": "",
+                "client_secret": "",
+                "redirect_uri": ""
+            })
+    except Exception as e:
+        log_with_context(
+            "ERROR", "get_google_oauth_status",
+            f"Failed to get Google OAuth status: {e}"
+        )
+        return JSONResponse({
+            "configured": False,
+            "client_id": "",
+            "client_secret": "",
+            "redirect_uri": "",
+            "error": str(e)
+        })
+
+
 @router.post("/admin/google/oauth/config")
 async def save_google_oauth_config(
     request: Request,
