@@ -103,12 +103,12 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
         for category_key, category_info in CONFIG_CATEGORIES.items():
             categorized_config[category_key] = {
                 "info": category_info,
-                "values": {}
+                "config_values": {}
             }
             for config_key in category_info["configs"]:
-                categorized_config[category_key]["values"][config_key] = (
-                    all_config.get(config_key, "")
-                )
+                config_value = all_config.get(config_key, "")
+                cat_config = categorized_config[category_key]["config_values"]
+                cat_config[config_key] = config_value
 
         logger.info("Configuration data organized successfully")
         

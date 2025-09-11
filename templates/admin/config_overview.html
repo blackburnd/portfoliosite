@@ -39,11 +39,11 @@
             
             <div class="category-preview">
                 <div class="config-count">
-                    {{ category_data.values.items()|length }} settings
+                    {{ category_data.config_values.items()|length }} settings
                 </div>
                 
                 <div class="config-samples">
-                    {% for key, value in category_data.values.items() %}
+                    {% for key, value in category_data.config_values.items() %}
                         {% if loop.index <= 3 %}
                         <div class="config-sample">
                             <span class="config-key">{{ key.replace('_', ' ').title() }}:</span>
@@ -58,9 +58,9 @@
                         {% endif %}
                     {% endfor %}
                     
-                    {% if category_data.values.items()|length > 3 %}
+                    {% if category_data.config_values.items()|length > 3 %}
                     <div class="config-sample more">
-                        <em>+ {{ category_data.values.items()|length - 3 }} more settings...</em>
+                        <em>+ {{ category_data.config_values.items()|length - 3 }} more settings...</em>
                     </div>
                     {% endif %}
                 </div>
@@ -99,7 +99,7 @@
             <div class="stat-number">
                 {% set configured_count = 0 %}
                 {% for category_data in categories.values() %}
-                    {% for value in category_data.values.values() %}
+                    {% for value in category_data.config_values.values() %}
                         {% if value %}
                             {% set configured_count = configured_count + 1 %}
                         {% endif %}
