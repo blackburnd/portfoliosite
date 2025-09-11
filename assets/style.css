@@ -1,3 +1,10 @@
+.log-age {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    min-width: 60px;
+    white-space: nowrap;
+}
 /* Simple, modern, and consistent styling for the portfolio site */
 /* Updated styling for contact forms and admin pages */
 body {
