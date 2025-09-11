@@ -116,6 +116,7 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
             "admin/config_overview.html",
             {
                 "request": request,
+                "config": all_config,  # Pass the config for template usage
                 "categories": categorized_config,
                 "total_configs": len(all_config)
             }
