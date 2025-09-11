@@ -1398,6 +1398,95 @@ async def initiate_linkedin_oauth_authorization(
         }, status_code=500)
 
 
+@router.get("/admin/linkedin/oauth/profile-data")
+async def fetch_linkedin_profile_data(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Fetch real profile data from LinkedIn APIs using stored OAuth tokens"""
+    try:
+        ttw_manager = TTWOAuthManager()
+        
+        # Get LinkedIn connection (which includes tokens)
+        connection = await ttw_manager.get_linkedin_connection()
+        
+        if not connection or not connection.get('access_token'):
+            return JSONResponse({
+                "status": "error",
+                "message": "No active LinkedIn OAuth token found. Please authorize first."
+            }, status_code=401)
+        
+        access_token = connection['access_token']
+        granted_scopes = connection.get('granted_scopes', [])
+        
+        # Prepare data structure for response
+        profile_data = {}
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json"
+        }
+        
+        import httpx
+        async with httpx.AsyncClient() as client:
+            # Fetch basic profile information
+            if any(scope in granted_scopes for scope in ['profile', 'openid']):
+                try:
+                    profile_response = await client.get(
+                        "https://api.linkedin.com/v2/me",
+                        headers=headers
+                    )
+                    if profile_response.status_code == 200:
+                        profile = profile_response.json()
+                        profile_data["basic_profile"] = profile
+                except Exception as e:
+                    log_with_context(
+                        "WARNING", "fetch_linkedin_profile_data",
+                        f"Failed to fetch basic profile: {e}",
+                        request
+                    )
+            
+            # Check if email access is available
+            if "email" in granted_scopes:
+                try:
+                    email_response = await client.get(
+                        "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+                        headers=headers
+                    )
+                    if email_response.status_code == 200:
+                        email_data = email_response.json()
+                        profile_data["email_access"] = email_data
+                except Exception as e:
+                    log_with_context(
+                        "WARNING", "fetch_linkedin_profile_data",
+                        f"Failed to fetch email: {e}",
+                        request
+                    )
+        
+        log_with_context(
+            "INFO", "fetch_linkedin_profile_data",
+            f"Successfully fetched LinkedIn profile data for admin: {admin.get('email')}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "success",
+            "data": profile_data,
+            "granted_scopes": granted_scopes
+        })
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "fetch_linkedin_profile_data",
+            f"Failed to fetch LinkedIn profile data: {e}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to fetch LinkedIn profile data: {str(e)}"
+        }, status_code=500)
+
 
 @router.get("/admin/linkedin/oauth/callback")
 async def linkedin_oauth_callback(request: Request, code: str, state: str):
