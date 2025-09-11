@@ -362,7 +362,6 @@ class TTWOAuthManager:
             expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
             
             # Extract profile info
-            linkedin_profile_id = profile_data.get("id")
             profile_name = None
             if profile_data.get("localizedFirstName") or profile_data.get("localizedLastName"):
                 profile_name = f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
@@ -374,16 +373,14 @@ class TTWOAuthManager:
             from database import PORTFOLIO_ID
             query = """
                 INSERT INTO linkedin_oauth_connections 
-                (portfolio_id,  linkedin_profile_id, 
-                 linkedin_profile_name, access_token, refresh_token, 
+                (portfolio_id, admin_email, access_token, refresh_token, 
                  token_expires_at, granted_scopes, requested_scopes)
-                VALUES (:portfolio_id, : :profile_id, :profile_name, 
-                       :access_token, :refresh_token, :expires_at, 
-                       :granted_scopes, :requested_scopes)
+                VALUES (:portfolio_id, :admin_email, :access_token, 
+                       :refresh_token, :expires_at, :granted_scopes, 
+                       :requested_scopes)
                 ON CONFLICT (portfolio_id) 
                 DO UPDATE SET 
-                    linkedin_profile_id = EXCLUDED.linkedin_profile_id,
-                    linkedin_profile_name = EXCLUDED.linkedin_profile_name,
+                    admin_email = EXCLUDED.admin_email,
                     access_token = EXCLUDED.access_token,
                     refresh_token = EXCLUDED.refresh_token,
                     token_expires_at = EXCLUDED.token_expires_at,
@@ -395,9 +392,7 @@ class TTWOAuthManager:
             
             await database.execute(query, {
                 "portfolio_id": PORTFOLIO_ID,
-                "system": "system",  # Placeholder until schema updated
-                "profile_id": linkedin_profile_id,
-                "profile_name": profile_name,
+                "admin_email": profile_name,  # Use profile name as email fallback
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "expires_at": expires_at,
@@ -423,8 +418,8 @@ class TTWOAuthManager:
         """Get LinkedIn connection for current portfolio"""
         from database import PORTFOLIO_ID
         query = """
-            SELECT linkedin_profile_id, linkedin_profile_name, access_token, refresh_token, 
-                   token_expires_at, granted_scopes, requested_scopes, last_sync_at, is_active
+            SELECT admin_email, access_token, refresh_token, 
+                   token_expires_at, granted_scopes, requested_scopes, is_active
             FROM linkedin_oauth_connections 
             WHERE portfolio_id = :portfolio_id AND is_active = true
         """
@@ -434,26 +429,37 @@ class TTWOAuthManager:
             return None
         
         try:
+            refresh_token = result["refresh_token"] or None
+            granted_scopes = []
+            if result["granted_scopes"]:
+                granted_scopes = result["granted_scopes"].split()
+            requested_scopes = []
+            if result["requested_scopes"]:
+                requested_scopes = result["requested_scopes"].split()
+                
             connection = {
-                "linkedin_profile_id": result["linkedin_profile_id"],
-                "linkedin_profile_name": result["linkedin_profile_name"],
+                "admin_email": result["admin_email"],
                 "access_token": result["access_token"],
-                "refresh_token": result["refresh_token"] if result["refresh_token"] else None,
+                "refresh_token": refresh_token,
                 "expires_at": result["token_expires_at"],
-                "granted_scopes": result["granted_scopes"].split() if result["granted_scopes"] else [],
-                "requested_scopes": result["requested_scopes"].split() if result["requested_scopes"] else [],
-                "last_sync_at": result["last_sync_at"],
+                "granted_scopes": granted_scopes,
+                "requested_scopes": requested_scopes,
                 "is_active": result["is_active"]
             }
             
             # Check if token needs refresh
-            if connection["expires_at"] and datetime.utcnow() >= connection["expires_at"]:
+            expires_at = connection["expires_at"]
+            if expires_at and datetime.utcnow() >= expires_at:
                 if connection["refresh_token"]:
                     logger.info("Refreshing LinkedIn token")
-                    await self._refresh_linkedin_token(connection["refresh_token"])
+                    await self._refresh_linkedin_token(
+                        connection["refresh_token"]
+                    )
                     return await self.get_linkedin_connection()
                 else:
-                    logger.warning("LinkedIn token expired and no refresh token available")
+                    logger.warning(
+                        "LinkedIn token expired and no refresh token available"
+                    )
                     return None
             
             return connection
