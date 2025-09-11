@@ -66,23 +66,23 @@
         const query = `
             query GetPortfolio {
                 portfolio {
-                    work_experience {
+                    workExperience {
                         id
                         company
                         position
                         location
-                        start_date
-                        end_date
+                        startDate
+                        endDate
                         description
-                        is_current
-                        company_url
+                        isCurrent
+                        companyUrl
                     }
                     projects {
                         id
                         title
                         description
                         url
-                        image_url
+                        imageUrl
                         technologies
                     }
                 }
@@ -121,12 +121,12 @@
                 let html = '';
 
                 // Work Experience Section
-                if (portfolio.work_experience && portfolio.work_experience.length > 0) {
+                if (portfolio.workExperience && portfolio.workExperience.length > 0) {
                     html += '<div class="work-section"><h2>Work Experience</h2>';
-                    portfolio.work_experience.forEach(work => {
-                        const startDate = work.start_date ? new Date(work.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
-                        const endDate = work.is_current ? 'Present' : (work.end_date ? new Date(work.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown');
-                        const companyLink = work.company_url ? `<a href="${work.company_url}" target="_blank">${work.company}</a>` : work.company;
+                    portfolio.workExperience.forEach(work => {
+                        const startDate = work.startDate ? new Date(work.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
+                        const endDate = work.isCurrent ? 'Present' : (work.endDate ? new Date(work.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown');
+                        const companyLink = work.companyUrl ? `<a href="${work.companyUrl}" target="_blank">${work.company}</a>` : work.company;
                         
                         html += `
                             <div class="work-item">
