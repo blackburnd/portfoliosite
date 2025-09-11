@@ -5,6 +5,41 @@
     min-width: 60px;
     white-space: nowrap;
 }
+
+/* Error and Info Message Styling */
+.error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.error h3 {
+    margin-top: 0;
+    color: #a22;
+}
+
+.info {
+    background: #e8f4fd;
+    border: 1px solid #b8daff;
+    color: #004085;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.loading {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+    text-align: center;
+}
+
 /* Simple, modern, and consistent styling for the portfolio site */
 /* Updated styling for contact forms and admin pages */
 body {

@@ -71,17 +71,18 @@
                         company
                         position
                         location
-                        startDate
-                        endDate
+                        startDate: start_date
+                        endDate: end_date
                         description
-                        isCurrent
-                        companyUrl
+                        isCurrent: is_current
+                        companyUrl: company_url
                     }
                     projects {
                         id
                         title
                         description
                         url
+                        imageUrl: image_url
                         technologies
                     }
                 }
@@ -96,19 +97,25 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({ query })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const result = await response.json();
                 
                 if (result.errors) {
-                    throw new Error(result.errors[0].message);
+                    console.error('GraphQL errors:', result.errors);
+                    throw new Error(result.errors[0].message || 'GraphQL query failed');
                 }
 
-                const portfolio = result.data.portfolio;
+                const portfolio = result.data?.portfolio;
                 if (!portfolio) {
-                    throw new Error('No portfolio data found');
+                    throw new Error('No portfolio data found in response');
                 }
 
                 let html = '';
@@ -155,14 +162,21 @@
                 }
 
                 if (!html) {
-                    html = '<div class="error">No work experience or projects found.</div>';
+                    html = '<div class="info">No work experience or projects found.</div>';
                 }
 
                 container.innerHTML = html;
 
             } catch (error) {
                 console.error('Error loading work data:', error);
-                container.innerHTML = `<div class="error">Error loading work data: ${error.message}</div>`;
+                const errorMessage = error.message || 'Unknown error occurred';
+                container.innerHTML = `
+                    <div class="error">
+                        <h3>Unable to load work data</h3>
+                        <p>${errorMessage}</p>
+                        <p><small>Please try refreshing the page or contact support if the problem persists.</small></p>
+                    </div>
+                `;
             }
         }
 
