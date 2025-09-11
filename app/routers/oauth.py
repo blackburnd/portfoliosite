@@ -458,21 +458,43 @@ async def auth_callback(request: Request):
                     }}, 1000);
                     
                     function closeWindow() {{
-                        if (window.opener) {{
-                            // Send the token to the parent window
-                            window.opener.postMessage({{
-                                type: 'OAUTH_SUCCESS',
-                                token: '{access_token}',
-                                user: {{
-                                    email: '{email}'
-                                }}
-                            }}, window.location.origin);
-                            window.close();
-                        }} else {{ 
-                            // If not in popup, set cookie and redirect
-                            document.cookie = 'access_token={access_token}; path=/; max-age={int(ACCESS_TOKEN_EXPIRE_MINUTES * 60)}; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
-                            window.location.href = '/workadmin'; 
+                        // Always try to send token to parent window if it exists
+                        if (window.opener && !window.opener.closed) {{
+                            try {{
+                                window.opener.postMessage({{
+                                    type: 'OAUTH_SUCCESS',
+                                    token: '{access_token}',
+                                    user: {{
+                                        email: '{email}'
+                                    }}
+                                }}, window.location.origin);
+                            }} catch (e) {{
+                                console.log('Could not send message to parent:', e);
+                            }}
                         }}
+                        
+                        // Set cookie regardless (for backup)
+                        try {{
+                            document.cookie = 'access_token={access_token}; path=/; max-age={int(ACCESS_TOKEN_EXPIRE_MINUTES * 60)}; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
+                        }} catch (e) {{
+                            console.log('Could not set cookie:', e);
+                        }}
+                        
+                        // Always try to close the window
+                        try {{
+                            window.close();
+                        }} catch (e) {{
+                            console.log('Could not close window:', e);
+                            // If we can't close (maybe not a popup), redirect as fallback
+                            window.location.href = '/workadmin';
+                        }}
+                        
+                        // Fallback: if window didn't close after a short delay, redirect
+                        setTimeout(() => {{
+                            if (!window.closed) {{
+                                window.location.href = '/workadmin';
+                            }}
+                        }}, 500);
                     }}
                     
                     // Also allow manual closing by clicking anywhere
