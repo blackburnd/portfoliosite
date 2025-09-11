@@ -1401,3 +1401,108 @@ async def view_oauth_tokens_graphql(
         }
         
         return JSONResponse(error_response, status_code=500)
+
+
+@router.get("/admin/google/oauth/profile")
+async def fetch_google_profile_data(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Fetch real profile data from Google APIs using stored OAuth tokens"""
+    try:
+        from database import get_google_oauth_tokens, get_portfolio_id
+        import httpx
+        
+        # Get OAuth token for this portfolio
+        token_data = await get_google_oauth_tokens(
+            portfolio_id=get_portfolio_id()
+        )
+        
+        if not token_data or not token_data.get('access_token'):
+            return JSONResponse({
+                "status": "error",
+                "message": "No active Google OAuth token found. Please authorize first."
+            }, status_code=401)
+        
+        access_token = token_data['access_token']
+        granted_scopes = token_data.get('granted_scopes', '').split() if token_data.get('granted_scopes') else []
+        
+        # Prepare data structure for response
+        profile_data = {}
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            # Fetch basic profile information (userinfo API)
+            if any(scope in granted_scopes for scope in ['email', 'profile', 'openid']):
+                try:
+                    userinfo_response = await client.get(
+                        "https://www.googleapis.com/oauth2/v2/userinfo",
+                        headers=headers
+                    )
+                    if userinfo_response.status_code == 200:
+                        userinfo = userinfo_response.json()
+                        profile_data.update({
+                            "id": userinfo.get("id"),
+                            "email": userinfo.get("email"),
+                            "verified_email": userinfo.get("verified_email"),
+                            "name": userinfo.get("name"),
+                            "given_name": userinfo.get("given_name"),
+                            "family_name": userinfo.get("family_name"),
+                            "picture": userinfo.get("picture"),
+                            "locale": userinfo.get("locale")
+                        })
+                except Exception as e:
+                    log_with_context(
+                        "WARNING", "fetch_google_profile_data",
+                        f"Failed to fetch userinfo: {e}",
+                        request
+                    )
+            
+            # Check Gmail access (we don't fetch actual emails, just verify access)
+            if "https://www.googleapis.com/auth/gmail.send" in granted_scopes:
+                try:
+                    gmail_profile_response = await client.get(
+                        "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+                        headers=headers
+                    )
+                    if gmail_profile_response.status_code == 200:
+                        gmail_profile = gmail_profile_response.json()
+                        profile_data["gmail_access"] = {
+                            "email_address": gmail_profile.get("emailAddress"),
+                            "messages_total": gmail_profile.get("messagesTotal"),
+                            "threads_total": gmail_profile.get("threadsTotal")
+                        }
+                except Exception as e:
+                    log_with_context(
+                        "WARNING", "fetch_google_profile_data",
+                        f"Failed to fetch Gmail profile: {e}",
+                        request
+                    )
+        
+        log_with_context(
+            "INFO", "fetch_google_profile_data",
+            f"Successfully fetched Google profile data for admin: {admin.get('email')}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "success",
+            "data": profile_data,
+            "granted_scopes": granted_scopes
+        })
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "fetch_google_profile_data",
+            f"Failed to fetch Google profile data: {e}",
+            request
+        )
+        
+        return JSONResponse({
+            "status": "error",
+            "message": f"Failed to fetch Google profile data: {str(e)}"
+        }, status_code=500)

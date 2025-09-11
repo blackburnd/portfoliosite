@@ -576,10 +576,21 @@ class GoogleOAuthAdmin {
             }
         }
 
-        // Gmail send data remains static since we don't fetch Gmail-specific data
+        // Gmail data - now shows real data if available
         const gmailData = document.getElementById('gmail-send-data');
         if (gmailData) {
-            gmailData.innerHTML = 'Gmail API access enabled for sending emails';
+            if (data.gmail_access) {
+                let gmailHtml = `Gmail Account: ${data.gmail_access.email_address}`;
+                if (data.gmail_access.messages_total !== undefined) {
+                    gmailHtml += `<br>Total Messages: ${data.gmail_access.messages_total}`;
+                }
+                if (data.gmail_access.threads_total !== undefined) {
+                    gmailHtml += `<br>Total Threads: ${data.gmail_access.threads_total}`;
+                }
+                gmailData.innerHTML = gmailHtml;
+            } else {
+                gmailData.innerHTML = 'Gmail API access enabled for sending emails';
+            }
         }
     }
 
