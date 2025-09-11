@@ -62,8 +62,14 @@ class Book:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def portfolio(self, portfolio_id: str = "daniel-blackburn") -> Optional[Portfolio]:
+    async def portfolio(self, portfolio_id: Optional[str] = None) -> Optional[Portfolio]:
         """Get portfolio data with work experience and projects"""
+        from database import get_portfolio_id
+        
+        # Use the configured portfolio ID if none provided
+        if portfolio_id is None:
+            portfolio_id = get_portfolio_id()
+            
         data = await PortfolioDatabase.get_portfolio(portfolio_id)
         if not data:
             return None

@@ -135,7 +135,7 @@ class PortfolioDatabase:
                email, phone, vcard, resume_url, resume_download,
                github, twitter, skills, created_at, updated_at
         FROM portfolios
-        WHERE id = :portfolio_id
+        WHERE portfolio_id = :portfolio_id
         """
 
         portfolio = await database.fetch_one(
