@@ -47,6 +47,7 @@
     transition: all 0.2s ease;
     border-radius: 4px;
     min-height: 20px;
+    padding: 2px;
 }
 
 .editable-content:hover {
@@ -54,10 +55,29 @@
     outline: 2px dashed rgba(0, 123, 255, 0.3);
 }
 
+.editable-content:hover::after {
+    content: "Click to edit";
+    position: absolute;
+    top: -25px;
+    right: 0;
+    background: rgba(0, 123, 255, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: normal;
+    white-space: nowrap;
+    z-index: 100;
+}
+
 .editable-content.editing {
     background: rgba(0, 123, 255, 0.05);
     outline: 2px solid rgba(0, 123, 255, 0.5);
     cursor: default;
+}
+
+.editable-content.editing::after {
+    display: none;
 }
 
 .edit-controls {
@@ -68,7 +88,7 @@
     gap: 5px;
 }
 
-.editable-content:hover .edit-controls,
+/* Only show edit controls when editing (save/cancel buttons) */
 .editable-content.editing .edit-controls {
     display: flex;
 }

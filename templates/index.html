@@ -17,30 +17,12 @@
             <div class="hero-content">
                 <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_title">
                     {{ config.get('home_hero_title', 'Building Better Solutions Through Experience') }}
-                    {% if user_authenticated %}
-                    <div class="edit-controls">
-                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                    </div>
-                    {% endif %}
                 </h2>
                 <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_description">
                     {{ config.get('home_hero_description', 'With experience that expands throughout University IT departments, corporate banking environments, and agile remote startup companies, I have learned that foundational knowledge combined with effective communication creates a lasting impact. I thrive by embracing continuous growth and approaching every challenge with the mindset of a lifelong learner.') }}
-                    {% if user_authenticated %}
-                    <div class="edit-controls">
-                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                    </div>
-                    {% endif %}
                 </p>
-                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_tagline">
-                    <em>{{ config.get('home_hero_tagline', 'Building is easy. Building better is rewarding. Evidence-based performance enhancements are the ultimate motivator.') }}</em>
-                    {% if user_authenticated %}
-                    <div class="edit-controls">
-                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                    </div>
-                    {% endif %}
+                                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_tagline">
+                    <em>{{ config.get('home_hero_tagline', 'Innovation through collaboration') }}</em>
                 </p>
             </div>
         </div>
@@ -48,81 +30,33 @@
             <!-- About Me Section -->
             <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_title">
                 {{ config.get('about_section_title', 'About Me') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </h3>
             <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_1">
                 {{ config.get('about_section_content_1', 'With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career has taken me through diverse environments where I\'ve learned that the best solutions often require looking beyond the obvious tools.') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </p>
             
             <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_2">
                 {{ config.get('about_section_content_2', 'I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and validate confidence through comprehensive test coverage. Practicing continuous improvement with clear communication, kindness, and empathy helps me work smarter and more sustainably. Equally important is appreciating the strengths and limitations of my environment and team, which provides invaluable perspective.') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </p>
 
             <!-- Current Focus Section -->
             <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_title">
                 {{ config.get('focus_section_title', 'Embracing the AI Revolution') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </h3>
             <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_1">
                 {{ config.get('focus_section_content_1', 'Things are changing fast, and it\'s an incredibly exciting time to be skilled in software development—especially when you have a clear sense of what \'correct\' looks like. I think of using AI as a pair programmer like working with a mischievous djinn: it\'s resourceful but often unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide surprisingly valuable solutions.') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </p>
 
             <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_2">
                 {{ config.get('focus_section_content_2', 'With the right constraints, I\'ve found AI can help create some genuinely useful solutions, but only when kept on a short leash. Letting it run unchecked quickly turns into a new kind of frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I\'m excited to keep exploring how to use AI more effectively; it\'s a tool I\'m still learning from, and the journey itself is part of the reward.') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </p>
 
             <!-- Call to Action Section -->
             <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_title">
                 {{ config.get('cta_section_title', 'Let\'s Work Together') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </h3>
             <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_content">
                 {{ config.get('cta_section_content', 'Ready to discuss technical challenges and solutions?') }}
-                {% if user_authenticated %}
-                <div class="edit-controls">
-                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-                </div>
-                {% endif %}
             </p>
             <p><strong><a href="/work/">View My Technical Showcase →</a></strong><br>
             <em>(Featured case studies and technical implementations)</em></p>
@@ -141,19 +75,18 @@ let originalContent = {};
 document.addEventListener('DOMContentLoaded', function() {
     const editableElements = document.querySelectorAll('.editable-content');
     
-    // Add edit controls to each editable element
+    // Add click-to-edit functionality to each editable element
     editableElements.forEach(element => {
-        // Only add controls if they don't already exist
-        if (!element.querySelector('.edit-controls')) {
-            const controls = document.createElement('div');
-            controls.className = 'edit-controls';
-            const editBtn = document.createElement('button');
-            editBtn.className = 'edit-btn';
-            editBtn.textContent = 'Edit';
-            editBtn.onclick = function() { startEdit(element); };
-            controls.appendChild(editBtn);
-            element.appendChild(controls);
-        }
+        element.addEventListener('click', function(e) {
+            // Don't start editing if already editing or if clicking on controls
+            if (element.classList.contains('editing') || e.target.closest('.edit-controls')) {
+                return;
+            }
+            startEdit(element);
+        });
+        
+        // Add hover cursor styling
+        element.style.cursor = 'pointer';
     });
 });
 
@@ -251,16 +184,6 @@ async function saveContent(button) {
                 element.innerHTML = newValue;
             }
             
-            // Recreate edit controls
-            const newControls = document.createElement('div');
-            newControls.className = 'edit-controls';
-            const editBtn = document.createElement('button');
-            editBtn.className = 'edit-btn';
-            editBtn.textContent = 'Edit';
-            editBtn.onclick = function() { startEdit(this.parentElement); };
-            newControls.appendChild(editBtn);
-            element.appendChild(newControls);
-            
             // Show success feedback
             showFeedback('Content updated successfully!', 'success');
         } else {
@@ -299,16 +222,6 @@ function cancelEdit(button) {
     } else {
         element.innerHTML = originalText;
     }
-    
-    // Recreate edit controls
-    const newControls = document.createElement('div');
-    newControls.className = 'edit-controls';
-    const editBtn = document.createElement('button');
-    editBtn.className = 'edit-btn';
-    editBtn.textContent = 'Edit';
-    editBtn.onclick = function() { startEdit(element); };
-    newControls.appendChild(editBtn);
-    element.appendChild(newControls);
 }
 
 function showFeedback(message, type) {
