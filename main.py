@@ -750,3 +750,13 @@ async def read_root(request: Request):
         "config": config
     })
 
+
+@app.get("/privacy/", response_class=HTMLResponse)
+async def privacy_policy(request: Request):
+    """Privacy Policy page"""
+    return templates.TemplateResponse("privacy.html", {
+        "request": request,
+        "title": "Privacy Policy - Daniel Blackburn",
+        "current_page": "privacy"
+    })
+
