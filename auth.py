@@ -135,7 +135,7 @@ async def require_admin_auth(
 ) -> dict:
     """Dependency to require admin authentication using database config"""
     user_info = await get_current_user(request, credentials)
-    email = user_info.get("email")
+    email = user_info.get("sub")  # JWT payload uses 'sub' not 'email'
     
     if not email:
         raise HTTPException(
