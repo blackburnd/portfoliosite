@@ -1,15 +1,14 @@
 # auth.py - Google OAuth Authentication Module
 import os
-import logging
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 import secrets
+import logging
 
 logger = logging.getLogger(__name__)
-
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
@@ -17,11 +16,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
 # Authorized emails - load from environment as fallback
-import logging
-logger = logging.getLogger(__name__)
-
 authorized_emails_env = os.getenv("AUTHORIZED_EMAILS", "")
-logger.info(f"DEBUG: Raw AUTHORIZED_EMAILS env var: '{authorized_emails_env}'")
+logger.info(f"Raw AUTHORIZED_EMAILS env var: '{authorized_emails_env}'")
 
 if authorized_emails_env:
     AUTHORIZED_EMAILS = [
@@ -31,8 +27,7 @@ if authorized_emails_env:
 else:
     AUTHORIZED_EMAILS = []
 
-logger.info(f"DEBUG: Parsed AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
-
+logger.info(f"Parsed AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
@@ -43,13 +38,8 @@ class AuthenticationError(Exception):
     pass
 
 
-def create_access_token(
-    data: dict, expires_delta: Optional[timedelta] = None
-):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a JWT access token"""
-    import logging
-    logger = logging.getLogger(__name__)
-
     logger.info("=== Token Creation Debug ===")
     logger.info(f"Creating token for data: {data}")
     logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
@@ -59,32 +49,22 @@ def create_access_token(
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
     logger.info(f"Token payload: {to_encode}")
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.info(
-        "Created JWT token (first 50 chars): "
-        f"{encoded_jwt[:50] if encoded_jwt else 'None'}"
-    )
+    logger.info(f"Created JWT token (first 50 chars): {encoded_jwt[:50] if encoded_jwt else 'None'}")
     return encoded_jwt
 
 
 def verify_token(token: str) -> dict:
     """Verify and decode JWT token"""
-    import logging
-    logger = logging.getLogger(__name__)
-
     logger.info("=== Token Verification Debug ===")
     logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
     logger.info(f"SECRET_KEY length: {len(SECRET_KEY) if SECRET_KEY else 0}")
-    logger.info(
-        f"Token to verify (first 50 chars): {token[:50] if token else 'None'}"
-    )
+    logger.info(f"Token to verify (first 50 chars): {token[:50] if token else 'None'}")
 
     try:
         payload = jwt.decode(
@@ -107,14 +87,16 @@ def verify_token(token: str) -> dict:
 
 def is_authorized_user(email: str) -> bool:
     """Check if email is in authorized list"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    logger.info(f"DEBUG: Checking authorization for email: '{email}'")
-    logger.info(f"DEBUG: AUTHORIZED_EMAILS list: {AUTHORIZED_EMAILS}")
-    logger.info(f"DEBUG: Email in list: {email in AUTHORIZED_EMAILS}")
+    logger.info(f"Checking authorization for email: '{email}'")
+    logger.info(f"AUTHORIZED_EMAILS list: {AUTHORIZED_EMAILS}")
+    logger.info(f"Email in list: {email in AUTHORIZED_EMAILS}")
     
     return email in AUTHORIZED_EMAILS
+
+
+async def is_authorized_user_async(email: str) -> bool:
+    """Async version of is_authorized_user - check if email is in authorized list"""
+    return is_authorized_user(email)
 
 
 async def get_current_user(
