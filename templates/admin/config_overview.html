@@ -1,253 +1,443 @@
 {% extends "base.html" %}
 
-{% block title %}Site Configuration{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/assets/style.css">
-{% endblock %}
+{% block title %}Site Configuration - Admin{% endblock %}
 
 {% block content %}
-<div class="config-overview">
-    <div class="config-header">
-        <h1>Site Configuration</h1>
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>🛠️ Site Configuration</h1>
+        <p>Manage all configurable content and settings for your portfolio site</p>
         
-        <div class="config-controls">
-            <button onclick="sortByName()" class="sort-btn">Sort by Name</button>
-            <button onclick="sortByValue()" class="sort-btn">Sort by Value</button>
+        <!-- Diagnostic Button -->
+        <div class="admin-actions">
+            <button onclick="showEnvironmentVars()" class="btn btn-outline">
+                🔍 Show Environment Variables
+            </button>
         </div>
     </div>
-    
-    <!-- Authorized Emails Section -->
-    <div class="authorized-emails-section">
-        <h2>Authorized Admin Emails</h2>
-        <div class="emails-info">
-            <div class="emails-raw">
-                <strong>Raw Environment Variable:</strong>
-                <code>"{{ authorized_emails_raw }}"</code>
+
+    {% if request.query_params.get('bulk_success') %}
+    <div class="alert alert-success">
+        ✅ Successfully updated {{ request.query_params.get('updated', '0') }} configuration values!
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get('error') %}
+    <div class="alert alert-danger">
+        ❌ Error occurred during configuration update. Please try again.
+    </div>
+    {% endif %}
+
+    <div class="config-categories">
+        {% for category_key, category_data in categories.items() %}
+        <div class="config-category-card">
+            <div class="category-header">
+                <div class="category-icon">{{ category_data.info.icon }}</div>
+                <div class="category-title">
+                    <h3>{{ category_data.info.title }}</h3>
+                    <p>{{ category_data.info.description }}</p>
+                </div>
+                <div class="category-actions">
+                    <a href="/admin/config/{{ category_key }}" class="btn btn-primary">
+                        Configure
+                    </a>
+                </div>
             </div>
-            <div class="emails-parsed">
-                <strong>Parsed Email List ({{ authorized_emails|length }} total):</strong>
-                <ul>
-                    {% for email in authorized_emails %}
-                    <li><code>{{ email }}</code></li>
-                    {% else %}
-                    <li><em>No authorized emails found</em></li>
+            
+            <div class="category-preview">
+                <div class="config-count">
+                    {{ category_data.config_values.items()|length }} settings
+                </div>
+                
+                <div class="config-samples">
+                    {% for key, value in category_data.config_values.items() %}
+                        {% if loop.index <= 3 %}
+                        <div class="config-sample">
+                            <span class="config-key">{{ key.replace('_', ' ').title() }}:</span>
+                            <span class="config-value">
+                                {% if value %}
+                                    {{ value[:50] }}{% if value|length > 50 %}...{% endif %}
+                                {% else %}
+                                    <em>Not set</em>
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
                     {% endfor %}
-                </ul>
+                    
+                    {% if category_data.config_values.items()|length > 3 %}
+                    <div class="config-sample more">
+                        <em>+ {{ category_data.config_values.items()|length - 3 }} more settings...</em>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="config-list" id="configList">
-        {% for key, value in config.items() %}
-        <div class="config-item">
-            <div class="config-key">{{ key }}</div>
-            {% if user_authenticated %}
-            <div class="config-value editable-content" data-config-key="{{ key }}">
-                {{ value }}
-            </div>
-            {% else %}
-            <div class="config-value">{{ value }}</div>
-            {% endif %}
         </div>
         {% endfor %}
     </div>
+
+    <div class="admin-actions">
+        <div class="action-group">
+            <h4>🔧 Advanced Actions</h4>
+            <button class="btn btn-outline" onclick="exportConfig()">
+                📥 Export Configuration
+            </button>
+            <button class="btn btn-outline" onclick="importConfig()">
+                📤 Import Configuration
+            </button>
+            <button class="btn btn-danger" onclick="resetAllConfig()">
+                🗑️ Reset All Settings
+            </button>
+        </div>
+    </div>
+
+    <div class="config-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_configs }}</div>
+            <div class="stat-label">Total Configurations</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">{{ categories|length }}</div>
+            <div class="stat-label">Configuration Categories</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">
+                {% set configured_count = 0 %}
+                {% for category_data in categories.values() %}
+                    {% for value in category_data.config_values.values() %}
+                        {% if value %}
+                            {% set configured_count = configured_count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {{ configured_count }}
+            </div>
+            <div class="stat-label">Configured Settings</div>
+        </div>
+    </div>
 </div>
 
-{% if user_authenticated %}
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.admin-header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.admin-header p {
+    color: #7f8c8d;
+    font-size: 1.1em;
+}
+
+.config-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.config-category-card {
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    background: white;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.config-category-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e8ed;
+}
+
+.category-icon {
+    font-size: 2em;
+    margin-right: 15px;
+}
+
+.category-title {
+    flex: 1;
+}
+
+.category-title h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+}
+
+.category-title p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.category-actions .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+    border: 1px solid #3498db;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    border-color: #2980b9;
+}
+
+.category-preview {
+    padding: 20px;
+}
+
+.config-count {
+    font-weight: 600;
+    color: #3498db;
+    margin-bottom: 15px;
+}
+
+.config-samples {
+    margin-top: 10px;
+}
+
+.config-sample {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.config-sample:last-child {
+    border-bottom: none;
+}
+
+.config-key {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9em;
+}
+
+.config-value {
+    color: #7f8c8d;
+    font-size: 0.85em;
+    text-align: right;
+    max-width: 200px;
+    word-break: break-word;
+}
+
+.config-sample.more {
+    justify-content: center;
+    font-style: italic;
+    color: #95a5a6;
+}
+
+.admin-actions {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.action-group h4 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+}
+
+.btn-outline {
+    background: white;
+    color: #3498db;
+    border: 1px solid #3498db;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-outline:hover {
+    background: #3498db;
+    color: white;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+    border: 1px solid #e74c3c;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+.config-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #3498db;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 1px;
+}
+
+.alert {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+</style>
+
 <script>
-let originalContent = {};
+function exportConfig() {
+    // TODO: Implement configuration export
+    alert('Configuration export feature coming soon!');
+}
 
-// Add click event listeners to editable content
-document.addEventListener('DOMContentLoaded', function() {
-    const editableElements = document.querySelectorAll('.editable-content');
-    
-    // Add click-to-edit functionality to each editable element
-    editableElements.forEach(element => {
-        element.addEventListener('click', function(e) {
-            // Don't start editing if already editing or if clicking on controls
-            if (element.classList.contains('editing') || e.target.closest('.edit-controls')) {
-                return;
-            }
-            startEdit(element);
-        });
-        
-        // Add hover cursor styling
-        element.style.cursor = 'pointer';
-    });
-});
+function importConfig() {
+    // TODO: Implement configuration import
+    alert('Configuration import feature coming soon!');
+}
 
-function startEdit(element) {
-    const configKey = element.getAttribute('data-config-key');
-    
-    // Get current text content directly from the element (excluding any existing controls)
-    const clone = element.cloneNode(true);
-    const existingControls = clone.querySelector('.edit-controls');
-    if (existingControls) {
-        existingControls.remove();
-    }
-    const currentText = clone.textContent.trim();
-    
-    // Store original content for canceling
-    originalContent[configKey] = currentText;
-    
-    // Add editing class
-    element.classList.add('editing');
-    
-    // Create editing interface
-    const editingHTML = `
-        <input type="text" class="content-input" value="${currentText}">
-        <div class="edit-controls">
-            <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-            <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-        </div>`;
-    
-    element.innerHTML = editingHTML;
-    
-    // Focus the input
-    const input = element.querySelector('.content-input');
-    if (input) {
-        input.focus();
-        input.select();
-        
-        // Add keyboard event listeners
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const saveBtn = element.querySelector('.save-btn');
-                if (saveBtn) saveContent(saveBtn);
-            } else if (e.key === 'Escape') {
-                const cancelBtn = element.querySelector('.cancel-btn');
-                if (cancelBtn) cancelEdit(cancelBtn);
-            }
-        });
+function resetAllConfig() {
+    if (confirm('Are you sure you want to reset ALL configuration settings? This cannot be undone.')) {
+        // TODO: Implement reset all functionality
+        alert('Reset all functionality coming soon!');
     }
 }
 
-async function saveContent(button) {
-    const element = button.closest('.editable-content');
-    if (!element) {
-        console.error('Could not find editable element for button:', button);
-        return;
-    }
-    
-    const input = element.querySelector('.content-input');
-    if (!input) {
-        console.error('Could not find input field');
-        return;
-    }
-    
-    const configKey = element.getAttribute('data-config-key');
-    const newValue = input.value.trim();
-    
-    // Disable button during save
-    button.textContent = 'Saving...';
-    button.disabled = true;
-    
+async function showEnvironmentVars() {
     try {
-        const response = await fetch('/admin/update-content', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                key: configKey,
-                value: newValue
-            })
-        });
+        const response = await fetch('/admin/config/env-vars');
+        const data = await response.json();
         
-        const result = await response.json();
-        
-        if (result.success) {
-            // Update the display content
-            element.classList.remove('editing');
-            element.innerHTML = newValue;
+        if (data.status === 'success') {
+            const envData = data.data;
             
-            // Show success feedback
-            showFeedback('Content updated successfully!', 'success');
+            // Create a formatted display
+            let content = `
+                <h3>🔍 Environment Variables Diagnostic</h3>
+                <p><strong>Timestamp:</strong> ${envData.timestamp}</p>
+                
+                <h4>🔐 Authentication Diagnosis</h4>
+                <ul>
+                    <li><strong>Raw AUTHORIZED_EMAILS:</strong> "${envData.auth_diagnosis.raw_authorized_emails}"</li>
+                    <li><strong>Parsed Email List:</strong> [${envData.auth_diagnosis.parsed_authorized_emails.join(', ')}]</li>
+                    <li><strong>Parsed Count:</strong> ${envData.auth_diagnosis.parsed_count}</li>
+                    <li><strong>Split Method:</strong> ${envData.auth_diagnosis.split_method}</li>
+                </ul>
+                
+                <h4>🔑 Key Environment Variables</h4>
+                <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">`;
+            
+            for (const [key, value] of Object.entries(envData.key_env_vars)) {
+                content += `${key}=${value}\n`;
+            }
+            
+            content += `</pre>
+                
+                <h4>📋 All Environment Variables</h4>
+                <details>
+                    <summary>Click to expand (${Object.keys(envData.all_env_vars).length} variables)</summary>
+                    <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;">`;
+            
+            for (const [key, value] of Object.entries(envData.all_env_vars)) {
+                content += `${key}=${value}\n`;
+            }
+            
+            content += `</pre>
+                </details>
+            `;
+            
+            // Create modal popup
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+                align-items: center; justify-content: center;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white; padding: 20px; border-radius: 8px; 
+                max-width: 80%; max-height: 80%; overflow-y: auto;
+                position: relative;
+            `;
+            
+            modalContent.innerHTML = content + `
+                <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" 
+                        style="position: absolute; top: 10px; right: 15px; 
+                               background: none; border: none; font-size: 20px; cursor: pointer;">
+                    ×
+                </button>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
         } else {
-            throw new Error(result.message);
+            alert('Error loading environment variables: ' + data.message);
         }
     } catch (error) {
-        console.error('Save failed:', error);
-        showFeedback('Failed to save: ' + error.message, 'error');
-        
-        // Restore original content on error
-        cancelEdit(button.parentElement.querySelector('.cancel-btn'));
-    } finally {
-        button.textContent = 'Save';
-        button.disabled = false;
+        console.error('Error:', error);
+        alert('Error loading environment variables: ' + error.message);
     }
-}
-
-function cancelEdit(button) {
-    const element = button.closest('.editable-content');
-    if (!element) {
-        console.error('Could not find editable element for button:', button);
-        return;
-    }
-    
-    const configKey = element.getAttribute('data-config-key');
-    const originalText = originalContent[configKey];
-    
-    // Remove editing class
-    element.classList.remove('editing');
-    
-    // Restore original content
-    element.innerHTML = originalText;
-}
-
-function showFeedback(message, type) {
-    // Create feedback element
-    const feedback = document.createElement('div');
-    feedback.className = `feedback-message ${type}`;
-    feedback.textContent = message;
-    
-    document.body.appendChild(feedback);
-    
-    // Animate in
-    setTimeout(() => {
-        feedback.classList.add('show');
-    }, 100);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        feedback.classList.remove('show');
-        setTimeout(() => {
-            if (document.body.contains(feedback)) {
-                document.body.removeChild(feedback);
-            }
-        }, 300);
-    }, 3000);
-}
-
-function sortByName() {
-    const configList = document.getElementById('configList');
-    const items = Array.from(configList.getElementsByClassName('config-item'));
-    
-    items.sort((a, b) => {
-        const keyA = a.querySelector('.config-key').textContent.toLowerCase();
-        const keyB = b.querySelector('.config-key').textContent.toLowerCase();
-        return keyA.localeCompare(keyB);
-    });
-    
-    // Re-append sorted items
-    items.forEach(item => configList.appendChild(item));
-}
-
-function sortByValue() {
-    const configList = document.getElementById('configList');
-    const items = Array.from(configList.getElementsByClassName('config-item'));
-    
-    items.sort((a, b) => {
-        const valueA = a.querySelector('.config-value').textContent.toLowerCase();
-        const valueB = b.querySelector('.config-value').textContent.toLowerCase();
-        return valueA.localeCompare(valueB);
-    });
-    
-    // Re-append sorted items
-    items.forEach(item => configList.appendChild(item));
 }
 </script>
-{% endif %}
 {% endblock %}

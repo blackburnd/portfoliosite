@@ -4,9 +4,10 @@ Provides Through-The-Web configuration forms for all site settings
 """
 
 from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import logging
+from datetime import datetime
 
 from auth import require_admin_auth
 from site_config import SiteConfigManager
@@ -98,33 +99,6 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
         all_config = await config_manager.get_all_config()
         logger.info(f"Loaded {len(all_config)} configuration values")
 
-        # Get display order if it exists
-        display_order_str = all_config.get("_config_display_order", "")
-        if display_order_str:
-            ordered_keys = display_order_str.split(",")
-            # Filter to only include existing keys
-            ordered_keys = [
-                k for k in ordered_keys
-                if k in all_config and not k.startswith("_")
-            ]
-        else:
-            # Default order: exclude internal keys
-            ordered_keys = [
-                k for k in sorted(all_config.keys())
-                if not k.startswith("_")
-            ]
-
-        # Create ordered config dict
-        ordered_config = {}
-        for key in ordered_keys:
-            if key in all_config:
-                ordered_config[key] = all_config[key]
-        
-        # Add any remaining keys that weren't in the order
-        for key, value in all_config.items():
-            if key not in ordered_config and not key.startswith("_"):
-                ordered_config[key] = value
-
         # Organize config by categories
         categorized_config = {}
         for category_key, category_info in CONFIG_CATEGORIES.items():
@@ -139,43 +113,12 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
 
         logger.info("Configuration data organized successfully")
         
-        # Get authorized emails from database first, fallback to environment
-        import os
-        authorized_emails_str = all_config.get(
-            "authorized_emails",
-            os.getenv("AUTHORIZED_EMAILS", "")
-        )
-        
-        # If we got it from environment but not database, save it to database
-        if (not all_config.get("authorized_emails") and
-                os.getenv("AUTHORIZED_EMAILS")):
-            env_emails = os.getenv("AUTHORIZED_EMAILS", "")
-            if env_emails.strip():
-                config_manager = SiteConfigManager()
-                await config_manager.set_config(
-                    "authorized_emails", env_emails
-                )
-                authorized_emails_str = env_emails
-                log_msg = (f"Saved authorized_emails from environment "
-                           f"to database: {env_emails}")
-                logger.info(log_msg)
-        
-        authorized_emails_list = [
-            email.strip() for email in authorized_emails_str.split(",")
-            if email.strip()
-        ]
-        
         return templates.TemplateResponse(
             "admin/config_overview.html",
             {
                 "request": request,
-                "config": ordered_config,  # Pass ordered config
-                "all_config": all_config,  # Keep original for reference
                 "categories": categorized_config,
-                "total_configs": len(all_config),
-                "user_authenticated": True,  # Enable inline editing
-                "authorized_emails": authorized_emails_list,
-                "authorized_emails_raw": authorized_emails_str
+                "total_configs": len(all_config)
             }
         )
     except Exception as e:
@@ -338,3 +281,52 @@ async def bulk_update_config(
             url="/admin/config?error=true",
             status_code=303
         )
+
+
+@router.get("/admin/config/env-vars")
+async def get_environment_variables(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Get current environment variables for diagnostic purposes"""
+    import os
+    try:
+        # Get all environment variables
+        env_vars = dict(os.environ)
+        
+        # Get specific auth-related variables with their parsing
+        from auth import AUTHORIZED_EMAILS
+        
+        raw_emails = os.getenv("AUTHORIZED_EMAILS", "")
+        parsed_emails = AUTHORIZED_EMAILS
+        
+        split_method = ("space_separated" if " " in raw_emails
+                        else "comma_separated")
+        
+        diagnostic_info = {
+            "timestamp": datetime.now().isoformat(),
+            "auth_diagnosis": {
+                "raw_authorized_emails": raw_emails,
+                "parsed_authorized_emails": parsed_emails,
+                "parsed_count": len(parsed_emails) if parsed_emails else 0,
+                "split_method": split_method
+            },
+            "key_env_vars": {
+                k: v for k, v in env_vars.items()
+                if k.startswith(('AUTHORIZED_', 'ADMIN_', 'GOOGLE_',
+                                'DATABASE_', 'SECRET_'))
+            },
+            "all_env_vars": env_vars
+        }
+        
+        return JSONResponse({
+            "status": "success",
+            "data": diagnostic_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting environment variables: {e}")
+        return JSONResponse({
+            "status": "error",
+            "message": str(e)
+        }, status_code=500)
