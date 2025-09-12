@@ -118,10 +118,10 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             dump_file_path = dump_file.name
         
         try:
-            # Run pypgsvg on the dump file
+            # Run pypgsvg on the dump file with --view to output SVG content
             result = subprocess.run(
                 ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg', 
-                 dump_file_path],
+                 dump_file_path, '--view'],
                 capture_output=True,
                 text=True,
                 cwd='/opt/portfoliosite',
