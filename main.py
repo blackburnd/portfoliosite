@@ -651,6 +651,53 @@ async def update_content_inline(request: Request):
         }, status_code=500)
 
 
+# Config Reordering Endpoint
+@app.post("/admin/reorder-config")
+async def reorder_config(request: Request):
+    """Reorder configuration items"""
+    from auth import verify_token, is_authorized_user
+    from site_config import SiteConfigManager
+    
+    # Check authentication
+    try:
+        token = request.cookies.get("access_token")
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        payload = verify_token(token)
+        email = payload.get("sub")
+        if not email or not is_authorized_user(email):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication")
+    
+    try:
+        body = await request.json()
+        ordered_keys = body.get("ordered_keys", [])
+        
+        if not ordered_keys:
+            raise HTTPException(status_code=400, detail="Missing ordered_keys")
+        
+        # Store the order as a config value
+        await SiteConfigManager.set_config(
+            "_config_display_order",
+            ",".join(ordered_keys),
+            f"Updated config order from admin by {email}"
+        )
+        
+        return JSONResponse({
+            "success": True,
+            "message": "Configuration order updated successfully"
+        })
+    
+    except Exception as e:
+        logger.error(f"Failed to reorder config: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"Failed to reorder config: {str(e)}"
+        }, status_code=500)
+
+
 # Include routers
 app.include_router(contact.router, tags=["contact"])
 app.include_router(projects.router, tags=["projects"])

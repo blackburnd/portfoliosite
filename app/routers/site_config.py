@@ -98,6 +98,33 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
         all_config = await config_manager.get_all_config()
         logger.info(f"Loaded {len(all_config)} configuration values")
 
+        # Get display order if it exists
+        display_order_str = all_config.get("_config_display_order", "")
+        if display_order_str:
+            ordered_keys = display_order_str.split(",")
+            # Filter to only include existing keys
+            ordered_keys = [
+                k for k in ordered_keys
+                if k in all_config and not k.startswith("_")
+            ]
+        else:
+            # Default order: exclude internal keys
+            ordered_keys = [
+                k for k in sorted(all_config.keys())
+                if not k.startswith("_")
+            ]
+
+        # Create ordered config dict
+        ordered_config = {}
+        for key in ordered_keys:
+            if key in all_config:
+                ordered_config[key] = all_config[key]
+        
+        # Add any remaining keys that weren't in the order
+        for key, value in all_config.items():
+            if key not in ordered_config and not key.startswith("_"):
+                ordered_config[key] = value
+
         # Organize config by categories
         categorized_config = {}
         for category_key, category_info in CONFIG_CATEGORIES.items():
@@ -116,9 +143,11 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
             "admin/config_overview.html",
             {
                 "request": request,
-                "config": all_config,  # Pass the config for template usage
+                "config": ordered_config,  # Pass ordered config
+                "all_config": all_config,  # Keep original for reference
                 "categories": categorized_config,
-                "total_configs": len(all_config)
+                "total_configs": len(all_config),
+                "user_authenticated": True  # Enable inline editing
             }
         )
     except Exception as e:
