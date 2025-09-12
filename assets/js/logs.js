@@ -6,12 +6,7 @@ let pageSize = 50;
 let isLoading = false;
 let hasMoreLogs = true;
 let intersectionObserver;
-let backendTotalCount = 0; // Total count from backend including                     <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml((log.message && log.message.length > 100) ? log.message.substring(0, 100) + '...' : (log.message || ''))}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                        Copy
-                    </button>ers
-
-// Sorting variables
+let backendTotalCount = 0; 
 let currentSortField = 'timestamp';
 let currentSortOrder = 'desc'; // Default to newest first
 
@@ -207,7 +202,7 @@ function updateDisplay() {
     if (filteredLogs.length === 0) {
         console.log('No filtered logs to display');
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="9" style="text-align: center; padding: 20px;">No logs found</td>';
+        row.innerHTML = '<td colspan="8" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
         return;
     }
