@@ -17,6 +17,27 @@
         </div>
     </div>
     
+    <!-- Authorized Emails Section -->
+    <div class="authorized-emails-section">
+        <h2>Authorized Admin Emails</h2>
+        <div class="emails-info">
+            <div class="emails-raw">
+                <strong>Raw Environment Variable:</strong>
+                <code>"{{ authorized_emails_raw }}"</code>
+            </div>
+            <div class="emails-parsed">
+                <strong>Parsed Email List ({{ authorized_emails|length }} total):</strong>
+                <ul>
+                    {% for email in authorized_emails %}
+                    <li><code>{{ email }}</code></li>
+                    {% else %}
+                    <li><em>No authorized emails found</em></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
     <div class="config-list" id="configList">
         {% for key, value in config.items() %}
         <div class="config-item">

@@ -139,6 +139,14 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
 
         logger.info("Configuration data organized successfully")
         
+        # Get authorized emails from environment
+        import os
+        authorized_emails_str = os.getenv("AUTHORIZED_EMAILS", "")
+        authorized_emails_list = [
+            email.strip() for email in authorized_emails_str.split(",")
+            if email.strip()
+        ]
+        
         return templates.TemplateResponse(
             "admin/config_overview.html",
             {
@@ -147,7 +155,9 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
                 "all_config": all_config,  # Keep original for reference
                 "categories": categorized_config,
                 "total_configs": len(all_config),
-                "user_authenticated": True  # Enable inline editing
+                "user_authenticated": True,  # Enable inline editing
+                "authorized_emails": authorized_emails_list,
+                "authorized_emails_raw": authorized_emails_str
             }
         )
     except Exception as e:
