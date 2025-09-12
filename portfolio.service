@@ -6,6 +6,7 @@ After=network.target
 User=blackburnd
 Group=www-data
 WorkingDirectory=/opt/portfoliosite
+Environment=PYTHONPATH=/opt/portfoliosite/venv/src/pypgsvg/src
 EnvironmentFile=/etc/environment
 ExecStartPre=/bin/mkdir -p /var/log/portfoliosite
 ExecStartPre=/bin/chown blackburnd:www-data /var/log/portfoliosite
