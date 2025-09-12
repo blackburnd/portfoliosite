@@ -7,9 +7,7 @@ let isLoading = false;
 let hasMoreLogs = true;
 let intersectionObserver;
 let backendTotalCount = 0; 
-let currentSortField = 'timestamp';
-let currentSortOrder = 'desc'; // Default to newest first
-
+let currentSortField = 'timestamp' ;
 // Global functions - defined immediately so buttons work
 window.refreshLogs = function() {
     console.log('Refresh button clicked');
@@ -228,9 +226,6 @@ function updateDisplay() {
         // Show only date in Time column
         const dateStr = new Date(log.timestamp).toLocaleDateString();
         row.innerHTML = `
-            <td class="expand-col">
-                ${(log.message && (log.message.includes('\n') || log.message.length > 100)) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
-            </td>
             <td class="log-timestamp">${dateStr}<br><small style="color: #666">${new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</small></td>
             <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
