@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Site Configuration{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="config-header">
+        <h1>Site Configuration</h1>
+        <p>Manage all site variables - {{ total_configs }} total</p>
+        
+        <div class="config-actions">
+            <button id="add-new-btn" class="btn btn-primary">Add New Variable</button>
+            <button id="env-vars-btn" class="btn btn-secondary">Show Environment Variables</button>
+        </div>
+    </div>
+
+    <div class="config-controls">
+        <input type="text" id="search" placeholder="Search variables..." class="search-input">
+        <select id="sort-by" class="sort-select">
+            <option value="key">Sort by Key</option>
+            <option value="value">Sort by Value</option>
+        </select>
+    </div>
+
+    <div class="config-table-container">
+        <table id="config-table" class="config-table">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in config_list %}
+                <tr data-key="{{ key }}">
+                    <td class="key-cell">{{ key }}</td>
+                    <td class="value-cell">
+                        <div class="value-display">{{ value[:100] }}{% if value|length > 100 %}...{% endif %}</div>
+                        <textarea class="value-edit" style="display: none;">{{ value }}</textarea>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn btn-sm btn-edit" onclick="editRow('{{ key }}')">Edit</button>
+                        <button class="btn btn-sm btn-save" onclick="saveRow('{{ key }}')" style="display: none;">Save</button>
+                        <button class="btn btn-sm btn-cancel" onclick="cancelEdit('{{ key }}')" style="display: none;">Cancel</button>
+                        <button class="btn btn-sm btn-delete" onclick="deleteRow('{{ key }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add New Variable Modal -->
+    <div id="add-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Variable</h3>
+                <span class="close" onclick="closeAddModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <label for="new-key">Key:</label>
+                <input type="text" id="new-key" placeholder="variable_name">
+                
+                <label for="new-value">Value:</label>
+                <textarea id="new-value" placeholder="Variable value..."></textarea>
+                
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="addNewVariable()">Add Variable</button>
+                    <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environment Variables Display -->
+    <div id="env-vars-display" style="display: none; margin-top: 20px;">
+        <h3>Environment Variables</h3>
+        <pre id="env-vars-content"></pre>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.config-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.config-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.search-input, .sort-select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.search-input {
+    flex: 1;
+    max-width: 300px;
+}
+
+.config-table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.config-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.config-table th,
+.config-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.config-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.key-cell {
+    font-family: monospace;
+    font-weight: 600;
+    width: 25%;
+}
+
+.value-cell {
+    width: 55%;
+}
+
+.value-display {
+    word-break: break-word;
+}
+
+.value-edit {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.actions-cell {
+    width: 20%;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+.btn-primary { background: #007bff; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+.btn-edit { background: #28a745; color: white; }
+.btn-save { background: #007bff; color: white; }
+.btn-cancel { background: #6c757d; color: white; }
+.btn-delete { background: #dc3545; color: white; }
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.modal-body input,
+.modal-body textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.modal-body textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+#env-vars-display {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+#env-vars-content {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 12px;
+}
+</style>
+
+<script>
+// Table functionality
+function filterTable() {
+    const search = document.getElementById('search').value.toLowerCase();
+    const rows = document.querySelectorAll('#config-table tbody tr');
+    
+    rows.forEach(row => {
+        const key = row.querySelector('.key-cell').textContent.toLowerCase();
+        const value = row.querySelector('.value-display').textContent.toLowerCase();
+        const match = key.includes(search) || value.includes(search);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function sortTable() {
+    const sortBy = document.getElementById('sort-by').value;
+    const tbody = document.querySelector('#config-table tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        if (sortBy === 'key') {
+            aValue = a.querySelector('.key-cell').textContent;
+            bValue = b.querySelector('.key-cell').textContent;
+        } else {
+            aValue = a.querySelector('.value-display').textContent;
+            bValue = b.querySelector('.value-display').textContent;
+        }
+        return aValue.localeCompare(bValue);
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// CRUD operations
+function editRow(key) {
+    const row = document.querySelector(`tr[data-key="${key}"]`);
+    const valueDisplay = row.querySelector('.value-display');
+    const valueEdit = row.querySelector('.value-edit');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    
+    valueDisplay.style.display = 'none';
+    valueEdit.style.display = 'block';
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+}
+
+function cancelEdit(key) {
+    const row = document.querySelector(`tr[data-key="${key}"]`);
+    const valueDisplay = row.querySelector('.value-display');
+    const valueEdit = row.querySelector('.value-edit');
+    const editBtn = row.querySelector('.btn-edit');
+    const saveBtn = row.querySelector('.btn-save');
+    const cancelBtn = row.querySelector('.btn-cancel');
+    
+    valueDisplay.style.display = 'block';
+    valueEdit.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+
+async function saveRow(key) {
+    const row = document.querySelector(`tr[data-key="${key}"]`);
+    const valueEdit = row.querySelector('.value-edit');
+    const newValue = valueEdit.value;
+    
+    try {
+        const response = await fetch('/admin/config/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                key: key,
+                value: newValue
+            })
+        });
+        
+        if (response.ok) {
+            const valueDisplay = row.querySelector('.value-display');
+            const displayValue = newValue.length > 100 ? newValue.substring(0, 100) + '...' : newValue;
+            valueDisplay.textContent = displayValue;
+            cancelEdit(key);
+        } else {
+            alert('Failed to update variable');
+        }
+    } catch (error) {
+        alert('Error updating variable: ' + error.message);
+    }
+}
+
+async function deleteRow(key) {
+    if (!confirm(`Are you sure you want to delete "${key}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/config/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ key: key })
+        });
+        
+        if (response.ok) {
+            document.querySelector(`tr[data-key="${key}"]`).remove();
+        } else {
+            alert('Failed to delete variable');
+        }
+    } catch (error) {
+        alert('Error deleting variable: ' + error.message);
+    }
+}
+
+// Add new variable
+function showAddModal() {
+    document.getElementById('add-modal').style.display = 'block';
+}
+
+function closeAddModal() {
+    document.getElementById('add-modal').style.display = 'none';
+    document.getElementById('new-key').value = '';
+    document.getElementById('new-value').value = '';
+}
+
+async function addNewVariable() {
+    const key = document.getElementById('new-key').value.trim();
+    const value = document.getElementById('new-value').value;
+    
+    if (!key) {
+        alert('Key is required');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/config/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                key: key,
+                value: value
+            })
+        });
+        
+        if (response.ok) {
+            location.reload(); // Refresh to show new variable
+        } else {
+            alert('Failed to add variable');
+        }
+    } catch (error) {
+        alert('Error adding variable: ' + error.message);
+    }
+}
+
+// Environment variables
+async function showEnvironmentVariables() {
+    try {
+        const response = await fetch('/admin/config/env-vars');
+        const data = await response.json();
+        
+        document.getElementById('env-vars-content').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('env-vars-display').style.display = 'block';
+    } catch (error) {
+        alert('Error loading environment variables: ' + error.message);
+    }
+}
+
+// Event listeners
+document.getElementById('search').addEventListener('input', filterTable);
+document.getElementById('sort-by').addEventListener('change', sortTable);
+document.getElementById('add-new-btn').addEventListener('click', showAddModal);
+document.getElementById('env-vars-btn').addEventListener('click', showEnvironmentVariables);
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('add-modal');
+    if (event.target === modal) {
+        closeAddModal();
+    }
+});
+</script>
+{% endblock %}

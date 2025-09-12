@@ -65,6 +65,27 @@ class SiteConfigManager:
         cls._config_cache[key] = value
     
     @classmethod
+    async def delete_config(cls, key: str):
+        """Delete a configuration value from database"""
+        from database import database, get_portfolio_id
+        
+        portfolio_id = get_portfolio_id()
+        
+        query = """
+        DELETE FROM site_config 
+        WHERE portfolio_id = :portfolio_id AND config_key = :key
+        """
+        
+        await database.execute(query, {
+            "portfolio_id": portfolio_id,
+            "key": key
+        })
+        
+        # Remove from cache
+        if key in cls._config_cache:
+            del cls._config_cache[key]
+    
+    @classmethod
     async def _load_config(cls):
         """Load all configuration from database into cache"""
         portfolio_id = get_portfolio_id()

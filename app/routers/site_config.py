@@ -1,7 +1,20 @@
 """
 Site Configuration Management Router
-Provides Through-The-Web configuration forms for all site settings
+Provides simple Through-The-Web configuration management
 """
+
+from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+import logging
+from datetime import datetime
+
+from auth import require_admin_auth
+from site_config import SiteConfigManager
+
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -79,9 +92,8 @@ CONFIG_CATEGORIES = {
 
 @router.get("/admin/config", response_class=HTMLResponse)
 async def config_overview(request: Request, _=Depends(require_admin_auth)):
-    """Configuration overview page showing all categories"""
+    """Simple config management - sortable table of all variables"""
     try:
-        # Add debug logging
         from database import get_portfolio_id
         portfolio_id = get_portfolio_id()
         logger.info(f"Portfolio ID for config: {portfolio_id}")
@@ -94,30 +106,18 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
             )
         
         config_manager = SiteConfigManager()
-        logger.info("SiteConfigManager created successfully")
-        
         all_config = await config_manager.get_all_config()
         logger.info(f"Loaded {len(all_config)} configuration values")
-
-        # Organize config by categories
-        categorized_config = {}
-        for category_key, category_info in CONFIG_CATEGORIES.items():
-            categorized_config[category_key] = {
-                "info": category_info,
-                "config_values": {}
-            }
-            for config_key in category_info["configs"]:
-                config_value = all_config.get(config_key, "")
-                cat_config = categorized_config[category_key]["config_values"]
-                cat_config[config_key] = config_value
-
-        logger.info("Configuration data organized successfully")
+        
+        # Convert to list of tuples for easy sorting
+        config_list = [(key, value) for key, value in all_config.items()]
+        config_list.sort()  # Sort by key by default
         
         return templates.TemplateResponse(
-            "admin/config_overview.html",
+            "admin/simple_config.html",
             {
                 "request": request,
-                "categories": categorized_config,
+                "config_list": config_list,
                 "total_configs": len(all_config)
             }
         )
@@ -330,3 +330,81 @@ async def bulk_update_config(
             url="/admin/config?error=true",
             status_code=303
         )
+
+
+@router.post("/admin/config/update")
+async def update_config_variable(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Update a configuration variable"""
+    try:
+        data = await request.json()
+        key = data.get("key")
+        value = data.get("value")
+        
+        if not key:
+            raise HTTPException(status_code=400, detail="Key is required")
+        
+        config_manager = SiteConfigManager()
+        await config_manager.set_config(key, value)
+        
+        return {"success": True, "message": f"Updated {key}"}
+    except Exception as e:
+        logger.error(f"Error updating config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/config/delete")
+async def delete_config_variable(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Delete a configuration variable"""
+    try:
+        data = await request.json()
+        key = data.get("key")
+        
+        if not key:
+            raise HTTPException(status_code=400, detail="Key is required")
+        
+        config_manager = SiteConfigManager()
+        await config_manager.delete_config(key)
+        
+        return {"success": True, "message": f"Deleted {key}"}
+    except Exception as e:
+        logger.error(f"Error deleting config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/config/add")
+async def add_config_variable(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Add a new configuration variable"""
+    try:
+        data = await request.json()
+        key = data.get("key")
+        value = data.get("value", "")
+        
+        if not key:
+            raise HTTPException(status_code=400, detail="Key is required")
+        
+        config_manager = SiteConfigManager()
+        
+        # Check if key already exists
+        existing_config = await config_manager.get_all_config()
+        if key in existing_config:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Key \"{key}\" already exists"
+            )
+        
+        await config_manager.set_config(key, value)
+        
+        return {"success": True, "message": f"Added {key}"}
+    except Exception as e:
+        logger.error(f"Error adding config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
