@@ -15,50 +15,115 @@
             </figure>
 
             <div class="hero-content">
-                <h2>Building Better Solutions Through Experience</h2>
-                <p>With experience that expands throughout University IT departments, corporate banking
-environments, and agile remote startup companies, I have learned that foundational
-knowledge combined with effective communication creates a lasting impact. I thrive by
-embracing continuous growth and approaching every challenge with the mindset of a lifelong
-learner.</p>
-                <p><em>Building is easy. Building better is rewarding. Evidence-based performance enhancements are
-the ultimate motivator.</em></p>
+                <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_title">
+                    {{ config.get('home_hero_title', 'Building Better Solutions Through Experience') }}
+                    {% if user_authenticated %}
+                    <div class="edit-controls">
+                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                    </div>
+                    {% endif %}
+                </h2>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_description">
+                    {{ config.get('home_hero_description', 'With experience that expands throughout University IT departments, corporate banking environments, and agile remote startup companies, I have learned that foundational knowledge combined with effective communication creates a lasting impact. I thrive by embracing continuous growth and approaching every challenge with the mindset of a lifelong learner.') }}
+                    {% if user_authenticated %}
+                    <div class="edit-controls">
+                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                    </div>
+                    {% endif %}
+                </p>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_tagline">
+                    <em>{{ config.get('home_hero_tagline', 'Building is easy. Building better is rewarding. Evidence-based performance enhancements are the ultimate motivator.') }}</em>
+                    {% if user_authenticated %}
+                    <div class="edit-controls">
+                        <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                        <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                    </div>
+                    {% endif %}
+                </p>
             </div>
         </div>
         <div class="main-content">
             <!-- About Me Section -->
-            <h3>About Me</h3>
-            <p>With over two decades of experience solving problems and architecting solutions, I appreciate
-the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career
-has taken me through diverse environments where I&#39;ve learned that the best solutions often
-require looking beyond the obvious tools.</p>
+            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_title">
+                {{ config.get('about_section_title', 'About Me') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </h3>
+            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_1">
+                {{ config.get('about_section_content_1', 'With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career has taken me through diverse environments where I\'ve learned that the best solutions often require looking beyond the obvious tools.') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </p>
             
-            <p>I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and
-validate confidence through comprehensive test coverage. Practicing continuous improvement
-with clear communication, kindness, and empathy helps me work smarter and more
-sustainably. Equally important is appreciating the strengths and limitations of my environment
-and team, which provides invaluable perspective.</p>
+            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_2">
+                {{ config.get('about_section_content_2', 'I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and validate confidence through comprehensive test coverage. Practicing continuous improvement with clear communication, kindness, and empathy helps me work smarter and more sustainably. Equally important is appreciating the strengths and limitations of my environment and team, which provides invaluable perspective.') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </p>
 
             <!-- Current Focus Section -->
-            <h3>Embracing the AI Revolution</h3>
-            <p>Things are changing fast, and it's an incredibly exciting time to be skilled in software
-development—especially when you have a clear sense of what 'correct' looks like. I think of
-using AI as a pair programmer like working with a mischievous djinn: it's resourceful but often
-unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide
-surprisingly valuable solutions.
-</p>
+            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_title">
+                {{ config.get('focus_section_title', 'Embracing the AI Revolution') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </h3>
+            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_1">
+                {{ config.get('focus_section_content_1', 'Things are changing fast, and it\'s an incredibly exciting time to be skilled in software development—especially when you have a clear sense of what \'correct\' looks like. I think of using AI as a pair programmer like working with a mischievous djinn: it\'s resourceful but often unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide surprisingly valuable solutions.') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </p>
 
-            <p>With the right constraints, I've found AI can help create some genuinely useful solutions, but
-only when kept on a short leash. Letting it run unchecked quickly turns into a new kind of
-frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I'm
-excited to keep exploring how to use AI more effectively; it's a tool I'm still learning from, and
-the journey itself is part of the reward.
-              
+            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_2">
+                {{ config.get('focus_section_content_2', 'With the right constraints, I\'ve found AI can help create some genuinely useful solutions, but only when kept on a short leash. Letting it run unchecked quickly turns into a new kind of frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I\'m excited to keep exploring how to use AI more effectively; it\'s a tool I\'m still learning from, and the journey itself is part of the reward.') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
             </p>
 
             <!-- Call to Action Section -->
-            <h3>Let's Work Together</h3>
-            <p>Ready to discuss technical challenges and solutions? </p>
+            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_title">
+                {{ config.get('cta_section_title', 'Let\'s Work Together') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </h3>
+            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_content">
+                {{ config.get('cta_section_content', 'Ready to discuss technical challenges and solutions?') }}
+                {% if user_authenticated %}
+                <div class="edit-controls">
+                    <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                    <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+                </div>
+                {% endif %}
+            </p>
             <p><strong><a href="/work/">View My Technical Showcase →</a></strong><br>
             <em>(Featured case studies and technical implementations)</em></p>
         </div>
@@ -67,6 +132,191 @@ the journey itself is part of the reward.
 {% endblock %}
 
 {% block extra_js %}
+{% if user_authenticated %}
+<script>
+// Inline content editing functionality
+let originalContent = {};
+
+// Add click event listeners to editable content
+document.addEventListener('DOMContentLoaded', function() {
+    const editableElements = document.querySelectorAll('.editable-content');
+    
+    editableElements.forEach(element => {
+        element.addEventListener('click', function(e) {
+            if (!this.classList.contains('editing')) {
+                startEdit(this);
+            }
+        });
+    });
+});
+
+function startEdit(element) {
+    const configKey = element.getAttribute('data-config-key');
+    const currentText = element.textContent.trim();
+    
+    // Store original content for cancel functionality
+    originalContent[configKey] = currentText;
+    
+    // Add editing class
+    element.classList.add('editing');
+    
+    // Create input element
+    const isHeading = element.tagName.toLowerCase().startsWith('h');
+    let inputElement;
+    
+    if (isHeading) {
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        inputElement.className = 'edit-input';
+        inputElement.value = currentText;
+    } else {
+        inputElement = document.createElement('textarea');
+        inputElement.className = 'edit-textarea';
+        inputElement.value = currentText;
+    }
+    
+    // Replace content with input
+    const controls = element.querySelector('.edit-controls');
+    element.innerHTML = '';
+    element.appendChild(inputElement);
+    element.appendChild(controls);
+    
+    // Focus the input
+    inputElement.focus();
+    
+    // Handle Enter key for single-line inputs
+    if (isHeading) {
+        inputElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                saveContent(element.querySelector('.save-btn'));
+            } else if (e.key === 'Escape') {
+                cancelEdit(element.querySelector('.cancel-btn'));
+            }
+        });
+    } else {
+        // Handle Ctrl+Enter for textareas
+        inputElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                saveContent(element.querySelector('.save-btn'));
+            } else if (e.key === 'Escape') {
+                cancelEdit(element.querySelector('.cancel-btn'));
+            }
+        });
+    }
+}
+
+async function saveContent(button) {
+    const element = button.closest('.editable-content');
+    const configKey = element.getAttribute('data-config-key');
+    const input = element.querySelector('input, textarea');
+    const newValue = input.value.trim();
+    
+    if (!newValue) {
+        alert('Content cannot be empty');
+        return;
+    }
+    
+    // Show saving state
+    button.textContent = 'Saving...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/admin/update-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                key: configKey,
+                value: newValue
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update the display content
+            const controls = element.querySelector('.edit-controls');
+            element.classList.remove('editing');
+            
+            // Restore content with proper formatting
+            if (element.tagName.toLowerCase().startsWith('h')) {
+                element.innerHTML = newValue;
+            } else if (configKey === 'home_hero_tagline') {
+                element.innerHTML = '<em>' + newValue + '</em>';
+            } else {
+                element.innerHTML = newValue;
+            }
+            
+            // Re-add controls
+            element.appendChild(controls);
+            
+            // Show success feedback
+            showFeedback('Content updated successfully!', 'success');
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Save failed:', error);
+        showFeedback('Failed to save: ' + error.message, 'error');
+        
+        // Restore original content on error
+        cancelEdit(button.parentElement.querySelector('.cancel-btn'));
+    } finally {
+        button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+function cancelEdit(button) {
+    const element = button.closest('.editable-content');
+    const configKey = element.getAttribute('data-config-key');
+    const originalText = originalContent[configKey];
+    
+    // Remove editing class
+    element.classList.remove('editing');
+    
+    // Restore original content
+    const controls = element.querySelector('.edit-controls');
+    
+    if (element.tagName.toLowerCase().startsWith('h')) {
+        element.innerHTML = originalText;
+    } else if (configKey === 'home_hero_tagline') {
+        element.innerHTML = '<em>' + originalText + '</em>';
+    } else {
+        element.innerHTML = originalText;
+    }
+    
+    // Re-add controls
+    element.appendChild(controls);
+}
+
+function showFeedback(message, type) {
+    // Create feedback element
+    const feedback = document.createElement('div');
+    feedback.className = `feedback-message ${type}`;
+    feedback.textContent = message;
+    
+    document.body.appendChild(feedback);
+    
+    // Animate in
+    setTimeout(() => {
+        feedback.classList.add('show');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        feedback.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(feedback)) {
+                document.body.removeChild(feedback);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endif %}
+
 <script>
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }

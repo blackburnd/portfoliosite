@@ -600,6 +600,57 @@ async def shutdown_event():
     await close_database()
 
 
+# Inline Content Update Endpoint
+@app.post("/admin/update-content")
+async def update_content_inline(request: Request):
+    """Update site configuration content inline"""
+    from auth import verify_token, is_authorized_user
+    from site_config import SiteConfigManager
+    
+    # Check authentication
+    try:
+        token = request.cookies.get("access_token")
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        payload = verify_token(token)
+        email = payload.get("sub")
+        if not email or not is_authorized_user(email):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication")
+    
+    try:
+        body = await request.json()
+        config_key = body.get("key")
+        config_value = body.get("value", "")
+        
+        if not config_key:
+            raise HTTPException(status_code=400, detail="Missing config key")
+        
+        # Update the configuration
+        await SiteConfigManager.set_config(
+            config_key,
+            config_value,
+            f"Updated inline from homepage by {email}"
+        )
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"Updated {config_key} successfully"
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        await add_log("ERROR", "inline_content_update", f"Content update failed: {str(e)}", {"error": error_details})
+        
+        return JSONResponse({
+            "success": False,
+            "message": f"Failed to update content: {str(e)}"
+        }, status_code=500)
+
+
 # Include routers
 app.include_router(contact.router, tags=["contact"])
 app.include_router(projects.router, tags=["projects"])
@@ -615,6 +666,7 @@ app.include_router(site_config_migration_router, tags=["migration"])
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     from auth import verify_token, is_authorized_user
+    from site_config import SiteConfigManager
     
     # Get user authentication data for navigation
     user_authenticated = False
@@ -633,12 +685,21 @@ async def read_root(request: Request):
     except Exception:
         pass
     
+    # Get site configuration for content
+    config = {}
+    try:
+        config_manager = SiteConfigManager()
+        config = await config_manager.get_all_config()
+    except Exception:
+        pass  # Use defaults if config fails
+    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Daniel Blackburn - Software Developer & Solution Architect",
         "current_page": "home",
         "user_info": user_info,
         "user_authenticated": user_authenticated,
-        "user_email": user_email
+        "user_email": user_email,
+        "config": config
     })
 
