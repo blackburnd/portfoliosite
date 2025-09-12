@@ -1949,6 +1949,48 @@ td[style*="#abd6ff"] {
     background: #2980b9;
 }
 
+/* Log Level Controls */
+.log-level-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    padding: 2px 6px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.log-level-display {
+    font-size: 12px;
+    color: #444;
+    white-space: nowrap;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+.log-level-display strong {
+    color: #007acc;
+    font-weight: 600;
+}
+
+.log-level-controls .compact-select {
+    min-width: 90px;
+    max-width: 90px;
+    font-size: 12px;
+}
+
+.log-level-controls .compact-btn {
+    font-size: 14px;
+    padding: 2px 6px;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .logs-controls-row .filter-group {
     display: flex;
     flex-direction: column;

@@ -29,6 +29,22 @@
             <option value="7d">7d</option>
         </select>
         <button id="clearFiltersBtn" style="display: none;" class="compact-btn" onclick="clearFilters()" title="Clear">✕</button>
+        
+        <!-- Log Level Controls -->
+        <div class="log-level-controls" style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+            <span id="currentLogLevel" class="log-level-display" title="Current runtime log level">
+                Level: <strong id="logLevelValue">Loading...</strong>
+            </span>
+            <select id="logLevelSelect" class="compact-select" title="Change runtime log level">
+                <option value="">Change Level</option>
+                <option value="DEBUG">DEBUG</option>
+                <option value="INFO">INFO</option>
+                <option value="WARNING">WARNING</option>
+                <option value="ERROR">ERROR</option>
+                <option value="CRITICAL">CRITICAL</option>
+            </select>
+            <button id="refreshLogLevelBtn" class="compact-btn" onclick="refreshLogLevel()" title="Refresh log level">↻</button>
+        </div>
     </div>
     
     <div id="searchStatus" class="search-status" style="display: none;"></div>

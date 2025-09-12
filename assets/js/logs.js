@@ -534,6 +534,97 @@ document.addEventListener('DOMContentLoaded', function() {
     updateClearFiltersButtonVisibility(); // Check initial filter state
     loadLogs();
     
+    // Load current log level
+    loadCurrentLogLevel();
+    
+    // Setup log level change handler
+    setupLogLevelHandler();
+    
     // Recalculate on window resize
     window.addEventListener('resize', debounce(calculateAndSetTableHeight, 100));
 });
+
+// Log Level Management Functions
+async function loadCurrentLogLevel() {
+    try {
+        const response = await fetch('/logs/level', {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('logLevelValue').textContent = data.current_level;
+            
+            // Reset the select dropdown
+            document.getElementById('logLevelSelect').value = '';
+        } else {
+            console.error('Failed to load log level');
+            document.getElementById('logLevelValue').textContent = 'Error';
+        }
+    } catch (error) {
+        console.error('Error loading log level:', error);
+        document.getElementById('logLevelValue').textContent = 'Error';
+    }
+}
+
+async function setLogLevel(level) {
+    try {
+        const response = await fetch('/logs/level', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            },
+            body: JSON.stringify({ level: level })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('logLevelValue').textContent = data.new_level;
+            
+            // Show success message briefly
+            const levelDisplay = document.getElementById('currentLogLevel');
+            const originalBg = levelDisplay.style.backgroundColor;
+            levelDisplay.style.backgroundColor = '#d4edda';
+            levelDisplay.title = `${data.message}`;
+            
+            setTimeout(() => {
+                levelDisplay.style.backgroundColor = originalBg;
+                levelDisplay.title = 'Current runtime log level';
+            }, 2000);
+            
+            // Reset the select dropdown
+            document.getElementById('logLevelSelect').value = '';
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to set log level: ${errorData.message}`);
+        }
+    } catch (error) {
+        console.error('Error setting log level:', error);
+        alert(`Error setting log level: ${error.message}`);
+    }
+}
+
+function setupLogLevelHandler() {
+    const logLevelSelect = document.getElementById('logLevelSelect');
+    logLevelSelect.addEventListener('change', function() {
+        const newLevel = this.value;
+        if (newLevel) {
+            if (confirm(`Change runtime log level to ${newLevel}?`)) {
+                setLogLevel(newLevel);
+            } else {
+                // Reset selection if cancelled
+                this.value = '';
+            }
+        }
+    });
+}
+
+// Global function for refresh button
+window.refreshLogLevel = function() {
+    loadCurrentLogLevel();
+};
