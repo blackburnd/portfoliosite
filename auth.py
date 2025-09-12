@@ -16,18 +16,18 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
 # Authorized emails - load from environment as fallback
-authorized_emails_env = os.getenv("AUTHORIZED_EMAILS", "")
-logger.info(f"Raw AUTHORIZED_EMAILS env var: '{authorized_emails_env}'")
+authorized_emails_raw = os.getenv("AUTHORIZED_EMAILS", "")
+print(f"DEBUG: Raw AUTHORIZED_EMAILS from env: '{authorized_emails_raw}'")
 
-if authorized_emails_env:
+if authorized_emails_raw:
     AUTHORIZED_EMAILS = [
-        email.strip() for email in authorized_emails_env.split(" ")
-        if email.strip()
+        email.strip() for email in authorized_emails_raw.split(" ") if email.strip()
     ]
 else:
     AUTHORIZED_EMAILS = []
 
-logger.info(f"Parsed AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
+print(f"DEBUG: Parsed AUTHORIZED_EMAILS list: {AUTHORIZED_EMAILS}")
+print(f"DEBUG: Number of authorized emails: {len(AUTHORIZED_EMAILS)}")
 
 # Security bearer for JWT tokens
 security = HTTPBearer(auto_error=False)
@@ -40,32 +40,20 @@ class AuthenticationError(Exception):
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a JWT access token"""
-    logger.info("=== Token Creation Debug ===")
-    logger.info(f"Creating token for data: {data}")
-    logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
-    logger.info(f"SECRET_KEY length: {len(SECRET_KEY) if SECRET_KEY else 0}")
-
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
+        expire = datetime.utcnow() + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     to_encode.update({"exp": expire})
-    logger.info(f"Token payload: {to_encode}")
-
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    logger.info(f"Created JWT token (first 50 chars): {encoded_jwt[:50] if encoded_jwt else 'None'}")
     return encoded_jwt
 
 
 def verify_token(token: str) -> dict:
     """Verify and decode JWT token"""
-    logger.info("=== Token Verification Debug ===")
-    logger.info(f"SECRET_KEY configured: {bool(SECRET_KEY)}")
-    logger.info(f"SECRET_KEY length: {len(SECRET_KEY) if SECRET_KEY else 0}")
-    logger.info(f"Token to verify (first 50 chars): {token[:50] if token else 'None'}")
-
     try:
         payload = jwt.decode(
             token,
@@ -74,24 +62,22 @@ def verify_token(token: str) -> dict:
             options={"verify_aud": False}  # Don't verify audience for now
         )
         email: str = payload.get("sub")
-        logger.info(f"JWT decoded successfully, email: {email}")
-
         if email is None:
-            logger.error("No email (sub) found in JWT payload")
             raise AuthenticationError("Invalid token")
         return payload
-    except JWTError as e:
-        logger.error(f"JWT decoding failed: {str(e)}")
+    except JWTError:
         raise AuthenticationError("Invalid token")
 
 
 def is_authorized_user(email: str) -> bool:
     """Check if email is in authorized list"""
-    logger.info(f"Checking authorization for email: '{email}'")
-    logger.info(f"AUTHORIZED_EMAILS list: {AUTHORIZED_EMAILS}")
-    logger.info(f"Email in list: {email in AUTHORIZED_EMAILS}")
+    print(f"DEBUG: Checking authorization for email: '{email}'")
+    print(f"DEBUG: Available AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
     
-    return email in AUTHORIZED_EMAILS
+    result = email in AUTHORIZED_EMAILS
+    print(f"DEBUG: Authorization result for '{email}': {result}")
+    
+    return result
 
 
 async def is_authorized_user_async(email: str) -> bool:
