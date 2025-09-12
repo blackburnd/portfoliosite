@@ -17,7 +17,8 @@ steps:
     # Navigate to the repository directory or clone it
     if [ -d "/opt/portfoliosite/.git" ]; then
       cd /opt/portfoliosite
-      git pull origin main
+      git fetch origin main
+      git reset --hard origin/main
     else
       sudo git clone https://github.com/blackburnd/portfoliosite.git /opt/portfoliosite
       sudo chown -R blackburnd:blackburnd /opt/portfoliosite
