@@ -139,9 +139,27 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
 
         logger.info("Configuration data organized successfully")
         
-        # Get authorized emails from environment
+        # Get authorized emails from database first, fallback to environment
         import os
-        authorized_emails_str = os.getenv("AUTHORIZED_EMAILS", "")
+        authorized_emails_str = all_config.get(
+            "authorized_emails",
+            os.getenv("AUTHORIZED_EMAILS", "")
+        )
+        
+        # If we got it from environment but not database, save it to database
+        if (not all_config.get("authorized_emails") and
+                os.getenv("AUTHORIZED_EMAILS")):
+            env_emails = os.getenv("AUTHORIZED_EMAILS", "")
+            if env_emails.strip():
+                config_manager = SiteConfigManager()
+                await config_manager.set_config(
+                    "authorized_emails", env_emails
+                )
+                authorized_emails_str = env_emails
+                log_msg = (f"Saved authorized_emails from environment "
+                           f"to database: {env_emails}")
+                logger.info(log_msg)
+        
         authorized_emails_list = [
             email.strip() for email in authorized_emails_str.split(",")
             if email.strip()

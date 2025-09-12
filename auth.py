@@ -92,8 +92,61 @@ def verify_token(token: str) -> dict:
 
 
 def is_authorized_user(email: str) -> bool:
-    """Check if email is in authorized list"""
+    """Check if email is in authorized list (sync version using env var)"""
     return email in AUTHORIZED_EMAILS
+
+
+async def is_authorized_user_async(email: str) -> bool:
+    """Check if email is in authorized list (async version using database)"""
+    try:
+        from app.routers.site_config import SiteConfigManager
+        import os
+        
+        config_manager = SiteConfigManager()
+        authorized_emails_str = await config_manager.get_config(
+            "authorized_emails"
+        )
+        
+        # Fall back to environment variable if not in database
+        if not authorized_emails_str:
+            authorized_emails_str = os.getenv("AUTHORIZED_EMAILS", "")
+        
+        if not authorized_emails_str:
+            return False
+            
+        authorized_emails = [
+            e.strip() for e in authorized_emails_str.split(",")
+            if e.strip()
+        ]
+        
+        return email in authorized_emails
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error checking authorized user: {e}")
+        # Fall back to sync version on error
+        return email in AUTHORIZED_EMAILS
+
+
+async def require_admin_auth(request: Request) -> dict:
+    """Dependency to require admin authentication using database config"""
+    user_info = await get_current_user(request)
+    email = user_info.get("email")
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not found in token"
+        )
+    
+    if not await is_authorized_user_async(email):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied - not an authorized admin"
+        )
+    
+    return user_info
 
 
 async def get_current_user(
@@ -134,11 +187,6 @@ async def get_current_user(
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-
-async def require_admin_auth(user: dict = Depends(get_current_user)) -> dict:
-    """Require admin authentication for protected routes"""
-    return user
 
 
 def get_login_url(request: Request) -> str:

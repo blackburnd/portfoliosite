@@ -638,3 +638,29 @@ async def revoke_oauth_tokens(
         query, {"portfolio_id": portfolio_id, "reason": reason}
     )
     return result > 0
+
+
+async def update_google_oauth_admin_email(
+    portfolio_id: str, new_admin_email: str
+) -> int:
+    """
+    Update admin_email for all Google OAuth tokens belonging to a portfolio.
+    This should be called when an admin logs in to associate their email
+    with existing tokens.
+    
+    Returns the number of records updated.
+    """
+    query = """
+    UPDATE google_oauth_tokens
+    SET admin_email = :new_admin_email,
+        updated_at = NOW()
+    WHERE portfolio_id = :portfolio_id
+      AND is_active = true
+    """
+    
+    result = await database.execute(query, {
+        "portfolio_id": portfolio_id,
+        "new_admin_email": new_admin_email
+    })
+    
+    return result

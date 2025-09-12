@@ -11,6 +11,7 @@ from jose.exceptions import JWTError
 
 from auth import (
     is_authorized_user,
+    is_authorized_user_async,
     create_access_token,
     require_admin_auth,
     SECRET_KEY,
@@ -314,7 +315,8 @@ async def auth_callback(request: Request):
             email=email
         )
 
-        if not email or not is_authorized_user(email):
+        # Check if user is authorized (check database config first)
+        if not email or not await is_authorized_user_async(email):
             log_with_context(
                 "WARNING", "auth",
                 f"Unauthorized login attempt by {email}", request
