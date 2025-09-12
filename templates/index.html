@@ -92,7 +92,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function startEdit(element) {
     const configKey = element.getAttribute('data-config-key');
-    const currentText = originalContent[configKey];
+    
+    // Get current text content directly from the element (excluding any existing controls)
+    const clone = element.cloneNode(true);
+    const existingControls = clone.querySelector('.edit-controls');
+    if (existingControls) {
+        existingControls.remove();
+    }
+    const currentText = clone.textContent.trim();
+    
+    // Store original content for canceling
+    originalContent[configKey] = currentText;
     
     // Add editing class
     element.classList.add('editing');

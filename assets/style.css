@@ -121,7 +121,9 @@
 }
 
 .edit-input,
-.edit-textarea {
+.edit-textarea,
+.content-input,
+.content-textarea {
     width: 100%;
     padding: 8px;
     border: 2px solid #007bff;
@@ -131,14 +133,18 @@
     color: inherit;
     background: white;
     resize: vertical;
+    margin: 0;
 }
 
-.edit-textarea {
+.edit-textarea,
+.content-textarea {
     min-height: 100px;
 }
 
 .edit-input:focus,
-.edit-textarea:focus {
+.edit-textarea:focus,
+.content-input:focus,
+.content-textarea:focus {
     outline: none;
     border-color: #0056b3;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
