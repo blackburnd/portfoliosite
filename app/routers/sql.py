@@ -3,6 +3,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import time
 import json
+import os
+import subprocess
+import tempfile
 from datetime import datetime
 
 from auth import require_admin_auth
@@ -99,70 +102,52 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
 
 
 @router.get("/admin/sql/generate-erd")
-async def generate_erd(
-    request: Request, admin: dict = Depends(require_admin_auth)
-):
-    """Generate an ERD from the database schema using pypgsvg"""
+async def generate_erd(request: Request, admin: dict = Depends(require_admin_auth)):
+    """Generate ERD from database schema"""
     try:
-        log_with_context(
-            "INFO", "sql_admin_erd_generation",
-            "Admin generating database ERD", request
-        )
+        log_with_context("INFO", "sql_admin_erd", 
+                         "Admin generating ERD", request)
         
-        # Generate the schema dump content
+        # Reuse the existing schema generation code
         schema_content = await generate_schema_dump()
         
-        # Import pypgsvg to generate the ERD
+        # Create a temporary dump file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.sql', 
+                                        delete=False) as dump_file:
+            dump_file.write(schema_content)
+            dump_file_path = dump_file.name
+        
         try:
-            from pypgsvg import generate_svg_from_sql
-        except ImportError:
-            log_with_context(
-                "ERROR", "sql_admin_erd_error",
-                "pypgsvg package not available", request
+            # Run pypgsvg on the dump file
+            result = subprocess.run(
+                ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg', 
+                 dump_file_path],
+                capture_output=True,
+                text=True,
+                cwd='/opt/portfoliosite',
+                env={'PYTHONPATH': '/opt/portfoliosite/venv/src/pypgsvg/src'}
             )
-            pkg_msg = ("pypgsvg package is not installed. "
-                       "Please install it first.")
-            return JSONResponse({
-                "status": "error",
-                "message": pkg_msg
-            }, status_code=500)
-        
-        # Generate SVG from the schema
-        try:
-            svg_content = generate_svg_from_sql(schema_content)
-        except Exception as svg_error:
-            log_with_context(
-                "ERROR", "sql_admin_erd_svg_error",
-                f"SVG generation failed: {svg_error}", request
+            
+            if result.returncode != 0:
+                raise Exception(f"pypgsvg failed: {result.stderr}")
+            
+            # Return the generated SVG
+            svg_content = result.stdout
+            return Response(
+                content=svg_content,
+                media_type="image/svg+xml",
+                headers={"Content-Disposition": 
+                        "inline; filename=database_erd.svg"}
             )
-            return JSONResponse({
-                "status": "error",
-                "message": f"ERD generation failed: {str(svg_error)}"
-            }, status_code=500)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"database_erd_{timestamp}.svg"
-        
-        log_with_context(
-            "INFO", "sql_admin_erd_generated",
-            f"ERD generated successfully: {filename}", request
-        )
-        
-        return Response(
-            content=svg_content,
-            media_type="image/svg+xml",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Type": "image/svg+xml"
-            }
-        )
-        
+            
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(dump_file_path):
+                os.unlink(dump_file_path)
+                
     except Exception as e:
-        log_with_context(
-            "ERROR", "sql_admin_erd_error",
-            f"ERD generation error: {e}", request
-        )
-        error_msg = f"ERD generation failed: {e}"
-        return JSONResponse(
-            {"status": "error", "message": error_msg}, status_code=500
-        )
+        log_with_context("ERROR", "sql_admin_erd_error", 
+                         f"ERD generation error: {e}", request)
+        return JSONResponse({"status": "error", 
+                           "message": f"ERD generation failed: {e}"}, 
+                           status_code=500)
