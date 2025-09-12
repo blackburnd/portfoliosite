@@ -175,11 +175,25 @@ function startEdit(element) {
         inputElement.value = currentText;
     }
     
-    // Replace content with input
+    // Get controls before clearing innerHTML
     const controls = element.querySelector('.edit-controls');
+    if (!controls) {
+        console.error('Edit controls not found for element:', element);
+        return;
+    }
+    
+    // Store controls HTML to recreate them
+    const controlsHTML = controls.outerHTML;
+    
+    // Replace content with input
     element.innerHTML = '';
     element.appendChild(inputElement);
-    element.appendChild(controls);
+    
+    // Recreate controls from HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = controlsHTML;
+    const newControls = tempDiv.firstChild;
+    element.appendChild(newControls);
     
     // Focus the input
     inputElement.focus();
@@ -207,6 +221,11 @@ function startEdit(element) {
 
 async function saveContent(button) {
     const element = button.closest('.editable-content');
+    if (!element) {
+        console.error('Could not find editable element for button:', button);
+        return;
+    }
+    
     const configKey = element.getAttribute('data-config-key');
     const input = element.querySelector('input, textarea');
     const newValue = input.value.trim();
@@ -235,8 +254,17 @@ async function saveContent(button) {
         const result = await response.json();
         
         if (result.success) {
-            // Update the display content
+            // Get controls before clearing innerHTML
             const controls = element.querySelector('.edit-controls');
+            if (!controls) {
+                console.error('Could not find edit controls for element:', element);
+                return;
+            }
+            
+            // Store controls HTML to recreate them
+            const controlsHTML = controls.outerHTML;
+            
+            // Update the display content
             element.classList.remove('editing');
             
             // Restore content with proper formatting
@@ -248,8 +276,11 @@ async function saveContent(button) {
                 element.innerHTML = newValue;
             }
             
-            // Re-add controls
-            element.appendChild(controls);
+            // Recreate and re-add controls
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = controlsHTML;
+            const newControls = tempDiv.firstChild;
+            element.appendChild(newControls);
             
             // Show success feedback
             showFeedback('Content updated successfully!', 'success');
@@ -270,15 +301,28 @@ async function saveContent(button) {
 
 function cancelEdit(button) {
     const element = button.closest('.editable-content');
+    if (!element) {
+        console.error('Could not find editable element for button:', button);
+        return;
+    }
+    
     const configKey = element.getAttribute('data-config-key');
     const originalText = originalContent[configKey];
     
     // Remove editing class
     element.classList.remove('editing');
     
-    // Restore original content
+    // Get controls before clearing innerHTML
     const controls = element.querySelector('.edit-controls');
+    if (!controls) {
+        console.error('Could not find edit controls for element:', element);
+        return;
+    }
     
+    // Store controls HTML to recreate them
+    const controlsHTML = controls.outerHTML;
+    
+    // Restore original content
     if (element.tagName.toLowerCase().startsWith('h')) {
         element.innerHTML = originalText;
     } else if (configKey === 'home_hero_tagline') {
@@ -287,8 +331,11 @@ function cancelEdit(button) {
         element.innerHTML = originalText;
     }
     
-    // Re-add controls
-    element.appendChild(controls);
+    // Recreate and re-add controls
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = controlsHTML;
+    const newControls = tempDiv.firstChild;
+    element.appendChild(newControls);
 }
 
 function showFeedback(message, type) {
