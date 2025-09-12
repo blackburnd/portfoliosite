@@ -18,7 +18,7 @@
     </div>
     
     <div class="config-list" id="configList">
-        {% for key, value in config_values.items() %}
+        {% for key, value in config.items() %}
         <div class="config-item">
             <div class="config-key">{{ key }}</div>
             {% if user_authenticated %}
