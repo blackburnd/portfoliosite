@@ -129,9 +129,12 @@ async def is_authorized_user_async(email: str) -> bool:
         return email in AUTHORIZED_EMAILS
 
 
-async def require_admin_auth(request: Request) -> dict:
+async def require_admin_auth(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> dict:
     """Dependency to require admin authentication using database config"""
-    user_info = await get_current_user(request)
+    user_info = await get_current_user(request, credentials)
     email = user_info.get("email")
     
     if not email:
