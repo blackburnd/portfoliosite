@@ -201,7 +201,7 @@ function updateDisplay() {
     if (filteredLogs.length === 0) {
         console.log('No filtered logs to display');
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="8" style="text-align: center; padding: 20px;">No logs found</td>';
+        row.innerHTML = '<td colspan="9" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
         return;
     }
@@ -227,7 +227,7 @@ function updateDisplay() {
         // Show only date in Time column
         const dateStr = new Date(log.timestamp).toLocaleDateString();
         row.innerHTML = `
-            <td class="log-timestamp">${dateStr}<br><small style="color: #666">${new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</small></td>
+            <td class="log-timestamp">${dateStr} ${new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</td>
             <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
@@ -238,6 +238,15 @@ function updateDisplay() {
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
                         <span class="copy-icon">649</span>
                     </button>
+                </div>
+            </td>
+            <td class="log-traceback">
+                <div class="message-content">
+                    ${needsExpand(log.traceback) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || ''))}</span>
+                    ${log.traceback ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.traceback || '').replace(/'/g, "\\'")}', this)" title="Copy traceback to clipboard">
+                        <span class="copy-icon">649</span>
+                    </button>` : ''}
                 </div>
             </td>
             <td class="log-function">${escapeHtml(log.function || '')}</td>
@@ -275,10 +284,7 @@ function renderLogs() {
         }
         
         row.innerHTML = `
-            <td class="expand-col">
-                ${(log.message && (log.message.includes('\n') || log.message.length > 100)) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
-            </td>
-            <td class="log-timestamp">${dateStr}<br><small style="color: #666">${timeStr}</small></td>
+            <td class="log-timestamp">${dateStr} ${timeStr}</td>
             <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
@@ -293,6 +299,15 @@ function renderLogs() {
                 </div>
             </td>
             
+            <td class="log-traceback">
+                <div class="message-content">
+                    ${needsExpand(log.traceback) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || ''))}</span>
+                    ${log.traceback ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.traceback || '').replace(/'/g, "\\'")}', this)" title="Copy traceback to clipboard">
+                        Copy
+                    </button>` : ''}
+                </div>
+            </td>
         
             <td class="log-function">${escapeHtml(log.function || '')}</td>
             <td class="log-line">${escapeHtml(log.line || '')}</td>

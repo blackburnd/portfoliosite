@@ -105,7 +105,7 @@ async def get_logs_data(
         order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
         logs_query = f"""
             SELECT timestamp, level, message, module, function, line,
-                   user, extra, ip_address
+                   user, extra, ip_address, traceback
             FROM app_log {where_clause} {order_clause}
             LIMIT :limit OFFSET :offset
         """
@@ -157,124 +157,5 @@ async def clear_logs(
     except Exception as e:
         return JSONResponse(
             {"status": "error", "message": f"Failed to clear logs: {e}"},
-            status_code=500
-        )
-
-
-@router.get("/logs/level")
-async def get_log_level(
-    request: Request, user_info=Depends(require_admin_auth)
-):
-    """Get current log level"""
-    import logging
-    
-    try:
-        # Get main application logger
-        main_logger = logging.getLogger('portfoliosite')
-        current_level = main_logger.level
-        level_name = logging.getLevelName(current_level)
-        
-        # Get other important loggers
-        uvicorn_access_logger = logging.getLogger('uvicorn.access')
-        uvicorn_access_level = logging.getLevelName(
-            uvicorn_access_logger.level
-        )
-        
-        uvicorn_error_logger = logging.getLogger('uvicorn.error')
-        uvicorn_error_level = logging.getLevelName(uvicorn_error_logger.level)
-        
-        databases_logger = logging.getLogger('databases')
-        databases_level = logging.getLevelName(databases_logger.level)
-        
-        return JSONResponse({
-            "status": "success",
-            "current_level": level_name,
-            "current_level_number": current_level,
-            "loggers": {
-                "portfoliosite": level_name,
-                "uvicorn.access": uvicorn_access_level,
-                "uvicorn.error": uvicorn_error_level,
-                "databases": databases_level
-            },
-            "available_levels": {
-                "DEBUG": logging.DEBUG,
-                "INFO": logging.INFO,
-                "WARNING": logging.WARNING,
-                "ERROR": logging.ERROR,
-                "CRITICAL": logging.CRITICAL
-            }
-        })
-    except Exception as e:
-        return JSONResponse(
-            {"status": "error", "message": f"Failed to get log level: {e}"},
-            status_code=500
-        )
-
-
-@router.post("/logs/level")
-async def set_log_level(
-    request: Request,
-    user_info=Depends(require_admin_auth)
-):
-    """Set runtime log level"""
-    import logging
-    
-    try:
-        data = await request.json()
-        new_level = data.get("level")
-        
-        if not new_level:
-            return JSONResponse(
-                {"status": "error", "message": "Level is required"},
-                status_code=400
-            )
-        
-        # Convert level name to number if needed
-        if isinstance(new_level, str):
-            level_mapping = {
-                "DEBUG": logging.DEBUG,
-                "INFO": logging.INFO,
-                "WARNING": logging.WARNING,
-                "ERROR": logging.ERROR,
-                "CRITICAL": logging.CRITICAL
-            }
-            if new_level.upper() not in level_mapping:
-                error_msg = f"Invalid log level: {new_level}"
-                return JSONResponse(
-                    {"status": "error", "message": error_msg},
-                    status_code=400
-                )
-            new_level_number = level_mapping[new_level.upper()]
-            level_name = new_level.upper()
-        else:
-            new_level_number = new_level
-            level_name = logging.getLevelName(new_level_number)
-        
-        # Set the main application logger level
-        main_logger = logging.getLogger('portfoliosite')
-        old_level = logging.getLevelName(main_logger.level)
-        main_logger.setLevel(new_level_number)
-        
-        # Log the change
-        user_email = user_info.get("email", "unknown")
-        log_msg = (f"Admin ({user_email}) changed log level "
-                   f"from {old_level} to {level_name}")
-        add_log(
-            level="info",
-            message=log_msg,
-            module="logs_admin",
-            function="set_log_level"
-        )
-        
-        return JSONResponse({
-            "status": "success",
-            "message": f"Log level changed from {old_level} to {level_name}",
-            "old_level": old_level,
-            "new_level": level_name
-        })
-        
-    except Exception as e:
-        return JSONResponse(
-            {"status": "error", "message": f"Failed to set log level: {e}"},
             status_code=500
         )
