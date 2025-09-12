@@ -1,11 +1,14 @@
 # auth.py - Google OAuth Authentication Module
 import os
+import logging
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 import secrets
+
+logger = logging.getLogger(__name__)
 
 
 # Configuration
@@ -14,18 +17,21 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
 # Authorized emails - load from environment as fallback
+import logging
+logger = logging.getLogger(__name__)
+
 authorized_emails_env = os.getenv("AUTHORIZED_EMAILS", "")
-print(f"DEBUG: Raw AUTHORIZED_EMAILS env var: '{authorized_emails_env}'")
+logger.info(f"DEBUG: Raw AUTHORIZED_EMAILS env var: '{authorized_emails_env}'")
 
 if authorized_emails_env:
     AUTHORIZED_EMAILS = [
-        email.strip() for email in authorized_emails_env.split(" ") 
+        email.strip() for email in authorized_emails_env.split(" ")
         if email.strip()
     ]
 else:
     AUTHORIZED_EMAILS = []
 
-print(f"DEBUG: Parsed AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
+logger.info(f"DEBUG: Parsed AUTHORIZED_EMAILS: {AUTHORIZED_EMAILS}")
 
 
 # Security bearer for JWT tokens
@@ -174,3 +180,23 @@ def create_user_session(user_info: dict) -> dict:
         "iss": "google",
         "iat": datetime.utcnow().timestamp(),
     }
+
+
+def get_user_info(request: Request) -> dict:
+    """Get user info from session or return None if not authenticated"""
+    try:
+        # Try to get token from cookie
+        token = request.cookies.get("access_token")
+        if not token:
+            return None
+            
+        # Verify and decode token
+        payload = verify_token(token)
+        email = payload.get("sub")
+        
+        if not email or not is_authorized_user(email):
+            return None
+            
+        return payload
+    except Exception:
+        return None
