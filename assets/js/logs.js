@@ -8,6 +8,7 @@ let hasMoreLogs = true;
 let intersectionObserver;
 let backendTotalCount = 0; 
 let currentSortField = 'timestamp'; // Default sort field
+let currentSortOrder = 'desc'; // Default to newest first
 
 window.refreshLogs = function() {
     console.log('Refresh button clicked');
