@@ -96,3 +96,73 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
     except Exception as e:
         log_with_context("ERROR", "sql_admin_schema_error", f"Schema download error: {e}", request)
         return JSONResponse({"status": "error", "message": f"Schema download failed: {e}"}, status_code=500)
+
+
+@router.get("/admin/sql/generate-erd")
+async def generate_erd(
+    request: Request, admin: dict = Depends(require_admin_auth)
+):
+    """Generate an ERD from the database schema using pypgsvg"""
+    try:
+        log_with_context(
+            "INFO", "sql_admin_erd_generation",
+            "Admin generating database ERD", request
+        )
+        
+        # Generate the schema dump content
+        schema_content = await generate_schema_dump()
+        
+        # Import pypgsvg to generate the ERD
+        try:
+            from pypgsvg import generate_svg_from_sql
+        except ImportError:
+            log_with_context(
+                "ERROR", "sql_admin_erd_error",
+                "pypgsvg package not available", request
+            )
+            pkg_msg = ("pypgsvg package is not installed. "
+                       "Please install it first.")
+            return JSONResponse({
+                "status": "error",
+                "message": pkg_msg
+            }, status_code=500)
+        
+        # Generate SVG from the schema
+        try:
+            svg_content = generate_svg_from_sql(schema_content)
+        except Exception as svg_error:
+            log_with_context(
+                "ERROR", "sql_admin_erd_svg_error",
+                f"SVG generation failed: {svg_error}", request
+            )
+            return JSONResponse({
+                "status": "error",
+                "message": f"ERD generation failed: {str(svg_error)}"
+            }, status_code=500)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"database_erd_{timestamp}.svg"
+        
+        log_with_context(
+            "INFO", "sql_admin_erd_generated",
+            f"ERD generated successfully: {filename}", request
+        )
+        
+        return Response(
+            content=svg_content,
+            media_type="image/svg+xml",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Type": "image/svg+xml"
+            }
+        )
+        
+    except Exception as e:
+        log_with_context(
+            "ERROR", "sql_admin_erd_error",
+            f"ERD generation error: {e}", request
+        )
+        error_msg = f"ERD generation failed: {e}"
+        return JSONResponse(
+            {"status": "error", "message": error_msg}, status_code=500
+        )
