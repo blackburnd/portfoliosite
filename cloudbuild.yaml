@@ -67,7 +67,7 @@ steps:
     Environment=DATABASE_URL=postgresql://${_PG_USER}:${_PG_PASS}@${_PG_HOST}:${_PG_PORT}/${_PG_DB}
     Environment=ADMIN_USERNAME=${_ADMIN_USERNAME}
     Environment=ADMIN_PASSWORD=${_ADMIN_PASSWORD}
-    Environment=AUTHORIZED_EMAILS=${_AUTHORIZED_EMAILS}
+    Environment="AUTHORIZED_EMAILS=${_AUTHORIZED_EMAILS}"
     Environment=ENV=production
     EOF
 
