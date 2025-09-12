@@ -12,6 +12,8 @@
         <div class="auth-admin-section">
             {% if user_authenticated %}
                 <a href="/auth/logout" class="auth-link logout-link">Logout ({{ user_email }})</a>
+            {% else %}
+                <a href="#" onclick="initiateLogin(); return false;" class="auth-link">Login</a>
             {% endif %}
         </div>
     </div>
