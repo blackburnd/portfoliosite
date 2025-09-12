@@ -130,6 +130,55 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
         )
 
 
+@router.get("/admin/config/env-vars")
+async def get_environment_variables(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Get current environment variables for diagnostic purposes"""
+    import os
+    try:
+        # Get all environment variables
+        env_vars = dict(os.environ)
+        
+        # Get specific auth-related variables with their parsing
+        from auth import AUTHORIZED_EMAILS
+        
+        raw_emails = os.getenv("AUTHORIZED_EMAILS", "")
+        parsed_emails = AUTHORIZED_EMAILS
+        
+        split_method = ("space_separated" if " " in raw_emails
+                        else "comma_separated")
+        
+        diagnostic_info = {
+            "timestamp": datetime.now().isoformat(),
+            "auth_diagnosis": {
+                "raw_authorized_emails": raw_emails,
+                "parsed_authorized_emails": parsed_emails,
+                "parsed_count": len(parsed_emails) if parsed_emails else 0,
+                "split_method": split_method
+            },
+            "key_env_vars": {
+                k: v for k, v in env_vars.items()
+                if k.startswith(('AUTHORIZED_', 'ADMIN_', 'GOOGLE_',
+                                'DATABASE_', 'SECRET_'))
+            },
+            "all_env_vars": env_vars
+        }
+        
+        return JSONResponse({
+            "status": "success",
+            "data": diagnostic_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting environment variables: {e}")
+        return JSONResponse({
+            "status": "error",
+            "message": str(e)
+        }, status_code=500)
+
+
 @router.get("/admin/config/{category}", response_class=HTMLResponse)
 async def config_category_form(
     request: Request,
@@ -281,52 +330,3 @@ async def bulk_update_config(
             url="/admin/config?error=true",
             status_code=303
         )
-
-
-@router.get("/admin/config/env-vars")
-async def get_environment_variables(
-    request: Request,
-    _=Depends(require_admin_auth)
-):
-    """Get current environment variables for diagnostic purposes"""
-    import os
-    try:
-        # Get all environment variables
-        env_vars = dict(os.environ)
-        
-        # Get specific auth-related variables with their parsing
-        from auth import AUTHORIZED_EMAILS
-        
-        raw_emails = os.getenv("AUTHORIZED_EMAILS", "")
-        parsed_emails = AUTHORIZED_EMAILS
-        
-        split_method = ("space_separated" if " " in raw_emails
-                        else "comma_separated")
-        
-        diagnostic_info = {
-            "timestamp": datetime.now().isoformat(),
-            "auth_diagnosis": {
-                "raw_authorized_emails": raw_emails,
-                "parsed_authorized_emails": parsed_emails,
-                "parsed_count": len(parsed_emails) if parsed_emails else 0,
-                "split_method": split_method
-            },
-            "key_env_vars": {
-                k: v for k, v in env_vars.items()
-                if k.startswith(('AUTHORIZED_', 'ADMIN_', 'GOOGLE_',
-                                'DATABASE_', 'SECRET_'))
-            },
-            "all_env_vars": env_vars
-        }
-        
-        return JSONResponse({
-            "status": "success",
-            "data": diagnostic_info
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting environment variables: {e}")
-        return JSONResponse({
-            "status": "error",
-            "message": str(e)
-        }, status_code=500)
