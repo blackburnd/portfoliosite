@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Site Configuration{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/assets/style.css">
+{% endblock %}
+
+{% block content %}
+<div class="config-overview">
+    <div class="config-header">
+        <h1>Site Configuration</h1>
+        
+        <div class="config-controls">
+            <button onclick="sortByName()" class="sort-btn">Sort by Name</button>
+            <button onclick="sortByValue()" class="sort-btn">Sort by Value</button>
+        </div>
+    </div>
+    
+    <div class="config-list" id="configList">
+        {% for key, value in config_values.items() %}
+        <div class="config-item">
+            <div class="config-key">{{ key }}</div>
+            {% if user_authenticated %}
+            <div class="config-value editable-content" data-config-key="{{ key }}">
+                {{ value }}
+                <div class="edit-controls">
+                    <button class="edit-btn" onclick="startEdit(this)">Edit</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="config-value">{{ value }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if user_authenticated %}
+<script>
+let originalContent = {};
+
+function startEdit(button) {
+    const element = button.closest('.editable-content');
+    if (!element) {
+        console.error('Could not find editable element for button:', button);
+        return;
+    }
+    
+    const configKey = element.getAttribute('data-config-key');
+    
+    // Store original content (excluding edit controls)
+    const contentClone = element.cloneNode(true);
+    const cloneControls = contentClone.querySelector('.edit-controls');
+    if (cloneControls) {
+        cloneControls.remove();
+    }
+    originalContent[configKey] = contentClone.innerHTML.trim();
+    
+    // Add editing class
+    element.classList.add('editing');
+    
+    // Get current text content (excluding buttons)
+    const currentText = originalContent[configKey];
+    
+    // Create input field
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentText;
+    input.className = 'edit-input';
+    
+    // Create control buttons
+    const controls = element.querySelector('.edit-controls');
+    if (!controls) {
+        console.error('Edit controls not found for element:', element);
+        return;
+    }
+    
+    controls.innerHTML = `
+        <button class="save-btn" onclick="saveContent(this)">Save</button>
+        <button class="cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+    `;
+    
+    // Replace content with input (but keep controls)
+    const controlsClone = controls.cloneNode(true);
+    element.innerHTML = '';
+    element.appendChild(input);
+    element.appendChild(controlsClone);
+    
+    // Focus input
+    input.focus();
+    input.select();
+    
+    // Add keyboard shortcuts
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            saveContent(this.parentElement.querySelector('.save-btn'));
+        } else if (e.key === 'Escape') {
+            cancelEdit(this.parentElement.querySelector('.cancel-btn'));
+        }
+    });
+}
+
+async function saveContent(button) {
+    const element = button.closest('.editable-content');
+    if (!element) {
+        console.error('Could not find editable element for button:', button);
+        return;
+    }
+    
+    const input = element.querySelector('.edit-input');
+    if (!input) {
+        console.error('Could not find input field');
+        return;
+    }
+    
+    const configKey = element.getAttribute('data-config-key');
+    const newValue = input.value.trim();
+    
+    // Disable button during save
+    button.textContent = 'Saving...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/admin/update-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                key: configKey,
+                value: newValue
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update the display content
+            element.classList.remove('editing');
+            
+            // Restore content with edit controls
+            element.innerHTML = `${newValue}
+                <div class="edit-controls">
+                    <button class="edit-btn" onclick="startEdit(this)">Edit</button>
+                </div>`;
+            
+            // Show success feedback
+            showFeedback('Content updated successfully!', 'success');
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Save failed:', error);
+        showFeedback('Failed to save: ' + error.message, 'error');
+        
+        // Restore original content on error
+        cancelEdit(button.parentElement.querySelector('.cancel-btn'));
+    } finally {
+        button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+function cancelEdit(button) {
+    const element = button.closest('.editable-content');
+    if (!element) {
+        console.error('Could not find editable element for button:', button);
+        return;
+    }
+    
+    const configKey = element.getAttribute('data-config-key');
+    const originalText = originalContent[configKey];
+    
+    // Remove editing class
+    element.classList.remove('editing');
+    
+    // Restore original content with edit controls
+    element.innerHTML = `${originalText}
+        <div class="edit-controls">
+            <button class="edit-btn" onclick="startEdit(this)">Edit</button>
+        </div>`;
+}
+
+function showFeedback(message, type) {
+    // Create feedback element
+    const feedback = document.createElement('div');
+    feedback.className = `feedback-message ${type}`;
+    feedback.textContent = message;
+    
+    document.body.appendChild(feedback);
+    
+    // Animate in
+    setTimeout(() => {
+        feedback.classList.add('show');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        feedback.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(feedback)) {
+                document.body.removeChild(feedback);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function sortByName() {
+    const configList = document.getElementById('configList');
+    const items = Array.from(configList.getElementsByClassName('config-item'));
+    
+    items.sort((a, b) => {
+        const keyA = a.querySelector('.config-key').textContent.toLowerCase();
+        const keyB = b.querySelector('.config-key').textContent.toLowerCase();
+        return keyA.localeCompare(keyB);
+    });
+    
+    // Re-append sorted items
+    items.forEach(item => configList.appendChild(item));
+}
+
+function sortByValue() {
+    const configList = document.getElementById('configList');
+    const items = Array.from(configList.getElementsByClassName('config-item'));
+    
+    items.sort((a, b) => {
+        const valueA = a.querySelector('.config-value').textContent.toLowerCase();
+        const valueB = b.querySelector('.config-value').textContent.toLowerCase();
+        return valueA.localeCompare(valueB);
+    });
+    
+    // Re-append sorted items
+    items.forEach(item => configList.appendChild(item));
+}
+</script>
+{% endif %}
+{% endblock %}
