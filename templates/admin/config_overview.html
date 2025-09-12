@@ -1,79 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}Site Configuration - {{ config.get('site_title', 'Portfolio Site') }}{% endblock %}
+{% block title %}Site Configuration{% endblock %}
 
 {% block head %}
 <style>
-.config-card {
-    background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid #007bff;
-}
-
-.config-card h3 {
-    margin-top: 0;
-    color: #333;
-}
-
-.config-card p {
-    color: #666;
-    margin-bottom: 1rem;
-}
-
-.btn-config {
-    background: #007bff;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.3s;
-}
-
-.btn-config:hover {
-    background: #0056b3;
-    text-decoration: none;
-    color: white;
-}
-
 .config-overview {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 2rem;
 }
 
-.config-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
+.config-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.status-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 0.5rem;
-}
-
-.status-configured {
-    background: #28a745;
-}
-
-.status-default {
-    background: #ffc107;
-}
-
-.config-stats {
+.config-list {
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 4px;
-    margin-bottom: 2rem;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.config-item {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.config-key {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.config-value {
+    color: #333;
+    margin-left: 1rem;
 }
 </style>
 {% endblock %}
@@ -81,101 +49,31 @@
 {% block content %}
 <div class="config-overview">
     <h1>Site Configuration</h1>
-    <p>Manage all aspects of your portfolio site through these configuration panels.</p>
+    <p>Current configuration values stored in the database.</p>
     
-    <div class="config-stats">
-        <h4>Configuration Status</h4>
-        <p><span class="status-indicator status-configured"></span> Configured values: {{ config|length }}</p>
-        <p><span class="status-indicator status-default"></span> Using defaults where not configured</p>
-    </div>
-
-    <!-- Template Data Extraction Section -->
-    <div class="config-card" style="background: #e8f5e8; border-left-color: #28a745;">
-        <h3>🔄 Populate From Templates</h3>
-        <p>Extract your personal data from existing HTML templates and populate the database. This will read your actual content from index.html, work.html, and contact.html to populate your portfolio, work experience, and site configuration.</p>
-        <button onclick="extractTemplateData()" class="btn-config" style="background: #28a745;">
-            Extract My Data From Templates
-        </button>
-        <div id="extract-status" style="margin-top: 1rem; display: none;"></div>
-    </div>
-    
-    <div class="config-grid">
-        <div class="config-card">
-            <h3>Site Branding</h3>
-            <p>Configure your site title, tagline, company name, and copyright information.</p>
-            <a href="/admin/site-config/branding" class="btn-config">Configure Branding</a>
-        </div>
-        
-        <div class="config-card">
-            <h3>Site Content</h3>
-            <p>Edit hero section, about content, focus areas, and main page content.</p>
-            <a href="/admin/site-config/content" class="btn-config">Configure Content</a>
-        </div>
-        
-        <div class="config-card">
-            <h3>Page Settings</h3>
-            <p>Configure page titles, navigation labels, and page-specific settings.</p>
-            <a href="/admin/site-config/pages" class="btn-config">Configure Pages</a>
-        </div>
-        
-        <div class="config-card">
-            <h3>Assets & Files</h3>
-            <p>Manage profile images, resume files, and other downloadable assets.</p>
-            <a href="/admin/site-config/assets" class="btn-config">Configure Assets</a>
-        </div>
+    <div class="config-section">
+        <h3>Configuration Status</h3>
+        <p><strong>Total configured values:</strong> {{ config|length }}</p>
+        <p>These values are used throughout the site to customize content and behavior.</p>
     </div>
     
     {% if config %}
-    <div style="margin-top: 3rem;">
-        <h4>Current Configuration Values</h4>
-        <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; font-family: monospace; max-height: 300px; overflow-y: auto;">
+    <div class="config-section">
+        <h3>Current Configuration Values</h3>
+        <div class="config-list">
             {% for key, value in config.items() %}
-            <div style="margin-bottom: 0.5rem;">
-                <strong>{{ key }}:</strong> {{ value[:100] }}{% if value|length > 100 %}...{% endif %}
+            <div class="config-item">
+                <div class="config-key">{{ key }}</div>
+                <div class="config-value">{{ value[:200] }}{% if value|length > 200 %}...{% endif %}</div>
             </div>
             {% endfor %}
         </div>
     </div>
+    {% else %}
+    <div class="config-section">
+        <h3>No Configuration Found</h3>
+        <p>No configuration values are currently stored in the database.</p>
+    </div>
     {% endif %}
 </div>
-
-<script>
-async function extractTemplateData() {
-    const button = document.querySelector('button[onclick="extractTemplateData()"]');
-    const statusDiv = document.getElementById('extract-status');
-    
-    // Show loading state
-    button.disabled = true;
-    button.textContent = 'Extracting Data...';
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '<p style="color: #007bff;">🔄 Extracting data from templates...</p>';
-    
-    try {
-        const response = await fetch('/admin/extract-template-data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            statusDiv.innerHTML = '<p style="color: #28a745;">✅ ' + result.message + '</p>';
-            
-            // Reload page after 2 seconds to show new data
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        } else {
-            statusDiv.innerHTML = '<p style="color: #dc3545;">❌ ' + result.message + '</p>';
-        }
-    } catch (error) {
-        statusDiv.innerHTML = '<p style="color: #dc3545;">❌ Error: ' + error.message + '</p>';
-    } finally {
-        button.disabled = false;
-        button.textContent = 'Extract My Data From Templates';
-    }
-}
-</script>
 {% endblock %}

@@ -600,32 +600,6 @@ async def shutdown_event():
     await close_database()
 
 
-# Template Data Extraction Endpoint
-@app.post("/admin/extract-template-data")
-async def extract_template_data():
-    """Extract data from HTML templates and populate database"""
-    try:
-        from extract_template_data import extract_and_populate_data
-        
-        # Run the extraction in the background
-        import asyncio
-        await extract_and_populate_data()
-        
-        return JSONResponse({
-            "success": True,
-            "message": "Template data successfully extracted and populated in database"
-        })
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        await add_log("ERROR", "template_extraction", f"Template extraction failed: {str(e)}", {"error": error_details})
-        
-        return JSONResponse({
-            "success": False,
-            "message": f"Failed to extract template data: {str(e)}"
-        }, status_code=500)
-
-
 # Include routers
 app.include_router(contact.router, tags=["contact"])
 app.include_router(projects.router, tags=["projects"])
