@@ -24,9 +24,6 @@
             {% if user_authenticated %}
             <div class="config-value editable-content" data-config-key="{{ key }}">
                 {{ value }}
-                <div class="edit-controls">
-                    <button class="edit-btn" onclick="startEdit(this)">Edit</button>
-                </div>
             </div>
             {% else %}
             <div class="config-value">{{ value }}</div>
@@ -40,65 +37,70 @@
 <script>
 let originalContent = {};
 
-function startEdit(button) {
-    const element = button.closest('.editable-content');
-    if (!element) {
-        console.error('Could not find editable element for button:', button);
-        return;
-    }
+// Add click event listeners to editable content
+document.addEventListener('DOMContentLoaded', function() {
+    const editableElements = document.querySelectorAll('.editable-content');
     
+    // Add click-to-edit functionality to each editable element
+    editableElements.forEach(element => {
+        element.addEventListener('click', function(e) {
+            // Don't start editing if already editing or if clicking on controls
+            if (element.classList.contains('editing') || e.target.closest('.edit-controls')) {
+                return;
+            }
+            startEdit(element);
+        });
+        
+        // Add hover cursor styling
+        element.style.cursor = 'pointer';
+    });
+});
+
+function startEdit(element) {
     const configKey = element.getAttribute('data-config-key');
     
-    // Store original content (excluding edit controls)
-    const contentClone = element.cloneNode(true);
-    const cloneControls = contentClone.querySelector('.edit-controls');
-    if (cloneControls) {
-        cloneControls.remove();
+    // Get current text content directly from the element (excluding any existing controls)
+    const clone = element.cloneNode(true);
+    const existingControls = clone.querySelector('.edit-controls');
+    if (existingControls) {
+        existingControls.remove();
     }
-    originalContent[configKey] = contentClone.innerHTML.trim();
+    const currentText = clone.textContent.trim();
+    
+    // Store original content for canceling
+    originalContent[configKey] = currentText;
     
     // Add editing class
     element.classList.add('editing');
     
-    // Get current text content (excluding buttons)
-    const currentText = originalContent[configKey];
+    // Create editing interface
+    const editingHTML = `
+        <input type="text" class="content-input" value="${currentText}">
+        <div class="edit-controls">
+            <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+            <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+        </div>`;
     
-    // Create input field
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = currentText;
-    input.className = 'edit-input';
+    element.innerHTML = editingHTML;
     
-    // Create control buttons
-    const controls = element.querySelector('.edit-controls');
-    if (!controls) {
-        console.error('Edit controls not found for element:', element);
-        return;
+    // Focus the input
+    const input = element.querySelector('.content-input');
+    if (input) {
+        input.focus();
+        input.select();
+        
+        // Add keyboard event listeners
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const saveBtn = element.querySelector('.save-btn');
+                if (saveBtn) saveContent(saveBtn);
+            } else if (e.key === 'Escape') {
+                const cancelBtn = element.querySelector('.cancel-btn');
+                if (cancelBtn) cancelEdit(cancelBtn);
+            }
+        });
     }
-    
-    controls.innerHTML = `
-        <button class="save-btn" onclick="saveContent(this)">Save</button>
-        <button class="cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-    `;
-    
-    // Replace content with input (but keep controls)
-    const controlsClone = controls.cloneNode(true);
-    element.innerHTML = '';
-    element.appendChild(input);
-    element.appendChild(controlsClone);
-    
-    // Focus input
-    input.focus();
-    input.select();
-    
-    // Add keyboard shortcuts
-    input.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            saveContent(this.parentElement.querySelector('.save-btn'));
-        } else if (e.key === 'Escape') {
-            cancelEdit(this.parentElement.querySelector('.cancel-btn'));
-        }
-    });
 }
 
 async function saveContent(button) {
@@ -108,7 +110,7 @@ async function saveContent(button) {
         return;
     }
     
-    const input = element.querySelector('.edit-input');
+    const input = element.querySelector('.content-input');
     if (!input) {
         console.error('Could not find input field');
         return;
@@ -138,12 +140,7 @@ async function saveContent(button) {
         if (result.success) {
             // Update the display content
             element.classList.remove('editing');
-            
-            // Restore content with edit controls
-            element.innerHTML = `${newValue}
-                <div class="edit-controls">
-                    <button class="edit-btn" onclick="startEdit(this)">Edit</button>
-                </div>`;
+            element.innerHTML = newValue;
             
             // Show success feedback
             showFeedback('Content updated successfully!', 'success');
@@ -175,11 +172,8 @@ function cancelEdit(button) {
     // Remove editing class
     element.classList.remove('editing');
     
-    // Restore original content with edit controls
-    element.innerHTML = `${originalText}
-        <div class="edit-controls">
-            <button class="edit-btn" onclick="startEdit(this)">Edit</button>
-        </div>`;
+    // Restore original content
+    element.innerHTML = originalText;
 }
 
 function showFeedback(message, type) {
