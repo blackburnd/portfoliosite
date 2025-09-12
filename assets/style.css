@@ -1772,6 +1772,9 @@ td[style*="#abd6ff"] {
     width: 100%;
     border-collapse: collapse;
     min-width: 800px; /* Ensure table has minimum width to show all columns */
+    table-layout: fixed; /* Fixed layout for consistent column sizing */
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 13px;
 }
 
 .logs-table th {
@@ -1802,8 +1805,12 @@ td[style*="#abd6ff"] {
         cursor: pointer;
         user-select: none;
         border-bottom: 1px solid #e0e0e0;
+        border-right: 1px solid #e0e0e0;
         font-size: 13px;
         letter-spacing: 0.01em;
+    }
+    .logs-table.compact-table th.compact-th:last-child {
+        border-right: none;
     }
     .logs-table.compact-table th.compact-th:hover {
         background: #fafafa;
@@ -1816,10 +1823,14 @@ td[style*="#abd6ff"] {
     .logs-table.compact-table td {
         padding: 5px 6px;
         border-bottom: 1px solid #ededed;
+        border-right: 1px solid #ededed;
         vertical-align: top;
         font-size: 13px;
         color: #222;
         background: #fff;
+    }
+    .logs-table.compact-table td:last-child {
+        border-right: none;
     }
     .logs-table.compact-table tr {
         transition: background 0.2s;
@@ -1835,7 +1846,8 @@ td[style*="#abd6ff"] {
 .log-level-ERROR { background: #dc3545; color: white; }
 
 .log-message {
-    max-width: 400px;
+    width: auto;
+    min-width: 200px;
     word-wrap: break-word;
     position: relative;
 }
@@ -1886,14 +1898,14 @@ td[style*="#abd6ff"] {
 }
 
 .log-timestamp {
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #222;
     white-space: nowrap;
 }
 
 .log-module {
-    font-size: 12px;
-    color: #666;
+    font-size: 13px;
+    color: #222;
 }
 
 .loading-indicator {
