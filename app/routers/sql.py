@@ -118,10 +118,10 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             dump_file_path = dump_file.name
         
         try:
-            # Run pypgsvg on the dump file with --view to output SVG content
+            # Run pypgsvg on the dump file to generate SVG
             result = subprocess.run(
                 ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg', 
-                 dump_file_path, '--view'],
+                 dump_file_path],
                 capture_output=True,
                 text=True,
                 cwd='/opt/portfoliosite',
@@ -131,8 +131,22 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             if result.returncode != 0:
                 raise Exception(f"pypgsvg failed: {result.stderr}")
             
-            # Return the generated SVG
-            svg_content = result.stdout
+            # pypgsvg generates a file, extract filename from stdout
+            svg_filename = result.stdout.strip()
+            if svg_filename.startswith("Successfully generated ERD: "):
+                svg_filename = svg_filename.replace("Successfully generated ERD: ", "")
+            
+            # Read the generated SVG file
+            svg_file_path = os.path.join('/opt/portfoliosite', svg_filename)
+            if not os.path.exists(svg_file_path):
+                raise Exception(f"Generated SVG file not found: {svg_file_path}")
+                
+            with open(svg_file_path, 'r') as svg_file:
+                svg_content = svg_file.read()
+            
+            # Clean up the generated SVG file
+            os.unlink(svg_file_path)
+            
             return Response(
                 content=svg_content,
                 media_type="image/svg+xml",
@@ -141,7 +155,7 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             )
             
         finally:
-            # Clean up the temporary file
+            # Clean up the temporary dump file
             if os.path.exists(dump_file_path):
                 os.unlink(dump_file_path)
                 
