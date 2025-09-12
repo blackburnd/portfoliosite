@@ -8,6 +8,14 @@ import json
 from auth import require_admin_auth
 from database import database, PORTFOLIO_ID, get_portfolio_id
 
+# Import showcase template generation
+try:
+    from app.routers.showcase import generate_project_template
+except ImportError:
+    # Fallback if showcase module not available
+    async def generate_project_template(project):
+        pass
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
@@ -151,7 +159,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
         except (json.JSONDecodeError, TypeError):
             technologies = []
     
-    return Project(
+    project_result = Project(
         id=str(row_dict["id"]),
         portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
         title=row_dict.get("title", ""),
@@ -161,14 +169,41 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
         technologies=technologies,
         sort_order=row_dict.get("sort_order", 0)
     )
+    
+    # Generate showcase template for the new project
+    try:
+        title = project_result.title
+        project_slug = title.lower().replace(" ", "-").replace("&", "and")
+        project_slug = "".join(
+            c for c in project_slug if c.isalnum() or c in "-"
+        ).strip("-")
+        
+        project_data = {
+            "id": project_result.id,
+            "title": project_result.title,
+            "description": project_result.description,
+            "url": project_result.url,
+            "image_url": project_result.image_url,
+            "technologies": project_result.technologies,
+            "sort_order": project_result.sort_order,
+            "slug": project_slug
+        }
+        await generate_project_template(project_data)
+    except Exception as e:
+        # Don't fail project creation if template generation fails
+        print(f"Template generation failed: {e}")
+    
+    return project_result
 
 
 @router.put("/projects/{id}", response_model=Project)
-async def update_project(id: str, project: Project, admin: dict = Depends(require_admin_auth)):
+async def update_project(
+    id: str, project: Project, admin: dict = Depends(require_admin_auth)
+):
     query = """
         UPDATE projects SET
-            title=:title, description=:description, url=:url, 
-            image_url=:image_url, technologies=:technologies, 
+            title=:title, description=:description, url=:url,
+            image_url=:image_url, technologies=:technologies,
             sort_order=:sort_order
         WHERE id=:id
         RETURNING *
@@ -196,7 +231,7 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
         except (json.JSONDecodeError, TypeError):
             technologies = []
     
-    return Project(
+    project_result = Project(
         id=str(row_dict["id"]),
         portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
         title=row_dict.get("title", ""),
@@ -206,6 +241,31 @@ async def update_project(id: str, project: Project, admin: dict = Depends(requir
         technologies=technologies,
         sort_order=row_dict.get("sort_order", 0)
     )
+    
+    # Regenerate showcase template for the updated project
+    try:
+        title = project_result.title
+        project_slug = title.lower().replace(" ", "-").replace("&", "and")
+        project_slug = "".join(
+            c for c in project_slug if c.isalnum() or c in "-"
+        ).strip("-")
+        
+        project_data = {
+            "id": project_result.id,
+            "title": project_result.title,
+            "description": project_result.description,
+            "url": project_result.url,
+            "image_url": project_result.image_url,
+            "technologies": project_result.technologies,
+            "sort_order": project_result.sort_order,
+            "slug": project_slug
+        }
+        await generate_project_template(project_data)
+    except Exception as e:
+        # Don't fail project update if template generation fails
+        print(f"Template regeneration failed: {e}")
+    
+    return project_result
 
 
 @router.delete("/projects/{id}")
