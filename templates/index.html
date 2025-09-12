@@ -141,86 +141,64 @@ let originalContent = {};
 document.addEventListener('DOMContentLoaded', function() {
     const editableElements = document.querySelectorAll('.editable-content');
     
+    // Add edit controls to each editable element
     editableElements.forEach(element => {
-        element.addEventListener('click', function(e) {
-            if (!this.classList.contains('editing')) {
-                startEdit(this);
-            }
-        });
+        // Only add controls if they don't already exist
+        if (!element.querySelector('.edit-controls')) {
+            const controls = document.createElement('div');
+            controls.className = 'edit-controls';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'Edit';
+            editBtn.onclick = function() { startEdit(element); };
+            controls.appendChild(editBtn);
+            element.appendChild(controls);
+        }
     });
 });
 
 function startEdit(element) {
     const configKey = element.getAttribute('data-config-key');
-    
-    // Get only the text content excluding the controls
-    const existingControls = element.querySelector('.edit-controls');
-    const contentClone = element.cloneNode(true);
-    const controlsClone = contentClone.querySelector('.edit-controls');
-    if (controlsClone) {
-        controlsClone.remove();
-    }
-    const currentText = contentClone.textContent.trim();
-    
-    // Store original content for cancel functionality
-    originalContent[configKey] = currentText;
+    const currentText = originalContent[configKey];
     
     // Add editing class
     element.classList.add('editing');
     
-    // Create input element
-    const isHeading = element.tagName.toLowerCase().startsWith('h');
-    let inputElement;
-    
-    if (isHeading) {
-        inputElement = document.createElement('input');
-        inputElement.type = 'text';
-        inputElement.className = 'edit-input';
-        inputElement.value = currentText;
+    // Create editing interface directly
+    let editingHTML;
+    if (element.tagName.toLowerCase() === 'p') {
+        editingHTML = `
+            <textarea class="content-textarea">${currentText}</textarea>
+            <div class="edit-controls">
+                <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+            </div>`;
     } else {
-        inputElement = document.createElement('textarea');
-        inputElement.className = 'edit-textarea';
-        inputElement.value = currentText;
+        editingHTML = `
+            <input type="text" class="content-input" value="${currentText}">
+            <div class="edit-controls">
+                <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
+                <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
+            </div>`;
     }
     
-    // Get controls before clearing innerHTML (use the existing reference)
-    if (!existingControls) {
-        console.error('Edit controls not found for element:', element);
-        return;
-    }
-    
-    // Store controls HTML to recreate them
-    const controlsHTML = existingControls.outerHTML;
-    
-    // Replace content with input
-    element.innerHTML = '';
-    element.appendChild(inputElement);
-    
-    // Recreate controls from HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = controlsHTML;
-    const newControls = tempDiv.firstChild;
-    element.appendChild(newControls);
+    element.innerHTML = editingHTML;
     
     // Focus the input
-    inputElement.focus();
-    
-    // Handle Enter key for single-line inputs
-    if (isHeading) {
-        inputElement.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                saveContent(element.querySelector('.save-btn'));
+    const input = element.querySelector('.content-input, .content-textarea');
+    if (input) {
+        input.focus();
+        input.select();
+        
+        // Add keyboard event listeners
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const saveBtn = element.querySelector('.save-btn');
+                if (saveBtn) saveContent(saveBtn);
             } else if (e.key === 'Escape') {
-                cancelEdit(element.querySelector('.cancel-btn'));
-            }
-        });
-    } else {
-        // Handle Ctrl+Enter for textareas
-        inputElement.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                saveContent(element.querySelector('.save-btn'));
-            } else if (e.key === 'Escape') {
-                cancelEdit(element.querySelector('.cancel-btn'));
+                const cancelBtn = element.querySelector('.cancel-btn');
+                if (cancelBtn) cancelEdit(cancelBtn);
             }
         });
     }
@@ -261,16 +239,6 @@ async function saveContent(button) {
         const result = await response.json();
         
         if (result.success) {
-            // Get controls before clearing innerHTML
-            const controls = element.querySelector('.edit-controls');
-            if (!controls) {
-                console.error('Could not find edit controls for element:', element);
-                return;
-            }
-            
-            // Store controls HTML to recreate them
-            const controlsHTML = controls.outerHTML;
-            
             // Update the display content
             element.classList.remove('editing');
             
@@ -283,10 +251,14 @@ async function saveContent(button) {
                 element.innerHTML = newValue;
             }
             
-            // Recreate and re-add controls
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = controlsHTML;
-            const newControls = tempDiv.firstChild;
+            // Recreate edit controls
+            const newControls = document.createElement('div');
+            newControls.className = 'edit-controls';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'Edit';
+            editBtn.onclick = function() { startEdit(this.parentElement); };
+            newControls.appendChild(editBtn);
             element.appendChild(newControls);
             
             // Show success feedback
@@ -319,16 +291,6 @@ function cancelEdit(button) {
     // Remove editing class
     element.classList.remove('editing');
     
-    // Get controls before clearing innerHTML
-    const controls = element.querySelector('.edit-controls');
-    if (!controls) {
-        console.error('Could not find edit controls for element:', element);
-        return;
-    }
-    
-    // Store controls HTML to recreate them
-    const controlsHTML = controls.outerHTML;
-    
     // Restore original content
     if (element.tagName.toLowerCase().startsWith('h')) {
         element.innerHTML = originalText;
@@ -338,10 +300,14 @@ function cancelEdit(button) {
         element.innerHTML = originalText;
     }
     
-    // Recreate and re-add controls
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = controlsHTML;
-    const newControls = tempDiv.firstChild;
+    // Recreate edit controls
+    const newControls = document.createElement('div');
+    newControls.className = 'edit-controls';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = function() { startEdit(element); };
+    newControls.appendChild(editBtn);
     element.appendChild(newControls);
 }
 
