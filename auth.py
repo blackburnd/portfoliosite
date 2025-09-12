@@ -22,8 +22,10 @@ print(f"DEBUG: Length of raw string: {len(authorized_emails_raw)}")
 print(f"DEBUG: Repr of raw string: {repr(authorized_emails_raw)}")
 
 if authorized_emails_raw:
+    # Remove surrounding quotes if present and strip whitespace
+    cleaned_emails = authorized_emails_raw.strip().strip('"').strip("'")
     AUTHORIZED_EMAILS = [
-        email.strip() for email in authorized_emails_raw.split(" ") if email.strip()
+        email.strip() for email in cleaned_emails.split() if email.strip()
     ]
 else:
     AUTHORIZED_EMAILS = []
