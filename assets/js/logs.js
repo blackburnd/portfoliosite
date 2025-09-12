@@ -6,7 +6,10 @@ let pageSize = 50;
 let isLoading = false;
 let hasMoreLogs = true;
 let intersectionObserver;
-let backendTotalCount = 0; // Total count from backend including filters
+let backendTotalCount = 0; // Total count from backend including                     <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml((log.message && log.message.length > 100) ? log.message.substring(0, 100) + '...' : (log.message || ''))}</span>
+                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
+                        Copy
+                    </button>ers
 
 // Sorting variables
 let currentSortField = 'timestamp';
@@ -204,7 +207,7 @@ function updateDisplay() {
     if (filteredLogs.length === 0) {
         console.log('No filtered logs to display');
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="7" style="text-align: center; padding: 20px;">No logs found</td>';
+        row.innerHTML = '<td colspan="9" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
         return;
     }
@@ -218,20 +221,22 @@ function updateDisplay() {
         let ageMs = now - logTime;
         let ageStr = '';
         if (ageMs < 60000) {
-            ageStr = Math.floor(ageMs / 1000) + ' sec.';
+            ageStr = Math.floor(ageMs / 1000) + 's';
         } else if (ageMs < 3600000) {
-            ageStr = Math.floor(ageMs / 60000) + ' min.';
+            ageStr = Math.floor(ageMs / 60000) + 'm';
         } else if (ageMs < 86400000) {
-            ageStr = Math.floor(ageMs / 3600000) + ' hr.';
+            ageStr = Math.floor(ageMs / 3600000) + 'h';
         } else {
             const days = Math.floor(ageMs / 86400000);
-            const hours = Math.floor((ageMs % 86400000) / 3600000);
-            ageStr = days + ' d.' + (hours > 0 ? ' ' + hours + ' hr.' : '');
+            ageStr = days + 'd';
         }
         // Show only date in Time column
         const dateStr = new Date(log.timestamp).toLocaleDateString();
         row.innerHTML = `
-            <td class="log-timestamp">${dateStr}</td>
+            <td class="expand-col">
+                ${(log.message && (log.message.includes('\n') || log.message.length > 100)) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+            </td>
+            <td class="log-timestamp">${dateStr}<br><small style="color: #666">${new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</small></td>
             <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
@@ -258,15 +263,38 @@ function renderLogs() {
     
     filteredLogs.forEach(log => {
         const row = document.createElement('tr');
+        const dateStr = new Date(log.timestamp).toLocaleDateString();
+        const timeStr = new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        
+        // Compute age
+        const now = Date.now();
+        const logTime = new Date(log.timestamp).getTime();
+        let ageMs = now - logTime;
+        let ageStr = '';
+        if (ageMs < 60000) {
+            ageStr = Math.floor(ageMs / 1000) + 's';
+        } else if (ageMs < 3600000) {
+            ageStr = Math.floor(ageMs / 60000) + 'm';
+        } else if (ageMs < 86400000) {
+            ageStr = Math.floor(ageMs / 3600000) + 'h';
+        } else {
+            const days = Math.floor(ageMs / 86400000);
+            ageStr = days + 'd';
+        }
+        
         row.innerHTML = `
-            <td class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</td>
+            <td class="expand-col">
+                ${(log.message && (log.message.includes('\n') || log.message.length > 100)) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+            </td>
+            <td class="log-timestamp">${dateStr}<br><small style="color: #666">${timeStr}</small></td>
+            <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
             <td class="log-message">
                 <div class="message-content">
-                    <span class="message-text">${escapeHtml(log.message || '')}</span>
+                    <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml((log.message && log.message.length > 100) ? log.message.substring(0, 100) + '...' : (log.message || ''))}</span>
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                        <span class="copy-icon">⧉</span>
+                        Copy
                     </button>
                 </div>
             </td>
@@ -622,6 +650,27 @@ function setupLogLevelHandler() {
             }
         }
     });
+}
+
+// Toggle message expansion for long messages
+function toggleMessageExpand(button) {
+    const row = button.closest('tr');
+    const messageText = row.querySelector('.message-text');
+    const fullMessage = messageText.getAttribute('data-full-message');
+    const currentText = messageText.textContent;
+    
+    if (button.textContent === '▶') {
+        // Expand
+        messageText.textContent = fullMessage;
+        button.textContent = '▼';
+        button.title = 'Collapse message';
+    } else {
+        // Collapse  
+        const truncated = fullMessage.length > 100 ? fullMessage.substring(0, 100) + '...' : fullMessage;
+        messageText.textContent = truncated;
+        button.textContent = '▶';
+        button.title = 'Expand message';
+    }
 }
 
 // Global function for refresh button
