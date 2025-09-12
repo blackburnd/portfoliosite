@@ -152,7 +152,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function startEdit(element) {
     const configKey = element.getAttribute('data-config-key');
-    const currentText = element.textContent.trim();
+    
+    // Get only the text content excluding the controls
+    const existingControls = element.querySelector('.edit-controls');
+    const contentClone = element.cloneNode(true);
+    const controlsClone = contentClone.querySelector('.edit-controls');
+    if (controlsClone) {
+        controlsClone.remove();
+    }
+    const currentText = contentClone.textContent.trim();
     
     // Store original content for cancel functionality
     originalContent[configKey] = currentText;
@@ -175,15 +183,14 @@ function startEdit(element) {
         inputElement.value = currentText;
     }
     
-    // Get controls before clearing innerHTML
-    const controls = element.querySelector('.edit-controls');
-    if (!controls) {
+    // Get controls before clearing innerHTML (use the existing reference)
+    if (!existingControls) {
         console.error('Edit controls not found for element:', element);
         return;
     }
     
     // Store controls HTML to recreate them
-    const controlsHTML = controls.outerHTML;
+    const controlsHTML = existingControls.outerHTML;
     
     // Replace content with input
     element.innerHTML = '';
