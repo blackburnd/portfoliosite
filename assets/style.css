@@ -76,6 +76,14 @@ body {
 }
 
 .header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
 /* --- Compact log styles for logs page --- */
 .log-level {
     padding: 1px 4px;
@@ -101,7 +109,6 @@ body {
     font-size: 12px;
     color: #888;
     white-space: nowrap;
-}
 }
 
 .title-container {
@@ -250,40 +257,114 @@ nav ul {
 
 /* Admin Navigation Styling */
 .admin-section {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 2px solid #ffb300;
+    margin-top: 0;
+    padding: 8px 12px;
+    border: 1px solid #ffb300;
     background-color: #f8f9fa;
     border-radius: 4px;
-    padding: 10px;
 }
 
-.admin-section-label {
-    font-size: 0.8em;
+/* Full width admin top bar */
+.admin-top-bar {
+    width: 100%;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ffb300;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    margin-bottom: 10px;
+}
+
+.admin-section-spread {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    gap: 20px;
+}
+
+.admin-section-spread .admin-section-label {
+    font-size: 0.7em;
     font-weight: 600;
     color: #ffbb00;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+.admin-nav-spread {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex-grow: 1;
+}
+
+.admin-nav-spread li {
+    list-style: none;
+}
+
+.admin-nav-spread a {
+    color: #d59a04;
+    font-weight: 500;
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 3px;
+    text-decoration: none;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.admin-nav-spread a:hover {
+    color: #da950a;
+    background-color: #e7f3ff;
+    border-color: #ffb300;
+}
+
+.admin-nav-spread li.active a {
+    background-color: #eebd08;
+    color: white;
+    border-color: #ffb300;
+}
+
+.admin-section-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    color: #ffbb00;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    text-align: center;
 }
 
 .admin-nav {
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.admin-nav li {
+    list-style: none;
 }
 
 .admin-nav a {
     color: #d59a04;
     font-weight: 500;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .admin-nav a:hover {
     color: #da950a;
     background-color: #e7f3ff;
-    padding: 2px 6px;
-    border-radius: 3px;
-    text-decoration: none;
 }
 
 .admin-nav li.active a {
@@ -485,6 +566,46 @@ input[type="checkbox"] {
 
     .auth-admin-section {
         align-items: flex-start;
+    }
+
+    /* Mobile-friendly auth links */
+    .auth-link {
+        padding: 12px 20px;
+        font-size: 1em;
+        min-height: 44px; /* Apple's recommended minimum touch target */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation; /* Prevent zoom on double-tap */
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    }
+
+    /* Admin top bar mobile styles */
+    .admin-top-bar {
+        flex-direction: column;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .admin-section-spread {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .admin-nav-spread {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .admin-nav-spread a {
+        padding: 8px 12px;
+        font-size: 0.9em;
+        display: block;
+        text-align: center;
+        border: 1px solid #ffb300;
     }
 
     nav ul {

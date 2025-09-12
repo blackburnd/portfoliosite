@@ -6,6 +6,15 @@
 let authPopup = null;
 
 /**
+ * Detect if user is on a mobile device
+ */
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.innerWidth <= 768) ||
+           ('ontouchstart' in window);
+}
+
+/**
  * Calculate centered popup position
  */
 function getPopupPosition(width = 500, height = 600) {
@@ -42,7 +51,14 @@ function initiateLogin() {
         })
         .then(data => {
             if (data.auth_url) {
-                openOAuthPopup(data.auth_url);
+                // Check if user is on mobile device
+                if (isMobileDevice()) {
+                    // On mobile, redirect to OAuth URL in same window
+                    window.location.href = data.auth_url;
+                } else {
+                    // On desktop, use popup
+                    openOAuthPopup(data.auth_url);
+                }
             } else {
                 console.error('Auth URL not found in response:', data);
                 alert('Could not initiate login. The authentication URL was not provided.');
@@ -57,7 +73,13 @@ function initiateLogin() {
             );
             
             if (useAdminLogin) {
-                openAdminLoginPopup();
+                if (isMobileDevice()) {
+                    // On mobile, redirect to admin login page
+                    window.location.href = '/auth/admin-login';
+                } else {
+                    // On desktop, use popup
+                    openAdminLoginPopup();
+                }
             } else {
                 alert('An error occurred during login. Please check the console for more details.');
             }
