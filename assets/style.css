@@ -1763,6 +1763,8 @@ td[style*="#abd6ff"] {
     background: #fff;
     height: calc(80vh - var(--header-height, 180px));
     min-height: 320px;
+    width: 100%;
+    max-width: 100%;
 }
 
 .logs-table {
@@ -1834,6 +1836,52 @@ td[style*="#abd6ff"] {
 .log-message {
     max-width: 400px;
     word-wrap: break-word;
+    position: relative;
+}
+
+.message-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.expand-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: #666;
+    padding: 0;
+    margin-right: 4px;
+    line-height: 1;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.expand-btn:hover {
+    color: #333;
+}
+
+.expand-btn.expanded {
+    transform: rotate(90deg);
+}
+
+.message-text {
+    flex: 1;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.message-text.expanded {
+    white-space: pre-wrap;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 .log-timestamp {
@@ -1872,16 +1920,6 @@ td[style*="#abd6ff"] {
 }
 
 /* Copy button styling */
-.message-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.message-text {
-    flex: 1;
-}
-
 .copy-btn {
     background: transparent;
     border: 1px solid #ddd;
@@ -1896,6 +1934,7 @@ td[style*="#abd6ff"] {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .copy-btn:hover {

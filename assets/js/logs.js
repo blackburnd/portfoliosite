@@ -7,8 +7,8 @@ let isLoading = false;
 let hasMoreLogs = true;
 let intersectionObserver;
 let backendTotalCount = 0; 
-let currentSortField = 'timestamp' ;
-// Global functions - defined immediately so buttons work
+let currentSortField = 'timestamp'; // Default sort field
+
 window.refreshLogs = function() {
     console.log('Refresh button clicked');
     currentOffset = 0;
@@ -232,9 +232,10 @@ function updateDisplay() {
             <td class="log-module">${escapeHtml(log.module || '')}</td>
             <td class="log-message">
                 <div class="message-content">
-                    <span class="message-text">${escapeHtml(log.message || '')}</span>
+                    ${needsExpand(log.message) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+                    <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml(truncateMessage(log.message || ''))}</span>
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                        <span class="copy-icon">649</span>
+                        <span class="copy-icon">649</span>
                     </button>
                 </div>
             </td>
@@ -280,14 +281,18 @@ function renderLogs() {
             <td class="log-age">${ageStr}</td>
             <td><span class="log-level log-level-${log.level || 'unknown'}">${escapeHtml(log.level || 'unknown')}</span></td>
             <td class="log-module">${escapeHtml(log.module || '')}</td>
-            <td class="log-message">
+            
+             <td class="log-message">
                 <div class="message-content">
-                    <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml((log.message && log.message.length > 100) ? log.message.substring(0, 100) + '...' : (log.message || ''))}</span>
+                    ${needsExpand(log.message) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
+                    <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml(truncateMessage(log.message || ''))}</span>
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
                         Copy
                     </button>
                 </div>
             </td>
+            
+        
             <td class="log-function">${escapeHtml(log.function || '')}</td>
             <td class="log-line">${escapeHtml(log.line || '')}</td>
             <td class="log-ip">${escapeHtml(log.ip_address || 'N/A')}</td>
@@ -667,3 +672,15 @@ function toggleMessageExpand(button) {
 window.refreshLogLevel = function() {
     loadCurrentLogLevel();
 };
+
+// Helper functions for message truncation and expansion
+function needsExpand(message) {
+    if (!message) return false;
+    return message.length > 100 || message.includes('\n');
+}
+
+function truncateMessage(message) {
+    if (!message) return '';
+    if (message.length <= 100 && !message.includes('\n')) return message;
+    return message.substring(0, 100) + '...';
+}
