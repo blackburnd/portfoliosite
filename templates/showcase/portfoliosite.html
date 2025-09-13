@@ -15,18 +15,41 @@
                             <div class="breadcrumb">
                                 <a href="/work/">← Back to Portfolio</a>
                             </div>
-                            <h1>Portfolio Site: Technical Architecture</h1>
-                            <div class="project-meta">
-                                <a href="https://www.blackburnsystems.com" target="_blank" class="btn-primary">
-                                    View Live Site →
-                                </a>
+                            
+                            <!-- Top Navigation -->
+                            <div class="showcase-navigation">
+                                {% if prev_project %}
+                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                                        ← {{ prev_project.title }}
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">← Previous</span>
+                                {% endif %}
+                                
+                                {% if next_project %}
+                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                                        {{ next_project.title }} →
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">Next →</span>
+                                {% endif %}
                             </div>
+                            
+                            <h1>Portfolio Site: Technical Architecture</h1>
                         </div>
 
                         <div class="project-content">
                             <div class="project-overview">
                                 <h2>Project Overview</h2>
-                                <p class="lead">As a demonstration of modern web development practices, this portfolio site itself showcases comprehensive technical capabilities across the full stack - from infrastructure and DevOps to frontend user experience.</p>
+                                <p class="lead">Recognizing the limitations of traditional resume formats for demonstrating technical capabilities, I architected this comprehensive portfolio platform as both a professional showcase and a practical learning exercise in modern cloud-native development.</p>
+                                
+                                <p>The implementation leverages a distributed architecture across Google Cloud Platform, utilizing separate compute instances for application and database tiers to ensure proper separation of concerns. The platform incorporates several production-grade tooling solutions I've developed in enterprise environments, specifically addressing common pain points in OAuth2 integration debugging and managing the inherent unpredictability of AI agent orchestration workflows.</p>
+                                
+                                <p>The system demonstrates enterprise authentication patterns through Google OAuth2 integration, with planned LinkedIn API integration for automated data synchronization (currently pending LinkedIn's scope approval process for production applications).</p>
+                                
+                                <p>Deployment automation is handled through GitHub Actions CI/CD pipelines with Google Cloud Build integration, enabling continuous deployment from version control to production. The entire codebase is maintained as open source.</p>
+                                
+                                <p>The current implementation features a full-stack CRUD interface for project management, with dynamic content generation populating the /work landing page. Each project entry supports individual portfolio presentations through a template-driven showcase system. This architecture enables rapid iteration on professional presentation while maintaining clean separation between data management and content delivery layers.</p>
                             </div>
 
                             <div class="project-tech">
@@ -209,9 +232,25 @@
                                 </div>
                             </div>
 
-                            <div class="project-navigation">
-                                <a href="/work/" class="btn-secondary">← Back to Portfolio</a>
-                                <a href="https://www.blackburnsystems.com" target="_blank" class="btn-primary">View Live Site →</a>
+                            <!-- Bottom Navigation -->
+                            <div class="showcase-navigation">
+                                {% if prev_project %}
+                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                                        ← {{ prev_project.title }}
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">← Previous</span>
+                                {% endif %}
+                                
+                                <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
+                                
+                                {% if next_project %}
+                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                                        {{ next_project.title }} →
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">Next →</span>
+                                {% endif %}
                             </div>
                         </div>
                     </section>

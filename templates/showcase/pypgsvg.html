@@ -12,6 +12,29 @@
                 <article class="bc clearfix">
                     <section class="project-showcase-content">
                         <div class="project-header">
+                            <div class="breadcrumb">
+                                <a href="/work/">← Back to Portfolio</a>
+                            </div>
+                            
+                            <!-- Top Navigation -->
+                            <div class="showcase-navigation">
+                                {% if prev_project %}
+                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                                        ← {{ prev_project.title }}
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">← Previous</span>
+                                {% endif %}
+                                
+                                {% if next_project %}
+                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                                        {{ next_project.title }} →
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">Next →</span>
+                                {% endif %}
+                            </div>
+                            
                             <h1>pypgsvg</h1>
                             <p class="project-tagline">Automated PostgreSQL Entity Relationship Diagram Generator</p>
                             <div class="project-meta">
@@ -176,6 +199,27 @@
                                         <li><a href="/admin/sql/generate-erd" target="_blank">Live Demo (Admin Access)</a></li>
                                     </ul>
                                 </div>
+                            </div>
+                            
+                            <!-- Bottom Navigation -->
+                            <div class="showcase-navigation">
+                                {% if prev_project %}
+                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                                        ← {{ prev_project.title }}
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">← Previous</span>
+                                {% endif %}
+                                
+                                <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
+                                
+                                {% if next_project %}
+                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                                        {{ next_project.title }} →
+                                    </a>
+                                {% else %}
+                                    <span class="nav-button disabled">Next →</span>
+                                {% endif %}
                             </div>
                         </div>
                     </section>

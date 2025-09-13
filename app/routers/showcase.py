@@ -70,6 +70,36 @@ async def showcase_project(request: Request, project_slug: str):
         
         print(f"DEBUG: Rendering template for project: {project['title']}")
         
+        # Calculate navigation (previous/next projects)
+        all_projects = []
+        for i, row in enumerate(rows):
+            row_dict = dict(row)
+            title = row_dict["title"]
+            slug_base = title.lower().replace(" ", "-").replace("&", "and")
+            generated_slug = "".join(
+                c for c in slug_base if c.isalnum() or c in "-"
+            ).strip("-")
+            
+            all_projects.append({
+                "title": title,
+                "slug": generated_slug
+            })
+        
+        # Find current project index and calculate prev/next
+        current_index = None
+        for i, proj in enumerate(all_projects):
+            if proj["slug"] == project_slug:
+                current_index = i
+                break
+        
+        prev_project = None
+        next_project = None
+        if current_index is not None:
+            if current_index > 0:
+                prev_project = all_projects[current_index - 1]
+            if current_index < len(all_projects) - 1:
+                next_project = all_projects[current_index + 1]
+        
         # Check if project-specific template exists, use generic otherwise
         project_template = f"showcase/{project_slug}.html"
         generic_template = "showcase/project.html"
@@ -88,7 +118,9 @@ async def showcase_project(request: Request, project_slug: str):
             "request": request,
             "title": f"{project['title']} - Portfolio Showcase",
             "current_page": "work",
-            "project": project
+            "project": project,
+            "prev_project": prev_project,
+            "next_project": next_project
         })
         
     except HTTPException:
