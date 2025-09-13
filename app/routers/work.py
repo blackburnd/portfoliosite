@@ -46,6 +46,7 @@ async def work(request: Request):
     # Fetch projects for showcase listing
     try:
         portfolio_id = get_portfolio_id()
+        print(f"[DEBUG] work route: portfolio_id = {portfolio_id}")
         query = """
             SELECT id, title, description, url, image_url, technologies,
                    sort_order
@@ -54,6 +55,7 @@ async def work(request: Request):
             ORDER BY sort_order, title
         """
         rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
+        print(f"[DEBUG] work route: found {len(rows)} rows")
         
         projects = []
         for row in rows:
