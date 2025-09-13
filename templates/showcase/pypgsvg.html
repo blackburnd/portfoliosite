@@ -84,14 +84,24 @@
                                             <p><strong>Implementation Details:</strong> Uses PostgreSQL's information_schema and pg_catalog system tables for comprehensive metadata extraction. Implements connection pooling for performance and handles various PostgreSQL versions with backward compatibility.</p>
                                         </div>
                                         
-                                        <div class="screenshot-placeholder">
-                                            <div class="screenshot-frame">
-                                                <p class="screenshot-label">Screenshot: Generated ERD showing complex database relationships with tables, foreign keys, and data types</p>
-                                                <!-- Screenshot should show:
-                                                     - Complex database ERD with multiple tables
-                                                     - Foreign key relationships clearly marked
-                                                     - Column details with data types
-                                                     - Interactive SVG elements -->
+                                        <div class="interactive-erd-container">
+                                            <div class="erd-header">
+                                                <h5>Live Interactive ERD Demo</h5>
+                                                <p class="erd-description">This is a live example of pypgsvg output showing the actual database schema for this portfolio site. Click and hover to explore the relationships!</p>
+                                            </div>
+                                            <div class="erd-frame">
+                                                <iframe src="/admin/sql/test-erd-complex" 
+                                                        class="interactive-erd" 
+                                                        title="Interactive Entity Relationship Diagram"
+                                                        frameborder="0"
+                                                        scrolling="auto">
+                                                    <p>Your browser doesn't support iframes. <a href="/admin/sql/test-erd-complex" target="_blank">View the interactive ERD here</a>.</p>
+                                                </iframe>
+                                            </div>
+                                            <div class="erd-footer">
+                                                <a href="/admin/sql/test-erd-complex" target="_blank" class="btn-secondary btn-small">
+                                                    Open in Full Screen →
+                                                </a>
                                             </div>
                                         </div>
                                         
