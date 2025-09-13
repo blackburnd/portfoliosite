@@ -58,27 +58,25 @@ async def projects_admin_page(
 
 @router.get("/projects", response_model=List[Project])
 async def list_projects():
+    print("[DEBUG] projects API: Starting list_projects")
     try:
-        check_table = "SELECT to_regclass('projects')"
-        table_exists = await database.fetch_val(check_table)
-        
-        if not table_exists:
-            return []
-            
         portfolio_id = get_portfolio_id()
         print(f"[DEBUG] projects API: portfolio_id = {portfolio_id}")
+        
         query = """
             SELECT * FROM projects
             WHERE portfolio_id = :portfolio_id
             ORDER BY sort_order, title
         """
+        print(f"[DEBUG] projects API: executing query with portfolio_id = {portfolio_id}")
         rows = await database.fetch_all(
             query, {"portfolio_id": portfolio_id}
         )
         print(f"[DEBUG] projects API: found {len(rows)} rows")
         
         projects = []
-        for row in rows:
+        for i, row in enumerate(rows):
+            print(f"[DEBUG] projects API: processing row {i}: {dict(row)}")
             row_dict = dict(row)
             technologies = row_dict.get("technologies", [])
             if isinstance(technologies, str):
@@ -99,9 +97,12 @@ async def list_projects():
             )
             projects.append(project)
         
+        print(f"[DEBUG] projects API: returning {len(projects)} projects")
         return projects
     except Exception as e:
-        print(f"Error fetching projects: {e}")
+        import traceback
+        print(f"[DEBUG] projects API: Exception occurred: {e}")
+        print(f"[DEBUG] projects API: Traceback: {traceback.format_exc()}")
         return []
 
 
