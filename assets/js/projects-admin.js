@@ -31,88 +31,163 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
     // Inject aggressive CSS to override Dojo theming
     const aggressiveStyles = document.createElement('style');
     aggressiveStyles.textContent = `
-        /* Ultra-aggressive Dojo dialog overrides */
+        /* Ultra-aggressive Dojo dialog overrides with enhanced styling */
         .dijitDialog, .dijitDialog .dijitDialogPaneContent { 
             background: white !important; 
             background-image: none !important;
             background-color: white !important;
-            border: 1px solid #dee2e6 !important;
-            border-radius: 8px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08) !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         }
         .dijitDialogPaneContentArea, .dijitDialog .dijitDialogPaneContentArea { 
             background: white !important; 
             background-image: none !important;
             background-color: white !important;
-            color: #333 !important;
-            padding: 20px !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            color: #2d3748 !important;
+            padding: 24px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+            line-height: 1.5 !important;
         }
         .dijitDialogTitleBar, .dijitDialog .dijitDialogTitleBar {
-            background: white !important;
-            background-image: none !important;
-            background-color: white !important;
-            border-bottom: 1px solid #dee2e6 !important;
-            color: #333 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background-color: #667eea !important;
+            border-bottom: none !important;
+            color: white !important;
             font-weight: 600 !important;
-            padding: 15px 20px !important;
+            padding: 20px 24px !important;
+            border-radius: 12px 12px 0 0 !important;
+            font-size: 18px !important;
         }
         .dijitDialogPaneActionBar, .dijitDialog .dijitDialogPaneActionBar {
-            background: #f8f9fa !important;
+            background: #f7fafc !important;
             background-image: none !important;
-            background-color: #f8f9fa !important;
-            border-top: 1px solid #dee2e6 !important;
-            padding: 15px 20px !important;
+            background-color: #f7fafc !important;
+            border-top: 1px solid #e2e8f0 !important;
+            padding: 20px 24px !important;
+            border-radius: 0 0 12px 12px !important;
+            text-align: right !important;
         }
         .dijitDialog input, .dijitDialog textarea, .dijitDialog select,
         .dijitDialog .dijitTextBox, .dijitDialog .dijitTextArea {
-            border: 1px solid #ccc !important;
-            padding: 8px 12px !important;
-            border-radius: 4px !important;
+            border: 2px solid #e2e8f0 !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
             background: white !important;
             background-image: none !important;
             background-color: white !important;
-            color: #333 !important;
+            color: #2d3748 !important;
             font-size: 14px !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
             width: 100% !important;
             box-sizing: border-box !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .dijitDialog input:focus, .dijitDialog textarea:focus,
+        .dijitDialog .dijitTextBox:focus, .dijitDialog .dijitTextArea:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            outline: none !important;
         }
         .dijitDialog button, .dijitDialog .dijitButton {
-            background: #007bff !important;
-            background-image: none !important;
-            background-color: #007bff !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background-color: #667eea !important;
             color: white !important;
-            border: 1px solid #007bff !important;
-            padding: 8px 16px !important;
-            border-radius: 4px !important;
+            border: none !important;
+            padding: 12px 24px !important;
+            border-radius: 8px !important;
             cursor: pointer !important;
             font-size: 14px !important;
-            margin-left: 10px !important;
+            font-weight: 600 !important;
+            margin-left: 12px !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .dijitDialog button:hover, .dijitDialog .dijitButton:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        }
+        .dijitDialog button[onclick*="hideDialog"], .dijitDialog button[onclick*="Cancel"] {
+            background: #718096 !important;
+            background-image: none !important;
+            background-color: #718096 !important;
+        }
+        .dijitDialog button[onclick*="hideDialog"]:hover {
+            background: #4a5568 !important;
+            box-shadow: 0 4px 12px rgba(113, 128, 150, 0.3) !important;
         }
         .dijitDialog label {
             display: block !important;
-            margin-bottom: 5px !important;
+            margin-bottom: 8px !important;
             font-weight: 600 !important;
-            color: #333 !important;
+            color: #4a5568 !important;
             font-size: 14px !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         }
         /* Override any blue/themed backgrounds */
         .dijitDialog *, .dijitDialog *:before, .dijitDialog *:after {
             background-image: none !important;
         }
-        /* Form styling */
+        /* Enhanced form styling */
         .dijitDialog .form-row {
             display: flex !important;
-            gap: 15px !important;
-            margin-bottom: 15px !important;
+            gap: 20px !important;
+            margin-bottom: 20px !important;
             align-items: flex-start !important;
         }
         .dijitDialog .form-group {
             flex: 1 !important;
             display: flex !important;
             flex-direction: column !important;
+        }
+        .dijitDialog .form-note {
+            font-size: 12px !important;
+            color: #718096 !important;
+            margin-top: 6px !important;
+            font-style: italic !important;
+        }
+        /* Screenshot section styling */
+        .dijitDialog .screenshots-section {
+            margin-top: 24px !important;
+            padding-top: 24px !important;
+            border-top: 2px solid #e2e8f0 !important;
+        }
+        .dijitDialog .screenshots-list {
+            background: #f7fafc !important;
+            border: 2px dashed #cbd5e0 !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            margin-bottom: 20px !important;
+        }
+        .dijitDialog .screenshot-upload {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%) !important;
+            border: 2px dashed #cbd5e0 !important;
+            border-radius: 12px !important;
+            padding: 24px !important;
+            text-align: center !important;
+            transition: border-color 0.2s ease !important;
+        }
+        .dijitDialog .screenshot-upload:hover {
+            border-color: #667eea !important;
+        }
+        /* Replace/Delete buttons in screenshots */
+        .dijitDialog .screenshot-item button {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
+            margin-left: 0 !important;
+            margin-right: 8px !important;
+        }
+        .dijitDialog button[onclick*="replaceScreenshot"] {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+            background-color: #48bb78 !important;
+        }
+        .dijitDialog button[onclick*="deleteScreenshot"] {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important;
+            background-color: #f56565 !important;
         }
     `;
     document.head.appendChild(aggressiveStyles);
