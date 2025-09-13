@@ -123,7 +123,7 @@ async def get_logs_data(
         order_clause = f"ORDER BY {sort_field} {sort_order.upper()}"
         logs_query = f"""
             SELECT timestamp, level, message, module, function, line,
-                   user, extra, ip_address
+                   user, extra, ip_address, traceback
             FROM app_log {where_clause} {order_clause}
             LIMIT :limit OFFSET :offset
         """
