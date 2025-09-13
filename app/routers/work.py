@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import shutil
+from pathlib import Path
 
 from auth import require_admin_auth, verify_token, is_authorized_user
 from database import database, get_portfolio_id
@@ -82,6 +83,30 @@ async def work(request: Request):
             showcase_file_path = f"templates/showcase/{project_slug}.html"
             showcase_file_exists = os.path.exists(showcase_file_path)
             
+            # Check for work-featured screenshot with specific naming convention
+            screenshots_dir = Path(f"assets/screenshots/{project_slug}")
+            work_featured_screenshot = None
+            
+            # Look for work-featured screenshot in common formats
+            for ext in ['.png', '.jpg', '.jpeg', '.webp']:
+                featured_path = screenshots_dir / f"work-featured{ext}"
+                if featured_path.exists():
+                    work_featured_screenshot = (
+                        f"/assets/screenshots/{project_slug}/work-featured{ext}"
+                    )
+                    break
+            
+            # If no work-featured screenshot exists, create empty placeholder
+            if not work_featured_screenshot:
+                screenshots_dir.mkdir(parents=True, exist_ok=True)
+                placeholder_path = screenshots_dir / "work-featured.png"
+                if not placeholder_path.exists():
+                    # Create empty placeholder file
+                    placeholder_path.touch()
+                work_featured_screenshot = (
+                    f"/assets/screenshots/{project_slug}/work-featured.png"
+                )
+            
             projects.append({
                 "id": str(row_dict["id"]),
                 "title": row_dict["title"],
@@ -91,7 +116,8 @@ async def work(request: Request):
                 "technologies": technologies,
                 "sort_order": row_dict.get("sort_order", 0),
                 "slug": project_slug,
-                "showcase_file_exists": showcase_file_exists
+                "showcase_file_exists": showcase_file_exists,
+                "screenshot_url": work_featured_screenshot
             })
     except Exception:
         projects = []

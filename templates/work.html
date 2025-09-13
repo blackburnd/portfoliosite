@@ -20,10 +20,15 @@
                                 {% for project in projects %}
                                 <div class="showcase-project">
                                     <div class="project-screenshot">
-                                        <div class="screenshot-placeholder">
-                                            <span class="screenshot-icon">📸</span>
-                                            <p>Screenshot Coming Soon</p>
-                                        </div>
+                                        {% if project.screenshot_url %}
+                                            <img src="{{ project.screenshot_url }}" alt="{{ project.title }} Screenshot" class="screenshot-image" 
+                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><span class=&quot;screenshot-icon&quot;>📸</span><p>Upload work-featured.png via Projects Admin</p></div>'">
+                                        {% else %}
+                                            <div class="screenshot-placeholder">
+                                                <span class="screenshot-icon">📸</span>
+                                                <p>Upload work-featured.png via Projects Admin</p>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                     <div class="project-details">
                                         <div class="showcase-header">

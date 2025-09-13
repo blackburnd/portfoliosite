@@ -437,7 +437,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             })
             .catch(error => {
                 console.error('Error loading screenshots:', error);
-                document.getElementById('screenshotsList').innerHTML = '<p>No screenshots found</p>';
+                document.getElementById('screenshotsList').innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 20px; margin: 0;">No screenshots found<br><small style="font-size: 10px; color: #999; margin-top: 8px; display: block;">📌 Upload "work-featured.png" to display on /work route<br>When replacing files, originals are backed up with format: filename_YYYYMMDD_HHMMSS.ext</small></p>';
             });
     }
     
@@ -453,12 +453,17 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
     function displayScreenshots(screenshots, projectSlug) {
         const container = document.getElementById('screenshotsList');
         if (!screenshots || screenshots.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 20px; margin: 0;">No screenshots uploaded yet</p>';
+            container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 20px; margin: 0;">No screenshots uploaded yet<br><small style="font-size: 10px; color: #999; margin-top: 8px; display: block;">📌 Upload "work-featured.png" to display on /work route<br>When replacing files, originals are backed up with format: filename_YYYYMMDD_HHMMSS.ext</small></p>';
             return;
         }
         
-        container.innerHTML = screenshots.map(screenshot => `
-            <div style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; background: white;">
+        container.innerHTML = screenshots.map(screenshot => {
+            const isWorkFeatured = screenshot.filename.startsWith('work-featured');
+            const borderColor = isWorkFeatured ? '#007bff' : '#ddd';
+            const workFeaturedBadge = isWorkFeatured ? '<span style="background: #007bff; color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-left: 5px;">🏠 WORK ROUTE</span>' : '';
+            
+            return `
+            <div style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 2px solid ${borderColor}; border-radius: 4px; margin-bottom: 10px; background: white;">
                 <img src="/assets/screenshots/${projectSlug}/${screenshot.filename}" 
                      alt="${screenshot.filename}" 
                      style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">
@@ -469,7 +474,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                onchange="updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)"
                                onkeypress="if(event.key==='Enter') updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)"
                                placeholder="Enter display name">
-                        <small style="color: #666; font-size: 11px;">File: ${screenshot.filename}</small>
+                        <small style="color: #666; font-size: 11px;">File: ${screenshot.filename} ${workFeaturedBadge}</small>
                     </div>
                     <div style="display: flex; gap: 5px;">
                         <button type="button" onclick="replaceScreenshot('${projectSlug}', '${screenshot.filename}')" 
@@ -481,7 +486,8 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     
     function setupScreenshotUpload() {
