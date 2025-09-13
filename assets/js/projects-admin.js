@@ -592,9 +592,39 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         // Apply styling immediately and after delays
         setTimeout(applyDialogStyling, 10);
         setTimeout(applyDialogStyling, 50);
-        setTimeout(applyDialogStyling, 100);
-        setTimeout(applyDialogStyling, 200);
-        setTimeout(applyDialogStyling, 500);
+        // Monitor style changes over time to catch when Dojo overrides our styles
+        function monitorStyleChanges() {
+            const dialogNode = projectDialog.domNode;
+            let checkCount = 0;
+            const maxChecks = 20;
+            
+            const styleMonitor = setInterval(() => {
+                checkCount++;
+                const computedStyle = window.getComputedStyle(dialogNode);
+                const background = computedStyle.background;
+                const borderRadius = computedStyle.borderRadius;
+                
+                console.log(`Style check #${checkCount}:`, {
+                    background: background.substring(0, 100),
+                    borderRadius,
+                    hasGradient: background.includes('gradient'),
+                    timestamp: Date.now()
+                });
+                
+                // If we detect styles being reset, reapply them
+                if (!background.includes('gradient') && checkCount > 3) {
+                    console.log('Styles appear to have been reset, reapplying...');
+                    applyDialogStyling();
+                }
+                
+                if (checkCount >= maxChecks) {
+                    clearInterval(styleMonitor);
+                    console.log('Style monitoring complete');
+                }
+            }, 200);
+        }
+        
+        setTimeout(monitorStyleChanges, 300);
         
         // Debug function to inspect dialog structure
         setTimeout(() => {
@@ -878,7 +908,8 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         
         fetch('/projects/upload-screenshot', {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         })
         .then(response => response.json())
         .then(result => {
@@ -915,6 +946,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'same-origin',
             body: JSON.stringify({
                 project_slug: projectSlug,
                 filename: filename,
@@ -958,6 +990,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'same-origin',
             body: JSON.stringify({
                 project_slug: projectSlug,
                 filename: filename
@@ -1000,7 +1033,8 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             
             fetch('/projects/replace-screenshot', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(result => {
@@ -1081,6 +1115,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'same-origin',
             body: JSON.stringify(project)
         })
         .then(response => {
@@ -1168,7 +1203,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             const row = checkbox.closest('tr');
             const id = row.dataset.id;
             deletePromises.push(
-                fetch('/projects/' + id, { method: 'DELETE' })
+                fetch('/projects/' + id, { method: 'DELETE', credentials: 'same-origin' })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('HTTP error! status: ' + response.status);
@@ -1668,7 +1703,7 @@ function initWithoutDojo() {
         
         const ids = Array.from(checkboxes).map(cb => cb.value);
         Promise.all(ids.map(id => 
-            fetch(`/projects/${id}`, { method: 'DELETE' })
+            fetch(`/projects/${id}`, { method: 'DELETE', credentials: 'same-origin' })
         ))
         .then(() => {
             loadGrid();
