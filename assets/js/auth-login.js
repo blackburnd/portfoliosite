@@ -3,7 +3,10 @@
  * Centered popup positioning and OAuth flow management
  */
 
-let authPopup = null;
+// Prevent duplicate variable declaration
+if (typeof authPopup === 'undefined') {
+    var authPopup = null;
+}
 
 /**
  * Detect if user is on a mobile device

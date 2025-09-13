@@ -19,14 +19,14 @@ if (typeof require === 'undefined' || typeof dojo === 'undefined') {
         "dojo/parser"
     ], function(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
         console.log('Dojo modules loaded successfully');
-        initWithDojo(Dialog, Button, TextBox, Textarea, NumberTextBox, parser);
+        initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser);
     }, function(error) {
         console.error('Error loading Dojo modules:', error);
         initWithoutDojo();
     });
 }
 
-function initWithDojo(Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
+function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
     
     let projectDialog = null;
     let currentEditId = null;
