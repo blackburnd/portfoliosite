@@ -6,7 +6,7 @@ from typing import Optional, List
 import json
 
 from auth import require_admin_auth
-from database import database, PORTFOLIO_ID, get_portfolio_id
+from database import database, get_portfolio_id
 
 # Import showcase template generation
 try:
@@ -57,7 +57,7 @@ async def projects_admin_page(
 
 
 @router.get("/projects", response_model=List[Project])
-async def list_projects():
+async def list_projects(admin: dict = Depends(require_admin_auth)):
     try:
         check_table = "SELECT to_regclass('projects')"
         table_exists = await database.fetch_val(check_table)
@@ -104,9 +104,12 @@ async def list_projects():
 
 @router.get("/projects/{id}", response_model=Project)
 async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
-    portfolio_id = PORTFOLIO_ID
-    query = "SELECT * FROM projects WHERE id = :id AND portfolio_id = :portfolio_id"
-    row = await database.fetch_one(query, {"id": id, "portfolio_id": portfolio_id})
+    portfolio_id = get_portfolio_id()
+    query = """SELECT * FROM projects
+               WHERE id = :id AND portfolio_id = :portfolio_id"""
+    row = await database.fetch_one(
+        query, {"id": id, "portfolio_id": portfolio_id}
+    )
     
     if not row:
         raise HTTPException(status_code=404, detail="Project not found")
