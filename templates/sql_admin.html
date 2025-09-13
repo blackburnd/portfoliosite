@@ -16,7 +16,7 @@
         
         <div class="sql-editor">
             <label for="sqlQuery"><strong>SQL Query:</strong></label>
-            <textarea id="sqlQuery" class="sql-textarea" placeholder="Enter your SQL query here...
+            <textarea id="sqlQuery" class="sql-textarea" placeholder="SELECT * FROM app_log
 
 Examples (PostgreSQL syntax):
 SELECT * FROM portfolios LIMIT 10;
@@ -38,18 +38,22 @@ CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
         </div>
         
         <div class="query-examples">
-            <h3>Quick Examples (click to use):</h3>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 10;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT level, COUNT(*) as count FROM app_log GROUP BY level;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log WHERE module = 'sql_admin' ORDER BY timestamp DESC LIMIT 20;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM portfolios;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM work_experience ORDER BY sort_order;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM projects ORDER BY sort_order;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 10;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_work_items FROM work_experience;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_projects FROM projects;</div>
-            <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM oauth_apps;</div>
+            <h3 onclick="toggleExamples()" style="cursor: pointer; user-select: none;">
+                <span id="examplesToggle">▼</span> Quick Examples (click to use):
+            </h3>
+            <div id="examplesContent">
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log ORDER BY timestamp DESC LIMIT 10;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT level, COUNT(*) as count FROM app_log GROUP BY level;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM app_log WHERE module = 'sql_admin' ORDER BY timestamp DESC LIMIT 20;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM portfolios;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM work_experience ORDER BY sort_order;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM projects ORDER BY sort_order;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 10;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_work_items FROM work_experience;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT COUNT(*) as total_projects FROM projects;</div>
+                <div class="example-query" onclick="setQuery(this.textContent)">SELECT * FROM oauth_apps;</div>
+            </div>
         </div>
         
         <div id="resultsContainer" class="results-container">
@@ -61,6 +65,50 @@ CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
 {% block extra_js %}
     <script>
         let currentRequest = null;
+        let executedQueries = new Set(); // Track executed queries to avoid duplicates
+
+        function toggleExamples() {
+            const content = document.getElementById('examplesContent');
+            const toggle = document.getElementById('examplesToggle');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        function minimizeExamples() {
+            const content = document.getElementById('examplesContent');
+            const toggle = document.getElementById('examplesToggle');
+            content.style.display = 'none';
+            toggle.textContent = '▶';
+        }
+
+        function addQueryToExamples(query) {
+            // Clean up the query - remove extra whitespace and ensure it ends with semicolon
+            const cleanQuery = query.trim();
+            if (!cleanQuery || executedQueries.has(cleanQuery)) {
+                return; // Skip if empty or already exists
+            }
+
+            // Add to our tracking set
+            executedQueries.add(cleanQuery);
+
+            // Create new example element
+            const examplesContent = document.getElementById('examplesContent');
+            const newExample = document.createElement('div');
+            newExample.className = 'example-query executed-query';
+            newExample.textContent = cleanQuery;
+            newExample.onclick = function() { setQuery(this.textContent); };
+            newExample.style.backgroundColor = '#e8f5e8'; // Light green to indicate it was executed
+            newExample.title = 'Previously executed query';
+
+            // Add to the top of the examples list
+            examplesContent.insertBefore(newExample, examplesContent.firstChild);
+        }
 
         function setQuery(query) {
             document.getElementById('sqlQuery').value = query.trim();
@@ -149,6 +197,9 @@ CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT);
 
                 if (result.status === 'success') {
                     displayResults(result);
+                    // Add the executed query to examples and minimize the section
+                    addQueryToExamples(query);
+                    minimizeExamples();
                 } else {
                     showMessage(`Error: ${result.message}`, 'error');
                 }

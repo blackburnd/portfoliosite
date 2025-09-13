@@ -118,10 +118,11 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             dump_file_path = dump_file.name
         
         try:
-            # Run pypgsvg on the dump file to generate SVG
+            # Run pypgsvg on the dump file to generate SVG with explicit output path
+            svg_output_path = '/tmp/schema.erd'
             result = subprocess.run(
                 ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg', 
-                 dump_file_path],
+                 dump_file_path, '-o', svg_output_path],
                 capture_output=True,
                 text=True,
                 cwd='/opt/portfoliosite',
@@ -131,21 +132,15 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             if result.returncode != 0:
                 raise Exception(f"pypgsvg failed: {result.stderr}")
             
-            # pypgsvg generates a file, extract filename from stdout
-            svg_filename = result.stdout.strip()
-            if svg_filename.startswith("Successfully generated ERD: "):
-                svg_filename = svg_filename.replace("Successfully generated ERD: ", "")
-            
-            # Read the generated SVG file
-            svg_file_path = os.path.join('/opt/portfoliosite', svg_filename)
-            if not os.path.exists(svg_file_path):
-                raise Exception(f"Generated SVG file not found: {svg_file_path}")
+            # Check if the SVG file was generated at the specified location
+            if not os.path.exists(svg_output_path):
+                raise Exception(f"Generated SVG file not found: {svg_output_path}")
                 
-            with open(svg_file_path, 'r') as svg_file:
+            with open(svg_output_path, 'r') as svg_file:
                 svg_content = svg_file.read()
             
             # Clean up the generated SVG file
-            os.unlink(svg_file_path)
+            os.unlink(svg_output_path)
             
             return Response(
                 content=svg_content,
