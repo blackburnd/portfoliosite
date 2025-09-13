@@ -100,7 +100,8 @@ async def list_projects():
 
 @router.get("/projects/{id}", response_model=Project)
 async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
-    portfolio_id = get_portfolio_id()
+    from database import PORTFOLIO_ID
+    portfolio_id = PORTFOLIO_ID
     query = """SELECT * FROM projects
                WHERE id = :id AND portfolio_id = :portfolio_id"""
     row = await database.fetch_one(
@@ -120,7 +121,7 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
     
     return Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict["portfolio_id"],
+        portfolio_id=str(row_dict["portfolio_id"]),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -163,7 +164,7 @@ async def create_project(
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict["portfolio_id"],
+        portfolio_id=str(row_dict["portfolio_id"]),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -235,7 +236,7 @@ async def update_project(
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict["portfolio_id"],
+        portfolio_id=str(row_dict["portfolio_id"]),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
