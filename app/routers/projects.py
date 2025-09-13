@@ -66,6 +66,7 @@ async def list_projects():
             return []
             
         portfolio_id = get_portfolio_id()
+        print(f"[DEBUG] projects API: portfolio_id = {portfolio_id}")
         query = """
             SELECT * FROM projects
             WHERE portfolio_id = :portfolio_id
@@ -74,6 +75,7 @@ async def list_projects():
         rows = await database.fetch_all(
             query, {"portfolio_id": portfolio_id}
         )
+        print(f"[DEBUG] projects API: found {len(rows)} rows")
         
         projects = []
         for row in rows:
