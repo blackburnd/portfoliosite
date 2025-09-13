@@ -105,18 +105,36 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             margin-left: 12px !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease !important;
         }
+        .dijitDialog button *, .dijitDialog .dijitButton * {
+            color: white !important;
+        }
+        .dijitDialog button .dijitButtonText, .dijitDialog .dijitButton .dijitButtonText {
+            color: white !important;
+        }
         .dijitDialog button:hover, .dijitDialog .dijitButton:hover {
             transform: translateY(-1px) !important;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+            color: white !important;
+        }
+        .dijitDialog button:hover *, .dijitDialog .dijitButton:hover * {
+            color: white !important;
         }
         .dijitDialog button[onclick*="hideDialog"], .dijitDialog button[onclick*="Cancel"] {
             background: #718096 !important;
             background-image: none !important;
             background-color: #718096 !important;
+            color: white !important;
+        }
+        .dijitDialog button[onclick*="hideDialog"] *, .dijitDialog button[onclick*="Cancel"] * {
+            color: white !important;
         }
         .dijitDialog button[onclick*="hideDialog"]:hover {
             background: #4a5568 !important;
             box-shadow: 0 4px 12px rgba(113, 128, 150, 0.3) !important;
+            color: white !important;
+        }
+        .dijitDialog button[onclick*="hideDialog"]:hover * {
+            color: white !important;
         }
         .dijitDialog label {
             display: block !important;
@@ -692,11 +710,25 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                             // Force button styling
                             const buttons = dialogNode.querySelectorAll('button');
                             buttons.forEach(button => {
-                                button.style.setProperty('background', '#007bff', 'important');
+                                button.style.setProperty('background', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'important');
                                 button.style.setProperty('color', 'white', 'important');
-                                button.style.setProperty('border', '1px solid #007bff', 'important');
-                                button.style.setProperty('padding', '8px 16px', 'important');
-                                button.style.setProperty('border-radius', '4px', 'important');
+                                button.style.setProperty('border', 'none', 'important');
+                                button.style.setProperty('padding', '12px 24px', 'important');
+                                button.style.setProperty('border-radius', '8px', 'important');
+                                
+                                // Force all child elements to be white too
+                                const buttonText = button.querySelector('.dijitButtonText') || button.querySelector('span') || button;
+                                if (buttonText) {
+                                    buttonText.style.setProperty('color', 'white', 'important');
+                                }
+                                
+                                // Force text content directly
+                                button.style.setProperty('color', 'white', 'important');
+                                Array.from(button.childNodes).forEach(child => {
+                                    if (child.nodeType === Node.ELEMENT_NODE) {
+                                        child.style.setProperty('color', 'white', 'important');
+                                    }
+                                });
                             });
                         }
                     }, 100);
