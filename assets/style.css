@@ -1489,10 +1489,6 @@ td[style*="#abd6ff"] {
     background-image: none !important;
 }
 
-.dijitDialog *:not(.dijitButton):not(.dijitButtonText) {
-    background-color: white !important;
-}
-
 /* Specific Dojo widget styling overrides */
 .dijitDialog .dijitInputField,
 .dijitDialog .dijitTextBoxContainer,
