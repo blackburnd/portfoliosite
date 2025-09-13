@@ -3046,6 +3046,47 @@ td[style*="#abd6ff"] {
     width: 100%;
 }
 
+/* Enhanced dialog form styling */
+.dijitDialog .form-row {
+    display: flex !important;
+    gap: 15px !important;
+    margin-bottom: 15px !important;
+}
+
+.dijitDialog .form-group {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.dijitDialog .form-group.full-width {
+    width: 100% !important;
+}
+
+.dijitDialog label {
+    margin-bottom: 5px !important;
+    font-weight: bold !important;
+    color: #333 !important;
+    display: block !important;
+}
+
+.dijitDialog input,
+.dijitDialog textarea {
+    padding: 8px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    background: white !important;
+    color: #333 !important;
+    font-family: inherit !important;
+}
+
+.dijitDialog .form-note {
+    font-size: 12px !important;
+    color: #666 !important;
+    margin-top: 4px !important;
+    font-style: italic !important;
+}
+
 .screenshots-list {
     max-height: 300px;
     overflow-y: auto;

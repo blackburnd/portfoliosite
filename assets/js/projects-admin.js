@@ -79,19 +79,20 @@ require([
                     </div>
                 </div>
                 
-                <div class="form-row screenshots-section">
-                    <div class="form-group full-width">
-                        <label>Project Screenshots</label>
+                <div class="form-row screenshots-section" style="margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+                    <div class="form-group full-width" style="width: 100%;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">Project Screenshots</label>
                         <div id="screenshotsContainer">
-                            <div class="screenshots-list" id="screenshotsList">
+                            <div class="screenshots-list" id="screenshotsList" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 15px; background: #f9f9f9;">
                                 <!-- Screenshots will be loaded here -->
                             </div>
-                            <div class="screenshot-upload">
+                            <div class="screenshot-upload" style="text-align: center; padding: 15px; border: 2px dashed #ccc; border-radius: 4px; background: #fafafa;">
                                 <input type="file" id="screenshotUpload" accept="image/png,image/jpeg,image/webp" multiple style="display: none;">
-                                <button type="button" id="uploadScreenshotBtn" onclick="document.getElementById('screenshotUpload').click()">
+                                <button type="button" id="uploadScreenshotBtn" onclick="document.getElementById('screenshotUpload').click()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-bottom: 8px;">
                                     Add Screenshot
                                 </button>
-                                <span class="form-note">Upload PNG, JPEG, or WebP images (max 2MB each)</span>
+                                <br>
+                                <span class="form-note" style="font-size: 12px; color: #666; font-style: italic;">Upload PNG, JPEG, or WebP images (max 2MB each)</span>
                             </div>
                         </div>
                     </div>
@@ -238,21 +239,21 @@ require([
     function displayScreenshots(screenshots, projectSlug) {
         const container = document.getElementById('screenshotsList');
         if (!screenshots || screenshots.length === 0) {
-            container.innerHTML = '<p class="no-screenshots">No screenshots uploaded yet</p>';
+            container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 20px; margin: 0;">No screenshots uploaded yet</p>';
             return;
         }
         
         container.innerHTML = screenshots.map(screenshot => `
-            <div class="screenshot-item">
+            <div style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; background: white;">
                 <img src="/assets/screenshots/${projectSlug}/${screenshot.filename}" 
                      alt="${screenshot.filename}" 
-                     class="screenshot-thumbnail">
-                <div class="screenshot-info">
+                     style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
                     <input type="text" value="${screenshot.name}" 
-                           class="screenshot-name" 
+                           style="flex: 1; padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px;"
                            onchange="updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)">
                     <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
-                            class="delete-screenshot">Delete</button>
+                            style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">Delete</button>
                 </div>
             </div>
         `).join('');
@@ -611,6 +612,7 @@ require([
             contentArea.style.setProperty('background-image', 'none', 'important');
             contentArea.style.setProperty('background', 'white', 'important');
             contentArea.style.setProperty('color', '#333', 'important');
+            contentArea.style.setProperty('padding', '20px', 'important');
         }
         
         // Force styling on title bar
@@ -621,6 +623,57 @@ require([
             titleBar.style.setProperty('background', '#f8f9fa', 'important');
             titleBar.style.setProperty('color', '#333', 'important');
         }
+        
+        // Style form elements
+        const formRows = dialogNode.querySelectorAll('.form-row');
+        formRows.forEach(row => {
+            row.style.setProperty('display', 'flex', 'important');
+            row.style.setProperty('gap', '15px', 'important');
+            row.style.setProperty('margin-bottom', '15px', 'important');
+        });
+        
+        const formGroups = dialogNode.querySelectorAll('.form-group');
+        formGroups.forEach(group => {
+            group.style.setProperty('flex', '1', 'important');
+            group.style.setProperty('display', 'flex', 'important');
+            group.style.setProperty('flex-direction', 'column', 'important');
+        });
+        
+        const labels = dialogNode.querySelectorAll('label');
+        labels.forEach(label => {
+            label.style.setProperty('margin-bottom', '5px', 'important');
+            label.style.setProperty('font-weight', 'bold', 'important');
+            label.style.setProperty('color', '#333', 'important');
+            label.style.setProperty('display', 'block', 'important');
+        });
+        
+        const inputs = dialogNode.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.style.setProperty('padding', '8px', 'important');
+            input.style.setProperty('border', '1px solid #ccc', 'important');
+            input.style.setProperty('border-radius', '4px', 'important');
+            input.style.setProperty('background', 'white', 'important');
+            input.style.setProperty('color', '#333', 'important');
+        });
+        
+        const buttons = dialogNode.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Add Project') || button.textContent.includes('Update Project')) {
+                button.style.setProperty('background', '#007bff', 'important');
+                button.style.setProperty('color', 'white', 'important');
+                button.style.setProperty('border', 'none', 'important');
+                button.style.setProperty('padding', '10px 20px', 'important');
+                button.style.setProperty('border-radius', '4px', 'important');
+                button.style.setProperty('cursor', 'pointer', 'important');
+            } else if (button.textContent.includes('Cancel')) {
+                button.style.setProperty('background', '#6c757d', 'important');
+                button.style.setProperty('color', 'white', 'important');
+                button.style.setProperty('border', 'none', 'important');
+                button.style.setProperty('padding', '10px 20px', 'important');
+                button.style.setProperty('border-radius', '4px', 'important');
+                button.style.setProperty('cursor', 'pointer', 'important');
+            }
+        });
         
         // Force white background on all elements that might have blue
         const allElements = dialogNode.querySelectorAll('*');
