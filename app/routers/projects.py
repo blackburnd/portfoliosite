@@ -60,26 +60,18 @@ async def projects_admin_page(
 
 @router.get("/projects", response_model=List[Project])
 async def list_projects():
-    logger.debug("projects API: Starting list_projects")
     try:
-        portfolio_id = get_portfolio_id()
-        logger.debug(f"projects API: portfolio_id = {portfolio_id}")
-        
+        from database import PORTFOLIO_ID
+        portfolio_id = PORTFOLIO_ID
         query = """
             SELECT * FROM projects
             WHERE portfolio_id = :portfolio_id
             ORDER BY sort_order, title
         """
-        logger.debug("projects API: executing query with portfolio_id = "
-                     f"{portfolio_id}")
-        rows = await database.fetch_all(
-            query, {"portfolio_id": portfolio_id}
-        )
-        logger.debug(f"projects API: found {len(rows)} rows")
+        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
         
         projects = []
-        for i, row in enumerate(rows):
-            logger.debug(f"projects API: processing row {i}: {dict(row)}")
+        for row in rows:
             row_dict = dict(row)
             technologies = row_dict.get("technologies", [])
             if isinstance(technologies, str):
@@ -100,12 +92,9 @@ async def list_projects():
             )
             projects.append(project)
         
-        logger.debug(f"projects API: returning {len(projects)} projects")
         return projects
     except Exception as e:
-        import traceback
-        logger.debug(f"projects API: Exception occurred: {e}")
-        logger.debug(f"projects API: Traceback: {traceback.format_exc()}")
+        print(f"Error in list_projects: {e}")
         return []
 
 
@@ -142,7 +131,9 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
 
 
 @router.post("/projects", response_model=Project)
-async def create_project(project: Project, admin: dict = Depends(require_admin_auth)):
+async def create_project(
+    project: Project, admin: dict = Depends(require_admin_auth)
+):
     query = """
         INSERT INTO projects (portfolio_id, title, description, url,
                               image_url, technologies, sort_order)

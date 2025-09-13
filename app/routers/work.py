@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import APIRouter, Request, Depends, HTTPException, Form
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List
 import json
 import logging
+import os
+import shutil
 
 from auth import require_admin_auth, verify_token, is_authorized_user
 from database import database, get_portfolio_id
@@ -76,6 +78,10 @@ async def work(request: Request):
                 c for c in project_slug if c.isalnum() or c in "-"
             ).strip("-")
             
+            # Check if showcase HTML file exists
+            showcase_file_path = f"templates/showcase/{project_slug}.html"
+            showcase_file_exists = os.path.exists(showcase_file_path)
+            
             projects.append({
                 "id": str(row_dict["id"]),
                 "title": row_dict["title"],
@@ -84,7 +90,8 @@ async def work(request: Request):
                 "image_url": row_dict.get("image_url"),
                 "technologies": technologies,
                 "sort_order": row_dict.get("sort_order", 0),
-                "slug": project_slug
+                "slug": project_slug,
+                "showcase_file_exists": showcase_file_exists
             })
     except Exception:
         projects = []
