@@ -28,6 +28,66 @@ if (typeof require === 'undefined' || typeof dojo === 'undefined') {
 
 function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
     
+    // Inject aggressive CSS to override Dojo theming
+    const aggressiveStyles = document.createElement('style');
+    aggressiveStyles.textContent = `
+        .dijitDialog { 
+            background: white !important; 
+            border: 1px solid #dee2e6 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        .dijitDialogPaneContentArea { 
+            background: white !important; 
+            background-image: none !important;
+            color: #333 !important;
+            padding: 20px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        .dijitDialogTitleBar {
+            background: white !important;
+            background-image: none !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            color: #333 !important;
+            font-weight: 600 !important;
+            padding: 15px 20px !important;
+        }
+        .dijitDialogPaneActionBar {
+            background: #f8f9fa !important;
+            background-image: none !important;
+            border-top: 1px solid #dee2e6 !important;
+            padding: 15px 20px !important;
+        }
+        .dijitDialog input, .dijitDialog textarea, .dijitDialog select {
+            border: 1px solid #ccc !important;
+            padding: 8px 12px !important;
+            border-radius: 4px !important;
+            background: white !important;
+            background-image: none !important;
+            color: #333 !important;
+            font-size: 14px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        .dijitDialog button {
+            background: #007bff !important;
+            color: white !important;
+            border: 1px solid #007bff !important;
+            padding: 8px 16px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-size: 14px !important;
+            margin-left: 10px !important;
+        }
+        .dijitDialog label {
+            display: block !important;
+            margin-bottom: 5px !important;
+            font-weight: 600 !important;
+            color: #333 !important;
+            font-size: 14px !important;
+        }
+    `;
+    document.head.appendChild(aggressiveStyles);
+    
     let projectDialog = null;
     let currentEditId = null;
     
@@ -333,19 +393,63 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                     actionBar.style.cssText += 'background-color: #f8f9fa !important; background-image: none !important; border-top: 1px solid #dee2e6 !important; padding: 15px 20px !important;';
                 }
                 
-                // Style form elements
+                // Aggressively style all form elements
                 const inputs = dialogNode.querySelectorAll('input, textarea, select');
                 inputs.forEach(input => {
-                    input.style.cssText += 'border: 1px solid #ccc !important; padding: 8px 12px !important; border-radius: 4px !important; background-color: white !important; color: #333 !important; font-size: 14px !important; width: 100% !important; box-sizing: border-box !important;';
+                    input.style.setProperty('border', '1px solid #ccc', 'important');
+                    input.style.setProperty('padding', '8px 12px', 'important');
+                    input.style.setProperty('border-radius', '4px', 'important');
+                    input.style.setProperty('background-color', 'white', 'important');
+                    input.style.setProperty('background-image', 'none', 'important');
+                    input.style.setProperty('color', '#333', 'important');
+                    input.style.setProperty('font-size', '14px', 'important');
+                    input.style.setProperty('width', '100%', 'important');
+                    input.style.setProperty('box-sizing', 'border-box', 'important');
+                    input.style.setProperty('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 'important');
                 });
                 
                 // Style labels
                 const labels = dialogNode.querySelectorAll('label');
                 labels.forEach(label => {
-                    label.style.cssText += 'display: block !important; margin-bottom: 5px !important; font-weight: 600 !important; color: #333 !important; font-size: 14px !important;';
+                    label.style.setProperty('display', 'block', 'important');
+                    label.style.setProperty('margin-bottom', '5px', 'important');
+                    label.style.setProperty('font-weight', '600', 'important');
+                    label.style.setProperty('color', '#333', 'important');
+                    label.style.setProperty('font-size', '14px', 'important');
+                    label.style.setProperty('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 'important');
                 });
                 
-                // Remove any blue backgrounds
+                // Style form groups and rows
+                const formRows = dialogNode.querySelectorAll('.form-row');
+                formRows.forEach(row => {
+                    row.style.setProperty('display', 'flex', 'important');
+                    row.style.setProperty('gap', '15px', 'important');
+                    row.style.setProperty('margin-bottom', '15px', 'important');
+                    row.style.setProperty('align-items', 'flex-start', 'important');
+                });
+                
+                const formGroups = dialogNode.querySelectorAll('.form-group');
+                formGroups.forEach(group => {
+                    group.style.setProperty('flex', '1', 'important');
+                    group.style.setProperty('display', 'flex', 'important');
+                    group.style.setProperty('flex-direction', 'column', 'important');
+                });
+                
+                // Style buttons aggressively
+                const buttons = dialogNode.querySelectorAll('button');
+                buttons.forEach(button => {
+                    button.style.setProperty('background', '#007bff', 'important');
+                    button.style.setProperty('color', 'white', 'important');
+                    button.style.setProperty('border', '1px solid #007bff', 'important');
+                    button.style.setProperty('padding', '8px 16px', 'important');
+                    button.style.setProperty('border-radius', '4px', 'important');
+                    button.style.setProperty('cursor', 'pointer', 'important');
+                    button.style.setProperty('font-size', '14px', 'important');
+                    button.style.setProperty('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 'important');
+                    button.style.setProperty('margin-left', '10px', 'important');
+                });
+                
+                // Remove any blue backgrounds and override Dojo theming
                 const allElements = dialogNode.querySelectorAll('*');
                 allElements.forEach(el => {
                     if (el.style.backgroundColor && (el.style.backgroundColor.includes('171, 214, 255') || el.style.backgroundColor.includes('#abd6ff'))) {
@@ -373,6 +477,43 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         setTimeout(() => {
             dijit.byId("submitBtn").set("label", "Add Project");
             projectDialog.show();
+            
+            // Apply aggressive styling after dialog is shown
+            setTimeout(() => {
+                const dialogNode = projectDialog.domNode;
+                if (dialogNode) {
+                    // Force aggressive restyling
+                    const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+                    if (contentArea) {
+                        contentArea.style.setProperty('background-color', 'white', 'important');
+                        contentArea.style.setProperty('background-image', 'none', 'important');
+                        contentArea.style.setProperty('background', 'white', 'important');
+                        contentArea.style.setProperty('color', '#333', 'important');
+                        contentArea.style.setProperty('padding', '20px', 'important');
+                        contentArea.style.setProperty('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 'important');
+                    }
+                    
+                    // Re-apply all form styling
+                    const inputs = dialogNode.querySelectorAll('input, textarea');
+                    inputs.forEach(input => {
+                        input.style.setProperty('border', '1px solid #ccc', 'important');
+                        input.style.setProperty('padding', '8px 12px', 'important');
+                        input.style.setProperty('background', 'white', 'important');
+                        input.style.setProperty('color', '#333', 'important');
+                    });
+                    
+                    // Force button styling
+                    const buttons = dialogNode.querySelectorAll('button');
+                    buttons.forEach(button => {
+                        button.style.setProperty('background', '#007bff', 'important');
+                        button.style.setProperty('color', 'white', 'important');
+                        button.style.setProperty('border', '1px solid #007bff', 'important');
+                        button.style.setProperty('padding', '8px 16px', 'important');
+                        button.style.setProperty('border-radius', '4px', 'important');
+                    });
+                }
+            }, 100);
+            
             // Setup screenshot upload after dialog is shown
             setTimeout(setupScreenshotUpload, 200);
             // Force styling after showing
@@ -398,6 +539,43 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                     dijit.byId("submitBtn").set("label", "Update Project");
                     populateForm(item);
                     projectDialog.show();
+                    
+                    // Apply aggressive styling after dialog is shown
+                    setTimeout(() => {
+                        const dialogNode = projectDialog.domNode;
+                        if (dialogNode) {
+                            // Force aggressive restyling
+                            const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+                            if (contentArea) {
+                                contentArea.style.setProperty('background-color', 'white', 'important');
+                                contentArea.style.setProperty('background-image', 'none', 'important');
+                                contentArea.style.setProperty('background', 'white', 'important');
+                                contentArea.style.setProperty('color', '#333', 'important');
+                                contentArea.style.setProperty('padding', '20px', 'important');
+                                contentArea.style.setProperty('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 'important');
+                            }
+                            
+                            // Re-apply all form styling
+                            const inputs = dialogNode.querySelectorAll('input, textarea');
+                            inputs.forEach(input => {
+                                input.style.setProperty('border', '1px solid #ccc', 'important');
+                                input.style.setProperty('padding', '8px 12px', 'important');
+                                input.style.setProperty('background', 'white', 'important');
+                                input.style.setProperty('color', '#333', 'important');
+                            });
+                            
+                            // Force button styling
+                            const buttons = dialogNode.querySelectorAll('button');
+                            buttons.forEach(button => {
+                                button.style.setProperty('background', '#007bff', 'important');
+                                button.style.setProperty('color', 'white', 'important');
+                                button.style.setProperty('border', '1px solid #007bff', 'important');
+                                button.style.setProperty('padding', '8px 16px', 'important');
+                                button.style.setProperty('border-radius', '4px', 'important');
+                            });
+                        }
+                    }, 100);
+                    
                     // Setup screenshot upload after dialog is shown
                     setTimeout(setupScreenshotUpload, 200);
                     // Force styling after showing
