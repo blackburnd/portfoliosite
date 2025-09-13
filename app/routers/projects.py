@@ -491,3 +491,82 @@ async def replace_screenshot(
             {"success": False, "message": f"Replace failed: {str(e)}"},
             status_code=500
         )
+
+
+@router.post("/projects/rename-screenshot")
+async def rename_screenshot(
+    request: dict,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Rename a screenshot file with conflict resolution"""
+    
+    project_slug = request.get("project_slug")
+    current_filename = request.get("current_filename")
+    new_filename = request.get("new_filename")
+    
+    if not all([project_slug, current_filename, new_filename]):
+        return JSONResponse(
+            {"success": False, "message": "Missing required parameters"},
+            status_code=400
+        )
+    
+    try:
+        from datetime import datetime
+        import shutil
+        
+        # Paths
+        screenshots_dir = Path(f"assets/screenshots/{project_slug}")
+        current_path = screenshots_dir / current_filename
+        new_path = screenshots_dir / new_filename
+        
+        # Validate current file exists
+        if not current_path.exists():
+            return JSONResponse(
+                {"success": False,
+                 "message": f"Current file {current_filename} not found"},
+                status_code=404
+            )
+        
+        # Handle naming conflicts
+        conflict_resolved = False
+        conflict_backup = None
+        
+        if new_path.exists() and new_path != current_path:
+            # Create backup name with timestamp for conflicting file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            name_parts = new_filename.rsplit('.', 1)
+            if len(name_parts) == 2:
+                conflict_backup = (f"{name_parts[0]}_renamed_{timestamp}"
+                                   f".{name_parts[1]}")
+            else:
+                conflict_backup = f"{new_filename}_renamed_{timestamp}"
+            
+            conflict_backup_path = screenshots_dir / conflict_backup
+            
+            # Move the conflicting file to backup name
+            shutil.move(str(new_path), str(conflict_backup_path))
+            conflict_resolved = True
+        
+        # Rename the current file to new name
+        shutil.move(str(current_path), str(new_path))
+        
+        response_data = {
+            "success": True,
+            "message": (f"Screenshot renamed from {current_filename} "
+                       f"to {new_filename}"),
+            "old_filename": current_filename,
+            "new_filename": new_filename
+        }
+        
+        if conflict_resolved:
+            response_data["conflict_resolved"] = True
+            response_data["conflict_backup"] = conflict_backup
+        
+        return JSONResponse(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error renaming screenshot: {str(e)}")
+        return JSONResponse(
+            {"success": False, "message": f"Rename failed: {str(e)}"},
+            status_code=500
+        )

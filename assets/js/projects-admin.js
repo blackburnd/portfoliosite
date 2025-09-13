@@ -203,6 +203,10 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
             background-color: #48bb78 !important;
         }
+        .dijitDialog button[onclick*="renameScreenshot"] {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+            background-color: #17a2b8 !important;
+        }
         .dijitDialog button[onclick*="deleteScreenshot"] {
             background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important;
             background-color: #f56565 !important;
@@ -856,6 +860,9 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                         <button type="button" onclick="replaceScreenshot('${projectSlug}', '${screenshot.filename}')" 
                                 style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
                                 title="Replace ${screenshot.filename}">Replace</button>
+                        <button type="button" onclick="renameScreenshot('${projectSlug}', '${screenshot.filename}')" 
+                                style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+                                title="Rename ${screenshot.filename}">Rename</button>
                         <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
                                 style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
                                 title="Delete ${screenshot.filename}">Delete</button>
@@ -1053,6 +1060,55 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         document.body.appendChild(fileInput);
         fileInput.click();
         document.body.removeChild(fileInput);
+    }
+    
+    function renameScreenshot(projectSlug, currentFilename) {
+        const newFilename = prompt(`Enter new filename for ${currentFilename}:`, currentFilename);
+        
+        if (!newFilename || newFilename.trim() === '' || newFilename === currentFilename) {
+            return; // User cancelled or entered same name
+        }
+        
+        // Basic validation
+        if (!newFilename.match(/\.(png|jpg|jpeg|webp)$/i)) {
+            alert('Filename must end with a valid image extension (.png, .jpg, .jpeg, .webp)');
+            return;
+        }
+        
+        if (!confirm(`Rename ${currentFilename} to ${newFilename.trim()}?`)) {
+            return;
+        }
+        
+        fetch('/projects/rename-screenshot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                project_slug: projectSlug,
+                current_filename: currentFilename,
+                new_filename: newFilename.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                let message = `Screenshot renamed successfully!`;
+                if (result.conflict_resolved) {
+                    message += `\nConflicting file was renamed to: ${result.conflict_backup}`;
+                }
+                alert(message);
+                // Reload screenshots to show the renamed file
+                loadProjectScreenshots(dijit.byId("title").get("value"));
+            } else {
+                alert('Rename failed: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Rename error:', error);
+            alert('Rename failed: ' + error.message);
+        });
     }
     
     function hideDialog() {
@@ -1397,7 +1453,9 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         deleteScreenshot: deleteScreenshot,
         updateScreenshotName: updateScreenshotName,
         uploadScreenshotFile: uploadScreenshotFile,
-        displayScreenshots: displayScreenshots
+        displayScreenshots: displayScreenshots,
+        replaceScreenshot: replaceScreenshot,
+        renameScreenshot: renameScreenshot
     };
     
     // Also make screenshot functions globally available for onclick handlers
@@ -1405,6 +1463,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
     window.updateScreenshotName = updateScreenshotName;
     window.uploadScreenshotFile = uploadScreenshotFile;
     window.replaceScreenshot = replaceScreenshot;
+    window.renameScreenshot = renameScreenshot;
 }
 
 // Fallback implementation without Dojo
