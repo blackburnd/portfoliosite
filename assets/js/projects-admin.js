@@ -31,45 +31,57 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
     // Inject aggressive CSS to override Dojo theming
     const aggressiveStyles = document.createElement('style');
     aggressiveStyles.textContent = `
-        .dijitDialog { 
+        /* Ultra-aggressive Dojo dialog overrides */
+        .dijitDialog, .dijitDialog .dijitDialogPaneContent { 
             background: white !important; 
+            background-image: none !important;
+            background-color: white !important;
             border: 1px solid #dee2e6 !important;
             border-radius: 8px !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
         }
-        .dijitDialogPaneContentArea { 
+        .dijitDialogPaneContentArea, .dijitDialog .dijitDialogPaneContentArea { 
             background: white !important; 
             background-image: none !important;
+            background-color: white !important;
             color: #333 !important;
             padding: 20px !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
-        .dijitDialogTitleBar {
+        .dijitDialogTitleBar, .dijitDialog .dijitDialogTitleBar {
             background: white !important;
             background-image: none !important;
+            background-color: white !important;
             border-bottom: 1px solid #dee2e6 !important;
             color: #333 !important;
             font-weight: 600 !important;
             padding: 15px 20px !important;
         }
-        .dijitDialogPaneActionBar {
+        .dijitDialogPaneActionBar, .dijitDialog .dijitDialogPaneActionBar {
             background: #f8f9fa !important;
             background-image: none !important;
+            background-color: #f8f9fa !important;
             border-top: 1px solid #dee2e6 !important;
             padding: 15px 20px !important;
         }
-        .dijitDialog input, .dijitDialog textarea, .dijitDialog select {
+        .dijitDialog input, .dijitDialog textarea, .dijitDialog select,
+        .dijitDialog .dijitTextBox, .dijitDialog .dijitTextArea {
             border: 1px solid #ccc !important;
             padding: 8px 12px !important;
             border-radius: 4px !important;
             background: white !important;
             background-image: none !important;
+            background-color: white !important;
             color: #333 !important;
             font-size: 14px !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
         }
-        .dijitDialog button {
+        .dijitDialog button, .dijitDialog .dijitButton {
             background: #007bff !important;
+            background-image: none !important;
+            background-color: #007bff !important;
             color: white !important;
             border: 1px solid #007bff !important;
             padding: 8px 16px !important;
@@ -84,6 +96,23 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             font-weight: 600 !important;
             color: #333 !important;
             font-size: 14px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        /* Override any blue/themed backgrounds */
+        .dijitDialog *, .dijitDialog *:before, .dijitDialog *:after {
+            background-image: none !important;
+        }
+        /* Form styling */
+        .dijitDialog .form-row {
+            display: flex !important;
+            gap: 15px !important;
+            margin-bottom: 15px !important;
+            align-items: flex-start !important;
+        }
+        .dijitDialog .form-group {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
     `;
     document.head.appendChild(aggressiveStyles);
@@ -466,6 +495,17 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         setTimeout(applyDialogStyling, 10);
         setTimeout(applyDialogStyling, 50);
         setTimeout(applyDialogStyling, 100);
+        setTimeout(applyDialogStyling, 200);
+        setTimeout(applyDialogStyling, 500);
+        
+        // Debug function to inspect dialog structure
+        setTimeout(() => {
+            const dialogNode = projectDialog.domNode;
+            console.log('Dialog DOM structure:', dialogNode);
+            console.log('Dialog classes:', dialogNode.className);
+            console.log('Content area:', dialogNode.querySelector('.dijitDialogPaneContentArea'));
+            console.log('Applied styles:', window.getComputedStyle(dialogNode));
+        }, 100);
     }
     
     function showAddDialog() {
