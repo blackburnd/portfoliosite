@@ -90,7 +90,7 @@ async def list_projects():
             
             project = Project(
                 id=str(row_dict["id"]),
-                portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
+                portfolio_id=row_dict["portfolio_id"]),
                 title=row_dict.get("title", ""),
                 description=row_dict.get("description", ""),
                 url=row_dict.get("url"),
@@ -131,7 +131,7 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
     
     return Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
+        portfolio_id=row_dict["portfolio_id"],
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -172,7 +172,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=str(row_dict.get("portfolio_id", get_portfolio_id())),
+        portfolio_id=row_dict["portfolio_id"],
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
@@ -244,7 +244,7 @@ async def update_project(
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
+        portfolio_id=row_dict["portfolio_id"]),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
