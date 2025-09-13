@@ -4,12 +4,14 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List
 import json
+import logging
 
 from auth import require_admin_auth, verify_token, is_authorized_user
 from database import database, get_portfolio_id
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
 
 class WorkItem(BaseModel):
@@ -46,7 +48,7 @@ async def work(request: Request):
     # Fetch projects for showcase listing
     try:
         portfolio_id = get_portfolio_id()
-        print(f"[DEBUG] work route: portfolio_id = {portfolio_id}")
+        logger.debug(f"work route: portfolio_id = {portfolio_id}")
         query = """
             SELECT id, title, description, url, image_url, technologies,
                    sort_order
@@ -55,7 +57,7 @@ async def work(request: Request):
             ORDER BY sort_order, title
         """
         rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
-        print(f"[DEBUG] work route: found {len(rows)} rows")
+        logger.debug(f"work route: found {len(rows)} rows")
         
         projects = []
         for row in rows:

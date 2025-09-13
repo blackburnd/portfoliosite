@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List
 import json
+import logging
 
 from auth import require_admin_auth
 from database import database, get_portfolio_id
@@ -18,11 +19,12 @@ except ImportError:
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
 
 class Project(BaseModel):
     id: Optional[str] = None
-    portfolio_id: Optional[str] = None
+    portfolio_id: str
     title: str
     description: str
     url: Optional[str] = None
@@ -58,25 +60,26 @@ async def projects_admin_page(
 
 @router.get("/projects", response_model=List[Project])
 async def list_projects():
-    print("[DEBUG] projects API: Starting list_projects")
+    logger.debug("projects API: Starting list_projects")
     try:
         portfolio_id = get_portfolio_id()
-        print(f"[DEBUG] projects API: portfolio_id = {portfolio_id}")
+        logger.debug(f"projects API: portfolio_id = {portfolio_id}")
         
         query = """
             SELECT * FROM projects
             WHERE portfolio_id = :portfolio_id
             ORDER BY sort_order, title
         """
-        print(f"[DEBUG] projects API: executing query with portfolio_id = {portfolio_id}")
+        logger.debug("projects API: executing query with portfolio_id = "
+                     f"{portfolio_id}")
         rows = await database.fetch_all(
             query, {"portfolio_id": portfolio_id}
         )
-        print(f"[DEBUG] projects API: found {len(rows)} rows")
+        logger.debug(f"projects API: found {len(rows)} rows")
         
         projects = []
         for i, row in enumerate(rows):
-            print(f"[DEBUG] projects API: processing row {i}: {dict(row)}")
+            logger.debug(f"projects API: processing row {i}: {dict(row)}")
             row_dict = dict(row)
             technologies = row_dict.get("technologies", [])
             if isinstance(technologies, str):
@@ -97,12 +100,12 @@ async def list_projects():
             )
             projects.append(project)
         
-        print(f"[DEBUG] projects API: returning {len(projects)} projects")
+        logger.debug(f"projects API: returning {len(projects)} projects")
         return projects
     except Exception as e:
         import traceback
-        print(f"[DEBUG] projects API: Exception occurred: {e}")
-        print(f"[DEBUG] projects API: Traceback: {traceback.format_exc()}")
+        logger.debug(f"projects API: Exception occurred: {e}")
+        logger.debug(f"projects API: Traceback: {traceback.format_exc()}")
         return []
 
 
