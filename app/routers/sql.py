@@ -163,12 +163,26 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
 
 
 @router.get("/admin/sql/test-erd-complex")
-async def test_erd_complex(request: Request, admin: dict = Depends(require_admin_auth)):
+async def test_erd_complex(request: Request, 
+                          admin: dict = Depends(require_admin_auth)):
     """Test route to serve the complex_schema.svg file"""
     try:
-        svg_path = "/opt/portfoliosite/assets/files/complex_schema.svg"
-        if not os.path.exists(svg_path):
-            return JSONResponse({"status": "error", "message": f"SVG file not found: {svg_path}"}, status_code=404)
+        # Try production path first, then local development path
+        svg_paths = [
+            "/opt/portfoliosite/assets/files/complex_schema.svg",  # Production
+            "assets/files/complex_schema.svg"  # Local development
+        ]
+        
+        svg_path = None
+        for path in svg_paths:
+            if os.path.exists(path):
+                svg_path = path
+                break
+                
+        if not svg_path:
+            paths_msg = f"SVG file not found in any of: {svg_paths}"
+            return JSONResponse({"status": "error", "message": paths_msg},
+                                status_code=404)
             
         with open(svg_path, 'r') as svg_file:
             svg_content = svg_file.read()
@@ -180,16 +194,32 @@ async def test_erd_complex(request: Request, admin: dict = Depends(require_admin
         )
         
     except Exception as e:
-        return JSONResponse({"status": "error", "message": f"Error serving SVG: {e}"}, status_code=500)
+        error_msg = f"Error serving SVG: {e}"
+        return JSONResponse({"status": "error", "message": error_msg},
+                            status_code=500)
 
 
 @router.get("/admin/sql/test-erd-site")
-async def test_erd_site(request: Request, admin: dict = Depends(require_admin_auth)):
+async def test_erd_site(request: Request,
+                        admin: dict = Depends(require_admin_auth)):
     """Test route to serve the site_erd.svg file"""
     try:
-        svg_path = "/opt/portfoliosite/assets/files/site_erd.svg"
-        if not os.path.exists(svg_path):
-            return JSONResponse({"status": "error", "message": f"SVG file not found: {svg_path}"}, status_code=404)
+        # Try production path first, then local development path
+        svg_paths = [
+            "/opt/portfoliosite/assets/files/site_erd.svg",  # Production
+            "assets/files/site_erd.svg"  # Local development
+        ]
+        
+        svg_path = None
+        for path in svg_paths:
+            if os.path.exists(path):
+                svg_path = path
+                break
+                
+        if not svg_path:
+            paths_msg = f"SVG file not found in any of: {svg_paths}"
+            return JSONResponse({"status": "error", "message": paths_msg},
+                                status_code=404)
             
         with open(svg_path, 'r') as svg_file:
             svg_content = svg_file.read()
@@ -201,4 +231,6 @@ async def test_erd_site(request: Request, admin: dict = Depends(require_admin_au
         )
         
     except Exception as e:
-        return JSONResponse({"status": "error", "message": f"Error serving SVG: {e}"}, status_code=500)
+        error_msg = f"Error serving SVG: {e}"
+        return JSONResponse({"status": "error", "message": error_msg},
+                            status_code=500)
