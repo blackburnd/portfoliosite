@@ -88,11 +88,12 @@ class DatabaseLogHandler(logging.Handler):
         try:
             # Database is already connected, no need to connect/disconnect
             
-            # Extract extra information
+            # Extract traceback information
+            traceback_text = None
             extra = {}
             if hasattr(record, 'exc_info') and record.exc_info:
                 exc_info = record.exc_info
-                extra['traceback'] = ''.join(
+                traceback_text = ''.join(
                     traceback.format_exception(*exc_info)
                 )
             
@@ -104,9 +105,10 @@ class DatabaseLogHandler(logging.Handler):
             query = """
                 INSERT INTO app_log (portfolio_id, timestamp, level, message,
                                    module, function, line, "user", extra,
-                                   ip_address)
+                                   ip_address, traceback)
                 VALUES (:portfolio_id, :timestamp, :level, :message, :module,
-                       :function, :line, :user, :extra, :ip_address)
+                       :function, :line, :user, :extra, :ip_address,
+                       :traceback)
             """
             
             values = {
@@ -120,7 +122,8 @@ class DatabaseLogHandler(logging.Handler):
                 'line': record.lineno,
                 'user': user,
                 'extra': json.dumps(extra) if extra else None,
-                'ip_address': ip_address
+                'ip_address': ip_address,
+                'traceback': traceback_text
             }
             
             await get_database().execute(query, values)
@@ -207,7 +210,8 @@ def log_with_context(
 def add_log(level: str, message: str, module: str = "manual",
             function: str = "add_log", line: int = 0,
             user: Optional[str] = None, extra: Optional[dict] = None,
-            ip_address: Optional[str] = None):
+            ip_address: Optional[str] = None,
+            traceback_text: Optional[str] = None):
     """Manually add a log entry to the database"""
     
     async def _add_log_async():
@@ -221,9 +225,10 @@ def add_log(level: str, message: str, module: str = "manual",
             query = """
                 INSERT INTO app_log (portfolio_id, timestamp, level, message,
                                    module, function, line, "user", extra,
-                                   ip_address)
+                                   ip_address, traceback)
                 VALUES (:portfolio_id, :timestamp, :level, :message, :module,
-                       :function, :line, :user, :extra, :ip_address)
+                       :function, :line, :user, :extra, :ip_address,
+                       :traceback)
             """
 
             values = {
@@ -236,7 +241,8 @@ def add_log(level: str, message: str, module: str = "manual",
                 'line': line,
                 'user': user,
                 'extra': json.dumps(extra) if extra else None,
-                'ip_address': ip_address
+                'ip_address': ip_address,
+                'traceback': traceback_text
             }
 
             await db.execute(query, values)
@@ -244,7 +250,7 @@ def add_log(level: str, message: str, module: str = "manual",
 
         except Exception as e:
             print(f"Failed to add manual log entry: {e}")
-            # Don't disconnect on error either - let the connection pool handle it
+            # Don't disconnect on error either - let connection pool handle it
 
     # Run the async function synchronously
     try:

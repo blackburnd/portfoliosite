@@ -238,9 +238,9 @@ async def log_non_200_responses(request: Request, call_next):
                     "url": str(request.url),
                     "method": request.method,
                     "error_type": type(e).__name__,
-                    "traceback": full_traceback,
                     "client_ip": client_ip
-                }
+                },
+                traceback_text=full_traceback
             )
         except Exception as log_error:
             logger.error(
@@ -307,19 +307,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             line=0,
             user=None,
             ip_address=client_ip,
-            extra=extra_data
+            extra=extra_data,
+            traceback_text=error_traceback
         )
 
-        # Log the traceback separately
-        add_log(
-            "ERROR",
-            f"Traceback for [{error_id}]:\n{error_traceback}",
-            "global_exception_traceback",
-            function="global_exception_handler",
-            line=0,
-            user=None,
-            ip_address=client_ip
-        )
     except Exception as log_error:
         logger.error(f"Failed to log exception to database: {log_error}")
 
