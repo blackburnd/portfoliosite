@@ -103,7 +103,7 @@ async def download_schema(request: Request, admin: dict = Depends(require_admin_
 
 @router.get("/admin/sql/generate-erd")
 async def generate_erd(request: Request, admin: dict = Depends(require_admin_auth)):
-    """Generate ERD from database schema"""
+    """Generate ERD from database schema and save to assets/files"""
     try:
         log_with_context("INFO", "sql_admin_erd", 
                          "Admin generating ERD", request)
@@ -139,15 +139,41 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             with open(svg_output_path, 'r') as svg_file:
                 svg_content = svg_file.read()
             
+            # Determine the target path for saving the SVG
+            # Try production path first, then local development path
+            target_paths = [
+                "/opt/portfoliosite/assets/files/site_erd.svg",  # Production
+                "assets/files/site_erd.svg"  # Local development
+            ]
+            
+            target_path = None
+            for path in target_paths:
+                parent_dir = os.path.dirname(path)
+                if (os.path.exists(parent_dir) or
+                        parent_dir == "/opt/portfoliosite/assets/files"):
+                    target_path = path
+                    break
+            
+            if not target_path:
+                # Create the assets/files directory if it doesn't exist
+                os.makedirs("assets/files", exist_ok=True)
+                target_path = "assets/files/site_erd.svg"
+            
+            # Write the SVG content to the target file
+            with open(target_path, 'w') as target_file:
+                target_file.write(svg_content)
+            
             # Clean up the generated SVG file
             os.unlink(svg_output_path)
             
-            return Response(
-                content=svg_content,
-                media_type="image/svg+xml",
-                headers={"Content-Disposition": 
-                        "inline; filename=database_erd.svg"}
-            )
+            log_with_context("INFO", "sql_admin_erd",
+                             f"ERD saved to: {target_path}", request)
+            
+            return JSONResponse({
+                "status": "success",
+                "message": f"ERD generated and saved to {target_path}",
+                "file_path": target_path
+            })
             
         finally:
             # Clean up the temporary dump file
@@ -155,16 +181,16 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
                 os.unlink(dump_file_path)
                 
     except Exception as e:
-        log_with_context("ERROR", "sql_admin_erd_error", 
+        log_with_context("ERROR", "sql_admin_erd_error",
                          f"ERD generation error: {e}", request)
-        return JSONResponse({"status": "error", 
-                           "message": f"ERD generation failed: {e}"}, 
-                           status_code=500)
+        return JSONResponse({"status": "error",
+                             "message": f"ERD generation failed: {e}"},
+                            status_code=500)
 
 
 @router.get("/admin/sql/test-erd-complex")
-async def test_erd_complex(request: Request, 
-                          admin: dict = Depends(require_admin_auth)):
+async def test_erd_complex(request: Request,
+                           admin: dict = Depends(require_admin_auth)):
     """Test route to serve the complex_schema.svg file"""
     try:
         # Try production path first, then local development path
