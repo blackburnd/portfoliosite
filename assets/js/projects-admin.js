@@ -737,18 +737,16 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                 input.style.setProperty('color', '#333', 'important');
                             });
                             
-                            // Force button styling - target Dojo button structure
-                            console.log('Styling buttons...');
+                            // Force button text styling
+                            console.log('Styling button text...');
                             const buttons = dialogNode.querySelectorAll('button, .dijitButton, .dijitButtonNode');
                             console.log('Found buttons:', buttons.length);
                             
                             buttons.forEach((button, index) => {
                                 console.log(`Styling button ${index}:`, button);
-                                button.style.setProperty('background', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'important');
+                                
+                                // Only set text color, let CSS handle background
                                 button.style.setProperty('color', 'white', 'important');
-                                button.style.setProperty('border', 'none', 'important');
-                                button.style.setProperty('padding', '12px 24px', 'important');
-                                button.style.setProperty('border-radius', '8px', 'important');
                                 
                                 // Force all child elements to be white too
                                 const buttonText = button.querySelector('.dijitButtonText') || button.querySelector('span') || button;
@@ -758,7 +756,6 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                 }
                                 
                                 // Force text content directly
-                                button.style.setProperty('color', 'white', 'important');
                                 Array.from(button.childNodes).forEach(child => {
                                     if (child.nodeType === Node.ELEMENT_NODE) {
                                         child.style.setProperty('color', 'white', 'important');
