@@ -211,6 +211,30 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important;
             background-color: #f56565 !important;
         }
+        
+        /* Responsive screenshot sizing */
+        @media (max-width: 768px) {
+            .dijitDialog .screenshot-item img {
+                width: 100px !important;
+                height: 75px !important;
+            }
+            .dijitDialog .screenshots-list {
+                max-height: 350px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dijitDialog .screenshot-item {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            .dijitDialog .screenshot-item img {
+                width: 100% !important;
+                height: 150px !important;
+                max-width: 300px !important;
+                align-self: center !important;
+            }
+        }
     `;
     document.head.appendChild(aggressiveStyles);
     
@@ -457,7 +481,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                     <div class="form-group full-width" style="width: 100%;">
                         <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">Project Screenshots</label>
                         <div id="screenshotsContainer">
-                            <div class="screenshots-list" id="screenshotsList" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 15px; background: #f9f9f9;">
+                            <div class="screenshots-list" id="screenshotsList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 15px; background: #f9f9f9;">
                                 <!-- Screenshots will be loaded here -->
                             </div>
                             <div class="screenshot-upload" style="text-align: center; padding: 15px; border: 2px dashed #ccc; border-radius: 4px; background: #fafafa;">
@@ -843,11 +867,11 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             const workFeaturedBadge = isWorkFeatured ? '<span style="background: #007bff; color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-left: 5px;">🏠 WORK ROUTE</span>' : '';
             
             return `
-            <div style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 2px solid ${borderColor}; border-radius: 4px; margin-bottom: 10px; background: white;">
+            <div class="screenshot-item" style="display: flex; align-items: center; gap: 15px; padding: 10px; border: 2px solid ${borderColor}; border-radius: 4px; margin-bottom: 10px; background: white;">
                 <img src="/assets/screenshots/${projectSlug}/${screenshot.filename}" 
                      alt="${screenshot.filename}" 
-                     style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">
-                <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                     style="width: 120px; height: 90px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; flex-shrink: 0;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0;">
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                         <input type="text" value="${screenshot.name}" 
                                style="flex: 1; padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px;"
