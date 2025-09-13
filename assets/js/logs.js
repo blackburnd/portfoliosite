@@ -11,7 +11,6 @@ let currentSortField = 'timestamp'; // Default sort field
 let currentSortOrder = 'desc'; // Default to newest first
 
 window.refreshLogs = function() {
-    console.log('Refresh button clicked');
     currentOffset = 0;
     allLogs = [];
     filteredLogs = [];
@@ -21,7 +20,6 @@ window.refreshLogs = function() {
 };
 
 window.clearLogs = async function() {
-    console.log('Clear button clicked');
     if (confirm('Are you sure you want to clear all logs?')) {
         try {
             const cacheBust = Date.now() + Math.random();
@@ -44,13 +42,11 @@ window.clearLogs = async function() {
 };
 
 window.clearFilters = function() {
-    console.log('Clear filters button clicked');
     document.getElementById('searchBox').value = '';
     document.getElementById('levelFilter').value = '';
     document.getElementById('moduleFilter').value = '';
     document.getElementById('timeFilter').value = '';
-    applyFilters();
-    updateClearFiltersButtonVisibility();
+    reloadLogsWithFilters();
 };
 
 // Check if any filters are active
@@ -79,8 +75,6 @@ async function loadLogs(append = false) {
     
     isLoading = true;
     document.getElementById('loadingIndicator').style.display = 'block';
-    
-    console.log('Loading logs. Append:', append, 'Current offset:', currentOffset);
     
     try {
         // Build URL with sorting and filter parameters
@@ -111,15 +105,6 @@ async function loadLogs(append = false) {
         });
         const data = await response.json();
         
-        console.log('Received data:', data);
-        console.log('Data keys:', Object.keys(data));
-        console.log('Data type:', typeof data);
-        console.log('Has has_more?', 'has_more' in data);
-        console.log('Has has_next?', 'has_next' in data);
-        console.log('has_more value:', data.has_more);
-        console.log('has_next value:', data.has_next);
-        console.log('Logs count:', data.logs ? data.logs.length : 0);
-        
         // Extra validation for the data structure
         if (typeof data !== 'object' || data === null) {
             throw new Error('Invalid response format - not an object');
@@ -128,7 +113,6 @@ async function loadLogs(append = false) {
             throw new Error('Response missing logs property');
         }
         if (!('has_more' in data)) {
-            console.warn('Response missing has_more property, assuming false');
             data.has_more = false;
         }
         
@@ -177,7 +161,6 @@ async function loadLogs(append = false) {
 
 // Reload logs with current filters (called when filters change)
 function reloadWithFilters() {
-    console.log('Reloading logs with new filters');
     currentOffset = 0;
     allLogs = [];
     filteredLogs = [];
@@ -194,12 +177,10 @@ function applyFilters() {
 
 // Update the table display
 function updateDisplay() {
-    console.log('updateDisplay called with', filteredLogs.length, 'filtered logs');
     const tbody = document.getElementById('logsTableBody');
     tbody.innerHTML = '';
     
     if (filteredLogs.length === 0) {
-        console.log('No filtered logs to display');
         const row = document.createElement('tr');
         row.innerHTML = '<td colspan="9" style="text-align: center; padding: 20px;">No logs found</td>';
         tbody.appendChild(row);
@@ -207,7 +188,6 @@ function updateDisplay() {
     }
     
     filteredLogs.forEach((log, index) => {
-        console.log('Processing log', index, ':', log);
         const row = document.createElement('tr');
         // Compute age
         const now = Date.now();
@@ -664,11 +644,11 @@ function setupLogLevelHandler() {
 }
 
 // Toggle message expansion for long messages
-function toggleMessageExpand(button) {
+// Global function for message expansion
+window.toggleMessageExpand = function(button) {
     const row = button.closest('tr');
     const messageText = row.querySelector('.message-text');
     const fullMessage = messageText.getAttribute('data-full-message');
-    const currentText = messageText.textContent;
     
     if (button.textContent === '▶') {
         // Expand
@@ -682,7 +662,7 @@ function toggleMessageExpand(button) {
         button.textContent = '▶';
         button.title = 'Expand message';
     }
-}
+};
 
 // Global function for refresh button
 window.refreshLogLevel = function() {

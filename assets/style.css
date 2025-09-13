@@ -1884,82 +1884,101 @@ td[style*="#abd6ff"] {
     border-radius: 6px;
     overflow: auto;
     background: #fff;
-    height: calc(80vh - var(--header-height, 180px));
-    min-height: 320px;
+    height: calc(85vh - var(--header-height, 160px));
+    min-height: 400px;
     width: 100%;
     max-width: 100%;
+    margin-bottom: 0;
 }
 
 .logs-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 800px; /* Ensure table has minimum width to show all columns */
+    min-width: 1000px; /* Increased minimum width */
     table-layout: fixed; /* Fixed layout for consistent column sizing */
     font-family: 'Segoe UI', 'Arial', sans-serif;
     font-size: 13px;
 }
 
 .logs-table th {
-    background: rgba(52, 73, 94, 0.5); /* Reduced opacity by half for better contrast */
+    background: rgba(52, 73, 94, 0.8);
     color: white;
-    padding: 12px 8px;
+    padding: 8px 6px;
     text-align: left;
     font-weight: bold;
     position: sticky;
     top: 0;
     z-index: 10;
-    /* Compact table styles for logs */
-    .logs-table.compact-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 700px;
-        font-size: 13px;
-    }
-    .logs-table.compact-table th.compact-th {
-        background: #fff;
-        color: #555;
-        padding: 6px 4px;
-        text-align: left;
-        font-weight: 400;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        cursor: pointer;
-        user-select: none;
-        border-bottom: 1px solid #ccc;
-        border-right: 1px solid #ccc;
-        font-size: 13px;
-        letter-spacing: 0.01em;
-    }
-    .logs-table.compact-table th.compact-th:last-child {
-        border-right: none;
-    }
-    .logs-table.compact-table th.compact-th:hover {
-        background: #fafafa;
-    }
-    .logs-table.compact-table th .sort-indicator {
-        margin-left: 3px;
-        font-size: 11px;
-        opacity: 0.3;
-    }
-    .logs-table.compact-table td {
-        padding: 5px 6px;
-        border-bottom: 1px solid #ccc;
-        border-right: 1px solid #ccc;
-        vertical-align: top;
-        font-size: 13px;
-        color: #222;
-        background: #fff;
-    }
-    .logs-table.compact-table td:last-child {
-        border-right: none;
-    }
-    .logs-table.compact-table tr {
-        transition: background 0.2s;
-    }
-    .logs-table.compact-table tr:hover {
-        background: #f5f7fa;
-    }
+    border-right: 1px solid #555;
+    cursor: pointer;
+    user-select: none;
+}
+
+.logs-table th:last-child {
+    border-right: none;
+}
+
+/* Compact table styles for logs */
+.logs-table.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+    font-size: 12px;
+}
+
+.logs-table.compact-table th.compact-th {
+    background: #f8f9fa;
+    color: #555;
+    padding: 6px 4px;
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 2px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+}
+
+.logs-table.compact-table th.compact-th:last-child {
+    border-right: none;
+}
+
+.logs-table.compact-table th.compact-th:hover {
+    background: #e9ecef;
+}
+
+.logs-table.compact-table th .sort-indicator {
+    margin-left: 3px;
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.logs-table.compact-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    vertical-align: top;
+    font-size: 12px;
+    color: #495057;
+    background: #fff;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.logs-table.compact-table td:last-child {
+    border-right: none;
+}
+
+.logs-table.compact-table tr {
+    transition: background 0.1s;
+}
+
+.logs-table.compact-table tr:hover {
+    background: #f8f9fa;
 }
 
 .log-level-DEBUG { background: #6c757d; color: white; }
@@ -2007,10 +2026,11 @@ td[style*="#abd6ff"] {
 
 .message-text {
     flex: 1;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
 }
 
 .message-text.expanded {
