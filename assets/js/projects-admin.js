@@ -707,9 +707,13 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                 input.style.setProperty('color', '#333', 'important');
                             });
                             
-                            // Force button styling
-                            const buttons = dialogNode.querySelectorAll('button');
-                            buttons.forEach(button => {
+                            // Force button styling - target Dojo button structure
+                            console.log('Styling buttons...');
+                            const buttons = dialogNode.querySelectorAll('button, .dijitButton, .dijitButtonNode');
+                            console.log('Found buttons:', buttons.length);
+                            
+                            buttons.forEach((button, index) => {
+                                console.log(`Styling button ${index}:`, button);
                                 button.style.setProperty('background', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'important');
                                 button.style.setProperty('color', 'white', 'important');
                                 button.style.setProperty('border', 'none', 'important');
@@ -719,6 +723,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                 // Force all child elements to be white too
                                 const buttonText = button.querySelector('.dijitButtonText') || button.querySelector('span') || button;
                                 if (buttonText) {
+                                    console.log('Styling button text:', buttonText);
                                     buttonText.style.setProperty('color', 'white', 'important');
                                 }
                                 
@@ -729,6 +734,15 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                         child.style.setProperty('color', 'white', 'important');
                                     }
                                 });
+                            });
+                            
+                            // Also target specific Dojo button text spans
+                            const buttonTexts = dialogNode.querySelectorAll('.dijitButtonText, #submitBtn_label, #dijit_form_Button_0_label');
+                            console.log('Found button text elements:', buttonTexts.length);
+                            buttonTexts.forEach((textElement, index) => {
+                                console.log(`Styling button text ${index}:`, textElement);
+                                textElement.style.setProperty('color', 'white', 'important');
+                                textElement.style.setProperty('font-weight', '600', 'important');
                             });
                         }
                     }, 100);
