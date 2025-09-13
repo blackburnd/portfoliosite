@@ -79,6 +79,24 @@ require([
                     </div>
                 </div>
                 
+                <div class="form-row screenshots-section">
+                    <div class="form-group full-width">
+                        <label>Project Screenshots</label>
+                        <div id="screenshotsContainer">
+                            <div class="screenshots-list" id="screenshotsList">
+                                <!-- Screenshots will be loaded here -->
+                            </div>
+                            <div class="screenshot-upload">
+                                <input type="file" id="screenshotUpload" accept="image/png,image/jpeg,image/webp" multiple style="display: none;">
+                                <button type="button" id="uploadScreenshotBtn" onclick="document.getElementById('screenshotUpload').click()">
+                                    Add Screenshot
+                                </button>
+                                <span class="form-note">Upload PNG, JPEG, or WebP images (max 2MB each)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="dijitDialogPaneActionBar">
                     <button data-dojo-type="dijit/form/Button" type="button" id="submitBtn" onclick="window.projectsAdmin.handleFormSubmit()">
                         Add Project
@@ -140,6 +158,8 @@ require([
         setTimeout(() => {
             dijit.byId("submitBtn").set("label", "Add Project");
             projectDialog.show();
+            // Setup screenshot upload after dialog is shown
+            setTimeout(setupScreenshotUpload, 200);
             // Force styling after showing
             forceDialogStyling();
         }, 100);
@@ -163,6 +183,8 @@ require([
                     dijit.byId("submitBtn").set("label", "Update Project");
                     populateForm(item);
                     projectDialog.show();
+                    // Setup screenshot upload after dialog is shown
+                    setTimeout(setupScreenshotUpload, 200);
                     // Force styling after showing
                     forceDialogStyling();
                 }, 100);
@@ -186,6 +208,166 @@ require([
         } else {
             dijit.byId("technologies").set("value", "");
         }
+        
+        // Load screenshots for this project
+        loadProjectScreenshots(item.title);
+    }
+    
+    function loadProjectScreenshots(projectTitle) {
+        const projectSlug = generateSlug(projectTitle);
+        fetch(`/projects/screenshots/${projectSlug}`)
+            .then(response => response.json())
+            .then(screenshots => {
+                displayScreenshots(screenshots, projectSlug);
+            })
+            .catch(error => {
+                console.error('Error loading screenshots:', error);
+                document.getElementById('screenshotsList').innerHTML = '<p>No screenshots found</p>';
+            });
+    }
+    
+    function generateSlug(title) {
+        return title.toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9-]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+    }
+    
+    function displayScreenshots(screenshots, projectSlug) {
+        const container = document.getElementById('screenshotsList');
+        if (!screenshots || screenshots.length === 0) {
+            container.innerHTML = '<p class="no-screenshots">No screenshots uploaded yet</p>';
+            return;
+        }
+        
+        container.innerHTML = screenshots.map(screenshot => `
+            <div class="screenshot-item">
+                <img src="/assets/screenshots/${projectSlug}/${screenshot.filename}" 
+                     alt="${screenshot.filename}" 
+                     class="screenshot-thumbnail">
+                <div class="screenshot-info">
+                    <input type="text" value="${screenshot.name}" 
+                           class="screenshot-name" 
+                           onchange="updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)">
+                    <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
+                            class="delete-screenshot">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function setupScreenshotUpload() {
+        const uploadInput = document.getElementById('screenshotUpload');
+        if (uploadInput) {
+            uploadInput.addEventListener('change', handleScreenshotUpload);
+        }
+    }
+    
+    function handleScreenshotUpload(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        
+        const projectTitle = dijit.byId("title").get("value");
+        if (!projectTitle) {
+            alert('Please enter a project title first');
+            return;
+        }
+        
+        const projectSlug = generateSlug(projectTitle);
+        
+        for (let file of files) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                alert(`File ${file.name} is too large. Max size is 2MB.`);
+                continue;
+            }
+            
+            uploadScreenshotFile(file, projectSlug);
+        }
+        
+        // Clear the input
+        event.target.value = '';
+    }
+    
+    function uploadScreenshotFile(file, projectSlug) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('project_slug', projectSlug);
+        
+        fetch('/projects/upload-screenshot', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Reload screenshots
+                loadProjectScreenshots(dijit.byId("title").get("value"));
+            } else {
+                alert('Upload failed: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            alert('Upload failed: ' + error.message);
+        });
+    }
+    
+    function updateScreenshotName(projectSlug, filename, newName) {
+        fetch('/projects/update-screenshot-name', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                project_slug: projectSlug,
+                filename: filename,
+                new_name: newName
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success) {
+                alert('Failed to update name: ' + result.message);
+                // Reload to reset the name
+                loadProjectScreenshots(dijit.byId("title").get("value"));
+            }
+        })
+        .catch(error => {
+            console.error('Update error:', error);
+            alert('Failed to update name: ' + error.message);
+        });
+    }
+    
+    function deleteScreenshot(projectSlug, filename) {
+        if (!confirm(`Are you sure you want to delete ${filename}?`)) {
+            return;
+        }
+        
+        fetch('/projects/delete-screenshot', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                project_slug: projectSlug,
+                filename: filename
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Reload screenshots
+                loadProjectScreenshots(dijit.byId("title").get("value"));
+            } else {
+                alert('Delete failed: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            alert('Delete failed: ' + error.message);
+        });
     }
     
     function hideDialog() {

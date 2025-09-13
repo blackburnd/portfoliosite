@@ -3035,6 +3035,106 @@ td[style*="#abd6ff"] {
     line-height: 1.7;
 }
 
+/* Screenshot Management in Project Dialog */
+.screenshots-section {
+    margin-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.screenshots-section .form-group.full-width {
+    width: 100%;
+}
+
+.screenshots-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #f9f9f9;
+}
+
+.screenshot-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.screenshot-thumbnail {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.screenshot-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.screenshot-name {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.delete-screenshot {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.delete-screenshot:hover {
+    background: #c82333;
+}
+
+.screenshot-upload {
+    text-align: center;
+    padding: 15px;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.screenshot-upload button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.screenshot-upload button:hover {
+    background: #0056b3;
+}
+
+.no-screenshots {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+    margin: 0;
+}
+
 .project-overview {
     margin-bottom: 40px;
 }
