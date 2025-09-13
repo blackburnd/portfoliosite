@@ -2823,6 +2823,87 @@ td[style*="#abd6ff"] {
     text-decoration: none;
 }
 
+/* Portfolio Showcase List Layout */
+.showcase-list {
+    margin: 30px 0;
+}
+
+.showcase-project {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+    padding: 25px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.showcase-project:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.project-screenshot {
+    flex: 0 0 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.screenshot-placeholder {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px dashed #6c757d;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    transition: border-color 0.3s ease;
+}
+
+.screenshot-placeholder:hover {
+    border-color: #0066cc;
+}
+
+.screenshot-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+}
+
+.screenshot-placeholder p {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.project-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Responsive design for project list */
+@media (max-width: 768px) {
+    .showcase-project {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .project-screenshot {
+        flex: none;
+    }
+    
+    .screenshot-placeholder {
+        height: 150px;
+    }
+}
+
 /* Technical Architecture Grid */
 .architecture-grid {
     display: grid;

@@ -14,35 +14,43 @@
                         <h2>Portfolio Showcase</h2>
                         <p>Here you'll find a few of the projects i have been working on recently, each rewarding in its own way, Have a look.</p>
 
-                        <!-- Project Showcase Grid -->
-                        <div class="showcase-grid">
+                        <!-- Project Showcase List -->
+                        <div class="showcase-list">
                             {% if projects %}
                                 {% for project in projects %}
-                                <div class="showcase-item">
-                                    <div class="showcase-header">
-                                        <h3>
-                                            <a href="/showcase/{{ project.slug }}/" class="showcase-link">
-                                                {{ project.title }}
-                                            </a>
-                                        </h3>
-                                        {% if project.url %}
-                                            <a href="{{ project.url }}" target="_blank" class="external-link" title="View Live Project">
-                                                <span>🔗</span>
-                                            </a>
-                                        {% endif %}
-                                    </div>
-                                    <p class="showcase-description">{{ project.description }}</p>
-                                    {% if project.technologies %}
-                                        <div class="tech-tags">
-                                            {% for tech in project.technologies %}
-                                                <span class="tech-tag">{{ tech }}</span>
-                                            {% endfor %}
+                                <div class="showcase-project">
+                                    <div class="project-screenshot">
+                                        <div class="screenshot-placeholder">
+                                            <span class="screenshot-icon">📸</span>
+                                            <p>Screenshot Coming Soon</p>
                                         </div>
-                                    {% endif %}
-                                    <div class="showcase-actions">
-                                        <a href="/showcase/{{ project.slug }}/" class="btn-showcase">
-                                            View Details →
-                                        </a>
+                                    </div>
+                                    <div class="project-details">
+                                        <div class="showcase-header">
+                                            <h3>
+                                                <a href="/showcase/{{ project.slug }}/" class="showcase-link">
+                                                    {{ project.title }}
+                                                </a>
+                                            </h3>
+                                            {% if project.url %}
+                                                <a href="{{ project.url }}" target="_blank" class="external-link" title="View Live Project">
+                                                    <span>🔗</span>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        <p class="showcase-description">{{ project.description }}</p>
+                                        {% if project.technologies %}
+                                            <div class="tech-tags">
+                                                {% for tech in project.technologies %}
+                                                    <span class="tech-tag">{{ tech }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="showcase-actions">
+                                            <a href="/showcase/{{ project.slug }}/" class="btn-showcase">
+                                                View Details →
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
