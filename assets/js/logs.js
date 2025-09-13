@@ -216,7 +216,7 @@ function updateDisplay() {
                     ${needsExpand(log.message) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
                     <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml(truncateMessage(log.message || ''))}</span>
                     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
-                        <span class="copy-icon">649</span>
+                        <span class="copy-icon">📋</span>
                     </button>
                 </div>
             </td>
@@ -225,7 +225,7 @@ function updateDisplay() {
                     ${needsExpand(log.traceback) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
                     <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || ''))}</span>
                     ${log.traceback ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.traceback || '').replace(/'/g, "\\'")}', this)" title="Copy traceback to clipboard">
-                        <span class="copy-icon">649</span>
+                        <span class="copy-icon">📋</span>
                     </button>` : ''}
                 </div>
             </td>
