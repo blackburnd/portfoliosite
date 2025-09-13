@@ -1,13 +1,32 @@
 // Projects Admin JavaScript using Dojo for CRUD operations
-require([
-    "dojo/ready",
-    "dijit/Dialog",
-    "dijit/form/Button",
-    "dijit/form/TextBox",
-    "dijit/form/Textarea",
-    "dijit/form/NumberTextBox",
-    "dojo/parser"
-], function(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
+console.log('Projects Admin JS Loading...');
+
+// Check if Dojo is available
+if (typeof require === 'undefined' || typeof dojo === 'undefined') {
+    console.error('Dojo is not loaded! Falling back to native dialog');
+    // Fallback to native implementation
+    initWithoutDojo();
+} else {
+    console.log('Dojo detected, initializing...');
+    
+    require([
+        "dojo/ready",
+        "dijit/Dialog", 
+        "dijit/form/Button",
+        "dijit/form/TextBox",
+        "dijit/form/Textarea",
+        "dijit/form/NumberTextBox",
+        "dojo/parser"
+    ], function(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
+        console.log('Dojo modules loaded successfully');
+        initWithDojo(Dialog, Button, TextBox, Textarea, NumberTextBox, parser);
+    }, function(error) {
+        console.error('Error loading Dojo modules:', error);
+        initWithoutDojo();
+    });
+}
+
+function initWithDojo(Dialog, Button, TextBox, Textarea, NumberTextBox, parser) {
     
     let projectDialog = null;
     let currentEditId = null;
@@ -768,4 +787,334 @@ require([
         hideDialog: hideDialog,
         loadGrid: loadGrid
     };
-});
+}
+
+// Fallback implementation without Dojo
+function initWithoutDojo() {
+    console.log('Initializing without Dojo...');
+    
+    let currentEditId = null;
+    
+    function showAddDialog() {
+        createNativeDialog();
+    }
+    
+    function editItem(id) {
+        currentEditId = id;
+        fetch(`/projects/${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(item => {
+                createNativeDialog(item);
+            })
+            .catch(error => {
+                console.error('Error fetching project:', error);
+                alert('Error loading project data: ' + error.message);
+            });
+    }
+    
+    function createNativeDialog(item = null) {
+        // Remove any existing dialog
+        const existingDialog = document.getElementById('nativeProjectDialog');
+        if (existingDialog) {
+            existingDialog.remove();
+        }
+        
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'nativeProjectDialog';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        
+        // Create dialog content
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        `;
+        
+        const isEdit = item !== null;
+        
+        dialog.innerHTML = `
+            <div style="background: white; border-bottom: 1px solid #dee2e6; padding: 15px 20px; color: #333; font-weight: 600; font-size: 18px;">
+                ${isEdit ? 'Edit Project' : 'Add Project'}
+                <button onclick="hideNativeDialog()" style="float: right; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="padding: 20px; background: white;">
+                <form id="nativeProjectForm">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Title *</label>
+                        <input type="text" id="nativeTitle" name="title" required 
+                               style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px;"
+                               value="${item?.title || ''}" />
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Description *</label>
+                        <textarea id="nativeDescription" name="description" required rows="4"
+                                  style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px; resize: vertical;">${item?.description || ''}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Project URL</label>
+                            <input type="url" id="nativeUrl" name="url"
+                                   style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px;"
+                                   value="${item?.url || ''}" />
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Image URL</label>
+                            <input type="url" id="nativeImageUrl" name="image_url"
+                                   style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px;"
+                                   value="${item?.image_url || ''}" />
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 2;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Technologies</label>
+                            <input type="text" id="nativeTechnologies" name="technologies"
+                                   style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px;"
+                                   value="${item?.technologies ? (Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies) : ''}"
+                                   placeholder="Enter technologies separated by commas" />
+                            <small style="display: block; font-size: 12px; color: #666; margin-top: 4px; font-style: italic;">Enter technologies separated by commas</small>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px;">Sort Order</label>
+                            <input type="number" id="nativeSortOrder" name="sort_order"
+                                   style="width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 8px 12px; border-radius: 4px; background: white; color: #333; font-size: 14px;"
+                                   value="${item?.sort_order || 0}"
+                                   placeholder="0" />
+                            <small style="display: block; font-size: 12px; color: #666; margin-top: 4px; font-style: italic;">Lower numbers appear first</small>
+                        </div>
+                    </div>
+                    
+                    <div id="nativeScreenshotsSection" style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #333; font-size: 14px;">Project Screenshots</label>
+                        <div id="nativeScreenshots" style="margin-bottom: 10px;"></div>
+                        <input type="file" id="nativeScreenshotUpload" accept="image/*" style="margin-bottom: 10px;">
+                        <button type="button" onclick="uploadNativeScreenshot()" 
+                                style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                            Upload Screenshot
+                        </button>
+                        <div style="margin-top: 10px; padding: 15px; background: #f8f9fa; border: 2px dashed #ccc; border-radius: 6px; text-align: center; color: #666; font-size: 14px;">
+                            Upload PNG, JPEG or WebP images (max 2MB each)
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div style="padding: 15px 20px; background-color: #f8f9fa; border-top: 1px solid #dee2e6; text-align: right;">
+                <button onclick="submitNativeForm()" 
+                        style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px;">
+                    ${isEdit ? 'Update Project' : 'Add Project'}
+                </button>
+                <button onclick="hideNativeDialog()" 
+                        style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    Cancel
+                </button>
+            </div>
+        `;
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // Load screenshots if editing
+        if (item && item.title) {
+            loadNativeScreenshots(item.title);
+        }
+        
+        // Focus first input
+        setTimeout(() => {
+            document.getElementById('nativeTitle').focus();
+        }, 100);
+    }
+    
+    function hideNativeDialog() {
+        const dialog = document.getElementById('nativeProjectDialog');
+        if (dialog) {
+            dialog.remove();
+        }
+        currentEditId = null;
+    }
+    
+    function submitNativeForm() {
+        const form = document.getElementById('nativeProjectForm');
+        const formData = new FormData(form);
+        
+        // Convert technologies string to array
+        const techString = formData.get('technologies');
+        const technologies = techString ? techString.split(',').map(t => t.trim()).filter(t => t) : [];
+        
+        const projectData = {
+            title: formData.get('title'),
+            description: formData.get('description'), 
+            url: formData.get('url'),
+            image_url: formData.get('image_url'),
+            technologies: technologies,
+            sort_order: parseInt(formData.get('sort_order')) || 0,
+            portfolio_id: window.PORTFOLIO_ID
+        };
+        
+        const url = currentEditId ? `/projects/${currentEditId}` : '/projects';
+        const method = currentEditId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(projectData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideNativeDialog();
+            loadGrid();
+            alert(currentEditId ? 'Project updated successfully!' : 'Project added successfully!');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving project: ' + error.message);
+        });
+    }
+    
+    function loadNativeScreenshots(projectTitle) {
+        // Implementation for loading screenshots in native mode
+        // This would be similar to the Dojo version but simpler
+    }
+    
+    function uploadNativeScreenshot() {
+        // Implementation for uploading screenshots in native mode
+        // This would be similar to the Dojo version but simpler
+    }
+    
+    // Basic grid loading
+    function loadGrid() {
+        fetch('/projects')
+            .then(response => response.json())
+            .then(data => {
+                const gridContainer = document.getElementById('grid');
+                if (data.length === 0) {
+                    gridContainer.innerHTML = '<p>No projects found.</p>';
+                    return;
+                }
+                
+                let html = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Select</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Title</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Description</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">URL</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Technologies</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Sort Order</th>
+                                <th style="text-align: left; padding: 12px; border: 1px solid #dee2e6;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.forEach(project => {
+                    const technologies = Array.isArray(project.technologies) ? project.technologies.join(', ') : project.technologies || '';
+                    html += `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                <input type="checkbox" value="${project.id}" />
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${project.title}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${project.description}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${project.url || ''}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${technologies}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">${project.sort_order}</td>
+                            <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                <button onclick="window.projectsAdmin.editItem('${project.id}')" 
+                                        style="background: #007bff; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                gridContainer.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading projects:', error);
+                document.getElementById('grid').innerHTML = '<p>Error loading projects: ' + error.message + '</p>';
+            });
+    }
+    
+    function deleteSelected() {
+        const checkboxes = document.querySelectorAll('#grid input[type="checkbox"]:checked');
+        if (checkboxes.length === 0) {
+            alert('Please select projects to delete.');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to delete ${checkboxes.length} project(s)?`)) {
+            return;
+        }
+        
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        Promise.all(ids.map(id => 
+            fetch(`/projects/${id}`, { method: 'DELETE' })
+        ))
+        .then(() => {
+            loadGrid();
+            alert('Projects deleted successfully!');
+        })
+        .catch(error => {
+            console.error('Error deleting projects:', error);
+            alert('Error deleting projects: ' + error.message);
+        });
+    }
+    
+    // Export native functions to global scope
+    window.projectsAdmin = {
+        showAddDialog: showAddDialog,
+        editItem: editItem,
+        deleteSelected: deleteSelected,
+        handleFormSubmit: submitNativeForm,
+        hideDialog: hideNativeDialog,
+        loadGrid: loadGrid
+    };
+    
+    // Make native dialog functions globally available
+    window.hideNativeDialog = hideNativeDialog;
+    window.submitNativeForm = submitNativeForm;
+    window.uploadNativeScreenshot = uploadNativeScreenshot;
+    
+    // Initialize the grid
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGrid();
+        
+        // Setup button event listeners
+        document.getElementById('addBtn').addEventListener('click', showAddDialog);
+        document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
+    });
+}
