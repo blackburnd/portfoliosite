@@ -58,15 +58,7 @@ async def showcase_project(request: Request, project_slug: str):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Check if a custom template exists for this project
-        custom_template_path = f"templates/showcase/{project_slug}.html"
-        template_name = f"showcase/{project_slug}.html"
-        
-        if not os.path.exists(custom_template_path):
-            # Generate the template file
-            await generate_project_template(project)
-        
-        return templates.TemplateResponse(template_name, {
+        return templates.TemplateResponse("showcase/project.html", {
             "request": request,
             "title": f"{project['title']} - Portfolio Showcase",
             "current_page": "work",
@@ -79,80 +71,22 @@ async def showcase_project(request: Request, project_slug: str):
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
+@router.get("/showcase/complex_schema.svg")
+async def showcase_complex_schema():
+    """Serve the interactive complex_schema.svg file."""
+    return FileResponse(
+        path="assets/showcase/complex_schema.svg",
+        media_type="image/svg+xml",
+        filename="complex_schema.svg",
+        headers={"Content-Disposition": "inline"}
+    )
+
+
 async def generate_project_template(project):
-    """Generate a custom template file for a project"""
-    # Generate a clean template without linting issues
-    template_lines = [
-        '{% extends "base.html" %}',
-        '',
-        '{% block title %}{{ project.title }} - Portfolio{% endblock %}',
-        '',
-        '{% block body_class %}showcase project-showcase{% endblock %}',
-        '',
-        '{% block content %}',
-        '                <article class="bc clearfix">',
-        '                    <section class="project-showcase-content">',
-        '                        <div class="project-header">',
-        '                            <div class="breadcrumb">',
-        '                                <a href="/work/">Back</a>',
-        '                            </div>',
-        '                            <h1>{{ project.title }}</h1>',
-        '                            <div class="project-meta">',
-        '                                {% if project.url %}',
-        '                                <a href="{{ project.url }}" ' +
-        'target="_blank" class="btn-primary">',
-        '                                    View Live Project',
-        '                                </a>',
-        '                                {% endif %}',
-        '                            </div>',
-        '                        </div>',
-        '',
-        '                        <div class="project-content">',
-        '                            <div class="project-overview">',
-        '                                <h2>Project Overview</h2>',
-        '                                <p>{{ project.description }}</p>',
-        '                            </div>',
-        '',
-        '                            {% if project.technologies %}',
-        '                            <div class="project-tech">',
-        '                                <h3>Technologies Used</h3>',
-        '                                <div class="tech-tags-large">',
-        '                                    {% for tech in ' +
-        'project.technologies %}',
-        '                                    <span class="tech-tag-large">' +
-        '{{ tech }}</span>',
-        '                                    {% endfor %}',
-        '                                </div>',
-        '                            </div>',
-        '                            {% endif %}',
-        '',
-        '                            <div class="project-details">',
-        '                                <h3>Technical Implementation</h3>',
-        '                                <p>Modern development practices.</p>',
-        '                            </div>',
-        '',
-        '                            <div class="project-navigation">',
-        '                                <a href="/work/" ' +
-        'class="btn-secondary">Back</a>',
-        '                                {% if project.url %}',
-        '                                <a href="{{ project.url }}" ' +
-        'target="_blank" class="btn-primary">View Project</a>',
-        '                                {% endif %}',
-        '                            </div>',
-        '                        </div>',
-        '                    </section>',
-        '                </article>',
-        '            </div>',
-        '            <footer class="footer" role="contentinfo">',
-        '                <p class="copyright">© 2025 Blackburn.</p>',
-        '            </footer>',
-        '        </div>',
-        '    </div>',
-        '</body>',
-        '</html>'
-    ]
-    
-    template_content = '\n'.join(template_lines)
+    """Generate a simple template file for a project using base template"""
+    # Read the base showcase template
+    with open("templates/showcase_template.html", "r", encoding="utf-8") as f:
+        template_content = f.read()
     
     # Create the template file
     template_path = f"templates/showcase/{project['slug']}.html"
@@ -163,14 +97,3 @@ async def generate_project_template(project):
     # Write the template file
     with open(template_path, "w", encoding="utf-8") as f:
         f.write(template_content)
-
-
-@router.get("/showcase/complex_schema.svg")
-async def showcase_complex_schema():
-    """Serve the interactive complex_schema.svg file."""
-    return FileResponse(
-        path="assets/showcase/complex_schema.svg",
-        media_type="image/svg+xml",
-        filename="complex_schema.svg",
-        headers={"Content-Disposition": "inline"}
-    )

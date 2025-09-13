@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - Portfolio Showcase{% endblock %}
+
+{% block body_class %}showcase project-showcase{% endblock %}
+
+{% block content %}
+<article class="bc clearfix">
+    <section class="project-showcase-content">
+        <div class="project-header">
+            <div class="breadcrumb">
+                <a href="/work/">← Back to Portfolio</a>
+            </div>
+            <h1>{{ project.title }}</h1>
+            <div class="project-meta">
+                {% if project.url %}
+                <a href="{{ project.url }}" target="_blank" class="btn-primary">
+                    View Live Project →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="project-content">
+            <div class="project-overview">
+                <h2>Project Overview</h2>
+                <p class="lead">{{ project.description }}</p>
+            </div>
+
+            {% if project.technologies %}
+            <div class="project-tech">
+                <h3>Technologies Used</h3>
+                <div class="tech-tags-large">
+                    {% for tech in project.technologies %}
+                    <span class="tech-tag-large">{{ tech }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="project-details">
+                <h3>Technical Implementation</h3>
+                <p>This project demonstrates modern development practices and technical excellence through careful architecture and implementation.</p>
+            </div>
+
+            <div class="project-navigation">
+                <a href="/work/" class="btn-secondary">← Back to Portfolio</a>
+                {% if project.url %}
+                <a href="{{ project.url }}" target="_blank" class="btn-primary">View Live Project →</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</article>
+{% endblock %}

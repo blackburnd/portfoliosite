@@ -133,9 +133,9 @@ async def get_project(id: str, admin: dict = Depends(require_admin_auth)):
 @router.post("/projects", response_model=Project)
 async def create_project(project: Project, admin: dict = Depends(require_admin_auth)):
     query = """
-        INSERT INTO projects (portfolio_id, title, description, url, 
+        INSERT INTO projects (portfolio_id, title, description, url,
                               image_url, technologies, sort_order)
-        VALUES (:portfolio_id, :title, :description, :url, 
+        VALUES (:portfolio_id, :title, :description, :url,
                 :image_url, :technologies, :sort_order)
         RETURNING *
     """
@@ -143,13 +143,13 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
     technologies_json = json.dumps(project.technologies or [])
     
     row = await database.fetch_one(query, {
-        "portfolio_id": project.portfolio_id,
+        "portfolio_id": get_portfolio_id(),
         "title": project.title,
         "description": project.description,
         "url": project.url,
         "image_url": project.image_url,
         "technologies": technologies_json,
-        "sort_order": project.sort_order
+        "sort_order": project.sort_order or 0
     })
     row_dict = dict(row)
     technologies = row_dict.get("technologies", [])
@@ -161,7 +161,7 @@ async def create_project(project: Project, admin: dict = Depends(require_admin_a
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict.get("portfolio_id", get_portfolio_id()),
+        portfolio_id=str(row_dict.get("portfolio_id", get_portfolio_id())),
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
