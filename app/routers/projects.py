@@ -59,14 +59,13 @@ async def projects_admin_page(
 @router.get("/projects", response_model=List[Project])
 async def list_projects():
     try:
-        from database import PORTFOLIO_ID
-        portfolio_id = PORTFOLIO_ID
         check_table = "SELECT to_regclass('projects')"
         table_exists = await database.fetch_val(check_table)
         
         if not table_exists:
             return []
             
+        portfolio_id = get_portfolio_id()
         query = """
             SELECT * FROM projects
             WHERE portfolio_id = :portfolio_id
