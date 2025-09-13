@@ -112,7 +112,7 @@ require([
         projectDialog = new Dialog({
             title: "Add Project",
             content: dialogContent,
-            style: "width: 600px;"
+            style: "width: 600px; max-width: 90vw;"
         });
         
         // Parse the Dojo widgets in the dialog after it's created
@@ -120,26 +120,47 @@ require([
             parser.parse(projectDialog.domNode);
         });
         
-        // Force white background styling after dialog creation
-        setTimeout(() => {
+        // Enhanced styling application with multiple attempts
+        const applyDialogStyling = () => {
             const dialogNode = projectDialog.domNode;
             if (dialogNode) {
-                // Force white background on the main dialog
-                dialogNode.style.backgroundColor = 'white';
-                dialogNode.style.backgroundImage = 'none';
+                // Force comprehensive styling on the main dialog
+                dialogNode.style.cssText += 'background-color: white !important; background-image: none !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; border: 1px solid #dee2e6 !important;';
                 
-                // Force white background on content area
-                const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
-                if (contentArea) {
-                    contentArea.style.backgroundColor = 'white';
-                    contentArea.style.backgroundImage = 'none';
-                    contentArea.style.color = '#333';
+                // Style the title bar
+                const titleBar = dialogNode.querySelector('.dijitDialogTitleBar');
+                if (titleBar) {
+                    titleBar.style.cssText += 'background-color: white !important; background-image: none !important; border-bottom: 1px solid #dee2e6 !important; padding: 15px 20px !important; color: #333 !important; font-weight: 600 !important;';
                 }
                 
-                // Force white background on all child elements
+                // Style the content area
+                const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+                if (contentArea) {
+                    contentArea.style.cssText += 'background-color: white !important; background-image: none !important; color: #333 !important; padding: 20px !important;';
+                }
+                
+                // Style the action bar
+                const actionBar = dialogNode.querySelector('.dijitDialogPaneActionBar');
+                if (actionBar) {
+                    actionBar.style.cssText += 'background-color: #f8f9fa !important; background-image: none !important; border-top: 1px solid #dee2e6 !important; padding: 15px 20px !important;';
+                }
+                
+                // Style form elements
+                const inputs = dialogNode.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    input.style.cssText += 'border: 1px solid #ccc !important; padding: 8px 12px !important; border-radius: 4px !important; background-color: white !important; color: #333 !important; font-size: 14px !important; width: 100% !important; box-sizing: border-box !important;';
+                });
+                
+                // Style labels
+                const labels = dialogNode.querySelectorAll('label');
+                labels.forEach(label => {
+                    label.style.cssText += 'display: block !important; margin-bottom: 5px !important; font-weight: 600 !important; color: #333 !important; font-size: 14px !important;';
+                });
+                
+                // Remove any blue backgrounds
                 const allElements = dialogNode.querySelectorAll('*');
                 allElements.forEach(el => {
-                    if (el.style.backgroundColor && el.style.backgroundColor.includes('171, 214, 255')) {
+                    if (el.style.backgroundColor && (el.style.backgroundColor.includes('171, 214, 255') || el.style.backgroundColor.includes('#abd6ff'))) {
                         el.style.backgroundColor = 'white';
                     }
                     if (el.style.background && el.style.background.includes('#abd6ff')) {
@@ -147,7 +168,12 @@ require([
                     }
                 });
             }
-        }, 50);
+        };
+        
+        // Apply styling immediately and after delays
+        setTimeout(applyDialogStyling, 10);
+        setTimeout(applyDialogStyling, 50);
+        setTimeout(applyDialogStyling, 100);
     }
     
     function showAddDialog() {
@@ -249,11 +275,17 @@ require([
                      alt="${screenshot.filename}" 
                      style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;">
                 <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                    <input type="text" value="${screenshot.name}" 
-                           style="flex: 1; padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px;"
-                           onchange="updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <input type="text" value="${screenshot.name}" 
+                               style="flex: 1; padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px;"
+                               onchange="updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)"
+                               onkeypress="if(event.key==='Enter') updateScreenshotName('${projectSlug}', '${screenshot.filename}', this.value)"
+                               placeholder="Enter display name">
+                        <small style="color: #666; font-size: 11px;">File: ${screenshot.filename}</small>
+                    </div>
                     <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
-                            style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">Delete</button>
+                            style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+                            title="Delete ${screenshot.filename}">Delete</button>
                 </div>
             </div>
         `).join('');
@@ -316,6 +348,20 @@ require([
     }
     
     function updateScreenshotName(projectSlug, filename, newName) {
+        if (!newName || newName.trim() === '') {
+            alert('Please enter a valid name');
+            // Reload to reset the name
+            loadProjectScreenshots(dijit.byId("title").get("value"));
+            return;
+        }
+        
+        // Show visual feedback
+        const inputElement = event?.target;
+        if (inputElement) {
+            inputElement.style.backgroundColor = '#fff3cd';
+            inputElement.disabled = true;
+        }
+        
         fetch('/projects/update-screenshot-name', {
             method: 'POST',
             headers: {
@@ -324,12 +370,23 @@ require([
             body: JSON.stringify({
                 project_slug: projectSlug,
                 filename: filename,
-                new_name: newName
+                new_name: newName.trim()
             })
         })
         .then(response => response.json())
         .then(result => {
-            if (!result.success) {
+            if (result.success) {
+                // Show success feedback
+                if (inputElement) {
+                    inputElement.style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        inputElement.style.backgroundColor = '';
+                        inputElement.disabled = false;
+                    }, 1000);
+                }
+                // Reload screenshots to show new filename
+                loadProjectScreenshots(dijit.byId("title").get("value"));
+            } else {
                 alert('Failed to update name: ' + result.message);
                 // Reload to reset the name
                 loadProjectScreenshots(dijit.byId("title").get("value"));
@@ -338,6 +395,8 @@ require([
         .catch(error => {
             console.error('Update error:', error);
             alert('Failed to update name: ' + error.message);
+            // Reload to reset the name
+            loadProjectScreenshots(dijit.byId("title").get("value"));
         });
     }
     
