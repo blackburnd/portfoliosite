@@ -486,9 +486,14 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                 }
                 
                 // Style the content area
-                const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+                const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea') || 
+                                  dialogNode.querySelector('.dijitDialogPaneContent') ||
+                                  dialogNode.querySelector('[role="document"]') ||
+                                  dialogNode.querySelector('div[style*="padding"]');
                 if (contentArea) {
                     contentArea.style.cssText += 'background-color: white !important; background-image: none !important; color: #333 !important; padding: 20px !important;';
+                } else {
+                    console.warn('Could not find content area in dialog');
                 }
                 
                 // Style the action bar
@@ -578,7 +583,12 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             const dialogNode = projectDialog.domNode;
             console.log('Dialog DOM structure:', dialogNode);
             console.log('Dialog classes:', dialogNode.className);
-            console.log('Content area:', dialogNode.querySelector('.dijitDialogPaneContentArea'));
+            console.log('Dialog innerHTML:', dialogNode.innerHTML);
+            console.log('All child elements:', dialogNode.querySelectorAll('*'));
+            const contentArea = dialogNode.querySelector('.dijitDialogPaneContentArea');
+            console.log('Content area:', contentArea);
+            const allDivs = dialogNode.querySelectorAll('div');
+            console.log('All divs in dialog:', allDivs);
             console.log('Applied styles:', window.getComputedStyle(dialogNode));
         }, 100);
     }
@@ -1316,6 +1326,7 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
     window.deleteScreenshot = deleteScreenshot;
     window.updateScreenshotName = updateScreenshotName;
     window.uploadScreenshotFile = uploadScreenshotFile;
+    window.replaceScreenshot = replaceScreenshot;
 }
 
 // Fallback implementation without Dojo
