@@ -14,8 +14,13 @@ templates = Jinja2Templates(directory="templates")
 async def showcase_project(request: Request, project_slug: str):
     """Serve individual project showcase pages"""
     try:
+        # Log the incoming request for debugging
+        print(f"DEBUG: showcase_project called with slug: {project_slug}")
+        
         # Fetch project data by matching slug
         portfolio_id = get_portfolio_id()
+        print(f"DEBUG: portfolio_id = {portfolio_id}")
+        
         query = """
             SELECT id, title, description, url, image_url, technologies,
                    sort_order
@@ -24,9 +29,10 @@ async def showcase_project(request: Request, project_slug: str):
             ORDER BY sort_order, title
         """
         rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
+        print(f"DEBUG: found {len(rows)} projects in database")
         
         project = None
-        for row in rows:
+        for i, row in enumerate(rows):
             row_dict = dict(row)
             # Create URL-safe project slug from title
             title = row_dict["title"]
@@ -35,7 +41,10 @@ async def showcase_project(request: Request, project_slug: str):
                 c for c in slug_base if c.isalnum() or c in "-"
             ).strip("-")
             
+            print(f"DEBUG: Project {i}: '{title}' -> '{generated_slug}'")
+            
             if generated_slug == project_slug:
+                print(f"DEBUG: MATCH! '{title}' matches '{project_slug}'")
                 technologies = row_dict.get("technologies", [])
                 if isinstance(technologies, str):
                     try:
@@ -56,8 +65,10 @@ async def showcase_project(request: Request, project_slug: str):
                 break
         
         if not project:
+            print(f"DEBUG: No project found for slug '{project_slug}'")
             raise HTTPException(status_code=404, detail="Project not found")
         
+        print(f"DEBUG: Rendering template for project: {project['title']}")
         return templates.TemplateResponse("showcase/project.html", {
             "request": request,
             "title": f"{project['title']} - Portfolio Showcase",
@@ -68,6 +79,10 @@ async def showcase_project(request: Request, project_slug: str):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"DEBUG: Exception in showcase_project: {str(e)}")
+        print(f"DEBUG: Exception type: {type(e).__name__}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
