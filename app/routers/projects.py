@@ -274,14 +274,41 @@ async def update_project(
     return project_result
 
 
+# Screenshot Management Endpoints
+
+@router.delete("/projects/delete-screenshot")
+async def delete_screenshot(
+    request_data: dict,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Delete a screenshot file"""
+    project_slug = request_data.get('project_slug')
+    filename = request_data.get('filename')
+    
+    if not all([project_slug, filename]):
+        return JSONResponse({"success": False, "message": "Missing required fields"}, status_code=400)
+    
+    screenshots_dir = Path(f"assets/screenshots/{project_slug}")
+    file_path = screenshots_dir / filename
+    
+    if not file_path.exists():
+        return JSONResponse({"success": False, "message": "File not found"}, status_code=404)
+    
+    try:
+        file_path.unlink()
+        return JSONResponse({
+            "success": True,
+            "message": "Screenshot deleted successfully"
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "message": f"Delete failed: {str(e)}"}, status_code=500)
+
+
 @router.delete("/projects/{id}")
 async def delete_project(id: str, admin: dict = Depends(require_admin_auth)):
     query = "DELETE FROM projects WHERE id=:id"
     await database.execute(query, {"id": id})
     return {"deleted": True, "id": id}
-
-
-# Screenshot Management Endpoints
 
 @router.get("/projects/screenshots/{project_slug}")
 async def get_project_screenshots(project_slug: str, admin: dict = Depends(require_admin_auth)):
@@ -395,34 +422,6 @@ async def update_screenshot_name(
         })
     except Exception as e:
         return JSONResponse({"success": False, "message": f"Rename failed: {str(e)}"}, status_code=500)
-
-
-@router.delete("/projects/delete-screenshot")
-async def delete_screenshot(
-    request_data: dict,
-    admin: dict = Depends(require_admin_auth)
-):
-    """Delete a screenshot file"""
-    project_slug = request_data.get('project_slug')
-    filename = request_data.get('filename')
-    
-    if not all([project_slug, filename]):
-        return JSONResponse({"success": False, "message": "Missing required fields"}, status_code=400)
-    
-    screenshots_dir = Path(f"assets/screenshots/{project_slug}")
-    file_path = screenshots_dir / filename
-    
-    if not file_path.exists():
-        return JSONResponse({"success": False, "message": "File not found"}, status_code=404)
-    
-    try:
-        file_path.unlink()
-        return JSONResponse({
-            "success": True,
-            "message": "Screenshot deleted successfully"
-        })
-    except Exception as e:
-        return JSONResponse({"success": False, "message": f"Delete failed: {str(e)}"}, status_code=500)
 
 
 @router.post("/projects/replace-screenshot")
