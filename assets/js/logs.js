@@ -550,6 +550,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing logs interface');
     calculateAndSetTableHeight();
     setupEventListeners();
+    
+    // Set default level filter to "error"
+    document.getElementById('levelFilter').value = 'error';
+    
     updateClearFiltersButtonVisibility(); // Check initial filter state
     loadLogs();
     
