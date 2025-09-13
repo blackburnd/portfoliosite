@@ -471,9 +471,14 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
                                placeholder="Enter display name">
                         <small style="color: #666; font-size: 11px;">File: ${screenshot.filename}</small>
                     </div>
-                    <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
-                            style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
-                            title="Delete ${screenshot.filename}">Delete</button>
+                    <div style="display: flex; gap: 5px;">
+                        <button type="button" onclick="replaceScreenshot('${projectSlug}', '${screenshot.filename}')" 
+                                style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+                                title="Replace ${screenshot.filename}">Replace</button>
+                        <button type="button" onclick="deleteScreenshot('${projectSlug}', '${screenshot.filename}')" 
+                                style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+                                title="Delete ${screenshot.filename}">Delete</button>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -616,6 +621,52 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
             console.error('Delete error:', error);
             alert('Delete failed: ' + error.message);
         });
+    }
+    
+    function replaceScreenshot(projectSlug, filename) {
+        // Create a file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        
+        fileInput.onchange = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!confirm(`Replace ${filename} with ${file.name}?\n\nThe original file will be renamed with a timestamp for backup.`)) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('project_slug', projectSlug);
+            formData.append('original_filename', filename);
+            
+            fetch('/projects/replace-screenshot', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`Screenshot replaced successfully!\nOriginal saved as: ${result.backup_filename}`);
+                    // Reload screenshots to show the replacement
+                    loadProjectScreenshots(dijit.byId("title").get("value"));
+                } else {
+                    alert('Replace failed: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Replace error:', error);
+                alert('Replace failed: ' + error.message);
+            });
+        };
+        
+        // Trigger file selection
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        document.body.removeChild(fileInput);
     }
     
     function hideDialog() {
@@ -954,8 +1005,18 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         deleteSelected: deleteSelected,
         handleFormSubmit: handleFormSubmit,
         hideDialog: hideDialog,
-        loadGrid: loadGrid
+        loadGrid: loadGrid,
+        // Screenshot management functions
+        deleteScreenshot: deleteScreenshot,
+        updateScreenshotName: updateScreenshotName,
+        uploadScreenshotFile: uploadScreenshotFile,
+        displayScreenshots: displayScreenshots
     };
+    
+    // Also make screenshot functions globally available for onclick handlers
+    window.deleteScreenshot = deleteScreenshot;
+    window.updateScreenshotName = updateScreenshotName;
+    window.uploadScreenshotFile = uploadScreenshotFile;
 }
 
 // Fallback implementation without Dojo
@@ -1277,6 +1338,11 @@ function initWithoutDojo() {
     window.hideNativeDialog = hideNativeDialog;
     window.submitNativeForm = submitNativeForm;
     window.uploadNativeScreenshot = uploadNativeScreenshot;
+    
+    // Make screenshot management functions globally available
+    window.deleteScreenshot = deleteScreenshot;
+    window.updateScreenshotName = updateScreenshotName;
+    window.replaceScreenshot = replaceScreenshot;
     
     // Initialize the grid
     document.addEventListener('DOMContentLoaded', function() {

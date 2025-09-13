@@ -423,3 +423,71 @@ async def delete_screenshot(
         })
     except Exception as e:
         return JSONResponse({"success": False, "message": f"Delete failed: {str(e)}"}, status_code=500)
+
+
+@router.post("/projects/replace-screenshot")
+async def replace_screenshot(
+    file: UploadFile = File(...),
+    project_slug: str = Form(...),
+    original_filename: str = Form(...),
+    admin: dict = Depends(require_admin_auth)
+):
+    """Replace a screenshot file, keeping original as backup with timestamp"""
+    
+    # Validate file type
+    if not file.content_type.startswith('image/'):
+        return JSONResponse(
+            {"success": False, "message": "File must be an image"},
+            status_code=400
+        )
+    
+    # Validate file size (2MB limit)
+    if file.size and file.size > 2 * 1024 * 1024:
+        return JSONResponse(
+            {"success": False, "message": "File too large (max 2MB)"},
+            status_code=400
+        )
+    
+    screenshots_dir = Path(f"assets/screenshots/{project_slug}")
+    original_file_path = screenshots_dir / original_filename
+    
+    if not original_file_path.exists():
+        return JSONResponse(
+            {"success": False, "message": "Original file not found"},
+            status_code=404
+        )
+    
+    try:
+        # Create backup filename with timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_stem = original_file_path.stem
+        file_suffix = original_file_path.suffix
+        backup_filename = f"{file_stem}_{timestamp}{file_suffix}"
+        backup_file_path = screenshots_dir / backup_filename
+        
+        # Rename original file to backup
+        original_file_path.rename(backup_file_path)
+        
+        # Save new file with original filename
+        with open(original_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        return JSONResponse({
+            "success": True,
+            "message": "Screenshot replaced successfully",
+            "backup_filename": backup_filename,
+            "new_filename": original_filename
+        })
+    except Exception as e:
+        # If something went wrong, try to restore the original
+        try:
+            if backup_file_path.exists() and not original_file_path.exists():
+                backup_file_path.rename(original_file_path)
+        except Exception:
+            pass  # Ignore restoration errors
+        
+        return JSONResponse(
+            {"success": False, "message": f"Replace failed: {str(e)}"},
+            status_code=500
+        )
