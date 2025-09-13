@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, Response
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 import time
 import json
@@ -160,3 +160,45 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
         return JSONResponse({"status": "error", 
                            "message": f"ERD generation failed: {e}"}, 
                            status_code=500)
+
+
+@router.get("/admin/sql/test-erd-complex")
+async def test_erd_complex(request: Request, admin: dict = Depends(require_admin_auth)):
+    """Test route to serve the complex_schema.svg file"""
+    try:
+        svg_path = "/opt/portfoliosite/assets/files/complex_schema.svg"
+        if not os.path.exists(svg_path):
+            return JSONResponse({"status": "error", "message": f"SVG file not found: {svg_path}"}, status_code=404)
+            
+        with open(svg_path, 'r') as svg_file:
+            svg_content = svg_file.read()
+        
+        return Response(
+            content=svg_content,
+            media_type="image/svg+xml",
+            headers={"Content-Disposition": "inline; filename=complex_schema.svg"}
+        )
+        
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"Error serving SVG: {e}"}, status_code=500)
+
+
+@router.get("/admin/sql/test-erd-site")
+async def test_erd_site(request: Request, admin: dict = Depends(require_admin_auth)):
+    """Test route to serve the site_erd.svg file"""
+    try:
+        svg_path = "/opt/portfoliosite/assets/files/site_erd.svg"
+        if not os.path.exists(svg_path):
+            return JSONResponse({"status": "error", "message": f"SVG file not found: {svg_path}"}, status_code=404)
+            
+        with open(svg_path, 'r') as svg_file:
+            svg_content = svg_file.read()
+        
+        return Response(
+            content=svg_content,
+            media_type="image/svg+xml",
+            headers={"Content-Disposition": "inline; filename=site_erd.svg"}
+        )
+        
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"Error serving SVG: {e}"}, status_code=500)
