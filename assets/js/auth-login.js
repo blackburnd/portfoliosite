@@ -122,10 +122,15 @@ function openOAuthPopup(url) {
             // Show success notification
             showLoginSuccessNotification(event.data.user);
             
-            // Redirect to /work page after a short delay to show the notification
+            // Force page refresh to show authenticated content
             setTimeout(() => {
-                window.location.href = '/work';
+                window.location.reload();
             }, 2000);
+        } else if (event.data.type === 'OAUTH_CANCELLED') {
+            if (popup) {
+                popup.close();
+            }
+            showLoginCancelledNotification();
         }
     }, false);
 
@@ -133,8 +138,19 @@ function openOAuthPopup(url) {
     const checkPopup = setInterval(() => {
         if (popup && popup.closed) {
             clearInterval(checkPopup);
-            // Optional: could check login status here in case the user
-            // completed auth but the message failed. For now, we do nothing.
+            // Check if authentication might have completed without a message
+            // Wait a moment then refresh to show any new authenticated content
+            console.log('OAuth popup closed, checking for authentication changes...');
+            setTimeout(() => {
+                // Check if there's an access_token cookie
+                const hasToken = document.cookie.split(';').some(c => c.trim().startsWith('access_token='));
+                if (hasToken) {
+                    console.log('Authentication detected, refreshing page...');
+                    window.location.reload();
+                } else {
+                    console.log('No authentication detected');
+                }
+            }, 1000);
         }
     }, 1000);
 }
@@ -164,7 +180,14 @@ function openAdminLoginPopup() {
             if (popup) {
                 popup.close();
             }
-            window.location.href = '/work'; // Redirect to work page to show admin links
+            
+            // Show success notification
+            showLoginSuccessNotification(event.data.user || { email: 'Admin User' });
+            
+            // Force page refresh to show authenticated content
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     }, false);
 
@@ -298,6 +321,51 @@ function showLoginSuccessNotification(user) {
         `;
         document.head.appendChild(style);
     }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+    }, 3000);
+}
+
+/**
+ * Show login cancelled notification
+ */
+function showLoginCancelledNotification() {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.2rem; margin-right: 0.5rem;">ℹ</div>
+                <div style="font-weight: 600;">Login Cancelled</div>
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                You can try logging in again anytime.
+            </div>
+        </div>
+    `;
     
     // Add to page
     document.body.appendChild(notification);
