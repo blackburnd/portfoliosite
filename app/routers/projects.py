@@ -90,7 +90,7 @@ async def list_projects():
             
             project = Project(
                 id=str(row_dict["id"]),
-                portfolio_id=row_dict["portfolio_id"]),
+                portfolio_id=row_dict["portfolio_id"],
                 title=row_dict.get("title", ""),
                 description=row_dict.get("description", ""),
                 url=row_dict.get("url"),
@@ -244,7 +244,7 @@ async def update_project(
     
     project_result = Project(
         id=str(row_dict["id"]),
-        portfolio_id=row_dict["portfolio_id"]),
+        portfolio_id=row_dict["portfolio_id"],
         title=row_dict.get("title", ""),
         description=row_dict.get("description", ""),
         url=row_dict.get("url"),
