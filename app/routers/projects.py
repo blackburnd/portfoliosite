@@ -57,7 +57,7 @@ async def projects_admin_page(
 
 
 @router.get("/projects", response_model=List[Project])
-async def list_projects(admin: dict = Depends(require_admin_auth)):
+async def list_projects():
     try:
         check_table = "SELECT to_regclass('projects')"
         table_exists = await database.fetch_val(check_table)
