@@ -1,0 +1,169 @@
+/* Showcase Page Specific Styles */
+
+/* Feature showcase styling */
+.feature-showcase {
+    margin: 2rem 0;
+}
+
+.feature-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #2c5aa0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.feature-section h4 {
+    color: #2c5aa0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.feature-description {
+    line-height: 1.6;
+}
+
+.feature-description p {
+    margin-bottom: 1rem;
+}
+
+.feature-description strong {
+    color: #495057;
+}
+
+.feature-description ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.feature-description li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.feature-description code {
+    background: #e9ecef;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    color: #d63384;
+}
+
+/* Screenshot placeholder styling */
+.screenshot-placeholder {
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.screenshot-frame {
+    background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+    border: 2px dashed #6c757d;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 1rem 0;
+    position: relative;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s ease;
+}
+
+.screenshot-frame:hover {
+    border-color: #2c5aa0;
+}
+
+.screenshot-frame::before {
+    content: "📸";
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+.screenshot-label {
+    font-weight: 600;
+    color: #495057;
+    font-style: italic;
+    margin: 0;
+    max-width: 80%;
+    line-height: 1.4;
+}
+
+/* Technical outcomes styling */
+.technical-outcomes {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-top: 1.5rem;
+    position: relative;
+}
+
+.technical-outcomes::before {
+    content: "✅";
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.2rem;
+}
+
+.technical-outcomes p {
+    margin: 0;
+    color: #155724;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+/* Responsive design for feature sections */
+@media (max-width: 768px) {
+    .feature-section {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .feature-section h4 {
+        font-size: 1.1rem;
+    }
+    
+    .screenshot-frame {
+        padding: 1.5rem;
+        min-height: 100px;
+    }
+    
+    .screenshot-label {
+        font-size: 0.9rem;
+        max-width: 90%;
+    }
+}
+
+/* Print styles for technical documentation */
+@media print {
+    .feature-section {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    
+    .screenshot-frame {
+        border-style: solid;
+        background: #f8f9fa;
+    }
+    
+    .technical-outcomes {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+}
