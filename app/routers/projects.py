@@ -65,13 +65,14 @@ async def list_projects():
         if not table_exists:
             return []
             
-        portfolio_id = PORTFOLIO_ID
         query = """
-            SELECT * FROM projects 
-            WHERE portfolio_id = :portfolio_id 
+            SELECT * FROM projects
+            WHERE portfolio_id = :portfolio_id
             ORDER BY sort_order, title
         """
-        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
+        rows = await database.fetch_all(
+            query, {"portfolio_id": get_portfolio_id()}
+        )
         
         projects = []
         for row in rows:
