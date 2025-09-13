@@ -16,14 +16,17 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/logs", response_class=HTMLResponse)
-async def logs_admin_page(request: Request):
+async def logs_admin_page(
+    request: Request,
+    admin: dict = Depends(require_admin_auth)
+):
     """Application logs viewer interface"""
     return templates.TemplateResponse("logs.html", {
         "request": request,
         "current_page": "logs",
-        "user_info": None,
-        "user_authenticated": False,
-        "user_email": "",
+        "user_info": admin,
+        "user_authenticated": True,
+        "user_email": admin.get("email", ""),
         "cache_bust_version": str(int(time.time()))
     })
 
