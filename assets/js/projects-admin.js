@@ -37,7 +37,176 @@ function initWithDojo(ready, Dialog, Button, TextBox, Textarea, NumberTextBox, p
         }
         
         const dialogContent = `
-            <div style="width: 580px;">
+            <style>
+                /* Inline CSS for Dialog - Ensures styling regardless of external CSS loading */
+                .dijitDialogPaneContentArea {
+                    padding: 20px !important;
+                    background: white !important;
+                    color: #333 !important;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+                }
+                .form-row {
+                    display: flex !important;
+                    gap: 15px !important;
+                    margin-bottom: 15px !important;
+                    align-items: flex-start !important;
+                }
+                .form-group {
+                    flex: 1 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+                .form-group.full-width {
+                    width: 100% !important;
+                    flex: none !important;
+                }
+                .form-group label {
+                    display: block !important;
+                    margin-bottom: 5px !important;
+                    font-weight: 600 !important;
+                    color: #333 !important;
+                    font-size: 14px !important;
+                }
+                .form-group input,
+                .form-group textarea {
+                    width: 100% !important;
+                    box-sizing: border-box !important;
+                    border: 1px solid #ccc !important;
+                    padding: 8px 12px !important;
+                    border-radius: 4px !important;
+                    background: white !important;
+                    color: #333 !important;
+                    font-size: 14px !important;
+                    font-family: inherit !important;
+                }
+                .form-group input:focus,
+                .form-group textarea:focus {
+                    border-color: #666 !important;
+                    outline: none !important;
+                    box-shadow: 0 0 0 2px rgba(102, 102, 102, 0.1) !important;
+                }
+                .form-note {
+                    display: block !important;
+                    font-size: 12px !important;
+                    color: #666 !important;
+                    margin-top: 4px !important;
+                    font-style: italic !important;
+                }
+                .screenshots-section {
+                    margin-top: 20px !important;
+                    border-top: 1px solid #e0e0e0 !important;
+                    padding-top: 20px !important;
+                }
+                .screenshots-list {
+                    max-height: 300px !important;
+                    overflow-y: auto !important;
+                    border: 1px solid #e0e0e0 !important;
+                    border-radius: 4px !important;
+                    padding: 10px !important;
+                    margin-bottom: 15px !important;
+                    background: #f9f9f9 !important;
+                }
+                .screenshot-upload {
+                    text-align: center !important;
+                    padding: 15px !important;
+                    border: 2px dashed #ccc !important;
+                    border-radius: 4px !important;
+                    background: #fafafa !important;
+                }
+                .screenshot-item {
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 10px !important;
+                    padding: 8px !important;
+                    border: 1px solid #ddd !important;
+                    border-radius: 4px !important;
+                    margin-bottom: 8px !important;
+                    background: white !important;
+                }
+                .screenshot-item img {
+                    width: 60px !important;
+                    height: 40px !important;
+                    object-fit: cover !important;
+                    border-radius: 4px !important;
+                    border: 1px solid #ddd !important;
+                }
+                .screenshot-info {
+                    flex: 1 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 4px !important;
+                }
+                .screenshot-name {
+                    font-weight: 600 !important;
+                    color: #333 !important;
+                    font-size: 14px !important;
+                }
+                .screenshot-filename {
+                    font-size: 12px !important;
+                    color: #666 !important;
+                    font-style: italic !important;
+                }
+                .screenshot-actions {
+                    display: flex !important;
+                    gap: 5px !important;
+                }
+                .screenshot-actions button {
+                    padding: 4px 8px !important;
+                    font-size: 12px !important;
+                    border: none !important;
+                    border-radius: 3px !important;
+                    cursor: pointer !important;
+                }
+                .screenshot-actions button.rename-btn {
+                    background: #007bff !important;
+                    color: white !important;
+                }
+                .screenshot-actions button.delete-btn {
+                    background: #dc3545 !important;
+                    color: white !important;
+                }
+                .screenshot-actions button:hover {
+                    opacity: 0.8 !important;
+                }
+                .dijitDialogPaneActionBar {
+                    padding: 15px 20px !important;
+                    background-color: #f8f9fa !important;
+                    border-top: 1px solid #dee2e6 !important;
+                    text-align: right !important;
+                }
+                .dijitDialogPaneActionBar button {
+                    margin-left: 10px !important;
+                    background: #007bff !important;
+                    color: white !important;
+                    border: 1px solid #007bff !important;
+                    padding: 8px 16px !important;
+                    border-radius: 4px !important;
+                    cursor: pointer !important;
+                    font-size: 14px !important;
+                }
+                .dijitDialogPaneActionBar button:hover {
+                    background: #0056b3 !important;
+                    border-color: #0056b3 !important;
+                }
+                .dijitDialogPaneActionBar button[onclick*="hideDialog"] {
+                    background: #6c757d !important;
+                    border-color: #6c757d !important;
+                }
+                .dijitDialogPaneActionBar button[onclick*="hideDialog"]:hover {
+                    background: #5a6268 !important;
+                    border-color: #5a6268 !important;
+                }
+                @media (max-width: 768px) {
+                    .form-row {
+                        flex-direction: column !important;
+                        gap: 0 !important;
+                    }
+                    .form-group {
+                        margin-bottom: 15px !important;
+                    }
+                }
+            </style>
+            <div style="width: 580px; max-width: 90vw;">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="title">Title *</label>
