@@ -69,7 +69,22 @@ async def showcase_project(request: Request, project_slug: str):
             raise HTTPException(status_code=404, detail="Project not found")
         
         print(f"DEBUG: Rendering template for project: {project['title']}")
-        return templates.TemplateResponse("showcase/project.html", {
+        
+        # Check if project-specific template exists, use generic otherwise
+        project_template = f"showcase/{project_slug}.html"
+        generic_template = "showcase/project.html"
+        
+        # Check if project-specific template file exists
+        import os
+        project_template_path = f"templates/{project_template}"
+        if os.path.exists(project_template_path):
+            template_to_use = project_template
+            print(f"DEBUG: Using project-specific template: {template_to_use}")
+        else:
+            template_to_use = generic_template
+            print(f"DEBUG: Using generic template: {template_to_use}")
+        
+        return templates.TemplateResponse(template_to_use, {
             "request": request,
             "title": f"{project['title']} - Portfolio Showcase",
             "current_page": "work",
