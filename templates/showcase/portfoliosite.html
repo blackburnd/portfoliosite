@@ -87,15 +87,11 @@
                                             <p><strong>Implementation Details:</strong> The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async database connections for non-blocking queries, and subprocess management for ERD generation. Security is enforced through admin-only route protection and query sanitization.</p>
                                         </div>
                                         
-                                        <div class="screenshot-placeholder">
-                                            <div class="screenshot-frame">
-                                                <p class="screenshot-label">Screenshot: SQL Admin Interface showing ERD generation and query execution</p>
-                                                <!-- Screenshot should show the /admin/sql interface with:
-                                                     - SQL query input area
-                                                     - Results table with data
-                                                     - ERD generation button
-                                                     - Generated database diagram -->
-                                            </div>
+                                        <div class="screenshot-container">
+                                            <img src="/assets/screenshots/portfoliosite/sql-admin-interface.png" 
+                                                 alt="SQL Admin Interface showing ERD generation and query execution" 
+                                                 class="screenshot-image showcase-screenshot"
+                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: SQL Admin Interface showing ERD generation and query execution</p></div></div>'">
                                         </div>
                                         
                                         <div class="technical-outcomes">
@@ -120,15 +116,11 @@
                                             <p><strong>Implementation Details:</strong> Uses Google's OAuth2 library with custom TTWOAuthManager class for token lifecycle management. Implements secure credential storage in PostgreSQL with encryption at rest, automated token refresh workflows, and comprehensive error handling for network failures and token expiration scenarios.</p>
                                         </div>
                                         
-                                        <div class="screenshot-placeholder">
-                                            <div class="screenshot-frame">
-                                                <p class="screenshot-label">Screenshot: Google OAuth Configuration Interface with token status and management controls</p>
-                                                <!-- Screenshot should show the /admin/google-oauth interface with:
-                                                     - OAuth app configuration form
-                                                     - Current token status display
-                                                     - Authorization flow buttons
-                                                     - Token refresh controls -->
-                                            </div>
+                                        <div class="screenshot-container">
+                                            <img src="/assets/screenshots/portfoliosite/google-oauth-config.png" 
+                                                 alt="Google OAuth Configuration Interface with token status and management controls" 
+                                                 class="screenshot-image showcase-screenshot"
+                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Google OAuth Configuration Interface with token status and management controls</p></div></div>'">
                                         </div>
                                         
                                         <div class="technical-outcomes">
@@ -153,15 +145,11 @@
                                             <p><strong>Implementation Details:</strong> Custom log handler extends Python's logging.Handler, uses async database writes to prevent I/O blocking, implements log rotation and archival policies. The admin interface uses DataTables for responsive grid display with server-side filtering and real-time updates via WebSocket connections.</p>
                                         </div>
                                         
-                                        <div class="screenshot-placeholder">
-                                            <div class="screenshot-frame">
-                                                <p class="screenshot-label">Screenshot: Logs Administration Grid showing real-time log entries with filtering and stack trace details</p>
-                                                <!-- Screenshot should show the /admin/logs interface with:
-                                                     - Log entries table with timestamp, level, message
-                                                     - Filter controls for log level and date range
-                                                     - Expanded stack trace view
-                                                     - Log level distribution chart -->
-                                            </div>
+                                        <div class="screenshot-container">
+                                            <img src="/assets/screenshots/portfoliosite/logs-admin-grid.png" 
+                                                 alt="Logs Administration Grid showing real-time log entries with filtering and stack trace details" 
+                                                 class="screenshot-image showcase-screenshot"
+                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Logs Administration Grid showing real-time log entries with filtering and stack trace details</p></div></div>'">
                                         </div>
                                         
                                         <div class="technical-outcomes">
