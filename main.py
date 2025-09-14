@@ -846,3 +846,13 @@ async def analytics_recent_visits_api(
         offset, limit, days, search, sort_field, sort_order
     )
 
+
+@app.get("/admin/analytics/unique-visitors", response_class=JSONResponse)
+async def analytics_unique_visitors_api(
+    request: Request,
+    days: int = 7,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get unique visitors with view counts and last visit times"""
+    return await analytics.get_unique_visitors(days)
+

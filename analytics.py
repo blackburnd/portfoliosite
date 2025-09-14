@@ -245,6 +245,52 @@ class Analytics:
                 'error': str(e)
             }
 
+    async def get_unique_visitors(self, days: int = 7):
+        """Get unique visitors with their view counts and last visit times"""
+        try:
+            since_date = datetime.utcnow() - timedelta(days=days)
+            
+            query = """
+                SELECT 
+                    ip_address,
+                    COUNT(*) as total_views,
+                    MAX(timestamp) as last_visit
+                FROM page_analytics
+                WHERE timestamp >= :since_date
+                GROUP BY ip_address
+                ORDER BY total_views DESC, last_visit DESC
+            """
+            
+            visitors_raw = await database.fetch_all(query, {
+                'since_date': since_date
+            })
+            
+            # Convert timestamps to strings for JSON serialization
+            visitors = []
+            for row in visitors_raw:
+                row_dict = dict(row)
+                if row_dict['last_visit']:
+                    row_dict['last_visit'] = row_dict['last_visit'].strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                visitors.append(row_dict)
+            
+            return {
+                'visitors': visitors,
+                'total_unique': len(visitors)
+            }
+            
+        except Exception as e:
+            add_log(
+                "ERROR", "analytics",
+                f"Failed to get unique visitors: {str(e)}",
+                function="get_unique_visitors"
+            )
+            return {
+                'visitors': [],
+                'total_unique': 0,
+                'error': str(e)
+            }
+
 
 # Global analytics instance
 analytics = Analytics()

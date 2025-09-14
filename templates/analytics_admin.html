@@ -70,7 +70,7 @@
         <div class="analytics-stats compact-stats" id="analyticsStats">
             <span id="totalCount">Total: 0</span>
             <span id="filteredVisits">Loaded: 0</span>
-            <span id="uniqueVisitors">Unique IPs: 0</span>
+            <span id="uniqueVisitors" class="clickable-stat" onclick="showUniqueVisitorsPopup()" title="Click to view unique visitor details">Unique IPs: 0</span>
         </div>
         
         <div class="analytics-table-container">
@@ -106,6 +106,33 @@
     </div>
 </div>
 
+<!-- Unique Visitors Popup -->
+<div id="uniqueVisitorsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Unique Visitors Details</h3>
+            <span class="close-button" onclick="closeUniqueVisitorsPopup()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="uniqueVisitorsLoading" class="loading" style="display: none;">Loading visitor details...</div>
+            <div id="uniqueVisitorsContent">
+                <table class="visitors-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Total Views</th>
+                            <th>Last Visit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="uniqueVisitorsTableBody">
+                        <!-- Content will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Global variables for analytics
 let allVisits = [];
@@ -131,6 +158,59 @@ window.toggleSection = function(sectionId) {
         content.style.display = 'none';
         icon.textContent = '▶';
     }
+};
+
+// Show unique visitors popup
+window.showUniqueVisitorsPopup = async function() {
+    const modal = document.getElementById('uniqueVisitorsModal');
+    const loading = document.getElementById('uniqueVisitorsLoading');
+    const tbody = document.getElementById('uniqueVisitorsTableBody');
+    
+    // Show modal and loading state
+    modal.style.display = 'block';
+    loading.style.display = 'block';
+    tbody.innerHTML = '';
+    
+    try {
+        // Get current time filter
+        const timeFilter = document.getElementById('timeFilter').value;
+        const days = timeFilter === '1h' ? 0.04 : 
+                    timeFilter === '24h' ? 1 : 
+                    timeFilter === '7d' ? 7 : 
+                    timeFilter === '30d' ? 30 : 7;
+        
+        const response = await fetch(`/admin/analytics/unique-visitors?days=${days}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Populate table
+        data.visitors.forEach(visitor => {
+            const row = document.createElement('tr');
+            const lastVisit = new Date(visitor.last_visit);
+            const formattedLastVisit = lastVisit.toLocaleDateString() + ' ' + lastVisit.toLocaleTimeString();
+            
+            row.innerHTML = `
+                <td>${visitor.ip_address}</td>
+                <td>${visitor.total_views}</td>
+                <td>${formattedLastVisit}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error loading unique visitors:', error);
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Error loading visitor data</td></tr>';
+    } finally {
+        loading.style.display = 'none';
+    }
+};
+
+// Close unique visitors popup
+window.closeUniqueVisitorsPopup = function() {
+    document.getElementById('uniqueVisitorsModal').style.display = 'none';
 };
 
 // Refresh analytics data
@@ -651,6 +731,95 @@ if (dailyViews && dailyViews.length > 0) {
 
 .collapsible-content {
     transition: all 0.3s ease;
+}
+
+/* Clickable stat styles */
+.clickable-stat {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.clickable-stat:hover {
+    color: #007acc;
+    text-decoration: underline;
+}
+
+/* Modal popup styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background-color: #f5f5f5;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close-button {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover {
+    color: #000;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.visitors-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.visitors-table th,
+.visitors-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.visitors-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+}
+
+.visitors-table tr:hover {
+    background-color: #f5f5f5;
 }
 </style>
 {% endblock %}
