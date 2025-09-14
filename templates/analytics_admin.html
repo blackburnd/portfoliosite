@@ -100,6 +100,7 @@
     
     <div class="analytics-section">
         <h2>Daily Views</h2>
+        <p class="chart-description">Shows the number of page views per day over the selected time period. Each bar represents one day's total page views.</p>
         <div class="chart-container">
             <canvas id="dailyViewsChart" width="800" height="400"></canvas>
         </div>
@@ -507,45 +508,116 @@ function debounce(func, wait) {
     };
 }
 
-// Simple chart for daily views
+// Enhanced daily views chart
 const canvas = document.getElementById('dailyViewsChart');
 const ctx = canvas.getContext('2d');
 
 const dailyViews = {{ analytics.daily_views | tojson }};
 
-if (dailyViews && dailyViews.length > 0) {
-    // Simple bar chart
-    const maxViews = Math.max(...dailyViews.map(d => d.views));
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const barWidth = canvasWidth / dailyViews.length;
+function drawDailyViewsChart() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    ctx.fillStyle = '#007acc';
+    if (!dailyViews || dailyViews.length === 0) {
+        // No data message
+        ctx.fillStyle = '#666';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No daily view data available', canvas.width/2, canvas.height/2);
+        ctx.fillText('Select a longer time period to see trends', canvas.width/2, canvas.height/2 + 25);
+        return;
+    }
     
+    // Chart dimensions
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const maxViews = Math.max(...dailyViews.map(d => d.views), 1);
+    const barWidth = chartWidth / dailyViews.length;
+    
+    // Draw background grid
+    ctx.strokeStyle = '#f0f0f0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (chartHeight * i / 5);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(canvas.width - padding, y);
+        ctx.stroke();
+    }
+    
+    // Draw bars
     dailyViews.forEach((day, index) => {
-        const barHeight = (day.views / maxViews) * (canvasHeight - 40);
-        const x = index * barWidth;
-        const y = canvasHeight - barHeight - 20;
+        const barHeight = (day.views / maxViews) * chartHeight;
+        const x = padding + (index * barWidth);
+        const y = canvas.height - padding - barHeight;
         
+        // Bar background
+        ctx.fillStyle = '#e3f2fd';
+        ctx.fillRect(x + 2, canvas.height - padding - chartHeight, barWidth - 4, chartHeight);
+        
+        // Actual bar
+        ctx.fillStyle = '#007acc';
         ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
         
-        // Add date labels
+        // Bar border
+        ctx.strokeStyle = '#005a9e';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 2, y, barWidth - 4, barHeight);
+        
+        // Date labels (rotate for better fit)
+        ctx.save();
+        ctx.translate(x + barWidth/2, canvas.height - padding + 15);
+        ctx.rotate(-Math.PI / 4);
         ctx.fillStyle = '#333';
-        ctx.font = '12px Arial';
+        ctx.font = '11px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(day.date, x + barWidth/2, canvasHeight - 5);
+        ctx.fillText(formatDateLabel(day.date), 0, 0);
+        ctx.restore();
         
-        // Add view count
-        ctx.fillText(day.views, x + barWidth/2, y - 5);
-        
-        ctx.fillStyle = '#007acc';
+        // View count on top of bar
+        if (day.views > 0) {
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(day.views, x + barWidth/2, y - 5);
+        }
     });
-} else {
+    
+    // Y-axis labels
     ctx.fillStyle = '#666';
-    ctx.font = '16px Arial';
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+        const value = Math.round(maxViews * (5 - i) / 5);
+        const y = padding + (chartHeight * i / 5) + 4;
+        ctx.fillText(value, padding - 10, y);
+    }
+    
+    // Chart title
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('No data available', canvas.width/2, canvas.height/2);
+    ctx.fillText('Daily Page Views', canvas.width/2, 25);
+    
+    // Y-axis title
+    ctx.save();
+    ctx.translate(20, canvas.height/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Views', 0, 0);
+    ctx.restore();
 }
+
+function formatDateLabel(dateStr) {
+    const date = new Date(dateStr);
+    return (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+// Draw the chart
+drawDailyViewsChart();
 </script>
 
 <style>
@@ -634,6 +706,13 @@ if (dailyViews && dailyViews.length > 0) {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 20px;
+}
+
+.chart-description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+    font-style: italic;
 }
 
 #dailyViewsChart {
