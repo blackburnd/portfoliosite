@@ -29,6 +29,7 @@ from app.routers.site_config import router as site_config_router
 from app.routers.site_config_migration import (
     router as site_config_migration_router
 )
+from analytics import analytics
 from database import close_database, database, init_database
 from log_capture import add_log
 from ttw_oauth_manager import TTWOAuthManager
@@ -772,6 +773,9 @@ async def read_root(request: Request):
         config = await config_manager.get_all_config()
     except Exception:
         pass  # Use defaults if config fails
+
+    # Track page view
+    await analytics.track_page_view(request, "/")
     
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -787,9 +791,62 @@ async def read_root(request: Request):
 @app.get("/privacy/", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
     """Privacy Policy page"""
+    # Track page view
+    await analytics.track_page_view(request, "/privacy")
+    
     return templates.TemplateResponse("privacy.html", {
         "request": request,
         "title": "Privacy Policy - Daniel Blackburn",
         "current_page": "privacy"
     })
+
+
+@app.get("/admin/analytics", response_class=HTMLResponse)
+async def analytics_admin(request: Request):
+    """Analytics admin page"""
+    from auth import verify_token, is_authorized_user
+    
+    # Check authentication
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        payload = verify_token(token)
+        email = payload.get("sub")
+        if not email or not is_authorized_user(email):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    # Get analytics data
+    analytics_data = await analytics.get_summary(days=30)
+    
+    return templates.TemplateResponse("analytics_admin.html", {
+        "request": request,
+        "title": "Analytics - Daniel Blackburn",
+        "current_page": "analytics",
+        "analytics": analytics_data
+    })
+
+
+@app.get("/admin/analytics/api", response_class=JSONResponse)
+async def analytics_api(request: Request, days: int = 30):
+    """Analytics API endpoint"""
+    from auth import verify_token, is_authorized_user
+    
+    # Check authentication
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        payload = verify_token(token)
+        email = payload.get("sub")
+        if not email or not is_authorized_user(email):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    return await analytics.get_summary(days=days)
 
