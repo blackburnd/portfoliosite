@@ -192,13 +192,13 @@ async def contact_submit(request: Request):
                 }
             )
 
-        portfolio_query = "SELECT id FROM portfolios LIMIT 1"
+        portfolio_query = "SELECT portfolio_id FROM portfolios LIMIT 1"
         portfolio_result = await database.fetch_one(portfolio_query)
 
         if not portfolio_result:
             raise Exception("No portfolio found in database")
 
-        portfolio_id = portfolio_result['id']
+        portfolio_id = portfolio_result['portfolio_id']
 
         query = """
             INSERT INTO contact_messages
