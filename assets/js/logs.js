@@ -634,6 +634,10 @@ async function setLogLevel(level) {
 
 function setupLogLevelHandler() {
     const logLevelSelect = document.getElementById('logLevelSelect');
+    if (!logLevelSelect) {
+        console.warn('logLevelSelect element not found');
+        return;
+    }
     logLevelSelect.addEventListener('change', function() {
         const newLevel = this.value;
         if (newLevel) {
