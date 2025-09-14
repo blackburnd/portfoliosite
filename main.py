@@ -558,6 +558,48 @@ async def favicon():
     return Response(status_code=204)
 
 
+# Public demo route for pypgsvg ERD showcase
+@app.get("/demo-erd-complex")
+async def demo_erd_complex():
+    """Public demo route to serve the complex_schema.svg file for pypgsvg showcase"""
+    try:
+        # Try production path first, then local development path
+        svg_paths = [
+            "/opt/portfoliosite/assets/files/complex_schema.svg",  # Production
+            "assets/files/complex_schema.svg"  # Local development
+        ]
+        
+        svg_path = None
+        for path in svg_paths:
+            if os.path.exists(path):
+                svg_path = path
+                break
+                
+        if not svg_path:
+            return JSONResponse(
+                {"status": "error", "message": "ERD demo not available"}, 
+                status_code=404
+            )
+            
+        with open(svg_path, 'r') as svg_file:
+            svg_content = svg_file.read()
+        
+        return Response(
+            content=svg_content,
+            media_type="image/svg+xml",
+            headers={
+                "Content-Disposition": "inline; filename=pypgsvg_demo.svg",
+                "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
+            }
+        )
+    except Exception as e:
+        add_log("ERROR", "demo", f"Failed to serve ERD demo: {str(e)}", function="demo_erd_complex")
+        return JSONResponse(
+            {"status": "error", "message": "Demo temporarily unavailable"}, 
+            status_code=500
+        )
+
+
 # Database initialization
 @app.on_event("startup")
 async def startup_event():
