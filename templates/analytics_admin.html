@@ -156,9 +156,10 @@ async function loadVisits(append = false) {
     document.getElementById('loadingIndicator').style.display = 'block';
     
     try {
+        // Build URL with sorting and filter parameters
         const params = new URLSearchParams({
-            page: Math.floor(currentOffset / pageSize) + 1,
-            page_size: pageSize,
+            offset: append ? currentOffset : 0,
+            limit: pageSize,
             sort_field: currentSortField,
             sort_order: currentSortOrder
         });
@@ -188,26 +189,41 @@ async function loadVisits(append = false) {
             allVisits = [];
             filteredVisits = [];
             currentOffset = 0;
-            document.getElementById('analyticsTableBody').innerHTML = '';
         }
         
         if (data.visits && data.visits.length > 0) {
-            allVisits = allVisits.concat(data.visits);
-            filteredVisits = allVisits.slice();
-            renderVisits(data.visits, append);
+            backendTotalCount = data.total_count || 0;
+            
+            if (append) {
+                allVisits = allVisits.concat(data.visits);
+            } else {
+                allVisits = data.visits;
+                currentOffset = 0; // Reset offset for fresh loads
+            }
             
             currentOffset += data.visits.length;
             hasMoreVisits = data.has_more;
-            backendTotalCount = data.total_count || 0;
+            
+            // Since backend handles filtering, filtered visits = all loaded visits
+            filteredVisits = allVisits;
+            
+            updateDisplay();
+            updateStats();
+            updateClearFiltersButtonVisibility();
+            
+            if (!hasMoreVisits) {
+                document.getElementById('noMoreVisits').style.display = 'block';
+            }
         } else {
             hasMoreVisits = false;
-        }
-        
-        updateStats();
-        updateClearFiltersButtonVisibility();
-        
-        if (!hasMoreVisits) {
             document.getElementById('noMoreVisits').style.display = 'block';
+            if (!append) {
+                // Clear the display if this is a fresh load with no results
+                allVisits = [];
+                filteredVisits = [];
+                updateDisplay();
+                updateStats();
+            }
         }
         
     } catch (error) {
@@ -220,15 +236,19 @@ async function loadVisits(append = false) {
     }
 }
 
-// Render visits in table
-function renderVisits(visits, append = false) {
+// Update the table display
+function updateDisplay() {
     const tbody = document.getElementById('analyticsTableBody');
+    tbody.innerHTML = '';
     
-    if (!append) {
-        tbody.innerHTML = '';
+    if (filteredVisits.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="6" style="text-align: center; padding: 20px;">No visits found</td>';
+        tbody.appendChild(row);
+        return;
     }
     
-    visits.forEach(visit => {
+    filteredVisits.forEach(visit => {
         const row = document.createElement('tr');
         
         // Format timestamp
@@ -247,10 +267,10 @@ function renderVisits(visits, append = false) {
             visit.referer.substring(0, 30) + '...' : visit.referer) : '';
         
         row.innerHTML = `
-            <td class="compact-td" title="${formattedDate}">${formattedDate}</td>
-            <td class="compact-td">${age}</td>
-            <td class="compact-td">${visit.page_path}</td>
-            <td class="compact-td">${visit.ip_address}</td>
+            <td class="compact-td" title="${visit.timestamp}">${formattedDate}</td>
+            <td class="compact-td" title="${age}">${age}</td>
+            <td class="compact-td" title="${visit.page_path}">${visit.page_path}</td>
+            <td class="compact-td" title="${visit.ip_address}">${visit.ip_address}</td>
             <td class="compact-td" title="${visit.user_agent || ''}">${userAgent}</td>
             <td class="compact-td" title="${visit.referer || ''}">${referer}</td>
         `;
@@ -258,6 +278,20 @@ function renderVisits(visits, append = false) {
         tbody.appendChild(row);
     });
 }
+
+// Reload visits with current filters
+function reloadVisitsWithFilters() {
+    currentOffset = 0;
+    allVisits = [];
+    filteredVisits = [];
+    hasMoreVisits = true;
+    document.getElementById('analyticsTableBody').innerHTML = '';
+    document.getElementById('noMoreVisits').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+    loadVisits();
+}
+
+// Render visits in table (deprecated - use updateDisplay instead)
 
 // Get time ago string
 function getTimeAgo(date) {
@@ -330,6 +364,21 @@ function setupSorting() {
             reloadVisitsWithFilters();
         });
     });
+}
+
+// Setup intersection observer for infinite scroll
+function setupIntersectionObserver() {
+    const scrollTrigger = document.getElementById('scrollTrigger');
+    if (!scrollTrigger) return;
+    
+    intersectionObserver = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMoreVisits && !isLoading) {
+            console.log('Loading more visits due to scroll');
+            loadVisits(true);
+        }
+    }, { threshold: 0.1 });
+    
+    intersectionObserver.observe(scrollTrigger);
 }
 
 // Initialize on page load

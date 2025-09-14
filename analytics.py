@@ -155,8 +155,8 @@ class Analytics:
 
     async def get_recent_visits_paginated(
         self, 
-        page: int = 1, 
-        page_size: int = 20, 
+        offset: int = 0, 
+        limit: int = 50, 
         days: int = 30,
         search: str = None,
         sort_field: str = 'timestamp',
@@ -165,7 +165,6 @@ class Analytics:
         """Get paginated recent visits with search and sorting"""
         try:
             since_date = datetime.utcnow() - timedelta(days=days)
-            offset = (page - 1) * page_size
             
             # Validate sort parameters
             valid_sort_fields = {
@@ -182,7 +181,7 @@ class Analytics:
             where_conditions = ["timestamp >= :since_date"]
             params = {
                 'since_date': since_date,
-                'limit': page_size,
+                'limit': limit,
                 'offset': offset
             }
             
@@ -229,11 +228,8 @@ class Analytics:
             
             return {
                 'visits': recent_visits,
-                'page': page,
-                'page_size': page_size,
                 'total_count': total_count,
-                'total_pages': (total_count + page_size - 1) // page_size,
-                'has_more': page * page_size < total_count
+                'has_more': offset + limit < total_count
             }
             
         except Exception as e:
@@ -244,10 +240,7 @@ class Analytics:
             )
             return {
                 'visits': [],
-                'page': page,
-                'page_size': page_size,
                 'total_count': 0,
-                'total_pages': 0,
                 'has_more': False,
                 'error': str(e)
             }

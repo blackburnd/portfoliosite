@@ -833,8 +833,8 @@ async def analytics_api(
 @app.get("/admin/analytics/recent-visits", response_class=JSONResponse)
 async def analytics_recent_visits_api(
     request: Request,
-    page: int = 1,
-    page_size: int = 20,
+    offset: int = 0,
+    limit: int = 50,
     days: int = 7,
     search: str = None,
     sort_field: str = 'timestamp',
@@ -843,6 +843,6 @@ async def analytics_recent_visits_api(
 ):
     """Paginated recent visits API endpoint with search and sorting - requires admin authentication"""
     return await analytics.get_recent_visits_paginated(
-        page, page_size, days, search, sort_field, sort_order
+        offset, limit, days, search, sort_field, sort_order
     )
 
