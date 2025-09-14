@@ -153,6 +153,69 @@ class Analytics:
                 'error': str(e)
             }
 
+    async def get_recent_visits_paginated(self, page: int = 1, page_size: int = 20, days: int = 30):
+        """Get paginated recent visits"""
+        try:
+            since_date = datetime.utcnow() - timedelta(days=days)
+            offset = (page - 1) * page_size
+            
+            # Get recent visits with pagination
+            recent_visits_raw = await database.fetch_all(
+                """SELECT timestamp, page_path, ip_address, user_agent
+                FROM page_analytics
+                WHERE timestamp >= :since_date
+                ORDER BY timestamp DESC
+                LIMIT :limit OFFSET :offset""",
+                {
+                    'since_date': since_date,
+                    'limit': page_size,
+                    'offset': offset
+                }
+            )
+            
+            # Get total count for pagination info
+            total_count_result = await database.fetch_one(
+                """SELECT COUNT(*) as total
+                FROM page_analytics
+                WHERE timestamp >= :since_date""",
+                {'since_date': since_date}
+            )
+            total_count = total_count_result['total'] if total_count_result else 0
+            
+            # Convert timestamps to strings for JSON serialization
+            recent_visits = []
+            for row in recent_visits_raw:
+                row_dict = dict(row)
+                if row_dict['timestamp']:
+                    row_dict['timestamp'] = row_dict['timestamp'].strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                recent_visits.append(row_dict)
+            
+            return {
+                'visits': recent_visits,
+                'page': page,
+                'page_size': page_size,
+                'total_count': total_count,
+                'total_pages': (total_count + page_size - 1) // page_size,
+                'has_more': page * page_size < total_count
+            }
+            
+        except Exception as e:
+            add_log(
+                "ERROR", "analytics",
+                f"Failed to get paginated recent visits: {str(e)}",
+                function="get_recent_visits_paginated"
+            )
+            return {
+                'visits': [],
+                'page': page,
+                'page_size': page_size,
+                'total_count': 0,
+                'total_pages': 0,
+                'has_more': False,
+                'error': str(e)
+            }
+
 
 # Global analytics instance
 analytics = Analytics()

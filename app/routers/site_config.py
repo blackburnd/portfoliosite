@@ -91,7 +91,7 @@ CONFIG_CATEGORIES = {
 
 
 @router.get("/admin/config", response_class=HTMLResponse)
-async def config_overview(request: Request, _=Depends(require_admin_auth)):
+async def config_overview(request: Request, admin=Depends(require_admin_auth)):
     """Simple config management - sortable table of all variables"""
     try:
         from database import get_portfolio_id
@@ -118,7 +118,11 @@ async def config_overview(request: Request, _=Depends(require_admin_auth)):
             {
                 "request": request,
                 "config_list": config_list,
-                "total_configs": len(all_config)
+                "total_configs": len(all_config),
+                "current_page": "config",
+                "user_authenticated": True,
+                "user_email": admin.get("email", ""),
+                "user_info": admin
             }
         )
     except Exception as e:

@@ -819,6 +819,11 @@ async def analytics_admin(request: Request):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    # Get user info for navigation
+    user_authenticated = True
+    user_email = email
+    user_info = {"email": email}
+    
     # Get analytics data
     analytics_data = await analytics.get_summary(days=30)
     
@@ -826,6 +831,9 @@ async def analytics_admin(request: Request):
         "request": request,
         "title": "Analytics - Daniel Blackburn",
         "current_page": "analytics",
+        "user_authenticated": user_authenticated,
+        "user_email": user_email,
+        "user_info": user_info,
         "analytics": analytics_data
     })
 
@@ -849,4 +857,30 @@ async def analytics_api(request: Request, days: int = 30):
         raise HTTPException(status_code=401, detail="Invalid token")
     
     return await analytics.get_summary(days=days)
+
+
+@app.get("/admin/analytics/recent-visits", response_class=JSONResponse)
+async def analytics_recent_visits_api(
+    request: Request, 
+    page: int = 1, 
+    page_size: int = 20, 
+    days: int = 30
+):
+    """Paginated recent visits API endpoint for endless scrolling"""
+    from auth import verify_token, is_authorized_user
+    
+    # Check authentication
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        payload = verify_token(token)
+        email = payload.get("sub")
+        if not email or not is_authorized_user(email):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    return await analytics.get_recent_visits_paginated(page, page_size, days)
 
