@@ -11,10 +11,12 @@ from pathlib import Path
 
 from auth import require_admin_auth, verify_token, is_authorized_user
 from database import database, get_portfolio_id
+from analytics import Analytics
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 logger = logging.getLogger(__name__)
+analytics = Analytics()
 
 
 class WorkItem(BaseModel):
@@ -34,6 +36,9 @@ class WorkItem(BaseModel):
 @router.get("/work/", response_class=HTMLResponse)
 async def work(request: Request):
     """Serve the work page - now a portfolio showcase listing"""
+    # Track page view
+    await analytics.track_page_view(request, "/work/")
+    
     user_authenticated = False
     user_email = None
     
@@ -135,6 +140,9 @@ async def work(request: Request):
 @router.get("/work/{project_slug}/", response_class=HTMLResponse)
 async def project_detail(request: Request, project_slug: str):
     """Serve individual project pages"""
+    # Track page view
+    await analytics.track_page_view(request, f"/work/{project_slug}/")
+    
     return templates.TemplateResponse("project.html", {
         "request": request,
         "project_slug": project_slug,
@@ -144,8 +152,11 @@ async def project_detail(request: Request, project_slug: str):
 
 @router.get("/resume")
 @router.get("/resume/")
-async def resume():
+async def resume(request: Request):
     """Serve resume PDF directly for browser viewing"""
+    # Track page view
+    await analytics.track_page_view(request, "/resume/")
+    
     return FileResponse(
         path="assets/files/danielblackburn.pdf",
         media_type="application/pdf",
@@ -155,8 +166,11 @@ async def resume():
 
 
 @router.get("/resume/download/")
-async def resume_download():
+async def resume_download(request: Request):
     """Serve resume PDF as attachment for download."""
+    # Track page view
+    await analytics.track_page_view(request, "/resume/download/")
+    
     return FileResponse(
         path="assets/files/danielblackburn.pdf",
         media_type="application/pdf",
