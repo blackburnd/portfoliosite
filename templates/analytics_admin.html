@@ -23,28 +23,33 @@
     </div>
     
     <div class="analytics-section">
-        <h2>Top Pages</h2>
-        <table class="analytics-table">
-            <thead>
-                <tr>
-                    <th>Page</th>
-                    <th>Views</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for page in analytics.top_pages %}
-                <tr>
-                    <td>{{ page.page_path }}</td>
-                    <td>{{ page.views }}</td>
-                </tr>
-                {% endfor %}
-                {% if not analytics.top_pages %}
-                <tr>
-                    <td colspan="2">No data available</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
+        <h2 class="collapsible-header" onclick="toggleSection('topPages')">
+            <span class="toggle-icon" id="topPagesIcon">▼</span>
+            Top Pages
+        </h2>
+        <div id="topPages" class="collapsible-content">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Page</th>
+                        <th>Views</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in analytics.top_pages %}
+                    <tr>
+                        <td>{{ page.page_path }}</td>
+                        <td>{{ page.views }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not analytics.top_pages %}
+                    <tr>
+                        <td colspan="2">No data available</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <div class="analytics-section">
@@ -113,6 +118,20 @@ let intersectionObserver;
 let backendTotalCount = 0;
 let currentSortField = 'timestamp';
 let currentSortOrder = 'desc';
+
+// Toggle collapsible sections
+window.toggleSection = function(sectionId) {
+    const content = document.getElementById(sectionId);
+    const icon = document.getElementById(sectionId + 'Icon');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
+    }
+};
 
 // Refresh analytics data
 window.refreshAnalytics = function() {
@@ -596,6 +615,29 @@ if (dailyViews && dailyViews.length > 0) {
     .recent-visits-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Collapsible section styles */
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 10px;
+    transition: color 0.2s ease;
+}
+
+.collapsible-header:hover {
+    color: #007acc;
+}
+
+.toggle-icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.collapsible-content {
+    transition: all 0.3s ease;
 }
 </style>
 {% endblock %}
