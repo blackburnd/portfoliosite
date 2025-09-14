@@ -169,11 +169,14 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             log_with_context("INFO", "sql_admin_erd",
                              f"ERD saved to: {target_path}", request)
             
-            return JSONResponse({
-                "status": "success",
-                "message": f"ERD generated and saved to {target_path}",
-                "file_path": target_path
-            })
+            # Return the SVG content directly like other ERD endpoints
+            return Response(
+                content=svg_content,
+                media_type="image/svg+xml",
+                headers={
+                    "Content-Disposition": "inline; filename=site_erd.svg"
+                }
+            )
             
         finally:
             # Clean up the temporary dump file
@@ -216,7 +219,9 @@ async def test_erd_complex(request: Request,
         return Response(
             content=svg_content,
             media_type="image/svg+xml",
-            headers={"Content-Disposition": "inline; filename=complex_schema.svg"}
+            headers={
+                "Content-Disposition": "inline; filename=complex_schema.svg"
+            }
         )
         
     except Exception as e:
@@ -253,7 +258,9 @@ async def test_erd_site(request: Request,
         return Response(
             content=svg_content,
             media_type="image/svg+xml",
-            headers={"Content-Disposition": "inline; filename=site_erd.svg"}
+            headers={
+                "Content-Disposition": "inline; filename=site_erd.svg"
+            }
         )
         
     except Exception as e:
