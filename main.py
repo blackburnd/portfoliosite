@@ -22,6 +22,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from strawberry.fastapi import GraphQLRouter
 
 # --- Local Application Imports ---
+from analytics_middleware import AnalyticsMiddleware
 from app.resolvers import schema
 from app.routers import contact, projects, work, showcase, logs, sql
 from app.routers.oauth import router as google_oauth_router
@@ -58,6 +59,9 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET_KEY", "a-secure-secret-key")
 )
+
+# Analytics middleware for automatic page view tracking
+app.add_middleware(AnalyticsMiddleware)
 
 # Initialize OAuth client
 # The oauth object is now imported from oauth_client.py
@@ -775,9 +779,6 @@ async def read_root(request: Request):
     except Exception:
         pass  # Use defaults if config fails
 
-    # Track page view
-    await analytics.track_page_view(request, "/")
-    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Daniel Blackburn - Software Developer & Solution Architect",
@@ -792,9 +793,6 @@ async def read_root(request: Request):
 @app.get("/privacy/", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
     """Privacy Policy page"""
-    # Track page view
-    await analytics.track_page_view(request, "/privacy")
-    
     return templates.TemplateResponse("privacy.html", {
         "request": request,
         "title": "Privacy Policy - Daniel Blackburn",
@@ -837,9 +835,14 @@ async def analytics_recent_visits_api(
     request: Request,
     page: int = 1,
     page_size: int = 20,
-    days: int = 30,
+    days: int = 7,
+    search: str = None,
+    sort_field: str = 'timestamp',
+    sort_order: str = 'desc',
     admin: dict = Depends(require_admin_auth)
 ):
-    """Paginated recent visits API endpoint for endless scrolling - requires admin authentication"""
-    return await analytics.get_recent_visits_paginated(page, page_size, days)
+    """Paginated recent visits API endpoint with search and sorting - requires admin authentication"""
+    return await analytics.get_recent_visits_paginated(
+        page, page_size, days, search, sort_field, sort_order
+    )
 

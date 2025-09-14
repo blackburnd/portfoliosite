@@ -41,19 +41,23 @@
                         <div class="project-content">
                             <div class="project-overview">
                                 <h2>Project Overview</h2>
-                                <p class="lead">This site was put together as an academic excercise and also to showcase some interesting work I have completed recently. The site is mostly dynamic, the /work page is populated via CRUD operations, The projects populate the /work page, and provide the ability to add and edit screenshots</p>
+                            <p class="lead">This site was put together as an academic excercise and also to showcase some interesting work I have completed recently. It is an open source project and has some useful toolsets i have created over the years. 
+                                The site's content is mostly dynamic and or can be modified TTW, the /work page is populated via CRUD operation, If one were to repurpose the repo, a google app, and linkedin app will need to be created for the full functionlity.
+                                The projects populate the /work page, and provide the ability to add and edit screenshots as you can see in some screenshots further down.</p>
+                                <p></p>
                                 
-                                <p>The implementation leverages a distributed architecture across Google Cloud Platform, utilizing separate compute instances for application and database tiers to ensure proper separation of concerns. The platform incorporates several production-grade tooling solutions I've developed in enterprise environments, specifically addressing common pain points in OAuth2 integration debugging and managing the inherent unpredictability of AI agent orchestration workflows.</p>
+                                <p>The site lives on Google Cloud Platform, along with a separage sql instance for application and database tiers to ensure proper separation of concerns. The platform incorporates several tooling solutions I've developed in enterprise environments,
+                                     specifically addressing common pain points in OAuth2 integration debugging and managing the inherent unpredictability of AI agent orchestration workflows.</p>
                                 
-                                <p>The system demonstrates enterprise authentication patterns through Google OAuth2 integration, with planned LinkedIn API integration for automated data synchronization (currently pending LinkedIn's scope approval process for production applications).</p>
+                                <p>The system utilizes some standard enterprise authentication patterns through Google OAuth2 integration, with mostly implemented LinkedIn API integration for automated data synchronization (currently pending LinkedIn's scope approval process for production applications).</p>
                                 
                                 <p>Deployment automation is handled through GitHub Actions CI/CD pipelines with Google Cloud Build integration, enabling continuous deployment from version control to production. The entire codebase is maintained as open source.</p>
                                 
-                                <p>The current implementation features a full-stack CRUD interface for project management, with dynamic content generation populating the /work landing page. Each project entry supports individual portfolio presentations through a template-driven showcase system. This architecture enables rapid iteration on professional presentation while maintaining clean separation between data management and content delivery layers.</p>
+                                <p>The current implementation features are mostly based around the overview landing page and the /work page. </p>
                             </div>
 
                             <div class="project-tech">
-                                <h3>Technologies Used</h3>
+                                <h3>Core Technologies Used</h3>
                                 <div class="tech-tags-large">
                                     <span class="tech-tag-large">FastAPI</span>
                                     <span class="tech-tag-large">PostgreSQL</span>
@@ -68,13 +72,16 @@
 
                             <div class="project-details">
                                 <h3>Technical Implementation Deep Dive</h3>
-                                <p>This portfolio demonstrates enterprise-grade architecture and modern development practices through careful system design and implementation.</p>
+                                <p>This portfolio demonstrates the backend architecture and modern development tools to assist the design and implementation of this portfolio site. After the vertical slice had been setup and tested,
+                                    there would inevitalbly be SQL to run for updates, edits, and deletes as I did not know excactly where finished would end up as.
+                                </p>
                                 
                                 <div class="feature-showcase">
                                     <div class="feature-section">
                                         <h4>Database Administration & Schema Introspection</h4>
                                         <div class="feature-description">
-                                            <p><strong>Business Need:</strong> As a cloud engineer managing multiple projects with varying data structures, I needed robust database administration capabilities with real-time schema visualization and query execution.</p>
+                                            <p><strong>Amost directly after the </strong> As a cloud engineer managing multiple projects with varying data structures, 
+                                                I needed robust database administration capabilities with real-time schema visualization and query execution.</p>
                                             
                                             <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at <code>/admin/sql</code> that provides:</p>
                                             <ul>

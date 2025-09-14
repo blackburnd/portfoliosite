@@ -5,19 +5,14 @@ import json
 import os
 
 from database import database, get_portfolio_id
-from analytics import Analytics
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-analytics = Analytics()
 
 
 @router.get("/showcase/{project_slug}/", response_class=HTMLResponse)
 async def showcase_project(request: Request, project_slug: str):
     """Serve individual project showcase pages"""
-    # Track page view
-    await analytics.track_page_view(request, f"/showcase/{project_slug}/")
-    
     try:
         # Log the incoming request for debugging
         print(f"DEBUG: showcase_project called with slug: {project_slug}")
@@ -141,9 +136,6 @@ async def showcase_project(request: Request, project_slug: str):
 @router.get("/showcase/complex_schema.svg")
 async def showcase_complex_schema(request: Request):
     """Serve the interactive complex_schema.svg file."""
-    # Track page view
-    await analytics.track_page_view(request, "/showcase/complex_schema.svg")
-    
     return FileResponse(
         path="assets/showcase/complex_schema.svg",
         media_type="image/svg+xml",

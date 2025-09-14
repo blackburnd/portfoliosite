@@ -153,33 +153,69 @@ class Analytics:
                 'error': str(e)
             }
 
-    async def get_recent_visits_paginated(self, page: int = 1, page_size: int = 20, days: int = 30):
-        """Get paginated recent visits"""
+    async def get_recent_visits_paginated(
+        self, 
+        page: int = 1, 
+        page_size: int = 20, 
+        days: int = 30,
+        search: str = None,
+        sort_field: str = 'timestamp',
+        sort_order: str = 'desc'
+    ):
+        """Get paginated recent visits with search and sorting"""
         try:
             since_date = datetime.utcnow() - timedelta(days=days)
             offset = (page - 1) * page_size
             
-            # Get recent visits with pagination
-            recent_visits_raw = await database.fetch_all(
-                """SELECT timestamp, page_path, ip_address, user_agent
+            # Validate sort parameters
+            valid_sort_fields = {
+                'timestamp', 'page_path', 'ip_address', 
+                'user_agent', 'referer'
+            }
+            if sort_field not in valid_sort_fields:
+                sort_field = 'timestamp'
+            
+            if sort_order.lower() not in {'asc', 'desc'}:
+                sort_order = 'desc'
+            
+            # Build WHERE conditions
+            where_conditions = ["timestamp >= :since_date"]
+            params = {
+                'since_date': since_date,
+                'limit': page_size,
+                'offset': offset
+            }
+            
+            # Add search condition
+            if search:
+                where_conditions.append(
+                    "(page_path ILIKE :search OR ip_address ILIKE :search OR "
+                    "user_agent ILIKE :search OR referer ILIKE :search)"
+                )
+                params['search'] = f"%{search}%"
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # Get recent visits with search and sorting
+            query = f"""
+                SELECT timestamp, page_path, ip_address, user_agent, referer
                 FROM page_analytics
-                WHERE timestamp >= :since_date
-                ORDER BY timestamp DESC
-                LIMIT :limit OFFSET :offset""",
-                {
-                    'since_date': since_date,
-                    'limit': page_size,
-                    'offset': offset
-                }
-            )
+                WHERE {where_clause}
+                ORDER BY {sort_field} {sort_order.upper()}
+                LIMIT :limit OFFSET :offset
+            """
+            
+            recent_visits_raw = await database.fetch_all(query, params)
             
             # Get total count for pagination info
-            total_count_result = await database.fetch_one(
-                """SELECT COUNT(*) as total
+            count_query = f"""
+                SELECT COUNT(*) as total
                 FROM page_analytics
-                WHERE timestamp >= :since_date""",
-                {'since_date': since_date}
-            )
+                WHERE {where_clause}
+            """
+            count_params = {k: v for k, v in params.items() 
+                          if k not in ['limit', 'offset']}
+            total_count_result = await database.fetch_one(count_query, count_params)
             total_count = total_count_result['total'] if total_count_result else 0
             
             # Convert timestamps to strings for JSON serialization
