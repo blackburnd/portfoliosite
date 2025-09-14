@@ -60,7 +60,7 @@
             <tbody>
                 {% for visit in analytics.recent_visits %}
                 <tr>
-                    <td>{{ visit.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ visit.timestamp }}</td>
                     <td>{{ visit.page_path }}</td>
                     <td>{{ visit.ip_address }}</td>
                 </tr>

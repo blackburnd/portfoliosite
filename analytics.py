@@ -91,7 +91,7 @@ class Analytics:
             )
 
             # Recent visits
-            recent_visits = await database.fetch_all(
+            recent_visits_raw = await database.fetch_all(
                 """SELECT timestamp, page_path, ip_address
                 FROM page_analytics
                 WHERE timestamp >= :since_date
@@ -99,9 +99,18 @@ class Analytics:
                 LIMIT 20""",
                 {'since_date': since_date}
             )
+            
+            # Convert timestamps to strings for JSON serialization
+            recent_visits = []
+            for row in recent_visits_raw:
+                row_dict = dict(row)
+                if row_dict['timestamp']:
+                    row_dict['timestamp'] = row_dict['timestamp'].strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                recent_visits.append(row_dict)
 
             # Daily views for chart
-            daily_views = await database.fetch_all(
+            daily_views_raw = await database.fetch_all(
                 """SELECT DATE(timestamp) as date, COUNT(*) as views
                 FROM page_analytics
                 WHERE timestamp >= :since_date
@@ -109,6 +118,14 @@ class Analytics:
                 ORDER BY date""",
                 {'since_date': since_date}
             )
+            
+            # Convert dates to strings for JSON serialization
+            daily_views = []
+            for row in daily_views_raw:
+                row_dict = dict(row)
+                if row_dict['date']:
+                    row_dict['date'] = row_dict['date'].strftime('%Y-%m-%d')
+                daily_views.append(row_dict)
 
             return {
                 'total_views': total_views['total'] if total_views else 0,
@@ -116,7 +133,7 @@ class Analytics:
                                     if unique_visitors else 0),
                 'top_pages': [dict(row) for row in top_pages],
                 'recent_visits': [dict(row) for row in recent_visits],
-                'daily_views': [dict(row) for row in daily_views],
+                'daily_views': daily_views,
                 'period_days': days
             }
 
