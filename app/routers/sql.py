@@ -139,6 +139,15 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             with open(svg_output_path, 'r') as svg_file:
                 svg_content = svg_file.read()
             
+            # Validate SVG content
+            if not svg_content or not svg_content.strip().startswith('<'):
+                preview = svg_content[:50] + "..." if svg_content else "empty"
+                raise Exception(f"Invalid SVG content: {preview}")
+            
+            if '<svg' not in svg_content:
+                preview = svg_content[:50] + "..." if svg_content else "empty"
+                raise Exception(f"Missing <svg> tag: {preview}")
+            
             # Determine the target path for saving the SVG
             # Try production path first, then local development path
             target_paths = [
@@ -186,9 +195,31 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
     except Exception as e:
         log_with_context("ERROR", "sql_admin_erd_error",
                          f"ERD generation error: {e}", request)
-        return JSONResponse({"status": "error",
-                             "message": f"ERD generation failed: {e}"},
-                            status_code=500)
+        
+        # Return an SVG error message instead of JSON
+        error_msg = str(e)[:80] + "..." if len(str(e)) > 80 else str(e)
+        error_svg = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400">'
+            '<rect width="800" height="400" fill="#f8f9fa" stroke="#dc3545" '
+            'stroke-width="2"/>'
+            '<text x="400" y="180" text-anchor="middle" font-family="Arial" '
+            'font-size="24" fill="#dc3545">ERD Generation Failed</text>'
+            '<text x="400" y="220" text-anchor="middle" font-family="Arial" '
+            f'font-size="16" fill="#6c757d">Error: {error_msg}</text>'
+            '<text x="400" y="260" text-anchor="middle" font-family="Arial" '
+            'font-size="14" fill="#6c757d">Check logs for details</text>'
+            '</svg>'
+        )
+        
+        return Response(
+            content=error_svg,
+            media_type="image/svg+xml",
+            headers={
+                "Content-Disposition": "inline; filename=error.svg"
+            },
+            status_code=500
+        )
 
 
 @router.get("/admin/sql/test-erd-complex")
