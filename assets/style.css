@@ -430,12 +430,14 @@ nav li.active a:hover {
 .profile-image {
     float: left;
     width: 50%;
+    max-width: 500px; /* Hard cap: never larger than 500px */
     margin: 0 20px 20px 0;
     text-align: center;
 }
 
 .profile-image img {
     width: 100%;
+    max-width: 500px; /* Ensure image itself never exceeds 500px */
     height: auto;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -3523,12 +3525,17 @@ p.editable-content.editing .content-textarea {
     gap: 30px;
 }
 
-/* Wide screen responsive layout */
+/* Wide screen responsive layout - keep stats and top pages side by side */
 @media (min-width: 1024px) {
     .analytics-content {
         grid-template-columns: 1fr 1fr;
         gap: 40px;
         align-items: start;
+    }
+    
+    /* Full-width sections should span both columns */
+    .analytics-content .full-width-section {
+        grid-column: 1 / -1;
     }
 }
 
@@ -3627,4 +3634,34 @@ p.editable-content.editing .content-textarea {
     margin-bottom: 20px;
     color: #333;
     font-size: 24px;
+}
+
+/* Chart container styling */
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.chart-description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Daily views chart specific styling */
+#dailyViewsChart {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Limit chart text/numbers to 1em max width */
+.chart-container canvas text,
+.chart-container .chart-number {
+    max-width: 1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

@@ -583,7 +583,7 @@ async def demo_erd_complex():
                 
         if not svg_path:
             return JSONResponse(
-                {"status": "error", "message": "ERD demo not available"}, 
+                {"status": "error", "message": "ERD demo not available"},
                 status_code=404
             )
             
@@ -599,9 +599,9 @@ async def demo_erd_complex():
             }
         )
     except Exception as e:
-        add_log("ERROR", "demo", f"Failed to serve ERD demo: {str(e)}", function="demo_erd_complex")
+        add_log("ERROR", "demo", f"Failed to serve ERD demo: {str(e)}")
         return JSONResponse(
-            {"status": "error", "message": "Demo temporarily unavailable"}, 
+            {"status": "error", "message": "Demo temporarily unavailable"},
             status_code=500
         )
 
@@ -682,7 +682,12 @@ async def update_content_inline(request: Request):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        await add_log("ERROR", "inline_content_update", f"Content update failed: {str(e)}", {"error": error_details})
+        await add_log(
+            "ERROR",
+            "inline_content_update",
+            f"Content update failed: {str(e)}",
+            {"error": error_details},
+        )
         
         return JSONResponse({
             "success": False,
