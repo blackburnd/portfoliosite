@@ -229,16 +229,14 @@
 
 /* Responsive design for larger screens */
 @media (min-width: 1024px) {
-    /* Convert feature sections to grid layout on larger screens */
+    /* Feature sections take full width on larger screens for better screenshot visibility */
     .feature-showcase {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-        gap: 2rem;
+        display: block; /* Switch back to block layout for full-width sections */
         margin: 2rem 0;
     }
     
     .feature-section {
-        margin-bottom: 0; /* Remove margin since grid handles spacing */
+        margin-bottom: 2rem; /* Restore margin for spacing between sections */
         height: fit-content;
     }
     
@@ -248,10 +246,13 @@
 }
 
 @media (min-width: 1400px) {
-    /* Even wider layout for very large screens */
+    /* Maintain full-width layout on very large screens */
     .feature-showcase {
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 2.5rem;
+        margin: 2.5rem 0;
+    }
+    
+    .feature-section {
+        margin-bottom: 2.5rem; /* Increased spacing for larger screens */
     }
     
     .project-showcase-content {
