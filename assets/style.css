@@ -63,6 +63,13 @@ body {
     padding: 0 20px;
 }
 
+/* Full width layout for analytics page */
+.analytics-admin .wrap {
+    max-width: none;
+    margin: 0;
+    padding: 0 20px;
+}
+
 /* Site Header Styles */
 .site-header {
     margin-bottom: 30px;
@@ -3470,4 +3477,38 @@ p.editable-content.editing .content-textarea {
 
 .feedback-message.error {
     background: #dc3545;
+}
+
+/* OAuth Admin Pages Responsive Layout */
+.oauth-admin-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Responsive layout for OAuth configuration and scopes */
+@media (min-width: 1024px) {
+    .oauth-admin-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+    }
+    
+    .oauth-admin-content h2 {
+        grid-column: 1 / -1; /* Span both columns */
+        margin-bottom: 30px;
+    }
+    
+    .config-section {
+        margin-bottom: 0; /* Remove margin since grid handles spacing */
+    }
+}
+
+/* OAuth pages specific body class styling */
+.google-oauth-admin .wrap,
+.linkedin-oauth-admin .wrap {
+    max-width: 1200px; /* Limit width for better readability */
+    margin: 0 auto;
+    padding: 0 20px;
 }
