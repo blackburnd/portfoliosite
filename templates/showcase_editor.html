@@ -210,15 +210,27 @@ document.addEventListener('DOMContentLoaded', function() {
         height: 600,
         menubar: true,
         plugins: [
-            'advlist autolink lists link image charmap preview anchor',
-            'searchreplace visualblocks code fullscreen',
-            'insertdatetime media table paste code help wordcount'
+            // Core editing features
+            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+            // Premium features (trial until Sep 29, 2025)
+            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'ai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
         ],
-        toolbar: 'undo redo | blocks | ' +
-            'bold italic forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | help | code | fullscreen',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat | code fullscreen',
         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px }',
+        
+        // Premium feature configurations
+        tinycomments_mode: 'embedded',
+        tinycomments_author: 'Showcase Editor User',
+        mergetags_list: [
+            { value: 'First.Name', title: 'First Name' },
+            { value: 'Email', title: 'Email' },
+            { value: 'Project.Title', title: 'Project Title' },
+            { value: 'Site.Name', title: 'Site Name' }
+        ],
+        ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not configured')),
+        uploadcare_public_key: 'bcc27ec587ad6006fefe',
+        
+        // Existing functionality preservation
         setup: function (ed) {
             editor = ed;
             ed.on('change', function () {
