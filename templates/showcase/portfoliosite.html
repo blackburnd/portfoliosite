@@ -34,28 +34,6 @@
                                     <span class="nav-button disabled">Next →</span>
                                 {% endif %}
                             </div>
-                            
-                            <h1>Portfolio Site: Technical Architecture</h1>
-                        </div>
-
-                        <div class="project-content">
-                            <div class="project-overview">
-                                <h2>Project Overview</h2>
-                            <p class="lead">This site was put together as an academic excercise and also to showcase some interesting work I have completed recently. It is an open source project and has some useful toolsets i have created over the years. 
-                                The site's content is mostly dynamic and or can be modified TTW, the /work page is populated via CRUD operation, If one were to repurpose the repo, a google app, and linkedin app will need to be created for the full functionlity.
-                                The projects populate the /work page, and provide the ability to add and edit screenshots as you can see in some screenshots further down.</p>
-                                <p></p>
-                                
-                                <p>The site lives on Google Cloud Platform, along with a separage sql instance for application and database tiers to ensure proper separation of concerns. The platform incorporates several tooling solutions I've developed in enterprise environments,
-                                     specifically addressing common pain points in OAuth2 integration debugging and managing the inherent unpredictability of AI agent orchestration workflows.</p>
-                                
-                                <p>The system utilizes some standard enterprise authentication patterns through Google OAuth2 integration, with mostly implemented LinkedIn API integration for automated data synchronization (currently pending LinkedIn's scope approval process for production applications).</p>
-                                
-                                <p>Deployment automation is handled through GitHub Actions CI/CD pipelines with Google Cloud Build integration, enabling continuous deployment from version control to production. The entire codebase is maintained as open source.</p>
-                                
-                                <p>The current implementation features are mostly based around the overview landing page and the /work page. </p>
-                            </div>
-
                             <div class="project-tech">
                                 <h3>Core Technologies Used</h3>
                                 <div class="tech-tags-large">
@@ -69,27 +47,41 @@
                                     <span class="tech-tag-large">GraphQL</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="project-content">
+                            <div class="project-overview">
+                                <h2>Project Reasoning</h2>
+
+                                <p class="lead">
+				  A full-stack portfolio platform demonstrating modern web development practices and enterprise architecture patterns.
+				  This open-source project showcases dynamic content management, OAuth2 integration, and cloud-native deployment strategies developed through years of professional experience.
+         			    </p>
+				<p>
+				  Key capabilities include dynamic content management through administrative interfaces, comprehensive database tooling, and seamless third-party integrations. The platform requires Google and LinkedIn OAuth applications for complete functionality, enabling automated data synchronization and secure authentication workflows.
+				   </p>
+                            </div>
 
                             <div class="project-details">
                                 <h3>Technical Implementation Deep Dive</h3>
-                                <p>This portfolio demonstrates the backend architecture and modern development tools to assist the design and implementation of this portfolio site. After the vertical slice had been setup and tested,
-                                    there would inevitalbly be SQL to run for updates, edits, and deletes as I did not know excactly where finished would end up as.
+                                <p>
+				  The following sections detail the technical architecture and implementation strategies employed throughout development. Each component addresses specific enterprise challenges while maintaining scalability and maintainability.
                                 </p>
                                 
                                 <div class="feature-showcase">
                                     <div class="feature-section">
                                         <h4>Database Administration & Schema Introspection</h4>
                                         <div class="feature-description">
-                                            <p><strong>Amost directly after the </strong> As a cloud engineer managing multiple projects with varying data structures, 
-                                                I needed robust database administration capabilities with real-time schema visualization and query execution.</p>
-                                            
-                                            <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at <code>/admin/sql</code> that provides:</p>
-                                            <ul>
+                                          <p>
+					    As projects scale and data structures evolve, robust database administration becomes critical. This implementation provides comprehensive database management capabilities with real-time visualization and query execution.
+                                          </p>
+                                          <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at <code>/admin/sql</code> that provides:</p>
+                                          <ul>
                                                 <li>Real-time SQL query execution with syntax highlighting and error handling</li>
                                                 <li>Automatic Entity Relationship Diagram (ERD) generation using pypgsvg</li>
                                                 <li>Database schema introspection and documentation export</li>
                                                 <li>Query result formatting with pagination and data type preservation</li>
-                                            </ul>
+                                           </ul>
                                             
                                             <p><strong>Implementation Details:</strong> The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async database connections for non-blocking queries, and subprocess management for ERD generation. Security is enforced through admin-only route protection and query sanitization.</p>
                                         </div>
