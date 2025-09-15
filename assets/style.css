@@ -3495,7 +3495,8 @@ p.editable-content.editing .content-textarea {
         align-items: start;
     }
     
-    .oauth-admin-content h2 {
+    .oauth-admin-content h2,
+    .oauth-admin-content .admin-nav {
         grid-column: 1 / -1; /* Span both columns */
         margin-bottom: 30px;
     }
