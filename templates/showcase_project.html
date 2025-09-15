@@ -13,11 +13,6 @@
                             </div>
                             <h1>{{ project.title }}</h1>
                             <div class="project-meta">
-                                {% if project.url %}
-                                <a href="{{ project.url }}" target="_blank" class="btn-primary">
-                                    View Live Project →
-                                </a>
-                                {% endif %}
                             </div>
                         </div>
 
@@ -45,9 +40,6 @@
 
                             <div class="project-navigation">
                                 <a href="/work/" class="btn-secondary">← Back to Portfolio</a>
-                                {% if project.url %}
-                                <a href="{{ project.url }}" target="_blank" class="btn-primary">View Live Project →</a>
-                                {% endif %}
                             </div>
                         </div>
                     </section>
