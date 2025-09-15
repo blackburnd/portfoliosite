@@ -8,46 +8,60 @@
 <div class="analytics-container">
     <h1>Site Analytics</h1>
     
-    <div class="analytics-stats">
-        <div class="stat-card">
-            <h3>Total Views</h3>
-            <div class="stat-number">{{ analytics.total_views }}</div>
-            <div class="stat-period">Last {{ analytics.period_days }} days</div>
+    <div class="analytics-content">
+        <!-- Stats Section -->
+        <div class="analytics-stats-section">
+            <h2>Site Analytics</h2>
+            <div class="analytics-stats">
+                <div class="stat-card">
+                    <h3>Total Views</h3>
+                    <div class="stat-number">{{ analytics.total_views }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Unique Visitors</h3>
+                    <div class="stat-number">{{ analytics.unique_visitors }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Human Visitors</h3>
+                    <div class="stat-number">{{ analytics.human_visitors }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+                
+                <!-- Placeholder for 4th stat card to complete 2x2 grid -->
+                <div class="stat-card">
+                    <h3>Bot Visitors</h3>
+                    <div class="stat-number">{{ analytics.bot_visitors }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+            </div>
         </div>
         
-        <div class="stat-card">
-            <h3>Unique Visitors</h3>
-            <div class="stat-number">{{ analytics.unique_visitors }}</div>
-            <div class="stat-period">Last {{ analytics.period_days }} days</div>
-        </div>
-        
-        <div class="stat-card">
-            <h3>Human Visitors</h3>
-            <div class="stat-number">{{ analytics.human_visitors }}</div>
-            <div class="stat-period">Last {{ analytics.period_days }} days</div>
-        </div>
-    </div>
-    
-    <div class="analytics-section">
-        <h2 class="collapsible-header" onclick="toggleSection('topPages')">
-            <span class="toggle-icon" id="topPagesIcon">▼</span>
-            Top Pages
-        </h2>
-        <div id="topPages" class="collapsible-content">
-            <table class="analytics-table">
-                <thead>
-                    <tr>
-                        <th>Page</th>
-                        <th>Views</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for page in analytics.top_pages %}
-                    <tr>
-                        <td>{{ page.page_path }}</td>
-                        <td>{{ page.views }}</td>
-                    </tr>
-                    {% endfor %}
+        <!-- Top Pages Section -->
+        <div class="analytics-pages-section">
+            <div class="analytics-section">
+                <h2 class="collapsible-header" onclick="toggleSection('topPages')">
+                    <span class="toggle-icon" id="topPagesIcon">▼</span>
+                    Top Pages
+                </h2>
+                <div id="topPages" class="collapsible-content">
+                    <table class="analytics-table">
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Views</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for page in analytics.top_pages %}
+                            <tr>
+                                <td>{{ page.page_path }}</td>
+                                <td>{{ page.views }}</td>
+                            </tr>
+                            {% endfor %}
                     {% if not analytics.top_pages %}
                     <tr>
                         <td colspan="2">No data available</td>
@@ -58,7 +72,8 @@
         </div>
     </div>
     
-    <div class="analytics-section">
+    <!-- Recent Visits section - full width outside the grid -->
+    <div class="analytics-section full-width-section">
         <h2>Recent Visits</h2>
         <div class="analytics-controls-row compact-controls">
             <input type="text" id="searchBox" placeholder="Search pages, IPs..." class="compact-input" />
@@ -83,18 +98,22 @@
             <table class="analytics-table compact-table">
                 <thead>
                     <tr>
-                        <th data-sort="timestamp" class="sortable compact-th" style="width: 150px;">Date <span class="sort-indicator"></span></th>
+                        <th data-sort="timestamp" class="sortable compact-th" style="width: 120px;">Date <span class="sort-indicator"></span></th>
                         <th class="compact-th" style="width: 60px;">Age</th>
-                        <th data-sort="page_path" class="sortable compact-th" style="width: 35%; min-width: 200px;">Page <span class="sort-indicator"></span></th>
+                        <th data-sort="page_path" class="sortable compact-th" style="width: 200px;">Page <span class="sort-indicator"></span></th>
                         <th data-sort="ip_address" class="sortable compact-th" style="width: 120px;">IP Address <span class="sort-indicator"></span></th>
-                        <th data-sort="mouse_activity" class="sortable compact-th" style="width: 80px;" title="Human activity detected">Human <span class="sort-indicator"></span></th>
-                        <th data-sort="user_agent" class="sortable compact-th" style="width: 20%; min-width: 150px;">User Agent <span class="sort-indicator"></span></th>
-                        <th data-sort="referer" class="sortable compact-th" style="width: 15%; min-width: 100px;">Referer <span class="sort-indicator"></span></th>
+                        <th data-sort="mouse_activity" class="sortable compact-th" style="width: 70px;" title="Human activity detected">Human <span class="sort-indicator"></span></th>
+                        <th data-sort="visitor_type" class="sortable compact-th" style="width: 80px;" title="Visitor classification">Type <span class="sort-indicator"></span></th>
+                        <th data-sort="reverse_dns" class="sortable compact-th" style="width: 150px;" title="Reverse DNS lookup">DNS <span class="sort-indicator"></span></th>
+                        <th data-sort="is_datacenter" class="sortable compact-th" style="width: 80px;" title="Datacenter/Cloud">DC <span class="sort-indicator"></span></th>
+                        <th data-sort="organization" class="sortable compact-th" style="width: 120px;" title="Organization/ISP">Org <span class="sort-indicator"></span></th>
+                        <th data-sort="user_agent" class="sortable compact-th" style="width: 150px;">User Agent <span class="sort-indicator"></span></th>
+                        <th data-sort="referer" class="sortable compact-th" style="width: 120px;">Referer <span class="sort-indicator"></span></th>
                     </tr>
                 </thead>
                 <tbody id="analyticsTableBody">
                     <tr>
-                        <td colspan="7" class="loading">Loading visits...</td>
+                        <td colspan="11" class="loading">Loading visits...</td>
                     </tr>
                 </tbody>
             </table>
@@ -105,6 +124,7 @@
         </div>
     </div>
     
+    <!-- Daily Views section -->
     <div class="analytics-section">
         <h2>Daily Views</h2>
         <p class="chart-description">Shows the number of page views per day over the selected time period. Each bar represents one day's total page views.</p>
@@ -350,7 +370,7 @@ function updateDisplay() {
     
     if (filteredVisits.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="6" style="text-align: center; padding: 20px;">No visits found</td>';
+        row.innerHTML = '<td colspan="11" style="text-align: center; padding: 20px;">No visits found</td>';
         tbody.appendChild(row);
         return;
     }
@@ -366,16 +386,32 @@ function updateDisplay() {
         const age = getTimeAgo(date);
         
         // Truncate long user agents
-        const userAgent = visit.user_agent ? (visit.user_agent.length > 50 ? 
-            visit.user_agent.substring(0, 50) + '...' : visit.user_agent) : '';
+        const userAgent = visit.user_agent ? (visit.user_agent.length > 40 ? 
+            visit.user_agent.substring(0, 40) + '...' : visit.user_agent) : '';
         
         // Truncate long referers
-        const referer = visit.referer ? (visit.referer.length > 30 ? 
-            visit.referer.substring(0, 30) + '...' : visit.referer) : '';
+        const referer = visit.referer ? (visit.referer.length > 25 ? 
+            visit.referer.substring(0, 25) + '...' : visit.referer) : '';
         
         // Format mouse activity indicator
         const mouseActivity = visit.mouse_activity ? '✓' : '🤖';
         const mouseTitle = visit.mouse_activity ? 'Human activity detected' : 'Likely bot (no mouse activity)';
+        
+        // Format visitor type
+        const visitorType = visit.visitor_type || 'unknown';
+        const visitorTypeDisplay = visitorType.charAt(0).toUpperCase() + visitorType.slice(1);
+        
+        // Format reverse DNS
+        const reverseDns = visit.reverse_dns ? (visit.reverse_dns.length > 30 ? 
+            visit.reverse_dns.substring(0, 30) + '...' : visit.reverse_dns) : '';
+        
+        // Format datacenter indicator
+        const datacenterIndicator = visit.is_datacenter ? '🏢' : '';
+        const datacenterTitle = visit.is_datacenter ? 'Datacenter/Cloud hosting' : 'Not a datacenter';
+        
+        // Format organization
+        const organization = visit.organization ? (visit.organization.length > 25 ? 
+            visit.organization.substring(0, 25) + '...' : visit.organization) : '';
         
         row.innerHTML = `
             <td class="compact-td" title="${visit.timestamp}">${formattedDate}</td>
@@ -383,6 +419,10 @@ function updateDisplay() {
             <td class="compact-td" title="${visit.page_path}">${visit.page_path}</td>
             <td class="compact-td" title="${visit.ip_address}">${visit.ip_address}</td>
             <td class="compact-td" title="${mouseTitle}" style="text-align: center;">${mouseActivity}</td>
+            <td class="compact-td" title="Visitor Type: ${visitorType}" style="text-align: center;">${visitorTypeDisplay}</td>
+            <td class="compact-td" title="${visit.reverse_dns || 'No reverse DNS'}">${reverseDns}</td>
+            <td class="compact-td" title="${datacenterTitle}" style="text-align: center;">${datacenterIndicator}</td>
+            <td class="compact-td" title="${visit.organization || 'Unknown organization'}">${organization}</td>
             <td class="compact-td" title="${visit.user_agent || ''}">${userAgent}</td>
             <td class="compact-td" title="${visit.referer || ''}">${referer}</td>
         `;

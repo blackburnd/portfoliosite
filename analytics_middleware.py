@@ -23,6 +23,7 @@ class AnalyticsMiddleware(BaseHTTPMiddleware):
         self.excluded_paths = {
             '/admin/analytics/api',
             '/admin/analytics/recent-visits',
+            '/analytics/mouse-activity',
             '/logs/data',
             '/admin/logs',
             '/admin/sql',
@@ -35,6 +36,7 @@ class AnalyticsMiddleware(BaseHTTPMiddleware):
         self.excluded_prefixes = {
             '/assets/',
             '/admin/analytics/',
+            '/analytics/',
             '/logs/',
             '/admin/logs/',
             '/admin/sql/',

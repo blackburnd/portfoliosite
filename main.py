@@ -856,3 +856,26 @@ async def analytics_unique_visitors_api(
     """Get unique visitors with view counts and last visit times"""
     return await analytics.get_unique_visitors(days)
 
+
+@app.post("/analytics/mouse-activity", response_class=JSONResponse)
+async def track_mouse_activity(request: Request):
+    """Public endpoint to track mouse activity for bot filtering"""
+    try:
+        # Parse the JSON body
+        body = await request.json()
+        page_path = body.get('page_path', request.url.path)
+        
+        # Track the mouse activity
+        await analytics.track_mouse_activity(request, page_path)
+        
+        return {"status": "success", "message": "Mouse activity tracked"}
+        
+    except Exception as e:
+        # Don't expose internal errors to client
+        add_log(
+            "WARNING", "mouse_analytics",
+            f"Mouse activity tracking failed: {str(e)}",
+            function="track_mouse_activity"
+        )
+        return {"status": "error", "message": "Failed to track activity"}
+

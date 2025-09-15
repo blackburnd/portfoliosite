@@ -294,7 +294,9 @@ class Analytics:
             
             # Get recent visits with search and sorting
             query = f"""
-                SELECT timestamp, page_path, ip_address, user_agent, referer
+                SELECT timestamp, page_path, ip_address, user_agent, referer,
+                       mouse_activity, visitor_type, reverse_dns, is_datacenter,
+                       asn, organization
                 FROM page_analytics
                 WHERE {where_clause}
                 ORDER BY {sort_field} {sort_order.upper()}
