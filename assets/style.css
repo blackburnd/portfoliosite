@@ -51,7 +51,7 @@ body {
 }
 
 .wrap {
-    max-width: 1200px;
+    max-width: 1600px; /* Increased from 1200px to better utilize wide screens */
     margin: 0 auto;
     padding: 0 20px; /* Add horizontal padding to prevent content from touching edges */
 }
@@ -2675,12 +2675,14 @@ td[style*="#abd6ff"] {
 /* Portfolio Showcase List Layout */
 .showcase-list {
     margin: 30px 0;
+    display: grid;
+    grid-template-columns: 1fr; /* Single column by default (mobile-first) */
+    gap: 30px;
 }
 
 .showcase-project {
     display: flex;
     gap: 30px;
-    margin-bottom: 40px;
     padding: 25px;
     background: white;
     border: 1px solid #e0e0e0;
@@ -2720,8 +2722,8 @@ td[style*="#abd6ff"] {
 }
 
 .screenshot-image {
-    max-width: 250px;
-    max-height: 250px;
+    max-width: 100%;
+    max-height: 200px;
     width: auto;
     height: auto;
     object-fit: contain;
@@ -2751,6 +2753,19 @@ td[style*="#abd6ff"] {
     flex: 1;
     display: flex;
     flex-direction: column;
+    justify-content: space-between; /* Ensures consistent spacing */
+}
+
+.project-details h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.4em;
+    color: #333;
+    line-height: 1.3;
+}
+
+.showcase-actions {
+    margin-top: auto; /* Pushes actions to bottom of card */
+    padding-top: 15px;
 }
 
 /* Responsive design for project list */
@@ -2766,6 +2781,53 @@ td[style*="#abd6ff"] {
     
     .screenshot-placeholder {
         height: 150px;
+    }
+}
+
+/* Responsive design for larger screens */
+@media (min-width: 769px) and (max-width: 1023px) {
+    /* Tablet layout: 2 columns */
+    .showcase-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+    
+    .showcase-project {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .project-screenshot {
+        flex: none;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+    /* Desktop layout: 2 columns with horizontal layout */
+    .showcase-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+@media (min-width: 1440px) {
+    /* Large desktop layout: 3 columns */
+    .showcase-list {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+    
+    .showcase-project {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .project-screenshot {
+        flex: none;
+    }
+    
+    .project-details {
+        min-height: 180px; /* Ensure consistent card heights */
     }
 }
 
