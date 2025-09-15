@@ -417,7 +417,7 @@ nav li.active a:hover {
 
 /* Content Styles */
 .bc {
-    margin-top: 120px; /* Doubled spacing between header and content for better visual separation */
+    margin-top: 40px; /* Doubled spacing between header and content for better visual separation */
 }
 
 .about {
@@ -462,7 +462,7 @@ nav li.active a:hover {
 }
 
 .footer {
-    margin-top: 50px;
+    margin-top: 10px;
     padding: 20px 0;
     border-top: 1px solid #eee;
     text-align: center;
