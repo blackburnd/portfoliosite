@@ -20,6 +20,12 @@
             <div class="stat-number">{{ analytics.unique_visitors }}</div>
             <div class="stat-period">Last {{ analytics.period_days }} days</div>
         </div>
+        
+        <div class="stat-card">
+            <h3>Human Visitors</h3>
+            <div class="stat-number">{{ analytics.human_visitors }}</div>
+            <div class="stat-period">Last {{ analytics.period_days }} days</div>
+        </div>
     </div>
     
     <div class="analytics-section">
@@ -79,15 +85,16 @@
                     <tr>
                         <th data-sort="timestamp" class="sortable compact-th" style="width: 150px;">Date <span class="sort-indicator"></span></th>
                         <th class="compact-th" style="width: 60px;">Age</th>
-                        <th data-sort="page_path" class="sortable compact-th" style="width: 40%; min-width: 200px;">Page <span class="sort-indicator"></span></th>
+                        <th data-sort="page_path" class="sortable compact-th" style="width: 35%; min-width: 200px;">Page <span class="sort-indicator"></span></th>
                         <th data-sort="ip_address" class="sortable compact-th" style="width: 120px;">IP Address <span class="sort-indicator"></span></th>
-                        <th data-sort="user_agent" class="sortable compact-th" style="width: 25%; min-width: 150px;">User Agent <span class="sort-indicator"></span></th>
+                        <th data-sort="mouse_activity" class="sortable compact-th" style="width: 80px;" title="Human activity detected">Human <span class="sort-indicator"></span></th>
+                        <th data-sort="user_agent" class="sortable compact-th" style="width: 20%; min-width: 150px;">User Agent <span class="sort-indicator"></span></th>
                         <th data-sort="referer" class="sortable compact-th" style="width: 15%; min-width: 100px;">Referer <span class="sort-indicator"></span></th>
                     </tr>
                 </thead>
                 <tbody id="analyticsTableBody">
                     <tr>
-                        <td colspan="6" class="loading">Loading visits...</td>
+                        <td colspan="7" class="loading">Loading visits...</td>
                     </tr>
                 </tbody>
             </table>
@@ -366,11 +373,16 @@ function updateDisplay() {
         const referer = visit.referer ? (visit.referer.length > 30 ? 
             visit.referer.substring(0, 30) + '...' : visit.referer) : '';
         
+        // Format mouse activity indicator
+        const mouseActivity = visit.mouse_activity ? '✓' : '🤖';
+        const mouseTitle = visit.mouse_activity ? 'Human activity detected' : 'Likely bot (no mouse activity)';
+        
         row.innerHTML = `
             <td class="compact-td" title="${visit.timestamp}">${formattedDate}</td>
             <td class="compact-td" title="${age}">${age}</td>
             <td class="compact-td" title="${visit.page_path}">${visit.page_path}</td>
             <td class="compact-td" title="${visit.ip_address}">${visit.ip_address}</td>
+            <td class="compact-td" title="${mouseTitle}" style="text-align: center;">${mouseActivity}</td>
             <td class="compact-td" title="${visit.user_agent || ''}">${userAgent}</td>
             <td class="compact-td" title="${visit.referer || ''}">${referer}</td>
         `;

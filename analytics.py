@@ -13,7 +13,12 @@ class Analytics:
     def __init__(self):
         self.enabled = os.getenv("ANALYTICS_ENABLED", "true").lower() == "true"
 
-    async def track_page_view(self, request: Request, page_path: str):
+    async def track_page_view(
+        self,
+        request: Request,
+        page_path: str,
+        mouse_activity: bool = False
+    ):
         """Track a page view with basic information."""
         if not self.enabled:
             return
@@ -24,11 +29,13 @@ class Analytics:
             referer = request.headers.get("referer", "")
             client_ip = self._get_client_ip(request)
 
-            # Store in database
+            # Store in database with mouse_activity field
             query = """
             INSERT INTO page_analytics
-            (timestamp, page_path, ip_address, user_agent, referer)
-            VALUES (:timestamp, :page_path, :ip_address, :user_agent, :referer)
+            (timestamp, page_path, ip_address, user_agent, referer,
+             mouse_activity)
+            VALUES (:timestamp, :page_path, :ip_address, :user_agent,
+                    :referer, :mouse_activity)
             """
 
             await database.execute(query, {
@@ -36,7 +43,8 @@ class Analytics:
                 'page_path': page_path,
                 'ip_address': client_ip,
                 'user_agent': user_agent,
-                'referer': referer
+                'referer': referer,
+                'mouse_activity': mouse_activity
             })
 
         except Exception as e:
@@ -45,6 +53,39 @@ class Analytics:
                 "WARNING", "analytics",
                 f"Analytics tracking error: {str(e)}",
                 function="track_page_view"
+            )
+
+    async def track_mouse_activity(self, request: Request, page_path: str):
+        """Update existing page view record to mark mouse activity detected"""
+        if not self.enabled:
+            return
+
+        try:
+            client_ip = self._get_client_ip(request)
+            
+            # Update the most recent visit from this IP for this page
+            # to mark mouse activity
+            query = """
+            UPDATE page_analytics
+            SET mouse_activity = TRUE
+            WHERE ip_address = :ip_address
+                AND page_path = :page_path
+                AND timestamp > (NOW() - INTERVAL '5 minutes')
+                AND mouse_activity = FALSE
+            ORDER BY timestamp DESC
+            LIMIT 1
+            """
+            
+            await database.execute(query, {
+                'ip_address': client_ip,
+                'page_path': page_path
+            })
+
+        except Exception as e:
+            add_log(
+                "WARNING", "analytics",
+                f"Mouse activity tracking error: {str(e)}",
+                function="track_mouse_activity"
             )
 
     def _get_client_ip(self, request: Request) -> str:
@@ -76,6 +117,14 @@ class Analytics:
             unique_visitors = await database.fetch_one(
                 """SELECT COUNT(DISTINCT ip_address) as unique
                 FROM page_analytics WHERE timestamp >= :since_date""",
+                {'since_date': since_date}
+            )
+
+            # Human visitors (by IP with mouse activity)
+            human_visitors = await database.fetch_one(
+                """SELECT COUNT(DISTINCT ip_address) as human
+                FROM page_analytics 
+                WHERE timestamp >= :since_date AND mouse_activity = true""",
                 {'since_date': since_date}
             )
 
@@ -131,6 +180,8 @@ class Analytics:
                 'total_views': total_views['total'] if total_views else 0,
                 'unique_visitors': (unique_visitors['unique']
                                     if unique_visitors else 0),
+                'human_visitors': (human_visitors['human']
+                                   if human_visitors else 0),
                 'top_pages': [dict(row) for row in top_pages],
                 'recent_visits': [dict(row) for row in recent_visits],
                 'daily_views': daily_views,
@@ -146,6 +197,7 @@ class Analytics:
             return {
                 'total_views': 0,
                 'unique_visitors': 0,
+                'human_visitors': 0,
                 'top_pages': [],
                 'recent_visits': [],
                 'daily_views': [],
