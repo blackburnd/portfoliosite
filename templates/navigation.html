@@ -45,10 +45,12 @@
     
     <div class="header-top">
         <div class="header-left">
+            {% if current_page == 'home' %}
             <div class="title-container">
                 <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
                 <p class="tagline">Curious. Academic. <span class="amp">&amp;</span> Novel Solutions Work.</p>
             </div>
+            {% endif %}
         </div>
         
         <!-- Right side for non-authenticated users only -->
