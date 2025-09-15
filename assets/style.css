@@ -2890,7 +2890,7 @@ td[style*="#abd6ff"] {
 
 /* Project Showcase Detail Page Styles */
 .project-showcase-content {
-    max-width: 900px;
+    max-width: 1400px; /* Increased from 900px to better utilize wide screens */
     margin: 0 auto;
     padding: 20px;
 }
@@ -3180,6 +3180,45 @@ td[style*="#abd6ff"] {
     
     .btn-primary {
         display: block;
+    }
+}
+
+/* Responsive design for wider showcase pages */
+@media (min-width: 1024px) {
+    .project-header {
+        margin-bottom: 50px;
+    }
+    
+    .project-header h1 {
+        font-size: 3.2em;
+        margin-bottom: 30px;
+    }
+    
+    .project-content {
+        font-size: 1.1em;
+        line-height: 1.8;
+    }
+    
+    /* Create two-column layout for project tech and details when content is long */
+    .project-tech {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 40px;
+        align-items: start;
+    }
+    
+    .tech-tags-large {
+        justify-content: flex-start;
+    }
+}
+
+@media (min-width: 1200px) {
+    .project-header h1 {
+        font-size: 3.5em;
+    }
+    
+    .project-content {
+        font-size: 1.15em;
     }
 }
 

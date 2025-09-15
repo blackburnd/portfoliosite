@@ -227,6 +227,38 @@
     }
 }
 
+/* Responsive design for larger screens */
+@media (min-width: 1024px) {
+    /* Convert feature sections to grid layout on larger screens */
+    .feature-showcase {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .feature-section {
+        margin-bottom: 0; /* Remove margin since grid handles spacing */
+        height: fit-content;
+    }
+    
+    .project-showcase-content {
+        padding: 30px; /* More padding on larger screens */
+    }
+}
+
+@media (min-width: 1400px) {
+    /* Even wider layout for very large screens */
+    .feature-showcase {
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2.5rem;
+    }
+    
+    .project-showcase-content {
+        padding: 40px;
+    }
+}
+
 /* Screenshot display styles */
 .screenshot-container {
     margin: 2rem 0;
