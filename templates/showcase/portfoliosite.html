@@ -73,7 +73,7 @@
                                         <h4>Database Administration & Schema Introspection</h4>
                                         <div class="feature-description">
                                           <p>
-					    As projects scale and data structures evolve, robust database administration becomes critical. This implementation provides comprehensive database management capabilities with real-time visualization and query execution.
+					    This being a new project in a new environment, additional SQL was inevitably be required to be run and re-run as the site takes its shape, and also as projects scale and data structures evolve, robust database administration becomes critical. And rapid development in design mode is critical to predictable estimates of delivery. Remember, this implementation provides dangerously comprehensive database management capabilities with real-time visualization and query execution, but MUST be used behind a few layers of extra security. 
                                           </p>
                                           <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at <code>/admin/sql</code> that provides:</p>
                                           <ul>
@@ -82,8 +82,8 @@
                                                 <li>Database schema introspection and documentation export</li>
                                                 <li>Query result formatting with pagination and data type preservation</li>
                                            </ul>
-                                            
-                                            <p><strong>Implementation Details:</strong> The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async database connections for non-blocking queries, and subprocess management for ERD generation. Security is enforced through admin-only route protection and query sanitization.</p>
+                                          <p><strong>Implementation Details:</strong>
+					    The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async database connections for non-blocking queries, and subprocess management for ERD generation. Security is enforced through admin-only route protection and query sanitization.</p>
                                         </div>
                                         
                                         <div class="screenshot-container">
@@ -94,7 +94,7 @@
                                         </div>
                                         
                                         <div class="technical-outcomes">
-                                            <p><strong>Results:</strong> Enables rapid database debugging, schema validation, and documentation generation - reducing development time by 60% and providing stakeholders with clear visual data architecture.</p>
+                                            <p><strong>Results:</strong> Rapid database development and debugging, schema validation, and documentation generation</p>
                                         </div>
                                     </div>
                                     
@@ -130,9 +130,9 @@
                                     <div class="feature-section">
                                         <h4>Advanced Logging System & Real-time Monitoring</h4>
                                         <div class="feature-description">
-                                            <p><strong>Business Need:</strong> Comprehensive application monitoring and debugging capabilities with centralized log management for production troubleshooting and performance optimization.</p>
+                                            <p><strong>Business Need:</strong> In any application trusting the data and logs during every stage is paramount. If the application is a sql database application I will usuall create a logs in the sql database. Even if just a  temporary log handler, a quick grid with search, and filter capability is essential for accurate and real-time monitoring and debugging capabilities. </p>
                                             
-                                            <p><strong>Technical Solution:</strong> Built a custom logging infrastructure accessible at <code>/admin/logs</code> featuring:</p>
+                                            <p><strong>Technical Solution:</strong> Built a custom SQL logging infrastructure accessible at <code>/admin/logs</code> featuring:</p>
                                             <ul>
                                                 <li>Custom DatabaseLogHandler that intercepts Python logging and stores in PostgreSQL</li>
                                                 <li>Real-time log filtering by level, timestamp, and message content</li>
@@ -152,7 +152,7 @@
                                         </div>
                                         
                                         <div class="technical-outcomes">
-                                            <p><strong>Results:</strong> Reduces debugging time by 80% through centralized logging, enables proactive monitoring with real-time alerts, and provides complete audit trail for compliance and performance analysis.</p>
+                                            <p><strong>Results:</strong> Reduces debugging time by never needing to wait for intstances on sql apps, and provides completely separate audit trail for compliance and performance analysis.</p>
                                         </div>
                                     </div>
                                 </div>
