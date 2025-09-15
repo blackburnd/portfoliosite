@@ -51,22 +51,16 @@ body {
 }
 
 .wrap {
-    max-width: 1600px; /* Increased from 1200px to better utilize wide screens */
-    margin: 0 auto;
+    max-width: none; /* Allow full width usage across all pages */
+    margin: 0;
     padding: 0 20px; /* Add horizontal padding to prevent content from touching edges */
 }
 
-/* Full width layout for logs page */
-.logs .wrap {
-    max-width: none;
-    margin: 0;
-    padding: 0 20px;
-}
-
-/* Full width layout for analytics page */
-.analytics-admin .wrap {
-    max-width: none;
-    margin: 0;
+/* Specific pages that need content width constraints */
+.google-oauth-admin .wrap,
+.linkedin-oauth-admin .wrap {
+    max-width: 1200px; /* Limit width for OAuth pages for better readability */
+    margin: 0 auto;
     padding: 0 20px;
 }
 
