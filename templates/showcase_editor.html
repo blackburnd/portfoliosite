@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}Showcase File Editor{% endblock %}
+
+{% block body_class %}showcase-editor-admin claro{% endblock %}
+
+{% set current_page = 'showcase_editor' %}
+
+{% block extra_css %}
+<!-- TinyMCE WYSIWYG Editor -->
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<style>
+.editor-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.editor-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.file-selector {
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.editor-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #1e7e34;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.editor-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.editor-status {
+    margin: 15px 0;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-weight: 500;
+    display: none;
+}
+
+.status-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.editor-wrapper {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.file-info {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    color: #666;
+}
+
+.git-push-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.commit-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container">
+    <div class="editor-header">
+        <h1>Showcase File Editor</h1>
+        <div class="editor-controls">
+            <select id="fileSelector" class="file-selector">
+                <option value="">Select a file...</option>
+            </select>
+            <button id="loadBtn" class="editor-btn btn-primary" onclick="loadSelectedFile()">Load</button>
+            <button id="saveBtn" class="editor-btn btn-success" onclick="saveCurrentFile()" disabled>Save</button>
+            <button id="reloadBtn" class="editor-btn btn-secondary" onclick="reloadFileList()">Refresh</button>
+        </div>
+    </div>
+
+    <div id="editorStatus" class="editor-status"></div>
+
+    <div class="editor-wrapper">
+        <div id="fileInfo" class="file-info" style="display: none;">
+            <strong>File:</strong> <span id="currentFile"></span> | 
+            <strong>Last Modified:</strong> <span id="lastModified"></span>
+        </div>
+        
+        <textarea id="showcaseEditor" style="width: 100%; min-height: 600px;">
+            Select a file from the dropdown above to begin editing.
+        </textarea>
+    </div>
+
+    <div class="git-push-section">
+        <h3>Commit & Push Changes</h3>
+        <p>After saving your changes, you can commit and push them to the repository:</p>
+        <input type="text" id="commitMessage" class="commit-input" 
+               placeholder="Enter commit message (e.g., 'Updated showcase content')" 
+               value="Updated showcase files via editor">
+        <br>
+        <button id="gitPushBtn" class="editor-btn btn-success" onclick="gitPushChanges()">
+            <span id="pushLoading" style="display: none;" class="loading"></span>
+            Commit & Push to Repository
+        </button>
+    </div>
+</div>
+
+<script>
+let currentFileName = '';
+let editor = null;
+let hasUnsavedChanges = false;
+
+// Initialize TinyMCE
+document.addEventListener('DOMContentLoaded', function() {
+    tinymce.init({
+        selector: '#showcaseEditor',
+        height: 600,
+        menubar: true,
+        plugins: [
+            'advlist autolink lists link image charmap preview anchor',
+            'searchreplace visualblocks code fullscreen',
+            'insertdatetime media table paste code help wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | help | code | fullscreen',
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px }',
+        setup: function (ed) {
+            editor = ed;
+            ed.on('change', function () {
+                hasUnsavedChanges = true;
+                updateSaveButton();
+            });
+        },
+        paste_as_text: false,
+        paste_auto_cleanup_on_paste: true,
+        code_dialog_height: 600,
+        code_dialog_width: 1000,
+        convert_urls: false,
+        relative_urls: false
+    });
+    
+    // Load file list on page load
+    reloadFileList();
+});
+
+function showStatus(message, type = 'info') {
+    const status = document.getElementById('editorStatus');
+    status.className = `editor-status status-${type}`;
+    status.textContent = message;
+    status.style.display = 'block';
+    
+    // Auto-hide after 5 seconds unless it's an error
+    if (type !== 'error') {
+        setTimeout(() => {
+            status.style.display = 'none';
+        }, 5000);
+    }
+}
+
+function updateSaveButton() {
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = !currentFileName || !hasUnsavedChanges;
+    if (hasUnsavedChanges && currentFileName) {
+        saveBtn.textContent = 'Save*';
+    } else {
+        saveBtn.textContent = 'Save';
+    }
+}
+
+async function reloadFileList() {
+    try {
+        showStatus('Loading file list...', 'info');
+        
+        const response = await fetch('/api/admin/showcase/files');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const selector = document.getElementById('fileSelector');
+        
+        // Clear existing options
+        selector.innerHTML = '<option value="">Select a file...</option>';
+        
+        // Add files to selector
+        data.files.forEach(file => {
+            const option = document.createElement('option');
+            option.value = file.name;
+            option.textContent = `${file.name} (${new Date(file.modified).toLocaleDateString()})`;
+            selector.appendChild(option);
+        });
+        
+        showStatus(`Loaded ${data.files.length} files`, 'success');
+        
+    } catch (error) {
+        console.error('Failed to load file list:', error);
+        showStatus(`Failed to load files: ${error.message}`, 'error');
+    }
+}
+
+async function loadSelectedFile() {
+    const selector = document.getElementById('fileSelector');
+    const filename = selector.value;
+    
+    if (!filename) {
+        showStatus('Please select a file first', 'error');
+        return;
+    }
+    
+    try {
+        showStatus('Loading file...', 'info');
+        
+        const response = await fetch(`/api/admin/showcase/files/${filename}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Set content in TinyMCE
+        if (editor) {
+            editor.setContent(data.content);
+        }
+        
+        // Update UI
+        currentFileName = filename;
+        hasUnsavedChanges = false;
+        
+        document.getElementById('currentFile').textContent = filename;
+        document.getElementById('lastModified').textContent = new Date(data.modified).toLocaleString();
+        document.getElementById('fileInfo').style.display = 'block';
+        
+        updateSaveButton();
+        showStatus(`Loaded ${filename}`, 'success');
+        
+    } catch (error) {
+        console.error('Failed to load file:', error);
+        showStatus(`Failed to load file: ${error.message}`, 'error');
+    }
+}
+
+async function saveCurrentFile() {
+    if (!currentFileName) {
+        showStatus('No file selected', 'error');
+        return;
+    }
+    
+    if (!editor) {
+        showStatus('Editor not initialized', 'error');
+        return;
+    }
+    
+    try {
+        showStatus('Saving file...', 'info');
+        
+        const content = editor.getContent();
+        
+        const response = await fetch(`/api/admin/showcase/files/${currentFileName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        hasUnsavedChanges = false;
+        updateSaveButton();
+        
+        // Update last modified time
+        document.getElementById('lastModified').textContent = new Date(data.modified).toLocaleString();
+        
+        showStatus(`Saved ${currentFileName}`, 'success');
+        
+    } catch (error) {
+        console.error('Failed to save file:', error);
+        showStatus(`Failed to save file: ${error.message}`, 'error');
+    }
+}
+
+async function gitPushChanges() {
+    const commitMessage = document.getElementById('commitMessage').value.trim();
+    
+    if (!commitMessage) {
+        showStatus('Please enter a commit message', 'error');
+        return;
+    }
+    
+    const pushBtn = document.getElementById('gitPushBtn');
+    const loadingSpinner = document.getElementById('pushLoading');
+    
+    try {
+        pushBtn.disabled = true;
+        loadingSpinner.style.display = 'inline-block';
+        showStatus('Committing and pushing changes...', 'info');
+        
+        const response = await fetch('/api/admin/showcase/git-push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: commitMessage })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'info') {
+            showStatus(data.message, 'info');
+        } else {
+            showStatus(data.message, 'success');
+        }
+        
+    } catch (error) {
+        console.error('Failed to push changes:', error);
+        showStatus(`Failed to push changes: ${error.message}`, 'error');
+    } finally {
+        pushBtn.disabled = false;
+        loadingSpinner.style.display = 'none';
+    }
+}
+
+// Warn user about unsaved changes
+window.addEventListener('beforeunload', function (e) {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+{% endblock %}

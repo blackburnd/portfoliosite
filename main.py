@@ -879,3 +879,171 @@ async def track_mouse_activity(request: Request):
         )
         return {"status": "error", "message": "Failed to track activity"}
 
+
+# ===== SHOWCASE EDITOR ENDPOINTS =====
+
+@app.get("/admin/showcase-editor")
+async def showcase_editor_page(request: Request, 
+                              admin=Depends(require_admin_auth)):
+    """Showcase file editor interface"""
+    return templates.TemplateResponse(
+        "showcase_editor.html", 
+        {"request": request}
+    )
+
+
+@app.get("/api/admin/showcase/files")
+async def list_showcase_files(admin=Depends(require_admin_auth)):
+    """List all showcase HTML files"""
+    try:
+        showcase_dir = Path("templates/showcase")
+        files = []
+        
+        if showcase_dir.exists():
+            for file_path in showcase_dir.glob("*.html"):
+                files.append({
+                    "name": file_path.name,
+                    "path": str(file_path),
+                    "modified": datetime.fromtimestamp(
+                        file_path.stat().st_mtime
+                    ).isoformat()
+                })
+        
+        return {"files": sorted(files, key=lambda x: x["name"])}
+        
+    except Exception as e:
+        add_log("ERROR", "showcase_editor", 
+                f"Failed to list showcase files: {str(e)}")
+        raise HTTPException(status_code=500, 
+                           detail="Failed to list files")
+
+
+@app.get("/api/admin/showcase/files/{filename}")
+async def get_showcase_file(filename: str, admin=Depends(require_admin_auth)):
+    """Get the content of a specific showcase file"""
+    try:
+        file_path = Path(f"templates/showcase/{filename}")
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not filename.endswith('.html'):
+            raise HTTPException(status_code=400, 
+                               detail="Only HTML files are supported")
+        
+        content = file_path.read_text(encoding='utf-8')
+        
+        return {
+            "filename": filename,
+            "content": content,
+            "modified": datetime.fromtimestamp(
+                file_path.stat().st_mtime
+            ).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        add_log("ERROR", "showcase_editor", 
+                f"Failed to read file {filename}: {str(e)}")
+        raise HTTPException(status_code=500, 
+                           detail="Failed to read file")
+
+
+@app.post("/api/admin/showcase/files/{filename}")
+async def save_showcase_file(filename: str, request: Request,
+                            admin=Depends(require_admin_auth)):
+    """Save content to a showcase file"""
+    try:
+        body = await request.json()
+        content = body.get('content', '')
+        
+        if not filename.endswith('.html'):
+            raise HTTPException(status_code=400, 
+                               detail="Only HTML files are supported")
+        
+        file_path = Path(f"templates/showcase/{filename}")
+        
+        # Create backup of existing file
+        if file_path.exists():
+            backup_path = Path(f"templates/showcase/{filename}.bak")
+            backup_path.write_text(file_path.read_text(encoding='utf-8'))
+        
+        # Write new content
+        file_path.write_text(content, encoding='utf-8')
+        
+        add_log("INFO", "showcase_editor", 
+                f"Saved file {filename} by admin")
+        
+        return {
+            "status": "success",
+            "message": f"File {filename} saved successfully",
+            "modified": datetime.fromtimestamp(
+                file_path.stat().st_mtime
+            ).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        add_log("ERROR", "showcase_editor", 
+                f"Failed to save file {filename}: {str(e)}")
+        raise HTTPException(status_code=500, 
+                           detail="Failed to save file")
+
+
+@app.post("/api/admin/showcase/git-push")
+async def git_push_changes(request: Request, 
+                          admin=Depends(require_admin_auth)):
+    """Commit and push showcase file changes to git"""
+    try:
+        body = await request.json()
+        commit_message = body.get('message', 'Updated showcase files via editor')
+        
+        import subprocess
+        import os
+        
+        # Change to the project directory
+        os.chdir(Path(__file__).parent)
+        
+        # Add all modified files
+        subprocess.run(['git', 'add', 'templates/showcase/'], 
+                      check=True, capture_output=True)
+        
+        # Check if there are any changes to commit
+        result = subprocess.run(['git', 'status', '--porcelain'], 
+                               capture_output=True, text=True)
+        
+        if not result.stdout.strip():
+            return {
+                "status": "info",
+                "message": "No changes to commit"
+            }
+        
+        # Commit changes
+        subprocess.run(['git', 'commit', '-m', commit_message], 
+                      check=True, capture_output=True)
+        
+        # Push to remote
+        push_result = subprocess.run(['git', 'push'], 
+                                   check=True, capture_output=True, text=True)
+        
+        add_log("INFO", "showcase_editor", 
+                f"Git push completed: {commit_message}")
+        
+        return {
+            "status": "success",
+            "message": "Changes committed and pushed successfully",
+            "details": push_result.stdout
+        }
+        
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Git operation failed: {e.stderr.decode() if e.stderr else str(e)}"
+        add_log("ERROR", "showcase_editor", error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+    except Exception as e:
+        add_log("ERROR", "showcase_editor", 
+                f"Failed to push changes: {str(e)}")
+        raise HTTPException(status_code=500, 
+                           detail="Failed to push changes")
+
