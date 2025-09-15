@@ -2722,9 +2722,8 @@ td[style*="#abd6ff"] {
 }
 
 .screenshot-image {
+    width: 100%;
     max-width: 100%;
-    max-height: 200px;
-    width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 8px;
