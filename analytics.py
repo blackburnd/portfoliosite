@@ -5,6 +5,7 @@ from typing import Dict, Any
 from fastapi import Request
 from database import database
 from log_capture import add_log
+from ip_analysis import ip_analyzer
 
 
 class Analytics:
@@ -19,7 +20,7 @@ class Analytics:
         page_path: str,
         mouse_activity: bool = False
     ):
-        """Track a page view with basic information."""
+        """Track a page view with IP analysis and bot detection."""
         if not self.enabled:
             return
 
@@ -29,13 +30,20 @@ class Analytics:
             referer = request.headers.get("referer", "")
             client_ip = self._get_client_ip(request)
 
-            # Store in database with mouse_activity field
+            # Perform IP analysis for enhanced bot detection
+            ip_analysis = await ip_analyzer.analyze_ip_comprehensive(
+                client_ip, user_agent, mouse_activity
+            )
+
+            # Store in database with IP analysis data
             query = """
             INSERT INTO page_analytics
             (timestamp, page_path, ip_address, user_agent, referer,
-             mouse_activity)
+             mouse_activity, reverse_dns, visitor_type, is_datacenter, 
+             asn, organization)
             VALUES (:timestamp, :page_path, :ip_address, :user_agent,
-                    :referer, :mouse_activity)
+                    :referer, :mouse_activity, :reverse_dns, :visitor_type,
+                    :is_datacenter, :asn, :organization)
             """
 
             await database.execute(query, {
@@ -44,7 +52,12 @@ class Analytics:
                 'ip_address': client_ip,
                 'user_agent': user_agent,
                 'referer': referer,
-                'mouse_activity': mouse_activity
+                'mouse_activity': mouse_activity,
+                'reverse_dns': ip_analysis.get('reverse_dns'),
+                'visitor_type': ip_analysis.get('visitor_type', 'unknown'),
+                'is_datacenter': ip_analysis.get('is_datacenter', False),
+                'asn': ip_analysis.get('asn'),
+                'organization': ip_analysis.get('organization')
             })
 
         except Exception as e:
@@ -128,6 +141,27 @@ class Analytics:
                 {'since_date': since_date}
             )
 
+            # Visitor type breakdown
+            visitor_types = await database.fetch_all(
+                """SELECT visitor_type, COUNT(DISTINCT ip_address) as count
+                FROM page_analytics 
+                WHERE timestamp >= :since_date AND visitor_type IS NOT NULL
+                GROUP BY visitor_type
+                ORDER BY count DESC""",
+                {'since_date': since_date}
+            )
+
+            # Bot vs Human stats
+            bot_stats = await database.fetch_one(
+                """SELECT 
+                    COUNT(DISTINCT CASE WHEN visitor_type = 'bot' THEN ip_address END) as bot_visitors,
+                    COUNT(DISTINCT CASE WHEN visitor_type = 'human' THEN ip_address END) as confirmed_human_visitors,
+                    COUNT(DISTINCT CASE WHEN is_datacenter = true THEN ip_address END) as datacenter_visitors
+                FROM page_analytics 
+                WHERE timestamp >= :since_date""",
+                {'since_date': since_date}
+            )
+
             # Top pages
             top_pages = await database.fetch_all(
                 """SELECT page_path, COUNT(*) as views
@@ -182,6 +216,13 @@ class Analytics:
                                     if unique_visitors else 0),
                 'human_visitors': (human_visitors['human']
                                    if human_visitors else 0),
+                'visitor_types': [dict(row) for row in visitor_types],
+                'bot_visitors': (bot_stats['bot_visitors'] 
+                                if bot_stats else 0),
+                'confirmed_human_visitors': (bot_stats['confirmed_human_visitors']
+                                           if bot_stats else 0),
+                'datacenter_visitors': (bot_stats['datacenter_visitors']
+                                       if bot_stats else 0),
                 'top_pages': [dict(row) for row in top_pages],
                 'recent_visits': [dict(row) for row in recent_visits],
                 'daily_views': daily_views,
@@ -198,6 +239,10 @@ class Analytics:
                 'total_views': 0,
                 'unique_visitors': 0,
                 'human_visitors': 0,
+                'visitor_types': [],
+                'bot_visitors': 0,
+                'confirmed_human_visitors': 0,
+                'datacenter_visitors': 0,
                 'top_pages': [],
                 'recent_visits': [],
                 'daily_views': [],
