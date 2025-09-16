@@ -141,10 +141,13 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             if os.path.exists(target_path):
                 os.unlink(target_path)
             
-            # Run pypgsvg on the dump file to generate SVG directly to target
+            # pypgsvg appends .svg to the output path, so remove .svg extension
+            output_base = target_path.replace('.svg', '')
+            
+            # Run pypgsvg on the dump file
             result = subprocess.run(
                 ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg',
-                 dump_file_path, '-o', target_path],
+                 dump_file_path, '-o', output_base],
                 capture_output=True,
                 text=True,
                 cwd='/opt/portfoliosite',
