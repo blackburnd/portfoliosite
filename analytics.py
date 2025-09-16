@@ -30,12 +30,14 @@ class Analytics:
             referer = request.headers.get("referer", "")
             client_ip = self._get_client_ip(request)
 
-            # Perform IP analysis for enhanced bot detection
-            ip_analysis = await ip_analyzer.analyze_ip_comprehensive(
-                client_ip, user_agent, mouse_activity
+            # Perform IP analysis WITHOUT mouse_activity dependency
+            # to avoid circular reference
+            ip_analysis = await ip_analyzer.analyze_ip_basic(
+                client_ip, user_agent
             )
 
-            # Store in database with IP analysis data
+            # Store in database with basic IP analysis data
+            # visitor_type will be updated later when mouse activity is known
             query = """
             INSERT INTO page_analytics
             (timestamp, page_path, ip_address, user_agent, referer,
@@ -54,7 +56,7 @@ class Analytics:
                 'referer': referer,
                 'mouse_activity': mouse_activity,
                 'reverse_dns': ip_analysis.get('reverse_dns'),
-                'visitor_type': ip_analysis.get('visitor_type', 'unknown'),
+                'visitor_type': 'pending',  # Will be updated with mouse activity
                 'is_datacenter': ip_analysis.get('is_datacenter', False),
                 'asn': ip_analysis.get('asn'),
                 'organization': ip_analysis.get('organization')
@@ -76,23 +78,52 @@ class Analytics:
         try:
             client_ip = self._get_client_ip(request)
             
-            # Update the most recent visit from this IP for this page
-            # to mark mouse activity
-            query = """
-            UPDATE page_analytics
-            SET mouse_activity = TRUE
+            # First check if there are any matching records
+            check_query = """
+            SELECT timestamp, mouse_activity
+            FROM page_analytics
             WHERE ip_address = :ip_address
                 AND page_path = :page_path
                 AND timestamp > (NOW() - INTERVAL '5 minutes')
-                AND mouse_activity = FALSE
             ORDER BY timestamp DESC
-            LIMIT 1
+            LIMIT 3
             """
             
-            await database.execute(query, {
+            existing_records = await database.fetch_all(check_query, {
                 'ip_address': client_ip,
                 'page_path': page_path
             })
+            
+            add_log(
+                "INFO", "analytics",
+                f"Mouse activity for {client_ip} on {page_path}: "
+                f"Found {len(existing_records)} recent records",
+                function="track_mouse_activity"
+            )
+            
+            # Update the most recent visit from this IP for this page
+            # to mark mouse activity and update visitor classification
+            query = """
+            UPDATE page_analytics
+            SET mouse_activity = TRUE,
+                visitor_type = 'human'
+            WHERE ip_address = :ip_address
+                AND page_path = :page_path
+                AND timestamp > (NOW() - INTERVAL '5 minutes')
+                AND (mouse_activity = FALSE OR mouse_activity IS NULL)
+            """
+            
+            result = await database.execute(query, {
+                'ip_address': client_ip,
+                'page_path': page_path
+            })
+            
+            add_log(
+                "INFO", "analytics",
+                f"Mouse activity update for {client_ip}: "
+                f"Updated {result} records",
+                function="track_mouse_activity"
+            )
 
         except Exception as e:
             add_log(

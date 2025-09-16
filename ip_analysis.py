@@ -181,6 +181,43 @@ class IPAnalyzer:
         else:
             return 'unknown'
     
+    async def analyze_ip_basic(self,
+                               ip_address: str,
+                               user_agent: str) -> Dict[str, Any]:
+        """
+        Perform basic IP analysis without mouse activity dependency
+        Returns basic analysis data for initial page view tracking
+        """
+        try:
+            # Reverse DNS lookup
+            reverse_dns = self.get_reverse_dns(ip_address)
+            
+            # Geolocation lookup (with rate limiting consideration)
+            geo_data = await self.get_ip_geolocation(ip_address)
+            
+            return {
+                'reverse_dns': reverse_dns,
+                'is_datacenter': (
+                    geo_data.get('is_datacenter', False) if geo_data 
+                    else self.analyze_hostname(reverse_dns).get(
+                        'is_datacenter_hostname', False)
+                ),
+                'asn': geo_data.get('asn') if geo_data else None,
+                'organization': geo_data.get('org') if geo_data else None,
+                'geo_data': geo_data
+            }
+            
+        except Exception as e:
+            add_log("ERROR", "ip_analyzer",
+                    f"Failed basic IP analysis for {ip_address}: {str(e)}")
+            return {
+                'reverse_dns': None,
+                'is_datacenter': False,
+                'asn': None,
+                'organization': None,
+                'geo_data': None
+            }
+
     async def analyze_ip_comprehensive(self, 
                                      ip_address: str, 
                                      user_agent: str,
