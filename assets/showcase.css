@@ -495,6 +495,10 @@
     padding: 2rem;
     border: 1px solid #e9ecef;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    grid-template-rows: auto auto;
 }
 
 .tech-details h4 {
@@ -505,16 +509,18 @@
     font-weight: 700;
     border-bottom: 3px solid #2c5aa0;
     padding-bottom: 0.5rem;
+    grid-column: 1 / -1; /* Make title span full width */
 }
 
 .tech-category {
-    margin-bottom: 2rem;
+    margin-bottom: 0; /* Remove bottom margin since grid handles spacing */
     background: white;
     border-radius: 8px;
     padding: 1.5rem;
     border-left: 4px solid #28a745;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: fit-content;
 }
 
 .tech-category:hover {
@@ -684,6 +690,13 @@
 }
 
 /* Responsive design for enhanced tech section */
+@media (max-width: 1024px) {
+    .tech-details {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+}
+
 @media (max-width: 768px) {
     .project-showcase .bc {
         padding: 0 15px;
@@ -709,11 +722,12 @@
     .tech-details {
         padding: 1.5rem;
         margin-top: 1.5rem;
+        display: block; /* Switch back to block layout on mobile */
     }
     
     .tech-category {
         padding: 1rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.5rem; /* Restore margin for mobile stacked layout */
     }
     
     .tech-category h5 {
@@ -753,10 +767,12 @@
     .tech-details {
         padding: 1rem;
         border-radius: 8px;
+        display: block; /* Ensure block layout on small screens */
     }
     
     .tech-category {
         padding: 0.75rem;
+        margin-bottom: 1rem; /* Restore margin for small screen stacked layout */
     }
     
     .tech-tags-large {
