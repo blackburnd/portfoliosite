@@ -215,7 +215,7 @@ function updateDisplay() {
                 <div class="message-content">
                     ${needsExpand(log.message) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
                     <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml(truncateMessage(log.message || ''))}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
+                    <button class="copy-btn" data-copy-text="${escapeHtml(log.message || '')}" title="Copy message to clipboard">
                         <span class="copy-icon">📋</span>
                     </button>
                 </div>
@@ -223,8 +223,8 @@ function updateDisplay() {
             <td class="log-traceback">
                 <div class="message-content">
                     ${needsExpand(log.traceback) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
-                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || ''))}</span>
-                    ${log.traceback ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.traceback || '').replace(/'/g, "\\'")}', this)" title="Copy traceback to clipboard">
+                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || '', true))}</span>
+                    ${log.traceback ? `<button class="copy-btn" data-copy-text="${escapeHtml(log.traceback || '')}" title="Copy traceback to clipboard">
                         <span class="copy-icon">📋</span>
                     </button>` : ''}
                 </div>
@@ -273,7 +273,7 @@ function renderLogs() {
                 <div class="message-content">
                     ${needsExpand(log.message) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
                     <span class="message-text" data-full-message="${escapeHtml(log.message || '')}">${escapeHtml(truncateMessage(log.message || ''))}</span>
-                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.message || '').replace(/'/g, "\\'")}', this)" title="Copy message to clipboard">
+                    <button class="copy-btn" data-copy-text="${escapeHtml(log.message || '')}" title="Copy message to clipboard">
                         Copy
                     </button>
                 </div>
@@ -282,8 +282,8 @@ function renderLogs() {
             <td class="log-traceback">
                 <div class="message-content">
                     ${needsExpand(log.traceback) ? '<button class="expand-btn" onclick="toggleMessageExpand(this)">▶</button>' : ''}
-                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || ''))}</span>
-                    ${log.traceback ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(log.traceback || '').replace(/'/g, "\\'")}', this)" title="Copy traceback to clipboard">
+                    <span class="message-text" data-full-message="${escapeHtml(log.traceback || '')}">${escapeHtml(truncateMessage(log.traceback || '', true))}</span>
+                    ${log.traceback ? `<button class="copy-btn" data-copy-text="${escapeHtml(log.traceback || '')}" title="Copy traceback to clipboard">
                         Copy
                     </button>` : ''}
                 </div>
@@ -418,6 +418,17 @@ function setupEventListeners() {
     });
     
     intersectionObserver.observe(document.getElementById('scrollTrigger'));
+    
+    // Event delegation for copy buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.copy-btn')) {
+            const button = e.target.closest('.copy-btn');
+            const textToCopy = button.getAttribute('data-copy-text');
+            if (textToCopy) {
+                copyToClipboard(textToCopy, button);
+            }
+        }
+    });
 }
 
 // Utility functions
@@ -444,7 +455,12 @@ function debounce(func, wait) {
 
 // Copy text to clipboard
 function copyToClipboard(text, button) {
-    navigator.clipboard.writeText(text).then(() => {
+    // Decode HTML entities before copying
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text;
+    const decodedText = tempDiv.textContent || tempDiv.innerText || '';
+    
+    navigator.clipboard.writeText(decodedText).then(() => {
         // Show feedback
         const originalIcon = button.innerHTML;
         button.innerHTML = '<span class="copy-icon">✓</span>';
@@ -458,7 +474,7 @@ function copyToClipboard(text, button) {
         console.error('Failed to copy text: ', err);
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
-        textArea.value = text;
+        textArea.value = decodedText;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
@@ -683,8 +699,17 @@ function needsExpand(message) {
     return message.length > 100 || message.includes('\n');
 }
 
-function truncateMessage(message) {
+function truncateMessage(message, isTraceback = false) {
     if (!message) return '';
-    if (message.length <= 100 && !message.includes('\n')) return message;
-    return message.substring(0, 100) + '...';
+    // Never truncate tracebacks - they're essential for debugging
+    if (isTraceback) return message;
+    // Don't truncate shorter messages
+    if (message.length <= 300 && !message.includes('\n')) return message;
+    // For multi-line messages, show more content but still truncate
+    if (message.includes('\n')) {
+        const lines = message.split('\n');
+        if (lines.length <= 3) return message;
+        return lines.slice(0, 3).join('\n') + '\n... (' + (lines.length - 3) + ' more lines)';
+    }
+    return message.substring(0, 300) + '...';
 }
