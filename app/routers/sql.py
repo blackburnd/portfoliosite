@@ -137,6 +137,10 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
                 os.makedirs("assets/files", exist_ok=True)
                 target_path = "assets/files/site_erd.svg"
             
+            # Delete existing file if it exists
+            if os.path.exists(target_path):
+                os.unlink(target_path)
+            
             # Run pypgsvg on the dump file to generate SVG directly to target
             result = subprocess.run(
                 ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg',
@@ -150,50 +154,37 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             if result.returncode != 0:
                 raise Exception(f"pypgsvg failed: {result.stderr}")
             
+            # Debug: Check what files were actually created
+            log_with_context("INFO", "sql_admin_erd",
+                             f"pypgsvg stdout: {result.stdout}", request)
+            log_with_context("INFO", "sql_admin_erd",
+                             f"pypgsvg stderr: {result.stderr}", request)
+            
             # Check if the SVG file was generated
             if not os.path.exists(target_path):
+                # Try to find what files were created
+                parent_dir = os.path.dirname(target_path)
+                if os.path.exists(parent_dir):
+                    files_in_dir = os.listdir(parent_dir)
+                    log_with_context("ERROR", "sql_admin_erd",
+                                     f"Files in {parent_dir}: {files_in_dir}",
+                                     request)
+                
+                # Check if file was created in current directory
+                cwd_files = [f for f in os.listdir('/opt/portfoliosite')
+                             if f.endswith('.svg') or f.endswith('.erd')]
+                log_with_context("ERROR", "sql_admin_erd",
+                                 f"SVG/ERD files in /opt/portfoliosite: "
+                                 f"{cwd_files}", request)
+                
                 raise Exception(f"Generated SVG file not found: {target_path}")
-            
-            # Read and validate the generated content
-            with open(target_path, 'r') as svg_file:
-                svg_content = svg_file.read()
-            
-            # Check if pypgsvg generated DOT format instead of SVG
-            if not svg_content.strip().startswith('<'):
-                # Not XML/SVG format, likely DOT format - convert using dot
-                log_with_context("INFO", "sql_admin_erd",
-                                 "Converting DOT format to SVG using graphviz",
-                                 request)
-                
-                # Create temporary DOT file
-                dot_path = target_path + '.dot'
-                with open(dot_path, 'w') as dot_file:
-                    dot_file.write(svg_content)
-                
-                try:
-                    # Convert DOT to SVG
-                    dot_result = subprocess.run(
-                        ['dot', '-Tsvg', dot_path, '-o', target_path],
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if dot_result.returncode != 0:
-                        error_msg = (f"DOT conversion failed: "
-                                     f"{dot_result.stderr}")
-                        raise Exception(error_msg)
-                    
-                    # Read the converted SVG
-                    with open(target_path, 'r') as svg_file:
-                        svg_content = svg_file.read()
-                        
-                finally:
-                    # Clean up DOT file
-                    if os.path.exists(dot_path):
-                        os.unlink(dot_path)
             
             log_with_context("INFO", "sql_admin_erd",
                              f"ERD saved to: {target_path}", request)
+            
+            # Now serve the file just like test-erd-complex
+            with open(target_path, 'r') as svg_file:
+                svg_content = svg_file.read()
             
             return Response(
                 content=svg_content,
