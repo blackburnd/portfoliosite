@@ -145,16 +145,17 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             has_digraph = 'digraph {' in svg_content[:100]
             is_dot_format = starts_with_comment or has_digraph
             
+            dot_file_path = None  # Initialize to avoid scope issues
+            
             if is_dot_format:
                 # pypgsvg generated DOT format, convert to SVG using graphviz
-                import tempfile
-                import subprocess
                 
                 # Write DOT content to temporary file
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.dot',
-                                                 delete=False) as dot_file:
-                    dot_file.write(svg_content)
-                    dot_file_path = dot_file.name
+                with tempfile.NamedTemporaryFile(
+                    mode='w', suffix='.dot', delete=False
+                ) as dot_temp_file:
+                    dot_temp_file.write(svg_content)
+                    dot_file_path = dot_temp_file.name
                 
                 try:
                     # Convert DOT to SVG using graphviz
@@ -175,7 +176,7 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
                         
                 finally:
                     # Clean up DOT file
-                    if os.path.exists(dot_file_path):
+                    if dot_file_path and os.path.exists(dot_file_path):
                         os.unlink(dot_file_path)
             
             # Validate SVG content
