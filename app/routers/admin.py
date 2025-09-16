@@ -329,12 +329,25 @@ async def test_traceback_endpoint(
             raise ValueError(f"Unknown test type: {test_type}")
             
     except Exception as e:
+        # Get the traceback manually before calling log functions
+        traceback_text = traceback.format_exc()
+        
         # Log the error with full traceback using the logging system
         log_with_context(
             "ERROR", "test_traceback",
             f"Test error ({test_type}): {str(e)}",
             request,
             exc_info=True
+        )
+        
+        # Also add a manual log entry for comparison
+        add_log(
+            level="ERROR",
+            message=f"Manual test error ({test_type}): {str(e)}",
+            module="test_traceback_manual",
+            function="test_traceback_endpoint",
+            line=0,
+            traceback_text=traceback_text
         )
         
         return JSONResponse({
