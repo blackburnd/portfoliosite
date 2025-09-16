@@ -564,6 +564,49 @@ async def favicon():
     return Response(status_code=204)
 
 
+# Robots.txt route for SEO and bot management
+@app.get("/robots.txt")
+async def robots_txt():
+    """Serve robots.txt file for search engine crawlers and bot management"""
+    try:
+        # Try production path first, then local development path
+        robots_paths = [
+            "/opt/portfoliosite/robots.txt",  # Production
+            "robots.txt"  # Local development
+        ]
+        
+        for robots_path in robots_paths:
+            if os.path.exists(robots_path):
+                with open(robots_path, 'r') as f:
+                    content = f.read()
+                return Response(
+                    content=content,
+                    media_type="text/plain",
+                    headers={"Cache-Control": "public, max-age=86400"}
+                )
+        
+        # Fallback robots.txt if file not found
+        fallback_content = """User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /analytics/
+Disallow: /auth/
+Crawl-delay: 1"""
+        
+        return Response(
+            content=fallback_content,
+            media_type="text/plain"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving robots.txt: {e}")
+        # Return minimal robots.txt on error
+        return Response(
+            content="User-agent: *\nAllow: /",
+            media_type="text/plain"
+        )
+
+
 # Public demo route for pypgsvg ERD showcase
 @app.get("/demo-erd-complex")
 async def demo_erd_complex():

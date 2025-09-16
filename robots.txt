@@ -1,0 +1,61 @@
+# Robots.txt for BlackburnSystems Portfolio
+# Last updated: September 16, 2025
+
+# Allow all well-behaved crawlers to access main content
+User-agent: *
+Allow: /
+Allow: /showcase/
+Allow: /static/
+Allow: /assets/
+
+# Block access to admin and sensitive areas
+Disallow: /admin/
+Disallow: /analytics/
+Disallow: /auth/
+Disallow: /oauth/
+Disallow: /api/admin/
+Disallow: /logs/
+
+# Block common bot paths that aren't useful for indexing
+Disallow: /*?
+Disallow: /search
+Disallow: /.git/
+Disallow: /__pycache__/
+Disallow: /venv/
+Disallow: /.env
+Disallow: /requirements.txt
+
+# Block aggressive crawlers and scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+# Allow Google and Bing for good SEO
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /analytics/
+Disallow: /auth/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /analytics/
+Disallow: /auth/
+
+# Crawl delay to be respectful of server resources
+Crawl-delay: 1
+
+# Sitemap location (you may want to create this later)
+# Sitemap: https://blackburnsystems.com/sitemap.xml
