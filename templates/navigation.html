@@ -1,6 +1,6 @@
 <!-- Shared Navigation Component -->
 <header class="site-header" id="h">
-    <!-- Full width admin navigation at the very top -->
+    <!-- Admin navigation for authenticated users -->
     {% if user_authenticated %}
     <div class="admin-top-bar">
         <div class="admin-section-spread">
@@ -32,17 +32,16 @@
             </ul>
         </div>
         
-        <!-- Authentication Section at far right -->
+        <!-- Authentication controls -->
         <div class="auth-admin-section">
-            {% if user_authenticated %}
-                <a href="/auth/logout" class="auth-link logout-link" role="button" tabindex="0">Logout ({{ user_email }})</a>
-            {% else %}
-                <a href="#" onclick="initiateLogin(); return false;" class="auth-link" role="button" tabindex="0">Login</a>
-            {% endif %}
+            <a href="/auth/logout" class="auth-link logout-link" role="button" tabindex="0">
+                Logout ({{ user_email }})
+            </a>
         </div>
     </div>
     {% endif %}
     
+    <!-- Main header section -->
     <div class="header-top">
         <div class="header-left">
             {% if current_page in ['home', 'work', 'contact'] %}
@@ -53,18 +52,20 @@
             {% endif %}
         </div>
         
-        <!-- Right side for non-authenticated users only -->
+        <!-- Login button for non-authenticated users -->
         {% if not user_authenticated %}
         <div class="header-right">
             <div class="auth-admin-section">
-                <a href="#" onclick="initiateLogin(); return false;" class="auth-link" role="button" tabindex="0">Login</a>
+                <a href="#" onclick="initiateLogin(); return false;" class="auth-link" role="button" tabindex="0">
+                    Login
+                </a>
             </div>
         </div>
         {% endif %}
     </div>
     
+    <!-- Primary navigation -->
     <nav>
-        <!-- Primary Navigation -->
         <ul class="primary-nav">
             <li class="me {{ 'active' if current_page == 'home' else '' }}">
                 <a href="/">Overview</a>
@@ -73,7 +74,7 @@
                 <a href="/work/">Select Work</a>
             </li>
             <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
-                <a href="/contact/"><span>Let's</span>Talk</a>
+                <a href="/contact/"><span>Let's</span> Talk</a>
             </li>
             <li class="resume">
                 <a href="/resume" target="_blank">Résumé</a>
@@ -84,7 +85,5 @@
                 <a href="https://pypi.org/user/blackburnd/" target="_blank" title="PyPI">📦 pypi</a>
             </li>
         </ul>
-        
-    
     </nav>
 </header>
