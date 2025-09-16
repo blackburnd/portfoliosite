@@ -9,338 +9,385 @@
 {% endblock %}
 
 {% block content %}
-                <article class="bc clearfix">
-                    <section class="project-showcase-content">
-                        <div class="project-header">
-                            <div class="breadcrumb">
-                                <a href="/work/">← Back to Portfolio</a>
-                            </div>
-                            
-                            <!-- Top Navigation -->
-                            <div class="showcase-navigation">
-                                {% if prev_project %}
-                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
-                                        ← {{ prev_project.title }}
-                                    </a>
-                                {% else %}
-                                    <span class="nav-button disabled">← Previous</span>
-                                {% endif %}
-                                
-                                {% if next_project %}
-                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
-                                        {{ next_project.title }} →
-                                    </a>
-                                {% else %}
-                                    <span class="nav-button disabled">Next →</span>
-                                {% endif %}
-                            </div>
-                            <div class="project-tech">
-                                <h3>Core Technologies Used</h3>
-                                <div class="tech-tags-large">
-                                    <span class="tech-tag-large">FastAPI</span>
-                                    <span class="tech-tag-large">PostgreSQL</span>
-                                    <span class="tech-tag-large">Google Cloud Platform</span>
-                                    <span class="tech-tag-large">OAuth2</span>
-                                    <span class="tech-tag-large">Nginx</span>
-                                    <span class="tech-tag-large">GitHub Actions</span>
-                                    <span class="tech-tag-large">SSL/TLS</span>
-                                    <span class="tech-tag-large">Strawberry GraphQL</span>
-                                    <span class="tech-tag-large">Pydantic</span>
-                                    <span class="tech-tag-large">AsyncPG</span>
-                                    <span class="tech-tag-large">Jinja2</span>
-                                    <span class="tech-tag-large">Python</span>
-                                    <span class="tech-tag-large">JavaScript ES6+</span>
-                                    <span class="tech-tag-large">HTML5/CSS3</span>
-                                    <span class="tech-tag-large">Google Cloud Build</span>
-                                    <span class="tech-tag-large">Systemd</span>
-                                    <span class="tech-tag-large">Let's Encrypt</span>
-                                    <span class="tech-tag-large">Uvicorn</span>
-                                    <span class="tech-tag-large">PyPGSVG</span>
-                                </div>
-                            </div>
+<article class="bc clearfix">
+    <section class="project-showcase-content">
+        <div class="project-header">
+            <div class="breadcrumb">
+                <a href="/work/">← Back to Portfolio</a>
+            </div>
+
+            <!-- Top Navigation -->
+            <div class="showcase-navigation">
+                {% if prev_project %}
+                <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                    ← {{ prev_project.title }}
+                </a>
+                {% else %}
+                <span class="nav-button disabled">← Previous</span>
+                {% endif %}
+
+                {% if next_project %}
+                <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                    {{ next_project.title }} →
+                </a>
+                {% else %}
+                <span class="nav-button disabled">Next →</span>
+                {% endif %}
+            </div>
+            <div class="project-tech">
+                <h3>Core Technologies Used</h3>
+                <div class="tech-tags-large">
+                    <span class="tech-tag-large">FastAPI</span>
+                    <span class="tech-tag-large">PostgreSQL</span>
+                    <span class="tech-tag-large">Google Cloud Platform</span>
+                    <span class="tech-tag-large">OAuth2</span>
+                    <span class="tech-tag-large">Nginx</span>
+                    <span class="tech-tag-large">GitHub Actions</span>
+                    <span class="tech-tag-large">SSL/TLS</span>
+                    <span class="tech-tag-large">Strawberry GraphQL</span>
+                    <span class="tech-tag-large">Pydantic</span>
+                    <span class="tech-tag-large">AsyncPG</span>
+                    <span class="tech-tag-large">Jinja2</span>
+                    <span class="tech-tag-large">Python</span>
+                    <span class="tech-tag-large">JavaScript ES6+</span>
+                    <span class="tech-tag-large">HTML5/CSS3</span>
+                    <span class="tech-tag-large">Google Cloud Build</span>
+                    <span class="tech-tag-large">Systemd</span>
+                    <span class="tech-tag-large">Let's Encrypt</span>
+                    <span class="tech-tag-large">Uvicorn</span>
+                    <span class="tech-tag-large">PyPGSVG</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="project-content">
+            <div class="project-overview">
+                <h2>Project Reasoning</h2>
+
+                <p class="lead">
+                    A full-stack portfolio platform demonstrating modern web development practices and enterprise
+                    architecture patterns.
+                    This open-source project showcases dynamic content management, OAuth2 integration, and cloud-native
+                    deployment strategies developed through years of professional experience.
+                </p>
+                <p>
+                    Key capabilities include dynamic content management through administrative interfaces, comprehensive
+                    database tooling, and seamless third-party integrations. The platform requires Google and LinkedIn
+                    OAuth applications for complete functionality, enabling automated data synchronization and secure
+                    authentication workflows.
+                </p>
+            </div>
+
+            <div class="project-details">
+                <h3>Technical Implementation Deep Dive</h3>
+                <p>
+                    The following sections detail the technical architecture and implementation strategies employed
+                    throughout development. Each component addresses specific enterprise challenges while maintaining
+                    scalability and maintainability.
+                </p>
+
+
+                <div class="feature-showcase">
+                    <div class="feature-section">
+                        <h4>Database Administration & Schema Introspection</h4>
+                        <div class="feature-description">
+                            <p>
+                                This being a new project in a new environment, additional SQL was inevitably be required
+                                to be run and re-run as the site takes its shape, and also as projects scale and data
+                                structures evolve, robust database administration becomes critical. And rapid
+                                development in design mode is critical to predictable estimates of delivery. Remember,
+                                this implementation provides dangerously comprehensive database management capabilities
+                                with real-time visualization and query execution, but MUST be used behind a few layers
+                                of extra security.
+                            </p>
+                            <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at
+                                <code>/admin/sql</code> that provides:</p>
+                            <ul>
+                                <li>Real-time SQL query execution with syntax highlighting and error handling</li>
+                                <li>Automatic Entity Relationship Diagram (ERD) generation using pypgsvg</li>
+                                <li>Database schema introspection and documentation export</li>
+                                <li>Query result formatting with pagination and data type preservation</li>
+                            </ul>
+                            <p><strong>Implementation Details:</strong>
+                                The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async
+                                database connections for non-blocking queries, and subprocess management for ERD
+                                generation. Security is enforced through admin-only route protection and query
+                                sanitization.</p>
                         </div>
 
-                        <div class="project-content">
-                            <div class="project-overview">
-                                <h2>Project Reasoning</h2>
-
-                                <p class="lead">
-				  A full-stack portfolio platform demonstrating modern web development practices and enterprise architecture patterns.
-				  This open-source project showcases dynamic content management, OAuth2 integration, and cloud-native deployment strategies developed through years of professional experience.
-         			    </p>
-				<p>
-				  Key capabilities include dynamic content management through administrative interfaces, comprehensive database tooling, and seamless third-party integrations. The platform requires Google and LinkedIn OAuth applications for complete functionality, enabling automated data synchronization and secure authentication workflows.
-				   </p>
-                            </div>
-
-                            <div class="project-details">
-                                <h3>Technical Implementation Deep Dive</h3>
-                                <p>
-				  The following sections detail the technical architecture and implementation strategies employed throughout development. Each component addresses specific enterprise challenges while maintaining scalability and maintainability.
-                                </p>
-                                
-                            <div class="interactive-erd-container">
-                                <div class="erd-header">
-                                    <h5>Site Database Schema ERD</h5>
-                                    <p class="erd-description">This ERD shows the actual database schema powering this site</p>
-                                </div>
-                                <div class="erd-frame">
-                                    <iframe src="https://www.blackburnsystems.com/admin/sql/test-erd-site" 
-                                            class="interactive-erd" 
-                                            title="Site Database Schema ERD"
-                                            frameborder="0"
-                                            scrolling="auto">
-                                        <p>Your browser doesn't support iframes. <a href="https://www.blackburnsystems.com/admin/sql/test-erd-site" target="_blank">View the site schema ERD here</a>.</p>
-                                    </iframe>
-                                </div>
-                                <div class="erd-footer">
-                                    <a href="https://www.blackburnsystems.com/admin/sql/test-erd-site" target="_blank" class="btn-secondary btn-small">
-                                        Open in Full Screen →
-                                    </a>
-                                </div>
-                            </div>
-
-                                <div class="feature-showcase">
-                                    <div class="feature-section">
-                                        <h4>Database Administration & Schema Introspection</h4>
-                                        <div class="feature-description">
-                                          <p>
-					    This being a new project in a new environment, additional SQL was inevitably be required to be run and re-run as the site takes its shape, and also as projects scale and data structures evolve, robust database administration becomes critical. And rapid development in design mode is critical to predictable estimates of delivery. Remember, this implementation provides dangerously comprehensive database management capabilities with real-time visualization and query execution, but MUST be used behind a few layers of extra security. 
-                                          </p>
-                                          <p><strong>Technical Solution:</strong> Built a comprehensive SQL admin interface at <code>/admin/sql</code> that provides:</p>
-                                          <ul>
-                                                <li>Real-time SQL query execution with syntax highlighting and error handling</li>
-                                                <li>Automatic Entity Relationship Diagram (ERD) generation using pypgsvg</li>
-                                                <li>Database schema introspection and documentation export</li>
-                                                <li>Query result formatting with pagination and data type preservation</li>
-                                           </ul>
-                                          <p><strong>Implementation Details:</strong>
-					    The admin tool uses FastAPI's dependency injection for OAuth2 authentication, async database connections for non-blocking queries, and subprocess management for ERD generation. Security is enforced through admin-only route protection and query sanitization.</p>
-                                        </div>
-                                        
-                                        <div class="screenshot-container">
-                                            <img src="/assets/screenshots/portfoliosite/sql-admin-interface.png" 
-                                                 alt="SQL Admin Interface showing ERD generation and query execution" 
-                                                 class="screenshot-image showcase-screenshot"
-                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: SQL Admin Interface showing ERD generation and query execution</p></div></div>'">
-                                        </div>
-                                        
-                                        <div class="technical-outcomes">
-                                            <p><strong>Results:</strong> Rapid database development and debugging, schema validation, and documentation generation</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="feature-section">
-                                        <h4>Google OAuth2 Integration & Token Management</h4>
-                                        <div class="feature-description">
-                                            <p><strong>Business Need:</strong> Secure authentication and authorization system for admin access while maintaining user privacy and following OAuth2 best practices for enterprise applications.</p>
-                                            
-                                            <p><strong>Technical Solution:</strong> Implemented a comprehensive OAuth2 flow with Google at <code>/admin/google-oauth</code> that provides:</p>
-                                            <ul>
-                                                <li>Complete OAuth2 authorization code flow with PKCE for enhanced security</li>
-                                                <li>Secure token storage and automatic refresh token handling</li>
-                                                <li>Admin interface for OAuth app configuration and credential management</li>
-                                                <li>Real-time token validation and expiration monitoring</li>
-                                                <li>Scoped permissions management for minimal access principle</li>
-                                            </ul>
-                                            
-                                            <p><strong>Implementation Details:</strong> Uses Google's OAuth2 library with custom TTWOAuthManager class for token lifecycle management. Implements secure credential storage in PostgreSQL with encryption at rest, automated token refresh workflows, and comprehensive error handling for network failures and token expiration scenarios.</p>
-                                        </div>
-                                        
-                                        <div class="screenshot-container">
-                                            <img src="/assets/screenshots/portfoliosite/google-oauth-config.png" 
-                                                 alt="Google OAuth Configuration Interface with token status and management controls" 
-                                                 class="screenshot-image showcase-screenshot"
-                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Google OAuth Configuration Interface with token status and management controls</p></div></div>'">
-                                        </div>
-                                        
-                                        <div class="technical-outcomes">
-                                            <p><strong>Results:</strong> Provides enterprise-grade authentication with 99.9% uptime, automated token management reducing manual intervention by 95%, and maintains security compliance for production environments.</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="feature-section">
-                                        <h4>Advanced Logging System & Real-time Monitoring</h4>
-                                        <div class="feature-description">
-                                            <p><strong>Business Need:</strong> In any application trusting the data and logs during every stage is paramount. If the application is a sql database application I will usuall create a logs in the sql database. Even if just a  temporary log handler, a quick grid with search, and filter capability is essential for accurate and real-time monitoring and debugging capabilities. </p>
-                                            
-                                            <p><strong>Technical Solution:</strong> Built a custom SQL logging infrastructure accessible at <code>/admin/logs</code> featuring:</p>
-                                            <ul>
-                                                <li>Custom DatabaseLogHandler that intercepts Python logging and stores in PostgreSQL</li>
-                                                <li>Real-time log filtering by level, timestamp, and message content</li>
-                                                <li>Complete stack trace capture and storage for error debugging</li>
-                                                <li>Log level aggregation with counts and severity analysis</li>
-                                                <li>Searchable log history with pagination and export capabilities</li>
-                                            </ul>
-                                            
-                                            <p><strong>Implementation Details:</strong> Custom log handler extends Python's logging.Handler, uses async database writes to prevent I/O blocking, implements log rotation and archival policies. The admin interface uses DataTables for responsive grid display with server-side filtering and real-time updates via WebSocket connections.</p>
-                                        </div>
-                                        
-                                        <div class="screenshot-container">
-                                            <img src="/assets/screenshots/portfoliosite/logs-admin-grid.png" 
-                                                 alt="Logs Administration Grid showing real-time log entries with filtering and stack trace details" 
-                                                 class="screenshot-image showcase-screenshot"
-                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Logs Administration Grid showing real-time log entries with filtering and stack trace details</p></div></div>'">
-                                        </div>
-                                        
-                                        <div class="technical-outcomes">
-                                            <p><strong>Results:</strong> Reduces debugging time by never needing to wait for intstances on sql apps, and provides completely separate audit trail for compliance and performance analysis.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="architecture-grid">
-                                    <div class="arch-section">
-                                        <h4>Backend & APIs</h4>
-                                        <ul>
-                                            <li><strong>FastAPI:</strong> High-performance async API framework with automatic OpenAPI documentation</li>
-                                            <li><strong>Strawberry GraphQL:</strong> Type-safe GraphQL framework with async resolvers</li>
-                                            <li><strong>Uvicorn:</strong> Lightning-fast ASGI server with HTTP/2 support</li>
-                                            <li><strong>AsyncPG:</strong> High-performance PostgreSQL driver for Python</li>
-                                            <li><strong>Databases:</strong> Async database interface with connection pooling</li>
-                                            <li><strong>Pydantic:</strong> Data validation and serialization with type hints</li>
-                                            <li><strong>Jinja2:</strong> Modern templating engine with template inheritance</li>
-                                            <li><strong>Python-JOSE:</strong> JWT token handling and cryptographic operations</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Database & Schema Design</h4>
-                                        <ul>
-                                            <li><strong>PostgreSQL 15:</strong> Advanced relational database with JSON support</li>
-                                            <li><strong>Foreign Key Constraints:</strong> Referential integrity across all table relationships</li>
-                                            <li><strong>Database Triggers:</strong> Automated timestamp updates and data validation</li>
-                                            <li><strong>Stored Procedures:</strong> Complex business logic execution in database</li>
-                                            <li><strong>Indexes & Optimization:</strong> B-tree and GIN indexes for query performance</li>
-                                            <li><strong>Schema Migrations:</strong> Version-controlled database evolution</li>
-                                            <li><strong>ERD Generation:</strong> PyPGSVG for automatic schema visualization</li>
-                                            <li><strong>Connection Pooling:</strong> Efficient database connection management</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Authentication & Security</h4>
-                                        <ul>
-                                            <li><strong>OAuth2 + PKCE:</strong> Google and LinkedIn integration with enhanced security</li>
-                                            <li><strong>Google Auth Libraries:</strong> Official Google authentication SDK</li>
-                                            <li><strong>LinkedIn API:</strong> Professional network data synchronization</li>
-                                            <li><strong>SSL/TLS 1.3:</strong> End-to-end encryption with Let's Encrypt certificates</li>
-                                            <li><strong>Secure Cookies:</strong> HttpOnly, Secure, and SameSite session management</li>
-                                            <li><strong>CORS Configuration:</strong> Properly configured cross-origin resource sharing</li>
-                                            <li><strong>Cryptography:</strong> Advanced encryption for sensitive data storage</li>
-                                            <li><strong>Token Refresh:</strong> Automated OAuth token lifecycle management</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Frontend & JavaScript</h4>
-                                        <ul>
-                                            <li><strong>Vanilla JavaScript ES6+:</strong> Modern ECMAScript features and async/await</li>
-                                            <li><strong>Fetch API:</strong> Promise-based HTTP client for AJAX requests</li>
-                                            <li><strong>Event Delegation:</strong> Efficient event handling for dynamic content</li>
-                                            <li><strong>Clipboard API:</strong> Native browser copy/paste functionality</li>
-                                            <li><strong>Intersection Observer:</strong> Efficient infinite scroll implementation</li>
-                                            <li><strong>LocalStorage:</strong> Client-side data persistence and caching</li>
-                                            <li><strong>Chart.js Integration:</strong> Data visualization and analytics dashboards</li>
-                                            <li><strong>Real-time Updates:</strong> Live data refresh without page reloads</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Infrastructure & DevOps</h4>
-                                        <ul>
-                                            <li><strong>Google Cloud Platform:</strong> Compute Engine with auto-scaling capabilities</li>
-                                            <li><strong>Google Cloud SQL:</strong> Managed PostgreSQL with automated backups</li>
-                                            <li><strong>Google Cloud Build:</strong> Container-based CI/CD pipeline</li>
-                                            <li><strong>GitHub Actions:</strong> Automated testing and deployment workflows</li>
-                                            <li><strong>Nginx:</strong> Reverse proxy with caching, compression, and load balancing</li>
-                                            <li><strong>Systemd:</strong> Service management and process supervision</li>
-                                            <li><strong>Ubuntu Linux:</strong> Production server environment</li>
-                                            <li><strong>Git Version Control:</strong> Source code management and collaboration</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Testing & Quality Assurance</h4>
-                                        <ul>
-                                            <li><strong>Pytest:</strong> Comprehensive Python testing framework</li>
-                                            <li><strong>Test Database:</strong> Isolated PostgreSQL testing environment</li>
-                                            <li><strong>Automated Testing:</strong> CI/CD pipeline integration with test validation</li>
-                                            <li><strong>Type Checking:</strong> Pydantic models for runtime type validation</li>
-                                            <li><strong>Error Handling:</strong> Comprehensive exception management and logging</li>
-                                            <li><strong>Health Checks:</strong> Application monitoring and status endpoints</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Monitoring & Logging</h4>
-                                        <ul>
-                                            <li><strong>Custom Log Handler:</strong> Database-integrated logging system</li>
-                                            <li><strong>Real-time Analytics:</strong> Mouse activity tracking and user behavior</li>
-                                            <li><strong>Application Logs:</strong> Structured logging with severity levels</li>
-                                            <li><strong>Performance Metrics:</strong> Response time and throughput monitoring</li>
-                                            <li><strong>Error Tracking:</strong> Stack trace capture and debugging tools</li>
-                                            <li><strong>Audit Trail:</strong> Administrative action logging and compliance</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="arch-section">
-                                        <h4>Additional Libraries & Tools</h4>
-                                        <ul>
-                                            <li><strong>Requests & HTTPX:</strong> HTTP client libraries for external API integration</li>
-                                            <li><strong>Python-dotenv:</strong> Environment variable management</li>
-                                            <li><strong>Watchfiles:</strong> Development server auto-reload functionality</li>
-                                            <li><strong>WebSockets:</strong> Real-time bidirectional communication</li>
-                                            <li><strong>PyYAML:</strong> Configuration file parsing and management</li>
-                                            <li><strong>Certifi:</strong> Certificate authority bundle for HTTPS verification</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div class="implementation-highlights">
-                                    <h4>Key Features & Highlights</h4>
-                                    <ul>
-                                        <li>Microservices architecture with clear separation of concerns</li>
-                                        <li>Database-driven content management with admin interfaces</li>
-                                        <li>Real-time OAuth integration with multiple providers</li>
-                                        <li>Automated deployment pipeline with zero-downtime updates</li>
-                                        <li>Comprehensive error handling and logging strategies</li>
-                                        <li>Performance optimization with caching and CDN integration</li>
-                                    </ul>
-                                </div>
-
-                                <div class="project-metrics">
-                                    <h4>Performance Metrics</h4>
-                                    <ul>
-                                        <li><strong>Load Time:</strong> Sub-second initial page load</li>
-                                        <li><strong>Uptime:</strong> 99.9% availability with health monitoring</li>
-                                        <li><strong>Security:</strong> A+ SSL rating with modern cipher suites</li>
-                                        <li><strong>Scalability:</strong> Auto-scaling based on traffic patterns</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <!-- Bottom Navigation -->
-                            <div class="showcase-navigation">
-                                {% if prev_project %}
-                                    <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
-                                        ← {{ prev_project.title }}
-                                    </a>
-                                {% else %}
-                                    <span class="nav-button disabled">← Previous</span>
-                                {% endif %}
-                                
-                                <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
-                                
-                                {% if next_project %}
-                                    <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
-                                        {{ next_project.title }} →
-                                    </a>
-                                {% else %}
-                                    <span class="nav-button disabled">Next →</span>
-                                {% endif %}
-                            </div>
+                        <div class="screenshot-container">
+                            <img src="/assets/screenshots/portfoliosite/sql-admin-interface.png"
+                                alt="SQL Admin Interface showing ERD generation and query execution"
+                                class="screenshot-image showcase-screenshot"
+                                onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: SQL Admin Interface showing ERD generation and query execution</p></div></div>'">
                         </div>
-                    </section>
-                </article>
+
+                        <div class="technical-outcomes">
+                            <p><strong>Results:</strong> Rapid database development and debugging, schema validation,
+                                and documentation generation</p>
+                        </div>
+                    </div>
+
+                    <div class="interactive-erd-container">
+                        <div class="erd-header">
+                            <h5>Site Database Schema ERD</h5>
+                            <p class="erd-description">This ERD shows the actual database schema powering this site</p>
+                        </div>
+                        <div class="erd-frame">
+                            <iframe src="https://www.blackburnsystems.com/admin/sql/test-erd-site"
+                                class="interactive-erd" title="Site Database Schema ERD" frameborder="0"
+                                scrolling="auto">
+                                <p>Your browser doesn't support iframes. <a
+                                        href="https://www.blackburnsystems.com/admin/sql/test-erd-site"
+                                        target="_blank">View the site schema ERD here</a>.</p>
+                            </iframe>
+                        </div>
+                        <div class="erd-footer">
+                            <a href="https://www.blackburnsystems.com/admin/sql/test-erd-site" target="_blank"
+                                class="btn-secondary btn-small">
+                                Open in Full Screen →
+                            </a>
+                        </div>
+                    </div>
+                    <div class="feature-section">
+                        <h4>Google OAuth2 Integration & Token Management</h4>
+                        <div class="feature-description">
+                            <p><strong>Business Need:</strong> Secure authentication and authorization system for admin
+                                access while maintaining user privacy and following OAuth2 best practices for enterprise
+                                applications.</p>
+
+                            <p><strong>Technical Solution:</strong> Implemented a comprehensive OAuth2 flow with Google
+                                at <code>/admin/google-oauth</code> that provides:</p>
+                            <ul>
+                                <li>Complete OAuth2 authorization code flow with PKCE for enhanced security</li>
+                                <li>Secure token storage and automatic refresh token handling</li>
+                                <li>Admin interface for OAuth app configuration and credential management</li>
+                                <li>Real-time token validation and expiration monitoring</li>
+                                <li>Scoped permissions management for minimal access principle</li>
+                            </ul>
+
+                            <p><strong>Implementation Details:</strong> Uses Google's OAuth2 library with custom
+                                TTWOAuthManager class for token lifecycle management. Implements secure credential
+                                storage in PostgreSQL with encryption at rest, automated token refresh workflows, and
+                                comprehensive error handling for network failures and token expiration scenarios.</p>
+                        </div>
+
+                        <div class="screenshot-container">
+                            <img src="/assets/screenshots/portfoliosite/google-oauth-config.png"
+                                alt="Google OAuth Configuration Interface with token status and management controls"
+                                class="screenshot-image showcase-screenshot"
+                                onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Google OAuth Configuration Interface with token status and management controls</p></div></div>'">
+                        </div>
+
+                        <div class="technical-outcomes">
+                            <p><strong>Results:</strong> Provides enterprise-grade authentication with 99.9% uptime,
+                                automated token management reducing manual intervention by 95%, and maintains security
+                                compliance for production environments.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-section">
+                        <h4>Advanced Logging System & Real-time Monitoring</h4>
+                        <div class="feature-description">
+                            <p><strong>Business Need:</strong> In any application trusting the data and logs during
+                                every stage is paramount. If the application is a sql database application I will usuall
+                                create a logs in the sql database. Even if just a temporary log handler, a quick grid
+                                with search, and filter capability is essential for accurate and real-time monitoring
+                                and debugging capabilities. </p>
+
+                            <p><strong>Technical Solution:</strong> Built a custom SQL logging infrastructure accessible
+                                at <code>/admin/logs</code> featuring:</p>
+                            <ul>
+                                <li>Custom DatabaseLogHandler that intercepts Python logging and stores in PostgreSQL
+                                </li>
+                                <li>Real-time log filtering by level, timestamp, and message content</li>
+                                <li>Complete stack trace capture and storage for error debugging</li>
+                                <li>Log level aggregation with counts and severity analysis</li>
+                                <li>Searchable log history with pagination and export capabilities</li>
+                            </ul>
+
+                            <p><strong>Implementation Details:</strong> Custom log handler extends Python's
+                                logging.Handler, uses async database writes to prevent I/O blocking, implements log
+                                rotation and archival policies. The admin interface uses DataTables for responsive grid
+                                display with server-side filtering and real-time updates via WebSocket connections.</p>
+                        </div>
+
+                        <div class="screenshot-container">
+                            <img src="/assets/screenshots/portfoliosite/logs-admin-grid.png"
+                                alt="Logs Administration Grid showing real-time log entries with filtering and stack trace details"
+                                class="screenshot-image showcase-screenshot"
+                                onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><div class=&quot;screenshot-frame&quot;><p class=&quot;screenshot-label&quot;>Screenshot: Logs Administration Grid showing real-time log entries with filtering and stack trace details</p></div></div>'">
+                        </div>
+
+                        <div class="technical-outcomes">
+                            <p><strong>Results:</strong> Reduces debugging time by never needing to wait for intstances
+                                on sql apps, and provides completely separate audit trail for compliance and performance
+                                analysis.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="architecture-grid">
+                    <div class="arch-section">
+                        <h4>Backend & APIs</h4>
+                        <ul>
+                            <li><strong>FastAPI:</strong> High-performance async API framework with automatic OpenAPI
+                                documentation</li>
+                            <li><strong>Strawberry GraphQL:</strong> Type-safe GraphQL framework with async resolvers
+                            </li>
+                            <li><strong>Uvicorn:</strong> Lightning-fast ASGI server with HTTP/2 support</li>
+                            <li><strong>AsyncPG:</strong> High-performance PostgreSQL driver for Python</li>
+                            <li><strong>Databases:</strong> Async database interface with connection pooling</li>
+                            <li><strong>Pydantic:</strong> Data validation and serialization with type hints</li>
+                            <li><strong>Jinja2:</strong> Modern templating engine with template inheritance</li>
+                            <li><strong>Python-JOSE:</strong> JWT token handling and cryptographic operations</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Database & Schema Design</h4>
+                        <ul>
+                            <li><strong>PostgreSQL 15:</strong> Advanced relational database with JSON support</li>
+                            <li><strong>Foreign Key Constraints:</strong> Referential integrity across all table
+                                relationships</li>
+                            <li><strong>Database Triggers:</strong> Automated timestamp updates and data validation</li>
+                            <li><strong>Stored Procedures:</strong> Complex business logic execution in database</li>
+                            <li><strong>Indexes & Optimization:</strong> B-tree and GIN indexes for query performance
+                            </li>
+                            <li><strong>Schema Migrations:</strong> Version-controlled database evolution</li>
+                            <li><strong>ERD Generation:</strong> PyPGSVG for automatic schema visualization</li>
+                            <li><strong>Connection Pooling:</strong> Efficient database connection management</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Authentication & Security</h4>
+                        <ul>
+                            <li><strong>OAuth2 + PKCE:</strong> Google and LinkedIn integration with enhanced security
+                            </li>
+                            <li><strong>Google Auth Libraries:</strong> Official Google authentication SDK</li>
+                            <li><strong>LinkedIn API:</strong> Professional network data synchronization</li>
+                            <li><strong>SSL/TLS 1.3:</strong> End-to-end encryption with Let's Encrypt certificates</li>
+                            <li><strong>Secure Cookies:</strong> HttpOnly, Secure, and SameSite session management</li>
+                            <li><strong>CORS Configuration:</strong> Properly configured cross-origin resource sharing
+                            </li>
+                            <li><strong>Cryptography:</strong> Advanced encryption for sensitive data storage</li>
+                            <li><strong>Token Refresh:</strong> Automated OAuth token lifecycle management</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Frontend & JavaScript</h4>
+                        <ul>
+                            <li><strong>Vanilla JavaScript ES6+:</strong> Modern ECMAScript features and async/await
+                            </li>
+                            <li><strong>Fetch API:</strong> Promise-based HTTP client for AJAX requests</li>
+                            <li><strong>Event Delegation:</strong> Efficient event handling for dynamic content</li>
+                            <li><strong>Clipboard API:</strong> Native browser copy/paste functionality</li>
+                            <li><strong>Intersection Observer:</strong> Efficient infinite scroll implementation</li>
+                            <li><strong>LocalStorage:</strong> Client-side data persistence and caching</li>
+                            <li><strong>Chart.js Integration:</strong> Data visualization and analytics dashboards</li>
+                            <li><strong>Real-time Updates:</strong> Live data refresh without page reloads</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Infrastructure & DevOps</h4>
+                        <ul>
+                            <li><strong>Google Cloud Platform:</strong> Compute Engine with auto-scaling capabilities
+                            </li>
+                            <li><strong>Google Cloud SQL:</strong> Managed PostgreSQL with automated backups</li>
+                            <li><strong>Google Cloud Build:</strong> Container-based CI/CD pipeline</li>
+                            <li><strong>GitHub Actions:</strong> Automated testing and deployment workflows</li>
+                            <li><strong>Nginx:</strong> Reverse proxy with caching, compression, and load balancing</li>
+                            <li><strong>Systemd:</strong> Service management and process supervision</li>
+                            <li><strong>Ubuntu Linux:</strong> Production server environment</li>
+                            <li><strong>Git Version Control:</strong> Source code management and collaboration</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Testing & Quality Assurance</h4>
+                        <ul>
+                            <li><strong>Pytest:</strong> Comprehensive Python testing framework</li>
+                            <li><strong>Test Database:</strong> Isolated PostgreSQL testing environment</li>
+                            <li><strong>Automated Testing:</strong> CI/CD pipeline integration with test validation</li>
+                            <li><strong>Type Checking:</strong> Pydantic models for runtime type validation</li>
+                            <li><strong>Error Handling:</strong> Comprehensive exception management and logging</li>
+                            <li><strong>Health Checks:</strong> Application monitoring and status endpoints</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Monitoring & Logging</h4>
+                        <ul>
+                            <li><strong>Custom Log Handler:</strong> Database-integrated logging system</li>
+                            <li><strong>Real-time Analytics:</strong> Mouse activity tracking and user behavior</li>
+                            <li><strong>Application Logs:</strong> Structured logging with severity levels</li>
+                            <li><strong>Performance Metrics:</strong> Response time and throughput monitoring</li>
+                            <li><strong>Error Tracking:</strong> Stack trace capture and debugging tools</li>
+                            <li><strong>Audit Trail:</strong> Administrative action logging and compliance</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-section">
+                        <h4>Additional Libraries & Tools</h4>
+                        <ul>
+                            <li><strong>Requests & HTTPX:</strong> HTTP client libraries for external API integration
+                            </li>
+                            <li><strong>Python-dotenv:</strong> Environment variable management</li>
+                            <li><strong>Watchfiles:</strong> Development server auto-reload functionality</li>
+                            <li><strong>WebSockets:</strong> Real-time bidirectional communication</li>
+                            <li><strong>PyYAML:</strong> Configuration file parsing and management</li>
+                            <li><strong>Certifi:</strong> Certificate authority bundle for HTTPS verification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="implementation-highlights">
+                    <h4>Key Features & Highlights</h4>
+                    <ul>
+                        <li>Microservices architecture with clear separation of concerns</li>
+                        <li>Database-driven content management with admin interfaces</li>
+                        <li>Real-time OAuth integration with multiple providers</li>
+                        <li>Automated deployment pipeline with zero-downtime updates</li>
+                        <li>Comprehensive error handling and logging strategies</li>
+                        <li>Performance optimization with caching and CDN integration</li>
+                    </ul>
+                </div>
+
+                <div class="project-metrics">
+                    <h4>Performance Metrics</h4>
+                    <ul>
+                        <li><strong>Load Time:</strong> Sub-second initial page load</li>
+                        <li><strong>Uptime:</strong> 99.9% availability with health monitoring</li>
+                        <li><strong>Security:</strong> A+ SSL rating with modern cipher suites</li>
+                        <li><strong>Scalability:</strong> Auto-scaling based on traffic patterns</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="showcase-navigation">
+                {% if prev_project %}
+                <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                    ← {{ prev_project.title }}
+                </a>
+                {% else %}
+                <span class="nav-button disabled">← Previous</span>
+                {% endif %}
+
+                <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
+
+                {% if next_project %}
+                <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                    {{ next_project.title }} →
+                </a>
+                {% else %}
+                <span class="nav-button disabled">Next →</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</article>
 {% endblock %}
