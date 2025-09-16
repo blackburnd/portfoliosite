@@ -19,41 +19,34 @@
                         <div class="showcase-list">
                             {% if projects %}
                                 {% for project in projects %}
-                                <div class="showcase-project">
-                                    <div class="project-screenshot">
-                                        {% if project.screenshot_url %}
-                                            <img src="{{ project.screenshot_url }}" alt="{{ project.title }} Screenshot" class="screenshot-image" 
-                                                 onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><span class=&quot;screenshot-icon&quot;>📸</span><p>Upload work-featured.png via Projects Admin</p></div>'">
-                                        {% else %}
-                                            <div class="screenshot-placeholder">
-                                                <span class="screenshot-icon">📸</span>
-                                                <p>Upload work-featured.png via Projects Admin</p>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="project-details">
-                                        <div class="showcase-header">
-                                            <h3>
-                                                <a href="/showcase/{{ project.slug }}/" class="showcase-link">
-                                                    {{ project.title }}
-                                                </a>
-                                            </h3>
+                                <a href="/showcase/{{ project.slug }}/" class="showcase-project-link">
+                                    <div class="showcase-project">
+                                        <div class="project-screenshot">
+                                            {% if project.screenshot_url %}
+                                                <img src="{{ project.screenshot_url }}" alt="{{ project.title }} Screenshot" class="screenshot-image" 
+                                                     onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder&quot;><span class=&quot;screenshot-icon&quot;>📸</span><p>Upload work-featured.png via Projects Admin</p></div>'">
+                                            {% else %}
+                                                <div class="screenshot-placeholder">
+                                                    <span class="screenshot-icon">📸</span>
+                                                    <p>Upload work-featured.png via Projects Admin</p>
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                        <p class="showcase-description">{{ project.description }}</p>
-                                        {% if project.technologies %}
-                                            <div class="tech-tags">
-                                                {% for tech in project.technologies %}
-                                                    <span class="tech-tag">{{ tech }}</span>
-                                                {% endfor %}
+                                        <div class="project-details">
+                                            <div class="showcase-header">
+                                                <h3>{{ project.title }}</h3>
                                             </div>
-                                        {% endif %}
-                                        <div class="showcase-actions">
-                                            <a href="/showcase/{{ project.slug }}/" class="btn-showcase">
-                                                View Details →
-                                            </a>
+                                            <p class="showcase-description">{{ project.description }}</p>
+                                            {% if project.technologies %}
+                                                <div class="tech-tags">
+                                                    {% for tech in project.technologies %}
+                                                        <span class="tech-tag">{{ tech }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                                 {% endfor %}
                             {% else %}
                                 <div class="info">
