@@ -158,21 +158,64 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
                     dot_file_path = dot_temp_file.name
                 
                 try:
-                    # Convert DOT to SVG using graphviz
-                    svg_convert_result = subprocess.run(
-                        ['dot', '-Tsvg', dot_file_path, '-o', svg_output_path],
+                    # Check if graphviz dot command is available
+                    dot_check = subprocess.run(
+                        ['which', 'dot'],
                         capture_output=True,
                         text=True
                     )
                     
-                    if svg_convert_result.returncode != 0:
-                        error_msg = (f"Graphviz conversion failed: "
-                                     f"{svg_convert_result.stderr}")
-                        raise Exception(error_msg)
-                    
-                    # Read the converted SVG
-                    with open(svg_output_path, 'r') as svg_file:
-                        svg_content = svg_file.read()
+                    if dot_check.returncode != 0:
+                        # Graphviz not available, return DOT content as text
+                        dot_lines = svg_content.split('\n')
+                        escaped_content = '\n'.join(
+                            line.replace('&', '&amp;')
+                                .replace('<', '&lt;')
+                                .replace('>', '&gt;')
+                            for line in dot_lines
+                        )
+                        
+                        svg_content = (
+                            '<?xml version="1.0" encoding="UTF-8"?>\n'
+                            '<svg xmlns="http://www.w3.org/2000/svg" '
+                            'width="800" height="600">\n'
+                            '  <rect width="800" height="600" fill="#f8f9fa" '
+                            'stroke="#6c757d" stroke-width="1"/>\n'
+                            '  <text x="400" y="30" text-anchor="middle" '
+                            'font-family="monospace" font-size="16" '
+                            'fill="#0d6efd">Database ERD (DOT Format)</text>\n'
+                            '  <text x="400" y="50" text-anchor="middle" '
+                            'font-family="Arial" font-size="12" '
+                            'fill="#6c757d">Graphviz not available - '
+                            'showing DOT source</text>\n'
+                            '  <foreignObject x="20" y="70" width="760" '
+                            'height="520">\n'
+                            '    <div xmlns="http://www.w3.org/1999/xhtml" '
+                            'style="font-family: monospace; font-size: 10px; '
+                            'overflow: auto; height: 100%; background: white; '
+                            'padding: 10px; border: 1px solid #ccc;">\n'
+                            f'      <pre>{escaped_content}</pre>\n'
+                            '    </div>\n'
+                            '  </foreignObject>\n'
+                            '</svg>'
+                        )
+                    else:
+                        # Convert DOT to SVG using graphviz
+                        svg_convert_result = subprocess.run(
+                            ['dot', '-Tsvg', dot_file_path, '-o',
+                             svg_output_path],
+                            capture_output=True,
+                            text=True
+                        )
+                        
+                        if svg_convert_result.returncode != 0:
+                            error_msg = (f"Graphviz conversion failed: "
+                                         f"{svg_convert_result.stderr}")
+                            raise Exception(error_msg)
+                        
+                        # Read the converted SVG
+                        with open(svg_output_path, 'r') as svg_file:
+                            svg_content = svg_file.read()
                         
                 finally:
                     # Clean up DOT file
