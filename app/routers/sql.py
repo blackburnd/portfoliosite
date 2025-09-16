@@ -272,9 +272,8 @@ async def test_erd_complex(request: Request,
 
 
 @router.get("/admin/sql/test-erd-site")
-async def test_erd_site(request: Request,
-                        admin: dict = Depends(require_admin_auth)):
-    """Test route to serve the site_erd.svg file"""
+async def test_erd_site(request: Request):
+    """Public route to serve the site_erd.svg file"""
     try:
         # Try production path first, then local development path
         svg_paths = [
