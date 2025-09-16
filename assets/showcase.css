@@ -489,16 +489,19 @@
 
 /* Enhanced Technology Section Styling */
 .tech-details {
-    margin-top: 2rem;
+    margin: 2rem -2.5rem 0 -2.5rem; /* Negative margins to break out of container padding */
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: 12px;
-    padding: 2rem;
-    border: 1px solid #e9ecef;
+    border-radius: 0; /* Remove border radius for full-width effect */
+    padding: 3rem;
+    border: none;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
     grid-template-rows: auto auto;
+    width: calc(100% + 5rem); /* Account for negative margins */
 }
 
 .tech-details h4 {
@@ -692,8 +695,9 @@
 /* Responsive design for enhanced tech section */
 @media (max-width: 1024px) {
     .tech-details {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        padding: 2.5rem;
     }
 }
 
@@ -720,9 +724,10 @@
     }
     
     .tech-details {
-        padding: 1.5rem;
-        margin-top: 1.5rem;
+        margin: 2rem -1.5rem 0 -1.5rem; /* Adjust negative margins for smaller container padding */
+        padding: 2rem;
         display: block; /* Switch back to block layout on mobile */
+        width: calc(100% + 3rem); /* Account for adjusted negative margins */
     }
     
     .tech-category {
@@ -765,9 +770,11 @@
     }
     
     .tech-details {
-        padding: 1rem;
-        border-radius: 8px;
+        margin: 2rem -1rem 0 -1rem; /* Adjust negative margins for smallest container padding */
+        padding: 1.5rem;
+        border-radius: 0;
         display: block; /* Ensure block layout on small screens */
+        width: calc(100% + 2rem); /* Account for adjusted negative margins */
     }
     
     .tech-category {
