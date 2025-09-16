@@ -139,14 +139,61 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             with open(svg_output_path, 'r') as svg_file:
                 svg_content = svg_file.read()
             
+            # Check if pypgsvg generated DOT format instead of SVG
+            comment_start = '// Database ERD'
+            starts_with_comment = svg_content.strip().startswith(comment_start)
+            has_digraph = 'digraph {' in svg_content[:100]
+            is_dot_format = starts_with_comment or has_digraph
+            
+            if is_dot_format:
+                # pypgsvg generated DOT format, convert to SVG using graphviz
+                import tempfile
+                import subprocess
+                
+                # Write DOT content to temporary file
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.dot',
+                                                 delete=False) as dot_file:
+                    dot_file.write(svg_content)
+                    dot_file_path = dot_file.name
+                
+                try:
+                    # Convert DOT to SVG using graphviz
+                    svg_convert_result = subprocess.run(
+                        ['dot', '-Tsvg', dot_file_path, '-o', svg_output_path],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if svg_convert_result.returncode != 0:
+                        error_msg = (f"Graphviz conversion failed: "
+                                     f"{svg_convert_result.stderr}")
+                        raise Exception(error_msg)
+                    
+                    # Read the converted SVG
+                    with open(svg_output_path, 'r') as svg_file:
+                        svg_content = svg_file.read()
+                        
+                finally:
+                    # Clean up DOT file
+                    if os.path.exists(dot_file_path):
+                        os.unlink(dot_file_path)
+            
             # Validate SVG content
             if not svg_content or not svg_content.strip().startswith('<'):
-                preview = svg_content[:50] + "..." if svg_content else "empty"
-                raise Exception(f"Invalid SVG content: {preview}")
+                if len(svg_content) > 100:
+                    preview = svg_content[:100] + "..."
+                else:
+                    preview = svg_content
+                raise Exception(f"Invalid SVG content after conversion: "
+                                f"{preview}")
             
             if '<svg' not in svg_content:
-                preview = svg_content[:50] + "..." if svg_content else "empty"
-                raise Exception(f"Missing <svg> tag: {preview}")
+                if len(svg_content) > 100:
+                    preview = svg_content[:100] + "..."
+                else:
+                    preview = svg_content
+                raise Exception(f"Missing <svg> tag after conversion: "
+                                f"{preview}")
             
             # Determine the target path for saving the SVG
             # Try production path first, then local development path
