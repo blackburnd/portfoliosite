@@ -294,4 +294,58 @@ async def download_schema(
             {"status": "error", "message": f"Schema download failed: {e}"},
             status_code=500
         )
+
+
+@router.get("/test-traceback")
+async def test_traceback_endpoint(
+    request: Request, admin: dict = Depends(require_admin_auth)
+):
+    """Test endpoint to generate errors with tracebacks for logging
+    verification"""
+    test_type = request.query_params.get("type", "simple")
+    
+    try:
+        if test_type == "simple":
+            # Simple division by zero
+            1 / 0
+        elif test_type == "nested":
+            # Nested function error
+            def inner_func():
+                data = {"key": "value"}
+                return data["missing_key"]
+            
+            def middle_func():
+                return inner_func()
+            
+            middle_func()
+        elif test_type == "attribute":
+            # Attribute error
+            none_value = None
+            none_value.some_method()
+        elif test_type == "type":
+            # Type error
+            "string" + 123
+        else:
+            raise ValueError(f"Unknown test type: {test_type}")
+            
+    except Exception as e:
+        # Log the error with full traceback using the logging system
+        log_with_context(
+            "ERROR", "test_traceback",
+            f"Test error ({test_type}): {str(e)}",
+            request,
+            exc_info=True
+        )
         
+        return JSONResponse({
+            "status": "success",
+            "message": f"Test error ({test_type}) logged successfully",
+            "error": str(e),
+            "hint": "Check /admin/logs to verify traceback capture"
+        })
+    
+    # This should never be reached
+    return JSONResponse({
+        "status": "error",
+        "message": "Test endpoint failed to generate error"
+    })
