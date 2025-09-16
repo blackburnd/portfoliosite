@@ -29,6 +29,10 @@ steps:
     find . -name "*.pyc" -delete 2>/dev/null || true
     find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     
+    # Install system dependencies (Graphviz for ERD generation)
+    sudo apt-get update
+    sudo apt-get install -y graphviz
+    
     # Create a virtual environment and install dependencies
     if [ ! -d "venv" ]; then
       python3 -m venv venv
