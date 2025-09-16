@@ -3514,9 +3514,10 @@ p.editable-content.editing .content-textarea {
 
 /* Analytics Dashboard Styles */
 .analytics-container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
     padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 .analytics-content {
