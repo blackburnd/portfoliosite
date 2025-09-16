@@ -154,12 +154,46 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             if not os.path.exists(target_path):
                 raise Exception(f"Generated SVG file not found: {target_path}")
             
-            log_with_context("INFO", "sql_admin_erd",
-                             f"ERD saved to: {target_path}", request)
-            
-            # Now serve the file just like test-erd-complex
+            # Read and validate the generated content
             with open(target_path, 'r') as svg_file:
                 svg_content = svg_file.read()
+            
+            # Check if pypgsvg generated DOT format instead of SVG
+            if not svg_content.strip().startswith('<'):
+                # Not XML/SVG format, likely DOT format - convert using dot
+                log_with_context("INFO", "sql_admin_erd",
+                                 "Converting DOT format to SVG using graphviz",
+                                 request)
+                
+                # Create temporary DOT file
+                dot_path = target_path + '.dot'
+                with open(dot_path, 'w') as dot_file:
+                    dot_file.write(svg_content)
+                
+                try:
+                    # Convert DOT to SVG
+                    dot_result = subprocess.run(
+                        ['dot', '-Tsvg', dot_path, '-o', target_path],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if dot_result.returncode != 0:
+                        error_msg = (f"DOT conversion failed: "
+                                     f"{dot_result.stderr}")
+                        raise Exception(error_msg)
+                    
+                    # Read the converted SVG
+                    with open(target_path, 'r') as svg_file:
+                        svg_content = svg_file.read()
+                        
+                finally:
+                    # Clean up DOT file
+                    if os.path.exists(dot_path):
+                        os.unlink(dot_path)
+            
+            log_with_context("INFO", "sql_admin_erd",
+                             f"ERD saved to: {target_path}", request)
             
             return Response(
                 content=svg_content,
