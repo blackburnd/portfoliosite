@@ -57,5 +57,5 @@ Disallow: /auth/
 # Crawl delay to be respectful of server resources
 Crawl-delay: 1
 
-# Sitemap location (you may want to create this later)
-# Sitemap: https://blackburnsystems.com/sitemap.xml
+# Sitemap location
+Sitemap: https://blackburnsystems.com/sitemap.xml

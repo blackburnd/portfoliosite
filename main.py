@@ -32,7 +32,7 @@ from app.routers.site_config_migration import (
 )
 from analytics import analytics
 from auth import require_admin_auth
-from database import close_database, database, init_database
+from database import close_database, database, init_database, get_portfolio_id
 from log_capture import add_log
 from ttw_oauth_manager import TTWOAuthManager
 
@@ -604,6 +604,150 @@ Crawl-delay: 1"""
         return Response(
             content="User-agent: *\nAllow: /",
             media_type="text/plain"
+        )
+
+
+# Sitemap.xml route for SEO and search engine discovery
+@app.get("/sitemap.xml")
+async def sitemap_xml():
+    """Serve sitemap.xml file for search engine indexing"""
+    try:
+        # Try production path first, then local development path
+        sitemap_paths = [
+            "/opt/portfoliosite/sitemap.xml",  # Production
+            "sitemap.xml"  # Local development
+        ]
+        
+        for sitemap_path in sitemap_paths:
+            if os.path.exists(sitemap_path):
+                with open(sitemap_path, 'r') as f:
+                    content = f.read()
+                return Response(
+                    content=content,
+                    media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600"}
+                )
+        
+        # Fallback sitemap.xml if file not found
+        fallback_content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://blackburnsystems.com/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://blackburnsystems.com/work/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://blackburnsystems.com/contact/</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+</urlset>"""
+        
+        return Response(
+            content=fallback_content,
+            media_type="application/xml"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error serving sitemap.xml: {e}")
+        # Return minimal sitemap.xml on error
+        minimal_sitemap = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            '<url><loc>https://blackburnsystems.com/</loc></url>'
+            '</urlset>'
+        )
+        return Response(
+            content=minimal_sitemap,
+            media_type="application/xml"
+        )
+
+
+# Dynamic sitemap that includes database projects
+@app.get("/sitemap-dynamic.xml")
+async def sitemap_dynamic():
+    """Generate dynamic sitemap including all projects from database"""
+    try:
+        from datetime import datetime
+        from xml.sax.saxutils import escape
+        
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # Base URLs with metadata
+        urls = [
+            ("https://blackburnsystems.com/", "weekly", "1.0"),
+            ("https://blackburnsystems.com/work/", "weekly", "0.9"),
+            ("https://blackburnsystems.com/projects/", "weekly", "0.8"),
+            ("https://blackburnsystems.com/contact/", "monthly", "0.7"),
+            ("https://blackburnsystems.com/privacy/", "yearly", "0.4"),
+            ("https://blackburnsystems.com/resume", "monthly", "0.6")
+        ]
+        
+        # Get projects from database and add to URLs
+        try:
+            portfolio_id = get_portfolio_id()
+            query = """
+                SELECT title FROM projects
+                WHERE portfolio_id = :portfolio_id
+                ORDER BY sort_order, title
+            """
+            rows = await database.fetch_all(
+                query, {"portfolio_id": portfolio_id}
+            )
+            
+            for row in rows:
+                title = row["title"]
+                slug = title.lower().replace(" ", "-").replace("&", "and")
+                slug = "".join(c for c in slug if c.isalnum() or c in "-")
+                slug = slug.strip("-")
+                
+                project_url = f"https://blackburnsystems.com/showcase/{slug}/"
+                urls.append((project_url, "monthly", "0.8"))
+                
+        except Exception as e:
+            logger.warning(f"Could not fetch projects for sitemap: {e}")
+        
+        # Build XML sitemap
+        xml_lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
+        
+        for url, changefreq, priority in urls:
+            xml_lines.extend([
+                '    <url>',
+                f'        <loc>{escape(url)}</loc>',
+                f'        <lastmod>{current_date}</lastmod>',
+                f'        <changefreq>{changefreq}</changefreq>',
+                f'        <priority>{priority}</priority>',
+                '    </url>'
+            ])
+        
+        xml_lines.append('</urlset>')
+        xml_content = '\n'.join(xml_lines)
+        
+        return Response(
+            content=xml_content,
+            media_type="application/xml",
+            headers={"Cache-Control": "public, max-age=1800"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating dynamic sitemap: {e}")
+        minimal_xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            '<url><loc>https://blackburnsystems.com/</loc></url>'
+            '</urlset>'
+        )
+        return Response(
+            content=minimal_xml,
+            media_type="application/xml"
         )
 
 
