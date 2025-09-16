@@ -18,6 +18,13 @@ window.toggleSection = function (sectionId) {
     if (content.style.display === 'none') {
         content.style.display = 'block';
         icon.textContent = '▼';
+
+        // Load data when section is first expanded
+        if (sectionId === 'topReferrersContent') {
+            loadTopReferrers();
+        } else if (sectionId === 'topIpsContent') {
+            loadTopIps();
+        }
     } else {
         content.style.display = 'none';
         icon.textContent = '▶';
@@ -277,6 +284,24 @@ function reloadVisitsWithFilters() {
     document.getElementById('noMoreVisits').style.display = 'none';
     document.getElementById('errorMessage').style.display = 'none';
     loadVisits();
+
+    // Also reload the new sections if they are expanded
+    reloadExpandedSections();
+}
+
+// Reload any expanded sections when filters change
+function reloadExpandedSections() {
+    // Check if Top Referrers section is expanded
+    const topReferrersContent = document.getElementById('topReferrersContent');
+    if (topReferrersContent && topReferrersContent.style.display !== 'none') {
+        loadTopReferrers();
+    }
+
+    // Check if Top IPs section is expanded
+    const topIpsContent = document.getElementById('topIpsContent');
+    if (topIpsContent && topIpsContent.style.display !== 'none') {
+        loadTopIps();
+    }
 }
 
 // Get time ago string
@@ -465,6 +490,151 @@ function drawDailyViewsChart(dailyViews) {
     ctx.fillText('Views', 0, 0);
     ctx.restore();
 }
+
+// Load Top Referrers data
+window.loadTopReferrers = async function () {
+    const loading = document.getElementById('topReferrersLoading');
+    const tbody = document.getElementById('topReferrersTableBody');
+    const errorDiv = document.getElementById('topReferrersError');
+
+    // Show loading state
+    loading.style.display = 'block';
+    tbody.innerHTML = '';
+    errorDiv.style.display = 'none';
+
+    try {
+        // Get current time filter
+        const timeFilter = document.getElementById('timeFilter').value;
+        const days = timeFilter === '1h' ? 0.04 :
+            timeFilter === '24h' ? 1 :
+                timeFilter === '7d' ? 7 :
+                    timeFilter === '30d' ? 30 : 7;
+
+        const response = await fetch(`/admin/analytics/top-referrers?days=${days}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (data.referrers && data.referrers.length > 0) {
+            tbody.innerHTML = data.referrers.map((referrer, index) => `
+                <tr>
+                    <td style="text-align: center; padding: 8px; color: #666; font-weight: bold;">
+                        ${index + 1}
+                    </td>
+                    <td style="padding: 8px;">
+                        <div style="font-weight: 500; color: #333;">
+                            ${referrer.domain}
+                        </div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 2px;">
+                            ${referrer.referer}
+                        </div>
+                    </td>
+                    <td style="text-align: center; padding: 8px; color: #007bff; font-weight: bold;">
+                        ${referrer.visit_count}
+                    </td>
+                    <td style="text-align: center; padding: 8px; color: #28a745; font-weight: bold;">
+                        ${referrer.unique_visitors}
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
+                        No referrer data available for the selected time period
+                    </td>
+                </tr>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading top referrers:', error);
+        loading.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'Failed to load referrer data. Please try again.';
+    }
+};
+
+// Load Top IPs data
+window.loadTopIps = async function () {
+    const loading = document.getElementById('topIpsLoading');
+    const tbody = document.getElementById('topIpsTableBody');
+    const errorDiv = document.getElementById('topIpsError');
+
+    // Show loading state
+    loading.style.display = 'block';
+    tbody.innerHTML = '';
+    errorDiv.style.display = 'none';
+
+    try {
+        // Get current time filter
+        const timeFilter = document.getElementById('timeFilter').value;
+        const days = timeFilter === '1h' ? 0.04 :
+            timeFilter === '24h' ? 1 :
+                timeFilter === '7d' ? 7 :
+                    timeFilter === '30d' ? 30 : 7;
+
+        const response = await fetch(`/admin/analytics/top-ips?days=${days}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (data.ips && data.ips.length > 0) {
+            tbody.innerHTML = data.ips.map((ip, index) => `
+                <tr>
+                    <td style="text-align: center; padding: 8px; color: #666; font-weight: bold;">
+                        ${index + 1}
+                    </td>
+                    <td style="padding: 8px;">
+                        <div style="font-weight: 500; color: #333; font-family: monospace;">
+                            ${ip.ip_address}
+                        </div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 2px;">
+                            ${ip.organization || 'Unknown Organization'}
+                        </div>
+                    </td>
+                    <td style="text-align: center; padding: 8px; color: #007bff; font-weight: bold;">
+                        ${ip.visit_count}
+                    </td>
+                    <td style="text-align: center; padding: 8px; color: #28a745; font-weight: bold;">
+                        ${ip.unique_pages}
+                    </td>
+                    <td style="padding: 8px;">
+                        <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; 
+                              background-color: ${ip.visitor_type === 'Bot' ? '#dc3545' : 
+                                                 ip.visitor_type === 'Human' ? '#28a745' : '#6c757d'}; 
+                              color: white;">
+                            ${ip.visitor_type || 'Unknown'}
+                        </span>
+                    </td>
+                    <td style="padding: 8px; color: #666; font-size: 0.9em;">
+                        ${ip.last_visit}
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #666;">
+                        No IP data available for the selected time period
+                    </td>
+                </tr>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading top IPs:', error);
+        loading.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'Failed to load IP data. Please try again.';
+    }
+};
 
 function formatDateLabel(dateStr) {
     const date = new Date(dateStr);

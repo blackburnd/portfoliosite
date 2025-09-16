@@ -421,6 +421,115 @@ class Analytics:
                 'error': str(e)
             }
 
+    async def get_top_referrers(self, days: int = 7):
+        """Get top referrers with visit counts for the specified period."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+
+            query = """
+            SELECT
+                referer,
+                COUNT(*) as visit_count,
+                COUNT(DISTINCT ip_address) as unique_visitors
+            FROM page_analytics
+            WHERE timestamp >= :cutoff_date
+                AND referer IS NOT NULL
+                AND referer != ''
+                AND referer != 'Direct'
+            GROUP BY referer
+            ORDER BY visit_count DESC
+            LIMIT 10
+            """
+
+            result = await database.fetch_all(
+                query, {"cutoff_date": cutoff_date}
+            )
+
+            referrers = []
+            for row in result:
+                row_dict = dict(row)
+                # Clean up referrer display
+                if row_dict['referer']:
+                    # Extract domain from full URL
+                    try:
+                        from urllib.parse import urlparse
+                        parsed = urlparse(row_dict['referer'])
+                        row_dict['domain'] = (
+                            parsed.netloc or row_dict['referer']
+                        )
+                    except Exception:
+                        row_dict['domain'] = row_dict['referer']
+                else:
+                    row_dict['domain'] = 'Unknown'
+                referrers.append(row_dict)
+
+            return {
+                'referrers': referrers,
+                'total_referrers': len(referrers)
+            }
+
+        except Exception as e:
+            add_log(
+                "ERROR", "analytics",
+                f"Failed to get top referrers: {str(e)}",
+                function="get_top_referrers"
+            )
+            return {
+                'referrers': [],
+                'total_referrers': 0,
+                'error': str(e)
+            }
+
+    async def get_top_ips(self, days: int = 7):
+        """Get top IP addresses with visit counts for the specified period."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+
+            query = """
+            SELECT
+                ip_address,
+                COUNT(*) as visit_count,
+                COUNT(DISTINCT page_path) as unique_pages,
+                visitor_type,
+                organization,
+                MAX(timestamp) as last_visit
+            FROM page_analytics
+            WHERE timestamp >= :cutoff_date
+                AND ip_address IS NOT NULL
+            GROUP BY ip_address, visitor_type, organization
+            ORDER BY visit_count DESC
+            LIMIT 10
+            """
+
+            result = await database.fetch_all(
+                query, {"cutoff_date": cutoff_date}
+            )
+
+            ips = []
+            for row in result:
+                row_dict = dict(row)
+                if row_dict['last_visit']:
+                    row_dict['last_visit'] = row_dict['last_visit'].strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                ips.append(row_dict)
+
+            return {
+                'ips': ips,
+                'total_ips': len(ips)
+            }
+
+        except Exception as e:
+            add_log(
+                "ERROR", "analytics",
+                f"Failed to get top IPs: {str(e)}",
+                function="get_top_ips"
+            )
+            return {
+                'ips': [],
+                'total_ips': 0,
+                'error': str(e)
+            }
+
 
 # Global analytics instance
 analytics = Analytics()

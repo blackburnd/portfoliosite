@@ -1049,6 +1049,26 @@ async def analytics_unique_visitors_api(
     return await analytics.get_unique_visitors(days)
 
 
+@app.get("/admin/analytics/top-referrers", response_class=JSONResponse)
+async def analytics_top_referrers_api(
+    request: Request,
+    days: int = 7,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get top referrers with visit counts"""
+    return await analytics.get_top_referrers(days)
+
+
+@app.get("/admin/analytics/top-ips", response_class=JSONResponse)
+async def analytics_top_ips_api(
+    request: Request,
+    days: int = 7,
+    admin: dict = Depends(require_admin_auth)
+):
+    """Get top IP addresses with visit counts"""
+    return await analytics.get_top_ips(days)
+
+
 @app.post("/analytics/mouse-activity", response_class=JSONResponse)
 async def track_mouse_activity(request: Request):
     """Public endpoint to track mouse activity for bot filtering"""
