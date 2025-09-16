@@ -116,31 +116,30 @@
         <!-- Top Referrers Section -->
         <div class="analytics-section table-section">
             <div class="section-header">
-                <h2 class="collapsible-header" onclick="toggleSection('topReferrers')">
-                    <span class="toggle-icon" id="topReferrersIcon">▼</span>
+                <h2 class="collapsible-header" onclick="toggleSection('topReferrersContent')">
+                    <span class="toggle-icon" id="topReferrersContentIcon">▶</span>
                     Top Referrers
                 </h2>
                 <p class="section-description">Most common referrer sources ranked by frequency</p>
             </div>
-            <div id="topReferrers" class="collapsible-content">
+            <div id="topReferrersContent" class="collapsible-content" style="display: none;">
+                <div id="topReferrersLoading" class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading referrers...</span>
+                </div>
+                <div id="topReferrersError" class="error-message" style="display: none;"></div>
                 <div class="table-wrapper">
                     <table class="analytics-table modern-table">
                         <thead>
                             <tr>
+                                <th style="text-align: center; width: 60px;">Rank</th>
                                 <th>Referrer</th>
-                                <th>Visits</th>
-                                <th>Percentage</th>
+                                <th style="text-align: center; width: 100px;">Visits</th>
+                                <th style="text-align: center; width: 120px;">Unique Visitors</th>
                             </tr>
                         </thead>
                         <tbody id="topReferrersTableBody">
-                            <tr>
-                                <td colspan="3" class="loading-cell">
-                                    <div class="loading-state">
-                                        <div class="loading-spinner"></div>
-                                        <span>Loading referrers...</span>
-                                    </div>
-                                </td>
-                            </tr>
+                            <!-- Data loaded via JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -150,34 +149,37 @@
         <!-- Top IP Addresses Section -->
         <div class="analytics-section table-section">
             <div class="section-header">
-                <h2 class="collapsible-header" onclick="toggleSection('topIPs')">
-                    <span class="toggle-icon" id="topIPsIcon">▼</span>
+                <h2 class="collapsible-header" onclick="toggleSection('topIpsContent')">
+                    <span class="toggle-icon" id="topIpsContentIcon">▶</span>
                     Top IP Addresses
                 </h2>
                 <p class="section-description">Most active IP addresses ranked by visit count</p>
             </div>
-            <div id="topIPs" class="collapsible-content">
+            <div id="topIpsContent" class="collapsible-content" style="display: none;">
+                <div id="topIpsLoading" class="loading-state" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading IP addresses...</span>
+                </div>
+                <div id="topIpsError" class="error-message" style="display: none;"></div>
                 <div class="table-wrapper">
                     <table class="analytics-table modern-table">
                         <thead>
                             <tr>
+                                <th style="text-align: center; width: 60px;">Rank</th>
                                 <th>IP Address</th>
-                                <th>Visits</th>
-                                <th>Type</th>
-                                <th>Organization</th>
-                                <th>Percentage</th>
+                                <th style="text-align: center; width: 100px;">Visits</th>
+                                <th style="text-align: center; width: 120px;">Pages</th>
+                                <th style="text-align: center; width: 100px;">Type</th>
+                                <th style="text-align: center; width: 140px;">Last Visit</th>
                             </tr>
                         </thead>
-                        <tbody id="topIPsTableBody">
-                            <tr>
-                                <td colspan="5" class="loading-cell">
-                                    <div class="loading-state">
-                                        <div class="loading-spinner"></div>
-                                        <span>Loading IP addresses...</span>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="topIpsTableBody">
+                            <!-- Data loaded via JavaScript -->
                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
                     </table>
                 </div>
             </div>
