@@ -118,84 +118,7 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
             dump_file_path = dump_file.name
         
         try:
-            # Run pypgsvg on the dump file to generate SVG with explicit output path
-            svg_output_path = '/tmp/schema.erd'
-            result = subprocess.run(
-                ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg', 
-                 dump_file_path, '-o', svg_output_path],
-                capture_output=True,
-                text=True,
-                cwd='/opt/portfoliosite',
-                env={'PYTHONPATH': '/opt/portfoliosite/venv/src/pypgsvg/src'}
-            )
-            
-            if result.returncode != 0:
-                raise Exception(f"pypgsvg failed: {result.stderr}")
-            
-            # Check if the SVG file was generated at the specified location
-            if not os.path.exists(svg_output_path):
-                raise Exception(f"Generated SVG file not found: {svg_output_path}")
-                
-            with open(svg_output_path, 'r') as svg_file:
-                svg_content = svg_file.read()
-            
-            # Check if pypgsvg generated DOT format instead of SVG
-            comment_start = '// Database ERD'
-            starts_with_comment = svg_content.strip().startswith(comment_start)
-            has_digraph = 'digraph {' in svg_content[:100]
-            is_dot_format = starts_with_comment or has_digraph
-            
-            if is_dot_format:
-                # pypgsvg generated DOT format, convert to SVG using graphviz
-                
-                # Write DOT content to temporary file
-                with tempfile.NamedTemporaryFile(
-                    mode='w', suffix='.dot', delete=False
-                ) as dot_temp_file:
-                    dot_temp_file.write(svg_content)
-                    dot_file_path = dot_temp_file.name
-                
-                try:
-                    # Convert DOT to SVG using graphviz
-                    svg_convert_result = subprocess.run(
-                        ['dot', '-Tsvg', dot_file_path, '-o', svg_output_path],
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if svg_convert_result.returncode != 0:
-                        error_msg = (f"Graphviz conversion failed: "
-                                     f"{svg_convert_result.stderr}")
-                        raise Exception(error_msg)
-                    
-                    # Read the converted SVG
-                    with open(svg_output_path, 'r') as svg_file:
-                        svg_content = svg_file.read()
-                        
-                finally:
-                    # Clean up DOT file
-                    if os.path.exists(dot_file_path):
-                        os.unlink(dot_file_path)
-            
-            # Validate SVG content
-            if not svg_content or not svg_content.strip().startswith('<'):
-                if len(svg_content) > 100:
-                    preview = svg_content[:100] + "..."
-                else:
-                    preview = svg_content
-                raise Exception(f"Invalid SVG content after conversion: "
-                                f"{preview}")
-            
-            if '<svg' not in svg_content:
-                if len(svg_content) > 100:
-                    preview = svg_content[:100] + "..."
-                else:
-                    preview = svg_content
-                raise Exception(f"Missing <svg> tag after conversion: "
-                                f"{preview}")
-            
             # Determine the target path for saving the SVG
-            # Try production path first, then local development path
             target_paths = [
                 "/opt/portfoliosite/assets/files/site_erd.svg",  # Production
                 "assets/files/site_erd.svg"  # Local development
@@ -214,17 +137,30 @@ async def generate_erd(request: Request, admin: dict = Depends(require_admin_aut
                 os.makedirs("assets/files", exist_ok=True)
                 target_path = "assets/files/site_erd.svg"
             
-            # Write the SVG content to the target file
-            with open(target_path, 'w') as target_file:
-                target_file.write(svg_content)
+            # Run pypgsvg on the dump file to generate SVG directly to target
+            result = subprocess.run(
+                ['/opt/portfoliosite/venv/bin/python3', '-m', 'pypgsvg',
+                 dump_file_path, '-o', target_path],
+                capture_output=True,
+                text=True,
+                cwd='/opt/portfoliosite',
+                env={'PYTHONPATH': '/opt/portfoliosite/venv/src/pypgsvg/src'}
+            )
             
-            # Clean up the generated SVG file
-            os.unlink(svg_output_path)
+            if result.returncode != 0:
+                raise Exception(f"pypgsvg failed: {result.stderr}")
+            
+            # Check if the SVG file was generated
+            if not os.path.exists(target_path):
+                raise Exception(f"Generated SVG file not found: {target_path}")
             
             log_with_context("INFO", "sql_admin_erd",
                              f"ERD saved to: {target_path}", request)
             
-            # Return the SVG content directly like other ERD endpoints
+            # Now serve the file just like test-erd-complex
+            with open(target_path, 'r') as svg_file:
+                svg_content = svg_file.read()
+            
             return Response(
                 content=svg_content,
                 media_type="image/svg+xml",
