@@ -59,7 +59,6 @@ body {
 /* Specific pages that need content width constraints */
 .google-oauth-admin .wrap,
 .linkedin-oauth-admin .wrap {
-    max-width: 1200px; /* Limit width for OAuth pages for better readability */
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -834,7 +833,6 @@ input[type="checkbox"] {
 
 /* ===== GENERAL CONTENT STYLING ===== */
 .main-content {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
 }
@@ -3638,7 +3636,6 @@ p.editable-content.editing .content-textarea {
 
 /* OAuth Admin Pages Responsive Layout */
 .oauth-admin-content {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -3668,7 +3665,6 @@ p.editable-content.editing .content-textarea {
 .linkedin-oauth-admin .wrap,
 .analytics-admin .wrap,
 .showcase-editor-admin .wrap {
-    max-width: 1200px; /* Limit width for better readability */
     margin: 0 auto;
     padding: 0 20px;
 }
