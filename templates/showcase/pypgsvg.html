@@ -22,6 +22,14 @@
                 <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
                 {% endif %}
 
+                <div class="project_lintitle">
+                    <h1>pypgsvg</h1>
+                    <p class="project-tagline">Automated PostgreSQL Entity Relationship Diagram Generator</p>
+                    <a href="https://github.com/blackburnd/pypgsvg" target="_blank" class="btn-primary-small">
+                        View on GitHub →
+                    </a>
+                </div>
+
                 {% if next_project %}
                 <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
                     {{ next_project.title }} →
@@ -29,14 +37,6 @@
                 {% else %}
                 <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
                 {% endif %}
-            </div>
-
-            <h1>pypgsvg</h1>
-            <p class="project-tagline">Automated PostgreSQL Entity Relationship Diagram Generator</p>
-            <div class="project-meta">
-                <a href="https://github.com/blackburnd/pypgsvg" target="_blank" class="btn-primary">
-                    View on GitHub →
-                </a>
             </div>
         </div>
 

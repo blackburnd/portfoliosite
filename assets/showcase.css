@@ -111,9 +111,9 @@
 }
 
 .project-tech {
-    margin: 0 -2.5rem 3rem -2.5rem; /* Negative margins to break out of container */
-    padding: 0 2.5rem; /* Add padding to maintain content spacing */
-    width: calc(100% + 5rem); /* Account for negative margins */
+    margin: 0 0 3rem 0; /* Remove negative margins */
+    padding: 0; /* Remove extra padding */
+    width: 100%; /* Standard width */
 }
 
 .project-tech h3 {
@@ -787,9 +787,9 @@
     }
     
     .project-tech {
-        margin: 0 -1.5rem 3rem -1.5rem; /* Adjust negative margins for smaller container */
-        padding: 0 1.5rem;
-        width: calc(100% + 3rem);
+        margin: 0 0 3rem 0; /* Remove negative margins for mobile */
+        padding: 0;
+        width: 100%;
     }
     
     .tech-details {
@@ -889,9 +889,9 @@
     }
     
     .project-tech {
-        margin: 0 -1rem 3rem -1rem; /* Adjust negative margins for smallest container */
-        padding: 0 1rem;
-        width: calc(100% + 2rem);
+        margin: 0 0 3rem 0; /* Remove negative margins for smallest screens */
+        padding: 0;
+        width: 100%;
     }
     
     .tech-details {
