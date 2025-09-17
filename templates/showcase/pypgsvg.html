@@ -47,10 +47,12 @@
         <div class="project-content">
             <div class="project-overview">
                 <h2>Project Overview</h2>
-                <p class="lead">pypgsvg is a powerful Python tool that automatically generates interactive SVG Entity
-                    Relationship Diagrams from PostgreSQL database schemas. Built to solve the challenge of keeping
-                    database documentation current with rapid development cycles.</p>
-            </div>
+                <p class="lead">pypgsvg is a very simple yet powerful Python tool that automatically generates interactive SVG Entity
+                    Relationship Diagrams from PostgreSQL database schemas. A fun project to write and originally designed to digest PostgreSQL dump files.
+                    The package has been modified to just query the database for the data to generate the interactive result. Built to solve the challenge of keeping
+                    database documentation current with rapid development cycles and also the assistance of visual explanations of relationships.</p>
+
+                </div>
 
             <div class="project-tech">
                 <h3>Technologies Used</h3>
@@ -73,7 +75,11 @@
             <div class="project-details">
                 <h3>Technical Implementation Deep Dive</h3>
                 <p>pypgsvg demonstrates advanced database introspection and dynamic SVG generation capabilities, solving
-                    real-world documentation challenges for database-driven applications.</p>
+                    real-world documentation challenges for database-driven applications.
+
+                    <strong>There are still a couple points that need polish, and also an acivte feature set coming.</strong>
+
+                </p>
 
                 <div class="feature-showcase">
                     <div class="feature-section">
@@ -94,15 +100,12 @@
                             </ul>
 
                             <p><strong>Implementation Details:</strong> Uses PostgreSQL's information_schema and
-                                pg_catalog system tables for comprehensive metadata extraction. Implements connection
-                                pooling for performance and handles various PostgreSQL versions with backward
-                                compatibility.</p>
+                                pg_catalog system tables for comprehensive metadata extraction. Handles various PostgreSQL versions.</p>
                         </div>
 
                         <div class="interactive-erd-container">
                             <div class="erd-header">
-                                <p class="erd-description">This is another example of pypgsvg output of a more
-                                    interesting database schema</p>
+                                <p class="erd-description">This is the pypgsvg output of an interesting database schema, grab the image to move and mousewheel to zoom.</p>
                             </div>
                             <div class="erd-frame">
                                 <iframe src="/demo-erd-complex" class="interactive-erd"
@@ -113,7 +116,7 @@
                             </div>
                             <div class="erd-footer">
                                 <a href="/demo-erd-complex" target="_blank" class="btn-secondary btn-small">
-                                    Open in Full Screen →
+                                    Explore in Full Screen →
                                 </a>
                             </div>
                         </div>
