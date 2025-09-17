@@ -3274,10 +3274,6 @@ td[style*="#abd6ff"] {
     line-height: 1.6;
 }
 
-.project-tech {
-    margin-bottom: 40px;
-}
-
 .tech-tags-large {
     display: flex;
     flex-wrap: wrap;
@@ -3363,8 +3359,7 @@ td[style*="#abd6ff"] {
     /* Create two-column layout for project tech and details when content is long */
     .project-tech {
         display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 40px;
+        gap: 20px;
         align-items: start;
     }
     
