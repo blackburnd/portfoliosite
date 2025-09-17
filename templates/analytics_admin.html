@@ -6,18 +6,20 @@
 
 {% block extra_head %}
 <script src="/assets/js/analytics-admin.js?v=20250915a"></script>
+<link rel="stylesheet" href="{{ url_for('static', path='analytics-admin.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="analytics-container">
-                    <div class="dashboard-header">
-                        <div class="header-content">
-                            <div class="header-text">
-                                <h1>Site Analytics</h1>
-                                <p class="header-subtitle">Performance metrics and visitor insights</p>
-                            </div>
-                        </div>
-                    </div>    <div class="analytics-content">
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Site Analytics</h1>
+                <p class="header-subtitle">Performance metrics and visitor insights</p>
+            </div>
+        </div>
+    </div>
+    <div class="analytics-content">
         <!-- Enhanced Stats Section -->
         <div class="analytics-stats-section">
             <div class="analytics-stats">
@@ -47,1107 +49,307 @@
 
                 <div class="stat-card stat-card-warning">
                     <div class="stat-content">
-            </div>
-        </div>
-
-        <!-- Enhanced Daily Views section -->
-        <div class="analytics-section chart-section">
-            <div class="section-header">
-                <h2>Daily Views</h2>
-                <p class="chart-description">Page view trends over time with detailed daily breakdown</p>
-            </div>
-            <div class="chart-container">
-                <canvas id="dailyViewsChart" width="800" height="400"></canvas>
-            </div>
-        </div>
-
-        <!-- Enhanced Top Pages Section -->
-        <div class="analytics-section table-section">
-            <div class="section-header">
-                <h2 class="collapsible-header" onclick="toggleSection('topPages')">
-                    <span class="toggle-icon" id="topPagesIcon">▼</span>
-                    Top Pages
-                </h2>
-                <p class="section-description">Most visited pages ranked by view count</p>
-            </div>
-            <div id="topPages" class="collapsible-content">
-                <div class="table-wrapper">
-                    <table class="analytics-table modern-table">
-                        <thead>
-                            <tr>
-                                <th>Page</th>
-                                <th>Views</th>
-                                <th>Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for page in analytics.top_pages %}
-                            <tr>
-                                <td class="page-cell">
-                                    <span class="page-path">{{ page.page_path }}</span>
-                                </td>
-                                <td class="views-cell">
-                                    <span class="view-count">{{ page.views }}</span>
-                                </td>
-                                <td class="percentage-cell">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: {{ (page.views / analytics.total_views * 100)|round(1) if analytics.total_views > 0 else 0 }}%"></div>
-                                    </div>
-                                    <span class="percentage-text">{{ (page.views / analytics.total_views * 100)|round(1) if analytics.total_views > 0 else 0 }}%</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            {% if not analytics.top_pages %}
-                            <tr class="no-data-row">
-                                <td colspan="3">
-                                    <div class="no-data-message">
-                                        <i class="no-data-icon">📭</i>
-                                        <span>No data available</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Referrers Section -->
-        <div class="analytics-section table-section">
-            <div class="section-header">
-                <h2 class="collapsible-header" onclick="toggleSection('topReferrersContent')">
-                    <span class="toggle-icon" id="topReferrersContentIcon">▶</span>
-                    Top Referrers
-                </h2>
-                <p class="section-description">Most common referrer sources ranked by frequency</p>
-            </div>
-            <div id="topReferrersContent" class="collapsible-content" style="display: none;">
-                <div id="topReferrersLoading" class="loading-state" style="display: none;">
-                    <div class="loading-spinner"></div>
-                    <span>Loading referrers...</span>
-                </div>
-                <div id="topReferrersError" class="error-message" style="display: none;"></div>
-                <div class="table-wrapper">
-                    <table class="analytics-table modern-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align: center; width: 60px;">Rank</th>
-                                <th>Referrer</th>
-                                <th style="text-align: center; width: 100px;">Visits</th>
-                                <th style="text-align: center; width: 120px;">Unique Visitors</th>
-                            </tr>
-                        </thead>
-                        <tbody id="topReferrersTableBody">
-                            <!-- Data loaded via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top IP Addresses Section -->
-        <div class="analytics-section table-section">
-            <div class="section-header">
-                <h2 class="collapsible-header" onclick="toggleSection('topIpsContent')">
-                    <span class="toggle-icon" id="topIpsContentIcon">▶</span>
-                    Top IP Addresses
-                </h2>
-                <p class="section-description">Most active IP addresses ranked by visit count</p>
-            </div>
-            <div id="topIpsContent" class="collapsible-content" style="display: none;">
-                <div id="topIpsLoading" class="loading-state" style="display: none;">
-                    <div class="loading-spinner"></div>
-                    <span>Loading IP addresses...</span>
-                </div>
-                <div id="topIpsError" class="error-message" style="display: none;"></div>
-                <div class="table-wrapper">
-                    <table class="analytics-table modern-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align: center; width: 60px;">Rank</th>
-                                <th>IP Address</th>
-                                <th style="text-align: center; width: 100px;">Visits</th>
-                                <th style="text-align: center; width: 120px;">Pages</th>
-                                <th style="text-align: center; width: 100px;">Type</th>
-                                <th style="text-align: center; width: 140px;">Last Visit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="topIpsTableBody">
-                            <!-- Data loaded via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-                    </table>
-                </div>
-            </div>
-        </div>
- 
-        <!-- Enhanced Recent Visits section -->
-        <div class="analytics-section recent-visits-section">
-            <div class="section-header">
-                <h2>Recent Visits</h2>
-                <p class="section-description">Real-time visitor activity and detailed analytics</p>
-            </div>
-            
-            <div class="visits-controls">
-                <div class="controls-row">
-                    <div class="search-control">
-                        <input type="text" id="searchBox" placeholder="Search pages, IPs, user agents..." class="modern-input" />
-                    </div>
-                    <div class="filter-control">
-                        <select id="timeFilter" class="modern-select" title="Time Period">
-                            <option value="1h">Last Hour</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="7d" selected>Last 7 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                        </select>
-                    </div>
-                    <button id="clearFiltersBtn" style="display: none;" class="clear-btn" onclick="clearFilters()"
-                        title="Clear Filters">
-                        <i class="btn-icon">✕</i>
-                    </button>
-                </div>
-
-                <div id="searchStatus" class="search-status" style="display: none;"></div>
-
-                <div class="stats-row" id="analyticsStats">
-                    <div class="stat-badge">
-                        <span id="totalCount">Total: 0</span>
-                    </div>
-                    <div class="stat-badge">
-                        <span id="filteredVisits">Loaded: 0</span>
-                    </div>
-                    <div class="stat-badge clickable-stat" onclick="showUniqueVisitorsPopup()"
-                        title="Click to view unique visitor details">
-                        <span id="uniqueVisitors">Unique IPs: 0</span>
                     </div>
                 </div>
             </div>
-
-            <div class="visits-table-wrapper">
-                <div class="table-container">
-                    <table class="visits-table modern-table">
-                        <thead>
-                            <tr>
-                                <th data-sort="timestamp" class="sortable" style="width: 80px;">
-                                    Date 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th style="width: 40px;">
-                                    Age
-                                </th>
-                                <th data-sort="page_path" class="sortable" style="width: 120px;">
-                                    Page 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="ip_address" class="sortable" style="width: 90px;">
-                                    IP Address
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="mouse_activity" class="sortable" style="width: 50px;"
-                                    title="Human activity detected">
-                                    Human 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="visitor_type" class="sortable" style="width: 60px;"
-                                    title="Visitor classification">
-                                    Type 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="reverse_dns" class="sortable" style="width: 100px;"
-                                    title="Reverse DNS lookup">
-                                    DNS 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="is_datacenter" class="sortable" style="width: 40px;"
-                                    title="Datacenter/Cloud">
-                                    DC 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="organization" class="sortable" style="width: 80px;"
-                                    title="Organization/ISP">
-                                    Org 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="user_agent" class="sortable" style="width: 100px;">
-                                    User Agent
-                                    <span class="sort-indicator"></span>
-                                </th>
-                                <th data-sort="referer" class="sortable" style="width: 80px;">
-                                    Referer 
-                                    <span class="sort-indicator"></span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="analyticsTableBody">
-                            <tr>
-                                <td colspan="10" class="loading-cell">
-                                    <div class="loading-state">
-                                        <div class="loading-spinner"></div>
-                                        <span>Loading visits...</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- Enhanced Daily Views section -->
+            <div class="analytics-section chart-section">
+                <div class="section-header">
+                    <h2>Daily Views</h2>
+                    <p class="chart-description">Page view trends over time with detailed daily breakdown</p>
                 </div>
-                
-                <div class="table-footer">
-                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-                        <div class="loading-spinner"></div>
-                        <span>Loading more visits...</span>
-                    </div>
-                    <div id="noMoreVisits" class="no-more-indicator" style="display: none;">
-                        <i class="indicator-icon">✓</i>
-                        <span>All visits loaded</span>
-                    </div>
-                    <div id="errorMessage" class="error-indicator" style="display: none;"></div>
-                    <div id="scrollTrigger" class="scroll-trigger"></div>
+                <div class="chart-container">
+                    <canvas id="dailyViewsChart" width="800" height="400"></canvas>
                 </div>
             </div>
-        </div>
 
-       
-
-        <!-- Unique Visitors Popup -->
-        <div id="uniqueVisitorsModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Unique Visitors Details</h3>
-                    <span class="close-button" onclick="closeUniqueVisitorsPopup()">&times;</span>
+            <!-- Enhanced Top Pages Section -->
+            <div class="analytics-section table-section">
+                <div class="section-header">
+                    <h2 class="collapsible-header" onclick="toggleSection('topPages')">
+                        <span class="toggle-icon" id="topPagesIcon">▼</span>
+                        Top Pages
+                    </h2>
+                    <p class="section-description">Most visited pages ranked by view count</p>
                 </div>
-                <div class="modal-body">
-                    <div id="uniqueVisitorsLoading" class="loading" style="display: none;">Loading visitor details...
-                    </div>
-                    <div id="uniqueVisitorsContent">
-                        <table class="visitors-table">
+                <div id="topPages" class="collapsible-content">
+                    <div class="table-wrapper">
+                        <table class="analytics-table modern-table">
                             <thead>
                                 <tr>
-                                    <th>IP Address</th>
-                                    <th>Total Views</th>
-                                    <th>Last Visit</th>
+                                    <th>Page</th>
+                                    <th>Views</th>
+                                    <th>Percentage</th>
                                 </tr>
                             </thead>
-                            <tbody id="uniqueVisitorsTableBody">
-                                <!-- Content will be populated by JavaScript -->
+                            <tbody>
+                                {% for page in analytics.top_pages %}
+                                <tr>
+                                    <td class="page-cell">
+                                        <span class="page-path">{{ page.page_path }}</span>
+                                    </td>
+                                    <td class="views-cell">
+                                        <span class="view-count">{{ page.views }}</span>
+                                    </td>
+                                    <td class="percentage-cell">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill"
+                                                style="width: {{ (page.views / analytics.total_views * 100)|round(1) if analytics.total_views > 0 else 0 }}%">
+                                            </div>
+                                        </div>
+                                        <span class="percentage-text">{{ (page.views / analytics.total_views *
+                                            100)|round(1) if analytics.total_views > 0 else 0 }}%</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not analytics.top_pages %}
+                                <tr class="no-data-row">
+                                    <td colspan="3">
+                                        <div class="no-data-message">
+                                            <i class="no-data-icon">📭</i>
+                                            <span>No data available</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
+            <!-- Top Referrers Section -->
+            <div class="analytics-section table-section">
+                <div class="section-header">
+                    <h2 class="collapsible-header" onclick="toggleSection('topReferrersContent')">
+                        <span class="toggle-icon" id="topReferrersContentIcon">▶</span>
+                        Top Referrers
+                    </h2>
+                    <p class="section-description">Most common referrer sources ranked by frequency</p>
+                </div>
+                <div id="topReferrersContent" class="collapsible-content" style="display: none;">
+                    <div id="topReferrersLoading" class="loading-state" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>Loading referrers...</span>
+                    </div>
+                    <div id="topReferrersError" class="error-message" style="display: none;"></div>
+                    <div class="table-wrapper">
+                        <table class="analytics-table modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center; width: 60px;">Rank</th>
+                                    <th>Referrer</th>
+                                    <th style="text-align: center; width: 100px;">Visits</th>
+                                    <th style="text-align: center; width: 120px;">Unique Visitors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topReferrersTableBody">
+                                <!-- Data loaded via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top IP Addresses Section -->
+            <div class="analytics-section table-section">
+                <div class="section-header">
+                    <h2 class="collapsible-header" onclick="toggleSection('topIpsContent')">
+                        <span class="toggle-icon" id="topIpsContentIcon">▶</span>
+                        Top IP Addresses
+                    </h2>
+                    <p class="section-description">Most active IP addresses ranked by visit count</p>
+                </div>
+                <div id="topIpsContent" class="collapsible-content" style="display: none;">
+                    <div id="topIpsLoading" class="loading-state" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>Loading IP addresses...</span>
+                    </div>
+                    <div id="topIpsError" class="error-message" style="display: none;"></div>
+                    <div class="table-wrapper">
+                        <table class="analytics-table modern-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center; width: 60px;">Rank</th>
+                                    <th>IP Address</th>
+                                    <th style="text-align: center; width: 100px;">Visits</th>
+                                    <th style="text-align: center; width: 120px;">Pages</th>
+                                    <th style="text-align: center; width: 100px;">Type</th>
+                                    <th style="text-align: center; width: 140px;">Last Visit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topIpsTableBody">
+                                <!-- Data loaded via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Recent Visits section -->
+<div class="analytics-section recent-visits-section">
+    <div class="section-header">
+        <h2>Recent Visits</h2>
+        <p class="section-description">Real-time visitor activity and detailed analytics</p>
+    </div>
+
+    <div class="visits-controls">
+        <div class="controls-row">
+            <div class="search-control">
+                <input type="text" id="searchBox" placeholder="Search pages, IPs, user agents..."
+                    class="modern-input" />
+            </div>
+            <div class="filter-control">
+                <select id="timeFilter" class="modern-select" title="Time Period">
+                    <option value="1h">Last Hour</option>
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d" selected>Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                </select>
+            </div>
+            <button id="clearFiltersBtn" style="display: none;" class="clear-btn" onclick="clearFilters()"
+                title="Clear Filters">
+                <i class="btn-icon">✕</i>
+            </button>
         </div>
 
-        <script>
-            // Initialize analytics admin page when DOM is ready
-            document.addEventListener('DOMContentLoaded', function () {
-                const dailyViews = {{ analytics.daily_views | tojson }};
-                initializeAnalyticsAdmin(dailyViews);
+        <div id="searchStatus" class="search-status" style="display: none;"></div>
+
+        <div class="stats-row" id="analyticsStats">
+            <div class="stat-badge">
+                <span id="totalCount">Total: 0</span>
+            </div>
+            <div class="stat-badge">
+                <span id="filteredVisits">Loaded: 0</span>
+            </div>
+            <div class="stat-badge clickable-stat" onclick="showUniqueVisitorsPopup()"
+                title="Click to view unique visitor details">
+                <span id="uniqueVisitors">Unique IPs: 0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="visits-table-wrapper">
+        <div class="table-container">
+            <table class="visits-table modern-table">
+                <thead>
+                    <tr>
+                        <th data-sort="timestamp" class="sortable" style="width: 80px;">
+                            Date
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th style="width: 40px;">
+                            Age
+                        </th>
+                        <th data-sort="page_path" class="sortable" style="width: 120px;">
+                            Page
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="ip_address" class="sortable" style="width: 90px;">
+                            IP Address
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="mouse_activity" class="sortable" style="width: 50px;"
+                            title="Human activity detected">
+                            Human
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="visitor_type" class="sortable" style="width: 60px;"
+                            title="Visitor classification">
+                            Type
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="reverse_dns" class="sortable" style="width: 100px;" title="Reverse DNS lookup">
+                            DNS
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="is_datacenter" class="sortable" style="width: 40px;" title="Datacenter/Cloud">
+                            DC
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="organization" class="sortable" style="width: 80px;" title="Organization/ISP">
+                            Org
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="user_agent" class="sortable" style="width: 100px;">
+                            User Agent
+                            <span class="sort-indicator"></span>
+                        </th>
+                        <th data-sort="referer" class="sortable" style="width: 80px;">
+                            Referer
+                            <span class="sort-indicator"></span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsTableBody">
+                    <tr>
+                        <td colspan="10" class="loading-cell">
+                            <div class="loading-state">
+                                <div class="loading-spinner"></div>
+                                <span>Loading visits...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>Loading more visits...</span>
+            </div>
+            <div id="noMoreVisits" class="no-more-indicator" style="display: none;">
+                <i class="indicator-icon">✓</i>
+                <span>All visits loaded</span>
+            </div>
+            <div id="errorMessage" class="error-indicator" style="display: none;"></div>
+            <div id="scrollTrigger" class="scroll-trigger"></div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Unique Visitors Popup -->
+<div id="uniqueVisitorsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Unique Visitors Details</h3>
+            <span class="close-button" onclick="closeUniqueVisitorsPopup()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="uniqueVisitorsLoading" class="loading" style="display: none;">Loading visitor details...
+            </div>
+            <div id="uniqueVisitorsContent">
+                <table class="visitors-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Total Views</th>
+                            <th>Last Visit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="uniqueVisitorsTableBody">
+                        <!-- Content will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize analytics admin page when DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        const dailyViews = {{ analytics.daily_views | tojson
+    }};
+    initializeAnalyticsAdmin(dailyViews);
             });
-        </script>
+</script>
 
-        <style>
-            /* Modern Analytics Dashboard Styling */
-            .analytics-container {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 20px;
-                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                min-height: 100vh;
-            }
-
-            /* Compact Header Styling */
-            .dashboard-header {
-                text-align: center;
-                margin-bottom: 25px;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 12px;
-                color: white;
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
-            }
-
-            .dashboard-header h1 {
-                font-size: 1.8rem;
-                font-weight: 600;
-                margin: 0 0 5px 0;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-
-            .header-subtitle {
-                font-size: 0.9rem;
-                opacity: 0.9;
-                margin: 0;
-                font-weight: 300;
-            }
-
-            /* Very Compact Stats Grid */
-            .analytics-stats {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
-                margin-bottom: 20px;
-                max-width: 800px;
-            }
-
-            .stat-card {
-                background: white;
-                border-radius: 6px;
-                padding: 12px 10px;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-                transition: all 0.2s ease;
-                border: 1px solid #e5e7eb;
-                text-align: center;
-            }
-
-            .stat-card:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
-
-            .stat-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background: linear-gradient(90deg, var(--card-color-start), var(--card-color-end));
-            }
-
-            .stat-card-primary {
-                --card-color-start: #667eea;
-                --card-color-end: #764ba2;
-            }
-
-            .stat-card-success {
-                --card-color-start: #11998e;
-                --card-color-end: #38ef7d;
-            }
-
-            .stat-card-info {
-                --card-color-start: #3730a3;
-                --card-color-end: #06b6d4;
-            }
-
-            .stat-card-warning {
-                --card-color-start: #f59e0b;
-                --card-color-end: #ef4444;
-            }
-
-            .stat-content {
-                position: relative;
-                z-index: 2;            .stat-icon {
-                font-size: 2.5rem;
-                margin-bottom: 15px;
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-            }
-
-            .stat-card h3 {
-                font-size: 0.7rem;
-                font-weight: 600;
-                color: #6b7280;
-                margin: 0 0 4px 0;
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
-            }
-
-            .stat-number {
-                font-size: 1.4rem;
-                font-weight: 700;
-                color: #1f2937;
-                margin: 4px 0;
-                background: linear-gradient(135deg, var(--card-color-start), var(--card-color-end));
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-            }
-
-            .stat-period {
-                color: #9ca3af;
-                font-size: 0.65rem;
-                font-weight: 400;
-            }
-
-            .stat-trend {
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                z-index: 3;
-            }
-
-            .trend-indicator {
-                font-size: 1.5rem;
-                padding: 8px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.9);
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            }
-
-            .trend-indicator.positive {
-                color: #10b981;
-            }
-
-            .trend-indicator.neutral {
-                color: #6b7280;
-            }
-
-            /* Section Styling */
-            .analytics-section {
-                background: white;
-                border-radius: 10px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-            }
-
-            .section-header {
-                margin-bottom: 15px;
-            }
-
-            .section-header h2 {
-                font-size: 1.3rem;
-                font-weight: 600;
-                color: #1f2937;
-                margin: 0 0 5px 0;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-
-            .section-description {
-                color: #6b7280;
-                margin: 0;
-                font-size: 0.85rem;
-                font-weight: 400;
-            }
-
-            .chart-description {
-                color: #6b7280;
-                font-size: 0.85rem;
-                margin: 0;
-                font-style: normal;
-                font-weight: 400;
-            }
-
-            /* Compact Chart Container */
-            .chart-container {
-                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-                border: 2px solid #e2e8f0;
-                border-radius: 12px;
-                padding: 25px;
-                margin-top: 20px;
-                position: relative;
-                overflow: hidden;
-            }
-
-            .chart-container::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 3px;
-                background: linear-gradient(90deg, #667eea, #764ba2);
-            }
-
-            #dailyViewsChart {
-                border: none;
-                border-radius: 8px;
-                background: white;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            }
-
-            /* Modern Table Styling */
-            .table-wrapper {
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-                border: 1px solid #e5e7eb;
-            }
-
-            .modern-table {
-                width: 100%;
-                border-collapse: collapse;
-                background: white;
-                margin: 0;
-            }
-
-            .modern-table thead {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-            }
-
-            .modern-table th {
-                padding: 18px 20px;
-                text-align: left;
-                font-weight: 600;
-                font-size: 0.9rem;
-                letter-spacing: 0.3px;
-                text-transform: uppercase;
-                border: none;
-            }
-
-            .table-icon {
-                margin-right: 8px;
-                font-size: 1rem;
-                opacity: 0.9;
-            }
-
-            .modern-table td {
-                padding: 16px 20px;
-                border-bottom: 1px solid #f3f4f6;
-                vertical-align: middle;
-            }
-
-            .modern-table tbody tr {
-                transition: all 0.2s ease;
-            }
-
-            .modern-table tbody tr:hover {
-                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-                transform: scale(1.005);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            }
-
-            .modern-table tbody tr:last-child td {
-                border-bottom: none;
-            }
-
-            /* Enhanced Table Cells */
-            .page-cell {
-                font-weight: 500;
-                color: #374151;
-            }
-
-            .page-path {
-                font-family: 'Monaco', 'Menlo', monospace;
-                background: #f3f4f6;
-                padding: 4px 8px;
-                border-radius: 6px;
-                font-size: 0.85rem;
-                color: #4f46e5;
-            }
-
-            .views-cell {
-                text-align: center;
-                font-weight: 700;
-                color: #059669;
-                font-size: 1.1rem;
-            }
-
-            .percentage-cell {
-                position: relative;
-            }
-
-            .progress-bar {
-                background: #e5e7eb;
-                height: 8px;
-                border-radius: 4px;
-                overflow: hidden;
-                margin-bottom: 5px;
-            }
-
-            .progress-fill {
-                height: 100%;
-                background: linear-gradient(90deg, #10b981, #34d399);
-                border-radius: 4px;
-                transition: width 0.6s ease;
-            }
-
-            .percentage-text {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: #6b7280;
-            }
-
-            /* No Data State */
-            .no-data-row td {
-                text-align: center;
-                padding: 40px 20px;
-            }
-
-            .no-data-message {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 10px;
-                color: #9ca3af;
-                font-size: 0.95rem;
-            }
-
-            .no-data-icon {
-                font-size: 2rem;
-                opacity: 0.6;
-            }
-
-            /* Collapsible Section */
-            .collapsible-header {
-                cursor: pointer;
-                user-select: none;
-                transition: all 0.2s ease;
-                border-radius: 8px;
-                padding: 5px;
-                margin: -5px;
-            }
-
-            .collapsible-header:hover {
-                background: rgba(102, 126, 234, 0.05);
-                color: #667eea;
-            }
-
-            .toggle-icon {
-                display: inline-block;
-                margin-left: 10px;
-                font-size: 0.8rem;
-                transition: transform 0.3s ease;
-                color: #6b7280;
-            }
-
-            .collapsible-content {
-                transition: all 0.3s ease;
-                margin-top: 20px;
-            }
-
-            /* Responsive Design */
-            @media (max-width: 768px) {
-                .analytics-container {
-                    padding: 20px 15px;
-                }
-
-                .analytics-header {
-                    padding: 25px 20px;
-                }
-
-                .analytics-header h1 {
-                    font-size: 2.2rem;
-                }
-
-                .analytics-icon {
-                    font-size: 2.2rem;
-                    margin-right: 10px;
-                }
-
-                .analytics-stats {
-                    grid-template-columns: 1fr;
-                    gap: 20px;
-                }
-
-                .stat-card {
-                    padding: 20px;
-                }
-
-                .stat-number {
-                    font-size: 2.2rem;
-                }
-
-                .analytics-section {
-                    padding: 20px;
-                }
-
-                .section-header h2 {
-                    font-size: 1.5rem;
-                }
-
-                .modern-table th,
-                .modern-table td {
-                    padding: 12px 15px;
-                }
-
-                .chart-container {
-                    padding: 20px;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .analytics-header h1 {
-                    font-size: 1.8rem;
-                }
-
-                .analytics-icon {
-                    font-size: 1.8rem;
-                }
-
-                .stat-number {
-                    font-size: 2rem;
-                }
-
-                .modern-table {
-                    font-size: 0.9rem;
-                }
-
-                .modern-table th,
-                .modern-table td {
-                    padding: 10px 12px;
-                }
-            }
-
-            /* Animation for loading states */
-            @keyframes shimmer {
-                0% { background-position: -200px 0; }
-                100% { background-position: calc(200px + 100%) 0; }
-            }
-
-            .loading-shimmer {
-                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-                background-size: 200px 100%;
-                animation: shimmer 1.5s infinite;
-            }
-
-            /* Enhanced Recent Visits Styling */
-            .recent-visits-section {
-                border: 2px solid #e5e7eb;
-            }
-
-            .visits-controls {
-                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-                border-radius: 12px;
-                padding: 20px;
-                margin-bottom: 25px;
-                border: 1px solid #e5e7eb;
-            }
-
-            .controls-row {
-                display: flex;
-                gap: 20px;
-                align-items: center;
-                flex-wrap: wrap;
-                margin-bottom: 15px;
-            }
-
-            .search-control,
-            .filter-control {
-                position: relative;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .control-icon {
-                font-size: 1.1rem;
-                color: #6b7280;
-            }
-
-            .modern-input,
-            .modern-select {
-                padding: 12px 16px;
-                border: 2px solid #e5e7eb;
-                border-radius: 8px;
-                font-size: 0.95rem;
-                background: white;
-                transition: all 0.2s ease;
-                min-width: 200px;
-            }
-
-            .modern-input:focus,
-            .modern-select:focus {
-                outline: none;
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-
-            .clear-btn {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-                font-size: 0.9rem;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }
-
-            .clear-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            }
-
-            .btn-icon {
-                font-size: 0.9rem;
-            }
-
-            .stats-row {
-                display: flex;
-                gap: 15px;
-                flex-wrap: wrap;
-            }
-
-            .stat-badge {
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 20px;
-                padding: 8px 16px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.9rem;
-                font-weight: 500;
-                color: #374151;
-                transition: all 0.2s ease;
-            }
-
-            .stat-badge.clickable-stat {
-                cursor: pointer;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border-color: transparent;
-            }
-
-            .stat-badge.clickable-stat:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            }
-
-            .stat-icon {
-                font-size: 1rem;
-            }
-
-            /* Compact Visits Table */
-            .visits-table-wrapper {
-                background: white;
-                border-radius: 8px;
-                border: 1px solid #e5e7eb;
-                overflow: hidden;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-                max-width: 100%;
-            }
-
-            .table-container {
-                overflow-x: auto;
-                max-height: 500px;
-                overflow-y: auto;
-            }
-
-            .visits-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 0.75rem;
-                table-layout: fixed;
-            }
-
-            .visits-table thead {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                position: sticky;
-                top: 0;
-                z-index: 10;
-            }
-
-            .visits-table th {
-                padding: 8px 6px;
-                text-align: left;
-                font-weight: 600;
-                font-size: 0.7rem;
-                border: none;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .visits-table td {
-                padding: 6px;
-                border-bottom: 1px solid #f3f4f6;
-                vertical-align: middle;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                font-size: 0.7rem;
-            }
-
-            .visits-table tbody tr {
-                transition: all 0.2s ease;
-            }
-
-            .visits-table tbody tr:hover {
-                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            }
-
-            .visits-table tbody tr:nth-child(even) {
-                background: rgba(248, 250, 252, 0.5);
-            }
-
-            .visits-table tbody tr:nth-child(even):hover {
-                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            }
-
-            /* Sort indicators */
-            .sort-indicator {
-                margin-left: 5px;
-                font-size: 0.7rem;
-                opacity: 0.7;
-            }
-
-            /* Loading and status states */
-            .loading-cell {
-                text-align: center;
-                padding: 40px 20px;
-            }
-
-            .loading-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-                color: #6b7280;
-            }
-
-            .loading-spinner {
-                width: 24px;
-                height: 24px;
-                border: 3px solid #e5e7eb;
-                border-top: 3px solid #667eea;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
-
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-
-            .table-footer {
-                padding: 20px;
-                text-align: center;
-                background: #f8fafc;
-                border-top: 1px solid #e5e7eb;
-            }
-
-            .loading-indicator,
-            .no-more-indicator,
-            .error-indicator {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                color: #6b7280;
-                font-size: 0.9rem;
-                font-weight: 500;
-            }
-
-            .no-more-indicator {
-                color: #059669;
-            }
-
-            .error-indicator {
-                color: #dc2626;
-            }
-
-            .indicator-icon {
-                font-size: 1.1rem;
-            }
-
-            .scroll-trigger {
-                height: 1px;
-                background: transparent;
-            }
-
-            /* Search status */
-            .search-status {
-                background: #fef3c7;
-                border: 1px solid #f59e0b;
-                border-radius: 8px;
-                padding: 10px 15px;
-                color: #92400e;
-                font-size: 0.9rem;
-                font-weight: 500;
-                margin-top: 10px;
-            }
-
-            /* Modal enhancements */
-            .modal {
-                position: fixed;
-                z-index: 1000;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(4px);
-            }
-
-            .modal-content {
-                background-color: white;
-                margin: 5% auto;
-                padding: 0;
-                border-radius: 16px;
-                width: 85%;
-                max-width: 900px;
-                max-height: 80vh;
-                overflow: hidden;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-            }
-
-            .modal-header {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px 25px;
-                border-bottom: none;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .modal-header h3 {
-                margin: 0;
-                font-size: 1.3rem;
-                font-weight: 600;
-            }
-
-            .close-button {
-                font-size: 24px;
-                font-weight: bold;
-                cursor: pointer;
-                color: rgba(255, 255, 255, 0.8);
-                transition: color 0.2s ease;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .close-button:hover {
-                color: white;
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .modal-body {
-                padding: 25px;
-                max-height: 60vh;
-                overflow-y: auto;
-            }
-
-            .visitors-table {
-                border-radius: 8px;
-                overflow: hidden;
-                border: 1px solid #e5e7eb;
-            }
-
-            .visitors-table th {
-                background: #f8fafc;
-                color: #374151;
-                padding: 15px;
-                font-weight: 600;
-            }
-
-            .visitors-table td {
-                padding: 15px;
-                border-bottom: 1px solid #f3f4f6;
-            }
-
-            .visitors-table tr:hover {
-                background: #f8fafc;
-            }
-        </style>
-        {% endblock %}
+{% endblock %}
