@@ -12,10 +12,6 @@
 <article class="bc clearfix">
     <section class="project-showcase-content">
         <div class="project-header">
-            <div class="breadcrumb">
-                <a href="/work/">← Back to Portfolio</a>
-            </div>
-
             <!-- Top Navigation -->
             <div class="showcase-navigation">
                 {% if prev_project %}
@@ -23,7 +19,7 @@
                     ← {{ prev_project.title }}
                 </a>
                 {% else %}
-                <span class="nav-button disabled">← Previous</span>
+                <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
                 {% endif %}
 
 
@@ -40,7 +36,7 @@
                     {{ next_project.title }} →
                 </a>
                 {% else %}
-                <span class="nav-button disabled">Next →</span>
+                <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
                 {% endif %}
             </div>
 
@@ -384,7 +380,7 @@
                     ← {{ prev_project.title }}
                 </a>
                 {% else %}
-                <span class="nav-button disabled">← Previous</span>
+                <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
                 {% endif %}
 
                 <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
@@ -394,7 +390,7 @@
                     {{ next_project.title }} →
                 </a>
                 {% else %}
-                <span class="nav-button disabled">Next →</span>
+                <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
                 {% endif %}
             </div>
         </div>
