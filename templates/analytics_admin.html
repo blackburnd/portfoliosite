@@ -19,39 +19,42 @@
             </div>
         </div>
     </div>
-    <div class="analytics-content">
-        <!-- Enhanced Stats Section -->
-        <div class="analytics-stats-section">
-            <div class="analytics-stats">
-                <div class="stat-card stat-card-primary">
-                    <div class="stat-content">
-                        <h3>Total Views</h3>
-                        <div class="stat-number">{{ analytics.total_views }}</div>
-                        <div class="stat-period">Last {{ analytics.period_days }} days</div>
-                    </div>
-                </div>
 
-                <div class="stat-card stat-card-success">
-                    <div class="stat-content">
-                        <h3>Unique Visitors</h3>
-                        <div class="stat-number">{{ analytics.unique_visitors }}</div>
-                        <div class="stat-period">Last {{ analytics.period_days }} days</div>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-card-info">
-                    <div class="stat-content">
-                        <h3>Human Visitors</h3>
-                        <div class="stat-number">{{ analytics.human_visitors }}</div>
-                        <div class="stat-period">Last {{ analytics.period_days }} days</div>
-                    </div>
-                </div>
-
-                <div class="stat-card stat-card-warning">
-                    <div class="stat-content">
-                    </div>
+    <!-- Enhanced Stats Section -->
+    <div class="analytics-stats-section">
+        <div class="analytics-stats">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-content">
+                    <h3>Total Views</h3>
+                    <div class="stat-number">{{ analytics.total_views }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
                 </div>
             </div>
+
+            <div class="stat-card stat-card-success">
+                <div class="stat-content">
+                    <h3>Unique Visitors</h3>
+                    <div class="stat-number">{{ analytics.unique_visitors }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-info">
+                <div class="stat-content">
+                    <h3>Human Visitors</h3>
+                    <div class="stat-number">{{ analytics.human_visitors }}</div>
+                    <div class="stat-period">Last {{ analytics.period_days }} days</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-warning">
+                <div class="stat-content">
+                </div>
+            </div>
+        </div>
+            
+        <!-- Main Sections Grid -->
+        <div class="sections-grid">
             <!-- Enhanced Daily Views section -->
             <div class="analytics-section chart-section">
                 <div class="section-header">
@@ -185,10 +188,8 @@
                     </div>
                 </div>
             </div>
-            </table>
-        </div>
-    </div>
-</div>
+            </div> <!-- End sections-grid -->
+    </div> <!-- End analytics-stats-section -->
 
 <!-- Enhanced Recent Visits section -->
 <div class="analytics-section recent-visits-section">
