@@ -46,9 +46,32 @@
 .project_lintitle .project-tagline {
     font-size: 0.9rem;
     color: #6c757d;
-    margin: 0;
+    margin: 0 0 0.75rem 0;
     font-weight: 500;
     line-height: 1.3;
+}
+
+/* Smaller GitHub button for navigation area */
+.btn-primary-small {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3f73 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary-small:hover {
+    background: linear-gradient(135deg, #1e3f73 0%, #2c5aa0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(44, 90, 160, 0.3);
+    text-decoration: none;
+    color: white;
 }
 
 .project-tagline {
@@ -817,6 +840,11 @@
         font-size: 1.4rem;
     }
 
+    .btn-primary-small {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.7rem;
+    }
+
     .nav-button {
         width: 100%;
         text-align: center;
@@ -853,6 +881,11 @@
 
     .project_lintitle .project-tagline {
         font-size: 0.8rem;
+    }
+
+    .btn-primary-small {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
     }
     
     .project-tech {
