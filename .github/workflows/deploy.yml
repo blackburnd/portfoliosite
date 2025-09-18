@@ -1,7 +1,9 @@
-name: Deploy Portfolio API
+name: Test Portfolio API
 
 on:
   push:
+    branches: [ main ]
+  pull_request:
     branches: [ main ]
 
 jobs:
@@ -39,29 +41,11 @@ jobs:
     - name: Run tests
       env:
         DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+        ENV: testing
+        ADMIN_USERNAME: test_admin
+        ADMIN_PASSWORD: test_password
+        SECRET_KEY: test-secret-key-for-ci-only
+        AUTHORIZED_EMAILS: test@example.com,admin@blackburnsystems.com
       run: |
-        pytest tests/ -v
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v2'
-
-    - name: 'Use gcloud CLI'
-      run: 'gcloud info'
-
-    - name: Submit build
-      run: |-
-        gcloud builds submit --config cloudbuild.yaml .
+        pytest tests/ -v --cov=. --cov-report=term-missing
 
