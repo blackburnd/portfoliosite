@@ -2,12 +2,8 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block extra_css %}
-<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
-{% endblock %}
-
 {% block content %}
-<article class="bc clearfix">
+<main class="bc clearfix">
     <section class="about">
         <div class="intro-flex">
             <figure class="profile-image">
@@ -15,278 +11,66 @@
             </figure>
 
             <div class="hero-content">
-                <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_title">
+                <h1 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_title">
                     {{ config.get('home_hero_title', 'Building Better Solutions Through Experience') }}
-                </h2>
+                </h1>
                 <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="home_hero_description">
                     {{ config.get('home_hero_description', 'With experience that expands throughout University IT departments, corporate banking environments, and agile remote startup companies, I have learned that foundational knowledge combined with effective communication creates a lasting impact. I thrive by embracing continuous growth and approaching every challenge with the mindset of a lifelong learner.') }}
                 </p>
-                                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="tagline">
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="tagline">
                     <em>{{ config.get('tagline', 'Innovation through collaboration') }}</em>
                 </p>
             </div>
         </div>
+
         <div class="main-content">
             <!-- About Me Section -->
-            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_title">
-                {{ config.get('about_section_title', 'About Me') }}
-            </h3>
-            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="bio_long">
-                {{ config.get('bio_long', 'With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career has taken me through diverse environments where I\'ve learned that the best solutions often require looking beyond the obvious tools.') }}
-            </p>
-            
-            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_2">
-                {{ config.get('about_section_content_2', 'I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and validate confidence through comprehensive test coverage. Practicing continuous improvement with clear communication, kindness, and empathy helps me work smarter and more sustainably. Equally important is appreciating the strengths and limitations of my environment and team, which provides invaluable perspective.') }}
-            </p>
+            <section>
+                <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_title">
+                    {{ config.get('about_section_title', 'About Me') }}
+                </h2>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="bio_long">
+                    {{ config.get('bio_long', 'With over two decades of experience solving problems and architecting solutions, I appreciate the deep knowledge that comes from curiosity, trial, and hands-on problem solving. My career has taken me through diverse environments where I\'ve learned that the best solutions often require looking beyond the obvious tools.') }}
+                </p>
+                
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="about_section_content_2">
+                    {{ config.get('about_section_content_2', 'I enjoy working with forward-thinking, collaborative teams to create time-saving toolsets and validate confidence through comprehensive test coverage. Practicing continuous improvement with clear communication, kindness, and empathy helps me work smarter and more sustainably.') }}
+                </p>
+            </section>
 
             <!-- Current Focus Section -->
-            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_title">
-                {{ config.get('focus_section_title', 'Embracing the AI Revolution') }}
-            </h3>
-            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="ai_philosophy">
-                {{ config.get('ai_philosophy', 'Things are changing fast, and it\'s an incredibly exciting time to be skilled in software development—especially when you have a clear sense of what \'correct\' looks like. I think of using AI as a pair programmer like working with a mischievous djinn: it\'s resourceful but often unreliable, yet with clear guardrails, good oversight, and thoughtful follow-up, it can provide surprisingly valuable solutions.') }}
-            </p>
+            <section>
+                <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_title">
+                    {{ config.get('focus_section_title', 'Embracing the AI Revolution') }}
+                </h2>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="ai_philosophy">
+                    {{ config.get('ai_philosophy', 'Things are changing fast, and it\'s an exciting time to be skilled in software development. I think of using AI as working with a resourceful but sometimes unreliable partner—with clear guardrails and thoughtful oversight, it can provide surprisingly valuable solutions.') }}
+                </p>
 
-            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_2">
-                {{ config.get('focus_section_content_2', 'With the right constraints, I\'ve found AI can help create some genuinely useful solutions, but only when kept on a short leash. Letting it run unchecked quickly turns into a new kind of frustration, one that tends to stretch both patience and vocabulary. Even with its quirks, I\'m excited to keep exploring how to use AI more effectively; it\'s a tool I\'m still learning from, and the journey itself is part of the reward.') }}
-            </p>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="focus_section_content_2">
+                    {{ config.get('focus_section_content_2', 'With the right constraints, AI can help create genuinely useful solutions. I\'m excited to keep exploring how to use it more effectively; it\'s a tool I\'m still learning from, and the journey itself is part of the reward.') }}
+                </p>
+            </section>
 
             <!-- Call to Action Section -->
-            <h3 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_title">
-                {{ config.get('cta_section_title', 'Let\'s Work Together') }}
-            </h3>
-            <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_content">
-                {{ config.get('cta_section_content', 'Ready to discuss technical challenges and solutions?') }}
-            </p>
-            <p><strong><a href="/work/">View My Select Work →</a></strong><br>
-            <em>(Featured case studies and technical implementations)</em></p>
+            <section>
+                <h2 class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_title">
+                    {{ config.get('cta_section_title', 'Let\'s Work Together') }}
+                </h2>
+                <p class="{% if user_authenticated %}editable-content{% endif %}" data-config-key="cta_section_content">
+                    {{ config.get('cta_section_content', 'Ready to discuss technical challenges and solutions?') }}
+                </p>
+                <p><strong><a href="/work/">View My Select Work →</a></strong><br>
+                <em>(Featured case studies and technical implementations)</em></p>
+            </section>
         </div>
     </section>
-</article><!-- barba container -->
+</main>
 {% endblock %}
 
 {% block extra_js %}
 {% if user_authenticated %}
-<script>
-// Inline content editing functionality
-let originalContent = {};
-
-// Add click event listeners to editable content
-document.addEventListener('DOMContentLoaded', function() {
-    const editableElements = document.querySelectorAll('.editable-content');
-    
-    // Add click-to-edit functionality to each editable element
-    editableElements.forEach(element => {
-        element.addEventListener('click', function(e) {
-            // Don't start editing if already editing or if clicking on controls
-            if (element.classList.contains('editing') || e.target.closest('.edit-controls')) {
-                return;
-            }
-            startEdit(element);
-        });
-        
-        // Add hover cursor styling
-        element.style.cursor = 'pointer';
-    });
-});
-
-function startEdit(element) {
-    const configKey = element.getAttribute('data-config-key');
-    
-    // Get current text content directly from the element (excluding any existing controls)
-    const clone = element.cloneNode(true);
-    const existingControls = clone.querySelector('.edit-controls');
-    if (existingControls) {
-        existingControls.remove();
-    }
-    const currentText = clone.textContent.trim();
-    
-    // Store original content for canceling
-    originalContent[configKey] = currentText;
-    
-    // Add editing class
-    element.classList.add('editing');
-    
-    // Create editing interface directly
-    let editingHTML;
-    if (element.tagName.toLowerCase() === 'p') {
-        editingHTML = `
-            <textarea class="content-textarea">${currentText}</textarea>
-            <div class="edit-controls">
-                <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-            </div>`;
-    } else {
-        editingHTML = `
-            <input type="text" class="content-input" value="${currentText}">
-            <div class="edit-controls">
-                <button class="edit-btn save-btn" onclick="saveContent(this)">Save</button>
-                <button class="edit-btn cancel-btn" onclick="cancelEdit(this)">Cancel</button>
-            </div>`;
-    }
-    
-    element.innerHTML = editingHTML;
-    
-    // Focus the input
-    const input = element.querySelector('.content-input, .content-textarea');
-    if (input) {
-        input.focus();
-        input.select();
-        
-        // Add keyboard event listeners
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const saveBtn = element.querySelector('.save-btn');
-                if (saveBtn) saveContent(saveBtn);
-            } else if (e.key === 'Escape') {
-                const cancelBtn = element.querySelector('.cancel-btn');
-                if (cancelBtn) cancelEdit(cancelBtn);
-            }
-        });
-    }
-}
-
-async function saveContent(button) {
-    const element = button.closest('.editable-content');
-    if (!element) {
-        console.error('Could not find editable element for button:', button);
-        return;
-    }
-    
-    const configKey = element.getAttribute('data-config-key');
-    const input = element.querySelector('input, textarea');
-    const newValue = input.value.trim();
-    
-    if (!newValue) {
-        alert('Content cannot be empty');
-        return;
-    }
-    
-    // Show saving state
-    button.textContent = 'Saving...';
-    button.disabled = true;
-    
-    try {
-        const response = await fetch('/admin/update-content', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                key: configKey,
-                value: newValue
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Update the display content
-            element.classList.remove('editing');
-            
-            // Restore content with proper formatting
-            if (element.tagName.toLowerCase().startsWith('h')) {
-                element.innerHTML = newValue;
-            } else if (configKey === 'home_hero_tagline') {
-                element.innerHTML = '<em>' + newValue + '</em>';
-            } else {
-                element.innerHTML = newValue;
-            }
-            
-            // Show success feedback
-            showFeedback('Content updated successfully!', 'success');
-        } else {
-            throw new Error(result.message);
-        }
-    } catch (error) {
-        console.error('Save failed:', error);
-        showFeedback('Failed to save: ' + error.message, 'error');
-        
-        // Restore original content on error
-        cancelEdit(button.parentElement.querySelector('.cancel-btn'));
-    } finally {
-        button.textContent = 'Save';
-        button.disabled = false;
-    }
-}
-
-function cancelEdit(button) {
-    const element = button.closest('.editable-content');
-    if (!element) {
-        console.error('Could not find editable element for button:', button);
-        return;
-    }
-    
-    const configKey = element.getAttribute('data-config-key');
-    const originalText = originalContent[configKey];
-    
-    // Remove editing class
-    element.classList.remove('editing');
-    
-    // Restore original content
-    if (element.tagName.toLowerCase().startsWith('h')) {
-        element.innerHTML = originalText;
-    } else if (configKey === 'home_hero_tagline') {
-        element.innerHTML = '<em>' + originalText + '</em>';
-    } else {
-        element.innerHTML = originalText;
-    }
-}
-
-function showFeedback(message, type) {
-    // Create feedback element
-    const feedback = document.createElement('div');
-    feedback.className = `feedback-message ${type}`;
-    feedback.textContent = message;
-    
-    document.body.appendChild(feedback);
-    
-    // Animate in
-    setTimeout(() => {
-        feedback.classList.add('show');
-    }, 100);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        feedback.classList.remove('show');
-        setTimeout(() => {
-            if (document.body.contains(feedback)) {
-                document.body.removeChild(feedback);
-            }
-        }, 300);
-    }, 3000);
-}
-</script>
+<script src="/assets/js/admin-edit.js"></script>
 {% endif %}
-
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'UA-27877508-5');
-</script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Page loaded, checking assets...');
-        
-        // Check if assets directory is accessible
-        fetch('/assets/files/')
-            .then(response => {
-                if (response.ok) {
-                    console.log('✓ Assets directory accessible');
-                    return response.text();
-                } else {
-                    console.error('✗ Assets directory not accessible:', response.status);
-                }
-            })
-            .then(html => {
-                if (html) {
-                    console.log('Available files:', html.match(/href="[^"]+"/g) || []);
-                }
-            })
-            .catch(error => console.error('Asset check failed:', error));
-    });
-</script>
+<script src="/assets/js/analytics.js"></script>
 {% endblock %}
