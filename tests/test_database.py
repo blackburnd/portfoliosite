@@ -8,9 +8,9 @@ from database import (
     init_database,
     close_database,
     get_portfolio_id,
-    add_log,
     database
 )
+from log_capture import add_log
 
 
 @pytest.mark.database
