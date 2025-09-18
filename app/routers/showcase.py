@@ -146,16 +146,24 @@ async def showcase_complex_schema(request: Request):
 
 async def generate_project_template(project):
     """Generate a simple template file for a project using base template"""
+    # Create the template file path
+    template_path = f"templates/showcase/{project['slug']}.html"
+    
+    # Check if a custom template already exists - if so, don't overwrite it
+    if os.path.exists(template_path):
+        print(f"Custom template already exists for {project['slug']}, "
+              f"skipping generation")
+        return
+    
     # Read the base showcase template
     with open("templates/showcase_template.html", "r", encoding="utf-8") as f:
         template_content = f.read()
     
-    # Create the template file
-    template_path = f"templates/showcase/{project['slug']}.html"
-    
     # Ensure the directory exists
     os.makedirs("templates/showcase", exist_ok=True)
     
-    # Write the template file
+    # Write the template file only if it doesn't exist
     with open(template_path, "w", encoding="utf-8") as f:
         f.write(template_content)
+    
+    print(f"Generated new template for {project['slug']}")
