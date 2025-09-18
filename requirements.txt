@@ -25,7 +25,7 @@ idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.6
 lia-web==0.2.3
-linkedin-api==2.3.1
+linkedin-api==2.2.0
 lxml==5.4.0
 MarkupSafe==3.0.2
 packaging==25.0
