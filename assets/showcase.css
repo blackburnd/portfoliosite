@@ -13,7 +13,6 @@
 }
 
 .project-header {
-    margin-bottom: 3rem;
     padding: 2rem 0; /* Keep padding but remove visual container */
 }
 
@@ -850,7 +849,6 @@
     
     .project-header {
         padding: 1.5rem;
-        margin-bottom: 2rem;
     }
     
     .project-header h1 {
