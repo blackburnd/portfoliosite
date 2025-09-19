@@ -3513,11 +3513,9 @@ p.editable-content.editing .content-textarea {
 }
 
 .editable-content.editing {
-    background: #fff;
-    border: 2px solid #007bff;
-    border-radius: 4px;
-    padding: 10px;
-    margin: 5px 0;
+    border: 1px dashed #007bff;
+    border-radius: 2px;
+    /* Minimal visual change - preserve original layout */
 }
 
 .content-input,
