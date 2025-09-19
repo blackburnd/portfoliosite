@@ -14,11 +14,7 @@
 
 .project-header {
     margin-bottom: 3rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    padding: 2rem;
-    border-radius: 12px;
-    border: 1px solid #e9ecef;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 2rem 0; /* Keep padding but remove visual container */
 }
 
 .project-header h1 {
@@ -83,11 +79,7 @@
 }
 
 .project-content {
-    background: white;
-    border-radius: 12px;
-    padding: 2.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e9ecef;
+    padding: 2rem 0; /* Keep padding but remove visual container */
 }
 
 .project-overview {
