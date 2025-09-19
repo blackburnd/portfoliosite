@@ -753,8 +753,8 @@ async def sitemap_dynamic():
 
 # Public demo route for pypgsvg ERD showcase
 @app.get("/demo-erd-complex")
-async def demo_erd_complex():
-    """Public demo route to serve the complex_schema.svg file for pypgsvg showcase"""
+async def demo_erd_complex(clean: bool = False):
+    """Public demo route to serve complex_schema.svg for pypgsvg showcase"""
     try:
         # Try production path first, then local development path
         svg_paths = [
@@ -776,6 +776,21 @@ async def demo_erd_complex():
             
         with open(svg_path, 'r') as svg_file:
             svg_content = svg_file.read()
+        
+        # If clean mode requested, inject CSS to hide popups
+        if clean:
+            # Find the closing </style> tag and inject our CSS before it
+            style_end = svg_content.find(']]></style>')
+            if style_end != -1:
+                hide_popups_css = """
+/* Hide popup containers for clean embedded view */
+.metadata-container, .miniature-container {
+    display: none !important;
+}
+"""
+                svg_content = (svg_content[:style_end] +
+                               hide_popups_css +
+                               svg_content[style_end:])
         
         return Response(
             content=svg_content,
