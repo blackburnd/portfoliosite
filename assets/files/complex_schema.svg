@@ -4346,11 +4346,7 @@
     <foreignObject id="overlay-container" x="0" y="0" width="100%" height="100%" pointer-events="none">
         <div xmlns="http://www.w3.org/1999/xhtml" id="overlay-container-div" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; font-family: system-ui, -apple-system, sans-serif; z-index: 9999;">
             
-        
-    <div class="instructions">
-        💡 Drag to pan • Scroll to zoom • Click map to navigate • Click tables/edges to highlight • ESC/R to reset
-    </div>
-    
+        <div class="instructions">💡 Drag to pan • Scroll to zoom • Click map to navigate • Click tables/edges to highlight<br/>ESC/R to reset • I to toggle info windows</div>
         
 <div class='metadata-container container' id='metadata-container'>
     <div class='header'>📊 Database Metadata</div>
@@ -4369,7 +4365,7 @@
             </div>
             <div class="metadata-single">
                 <span class="label">Generated:</span>
-                <span class="value">2025-08-29 14:48:27</span>
+                <span class="value">2025-09-19 12:14:28</span>
             </div>
         </div>
 
@@ -7901,6 +7897,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let highlightedElementId = null;
     let dragState = { type: null, startX: 0, startY: 0, offsetX: 0, offsetY: 0, target: null, handle: null };
     let selectionContainerManuallyPositioned = false; // Flag to track if user has manually positioned selection container
+    let infoWindowsVisible = true; // Flag to track if informational windows are visible
 
     // --- Utility Functions ---
 
@@ -7977,6 +7974,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Clean up
         window.URL.revokeObjectURL(url);
+    }
+
+    // --- URL Parameter Handling ---
+    function parseUrlParameters() {
+        const queryString = window.location.search;
+        console.log('parseUrlParameters called with queryString:', queryString);
+        
+        // Check if info windows should be hidden via URL parameter
+        if (queryString.includes('hide')) {
+            console.log('URL parameter ?hide detected, hiding info windows');
+            infoWindowsVisible = false;
+            
+            // Apply the hiding immediately since containers now exist
+            const metadataContainer = document.getElementById('metadata-container');
+            const miniatureContainer = document.getElementById('miniature-container');
+            const selectionContainer = document.getElementById('selection-container');
+            
+            console.log('Containers found:', {
+                metadata: !!metadataContainer,
+                miniature: !!miniatureContainer,
+                selection: !!selectionContainer
+            });
+            
+            if (metadataContainer) {
+                metadataContainer.style.display = 'none';
+                console.log('Hidden metadata container');
+            }
+            if (miniatureContainer) {
+                miniatureContainer.style.display = 'none';
+                console.log('Hidden miniature container');
+            }
+            if (selectionContainer) {
+                selectionContainer.style.display = 'none';
+                console.log('Hidden selection container');
+            }
+        } else {
+            console.log('No ?hide URL parameter detected');
+        }
+    }
+
+    // --- Info Windows Toggle ---
+    function toggleInfoWindows() {
+        infoWindowsVisible = !infoWindowsVisible;
+        
+        const metadataContainer = document.getElementById('metadata-container');
+        const miniatureContainer = document.getElementById('miniature-container');
+        const selectionContainer = document.getElementById('selection-container');
+        
+        const displayValue = infoWindowsVisible ? 'block' : 'none';
+        
+        if (metadataContainer) {
+            metadataContainer.style.display = displayValue;
+        }
+        if (miniatureContainer) {
+            miniatureContainer.style.display = displayValue;
+        }
+        if (selectionContainer) {
+            selectionContainer.style.display = displayValue;
+        }
     }
 
     // --- Window Controls ---
@@ -9664,13 +9720,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper to compute minimum zoom to fit SVG in viewport
     function getMinZoomToFit() {
         const mainBounds = getMainERDBounds();
-        if (!mainBounds.width || !mainBounds.height) return 0.01;
+        if (!mainBounds.width || !mainBounds.height) return 0.005; // Reduced from 0.01 to allow more zoom out
         const viewport = getViewportDimensions();
         const svgWidth = viewport.width;
         const svgHeight = viewport.height;
         const scaleX = svgWidth / mainBounds.width;
         const scaleY = svgHeight / mainBounds.height;
-        return Math.min(scaleX, scaleY);
+        return Math.min(scaleX, scaleY) * 0.5; // Added multiplier to allow zooming out beyond fit
     }
 
     svg.addEventListener('wheel', (event) => {
@@ -9706,7 +9762,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' || e.key.toLowerCase() === 'r') {
             window.location.reload();
-
+        } else if (e.key.toLowerCase() === 'i') {
+            toggleInfoWindows();
         }
     });
 
@@ -10097,6 +10154,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Initialize table selector
             initializeTableSelector();
+            
+            // Parse and apply URL parameters after all containers are initialized
+            parseUrlParameters();
         } catch (error) {
             console.error("Error during SVG initialization:", error);
             setTimeout(initializeSvgView, 300);

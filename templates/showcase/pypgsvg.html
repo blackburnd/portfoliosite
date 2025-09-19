@@ -43,7 +43,10 @@
         <div class="project-content">
             <div class="project-overview">
                 <h2>Project Overview</h2>
-                <p class="lead">pypgsvg is a powerful Python tool that automatically generates interactive SVG Entity Relationship Diagrams from PostgreSQL database schemas. Originally designed to process PostgreSQL dump files, it now queries databases directly to create real-time visual documentation that keeps pace with rapid development cycles.</p>
+                <p class="lead">pypgsvg is a powerful Python tool that automatically generates interactive SVG Entity
+                    Relationship Diagrams from PostgreSQL database schemas. Originally designed to process PostgreSQL
+                    dump files, it now queries databases directly to create real-time visual documentation that keeps
+                    pace with rapid development cycles.</p>
             </div>
 
             <div class="project-tech">
@@ -76,22 +79,33 @@
                 </div>
 
                 <h3>Technical Implementation</h3>
-                <p>pypgsvg demonstrates advanced database introspection and dynamic SVG generation capabilities, solving real-world documentation challenges for database-driven applications.</p>
+                <p>pypgsvg demonstrates advanced database introspection and dynamic SVG generation capabilities, solving
+                    real-world documentation challenges for database-driven applications.</p>
                 <div class="feature-section">
                     <h4>Usage & Automation</h4>
                     <div class="feature-description">
-                        <p>Originally designed as a command-line tool, pypgsvg now supports direct database queries for real-time ERD generation. This portfolio site demonstrates live PostgreSQL schema visualization using the tool.</p>
-                        
-                        <p>The application supports key Graphviz layout options including <code>rankdir</code>, <code>nodesep</code>, and <code>packmode</code> for customizable diagram layouts. Being fully scriptable, it integrates seamlessly into CI/CD pipelines to keep documentation synchronized with database changes.</p>
+                        <p>Originally designed as a command-line tool, pypgsvg now supports direct database queries for
+                            real-time ERD generation. This portfolio site demonstrates live PostgreSQL schema
+                            visualization using the tool.</p>
+
+                        <p>The application supports key Graphviz layout options including <code>rankdir</code>,
+                            <code>nodesep</code>, and <code>packmode</code> for customizable diagram layouts. Being
+                            fully scriptable, it integrates seamlessly into CI/CD pipelines to keep documentation
+                            synchronized with database changes.
+                        </p>
                     </div>
 
-                    <p class="screenshot-label">Command-line interface with configuration options</p>
+                    <p class="screenshot-label">Command-line interface with some of the configuration options. </p>
                     <div class="screenshot-container">
                         <img src="/assets/screenshots/pypgsvg/options.gif"
                             alt="pypgsvg command line help and configuration options"
                             class="screenshot-image showcase-screenshot"
                             onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder-text&quot;>Screenshot: pypgsvg command line help</div>'">
                     </div>
+                </div>
+
+                <div class="" project-details">
+                    <h3>Testing and Code Coverage</h3>
 
                     <p class="screenshot-label">The unit test suite has over 94% coverage.</p>
                     <div class="screenshot-container">
@@ -108,239 +122,248 @@
                             class="screenshot-gif showcase-screenshot"
                             onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder-text&quot;>Screenshot: pypgsvg tests</div>'">
                     </div>
-
                 </div>
+
             </div>
-            <div class="feature-showcase">
-                <div class="feature-section">
-                    <h4>Automated Schema Discovery & Analysis</h4>
-                    <div class="feature-description">
-                        <p>Database schemas evolve rapidly during development, and not everyone speaks SQL fluently. Manual ERD maintenance becomes an error-prone bottleneck, especially in containerized environments. pypgsvg automates this process by providing real-time visual representations of PostgreSQL databases.</p>
+        </div>
+        <div class="feature-showcase">
+            <div class="feature-section">
+                <h4>Automated Schema Discovery & Analysis</h4>
+                <div class="feature-description">
+                    <p>Database schemas evolve rapidly during development, and not everyone speaks SQL fluently. Manual
+                        ERD maintenance becomes an error-prone bottleneck, especially in containerized environments.
+                        pypgsvg automates this process by providing real-time visual representations of PostgreSQL
+                        databases.</p>
 
-                        <p>The tool connects directly to PostgreSQL databases and performs comprehensive schema introspection with:</p>
-                        <ul>
-                            <li>Automated table discovery with column metadata extraction</li>
-                            <li>Foreign key relationship mapping and constraint analysis</li>
-                            <li>Data type recognition and nullable field identification</li>
-                            <li>Index detection and primary key identification</li>
-                            <li>Multi-schema support for complex database architectures</li>
-                        </ul>
-
-                        <p><strong>Implementation Details:</strong> Uses PostgreSQL's information_schema and
-                            pg_catalog system tables for comprehensive metadata extraction. Handles various
-                            PostgreSQL versions.</p>
-                    </div>
-
-                    <div class="interactive-erd-container">
-                        <div class="erd-header">
-                            <p class="erd-description">This is the pypgsvg output of an interesting database schema,
-                                grab the image to move and mousewheel to zoom.</p>
-                        </div>
-                        <div class="erd-frame">
-                            <iframe src="/demo-erd-complex?clean=true" class="interactive-erd"
-                                title="Interactive Entity Relationship Diagram" frameborder="0" scrolling="auto">
-                                <p>Your browser doesn't support iframes. <a href="/demo-erd-complex?clean=true"
-                                        target="_blank">View the interactive ERD here</a>.</p>
-                            </iframe>
-                        </div>
-                        <div class="erd-footer">
-                            <a href="/demo-erd-complex?clean=true" target="_blank" class="btn-secondary btn-small">
-                                Explore in Full Screen →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="feature-section">
-                    <h4>Interactive SVG Generation & Visualization</h4>
-                    <div class="feature-description">
-                        <p>Static database diagrams become outdated quickly and lack interactivity. Teams need
-                            dynamic, explorable diagrams that can be embedded in documentation and presentations.
-                        </p>
-                        <p><strong>Technical Solution:</strong> Advanced SVG generation engine that creates
-                            interactive, scalable diagrams:</p>
-                        <ul>
-                            <li>Dynamic layout algorithms for optimal table positioning</li>
-                            <li>Interactive hover states showing detailed column information</li>
-                            <li>Clickable relationships for relationship exploration</li>
-                            <li>Responsive design that scales for different screen sizes</li>
-                            <li>Export capabilities for documentation and presentations</li>
-                        </ul>
-                        <p><strong>Implementation Details:</strong> Custom SVG rendering engine with coordinate
-                            calculation algorithms, CSS styling integration, and JavaScript event handling for
-                            interactivity. Optimized for performance with large schemas containing hundreds of
-                            tables.</p>
-                    </div>
-
-                    <div class="screenshot-showcase">
-                        <div class="screenshot-frame">
-                            <p class="screenshot-label">Interactive SVG diagram with hover effects and relationship
-                                highlighting</p>
-                            <div class="screenshot-container">
-                                <img src="/assets/screenshots/pypgsvg/pypgsvg-hover.png"
-                                    alt="Interactive SVG diagram showing hover effects and relationship highlighting"
-                                    class="screenshot-image showcase-screenshot"
-                                    onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder-text&quot;>Interactive SVG diagram example</div>'">
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <div class="tech-summary">
-                    <h4>Technical Highlights</h4>
-                    <div class="tech-grid">
-                        <div class="tech-item">
-                            <h5>Core Technologies</h5>
-                            <p>Python 3.8+, PostgreSQL, Graphviz, SVG, JavaScript, CSS3</p>
-                        </div>
-                        <div class="tech-item">
-                            <h5>Testing & Quality</h5>
-                            <p>pytest with 90+ % coverage, Playwright browser testing, CI/CD integration</p>
-                        </div>
-                        <div class="tech-item">
-                            <h5>Database Features</h5>
-                            <p>Real-time schema introspection, foreign key analysis, multi-schema support</p>
-                        </div>
-                        <div class="tech-item">
-                            <h5>Visualization</h5>
-                            <p>Interactive SVG output, responsive design, export capabilities</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Comprehensive Technology Details (Collapsed for SEO) -->
-                <details class="tech-details-expandable">
-                    <summary class="tech-details-summary">
-                        <h4>Complete Technology Stack <span class="expand-icon">▼</span></h4>
-                        <p class="tech-details-subtitle">Comprehensive list of all technologies and libraries used</p>
-                    </summary>
-                    <div class="tech-details-content">
-                        <div class="tech-category">
-                            <h5>Backend Technologies</h5>
-                            <ul>
-                                <li><strong>Python 3.8+</strong> - Primary programming language with modern feature support</li>
-                                <li><strong>Graphviz (>=0.20.1)</strong> - Graph visualization library for automatic layout generation</li>
-                                <li><strong>argparse</strong> - Command-line interface parsing and validation</li>
-                                <li><strong>xml.etree.ElementTree</strong> - XML parsing and SVG manipulation</li>
-                                <li><strong>re (Regular Expressions)</strong> - SQL pattern matching and data extraction</li>
-                                <li><strong>tempfile</strong> - Secure temporary file handling for processing</li>
-                                <li><strong>base64</strong> - Binary data encoding for embedded resources</li>
-                                <li><strong>datetime</strong> - Timestamp generation and metadata tracking</li>
-                                <li><strong>os/sys</strong> - System integration and file path management</li>
-                                <li><strong>logging</strong> - Comprehensive error reporting and debugging</li>
-                                <li><strong>webbrowser</strong> - Cross-platform browser integration</li>
-                            </ul>
-                        </div>
-
-                        <div class="tech-category">
-                            <h5>Frontend Technologies</h5>
-                            <ul>
-                                <li><strong>SVG (Scalable Vector Graphics)</strong> - Vector-based diagram rendering</li>
-                                <li><strong>JavaScript ES6+</strong> - Interactive behavior and DOM manipulation</li>
-                                <li><strong>CSS3</strong> - Advanced styling with gradients, shadows, and animations</li>
-                                <li><strong>HTML5</strong> - Semantic markup and modern web standards</li>
-                                <li><strong>Event Listeners</strong> - Mouse, keyboard, and touch interaction handling</li>
-                                <li><strong>Canvas API</strong> - High-performance graphics rendering</li>
-                                <li><strong>Drag & Drop API</strong> - Interactive element manipulation</li>
-                                <li><strong>Viewport Management</strong> - Responsive design and zoom controls</li>
-                                <li><strong>Local Storage</strong> - Client-side state persistence</li>
-                            </ul>
-                        </div>
-
-                        <div class="tech-category">
-                            <h5>Testing & Quality Assurance</h5>
-                            <ul>
-                                <li><strong>pytest (>=7.0.0)</strong> - Python unit testing framework</li>
-                                <li><strong>pytest-cov (>=4.0.0)</strong> - Code coverage analysis and reporting</li>
-                                <li><strong>pytest-mock</strong> - Advanced mocking and test fixtures</li>
-                                <li><strong>Playwright (>=1.37.0)</strong> - Cross-browser automation testing</li>
-                                <li><strong>Chrome/Firefox/Safari</strong> - Multi-browser compatibility testing</li>
-                                <li><strong>Headless Testing</strong> - CI/CD pipeline integration</li>
-                                <li><strong>Visual Regression Testing</strong> - UI consistency validation</li>
-                                <li><strong>Coverage Reports</strong> - HTML/XML test coverage reporting</li>
-                            </ul>
-                        </div>
-
-                        <div class="tech-category">
-                            <h5>Development & Deployment</h5>
-                            <ul>
-                                <li><strong>setuptools</strong> - Python package creation and distribution</li>
-                                <li><strong>pip</strong> - Python package installation and dependency management</li>
-                                <li><strong>PyPI</strong> - Public package repository and distribution</li>
-                                <li><strong>Virtual Environments</strong> - Isolated development environments</li>
-                                <li><strong>Git</strong> - Version control and collaborative development</li>
-                                <li><strong>GitHub</strong> - Code hosting and issue tracking</li>
-                                <li><strong>Bash Scripting</strong> - Automated testing and deployment scripts</li>
-                                <li><strong>Entry Points</strong> - Command-line executable generation</li>
-                                <li><strong>Cross-Platform Support</strong> - Windows, macOS, and Linux compatibility</li>
-                            </ul>
-                        </div>
-
-                        <div class="tech-category">
-                            <h5>Database & Data Processing</h5>
-                            <ul>
-                                <li><strong>PostgreSQL</strong> - Primary database system support</li>
-                                <li><strong>SQL Parsing</strong> - Complex schema introspection and analysis</li>
-                                <li><strong>information_schema</strong> - Metadata extraction from system catalogs</li>
-                                <li><strong>pg_catalog</strong> - PostgreSQL system table analysis</li>
-                                <li><strong>Foreign Key Analysis</strong> - Relationship mapping and constraint detection</li>
-                                <li><strong>Data Type Recognition</strong> - PostgreSQL type system integration</li>
-                                <li><strong>Trigger Detection</strong> - Database automation discovery</li>
-                                <li><strong>Index Analysis</strong> - Performance optimization identification</li>
-                            </ul>
-                        </div>
-
-                        <div class="tech-category">
-                            <h5>Algorithms & Computer Science</h5>
-                            <ul>
-                                <li><strong>Graph Theory</strong> - Entity relationship modeling and visualization</li>
-                                <li><strong>Layout Algorithms</strong> - Automatic node positioning and edge routing</li>
-                                <li><strong>Color Theory</strong> - Accessible color palette generation</li>
-                                <li><strong>Hash Functions</strong> - Consistent color assignment algorithms</li>
-                                <li><strong>String Algorithms</strong> - Text processing and sanitization</li>
-                                <li><strong>Tree Traversal</strong> - Hierarchical data structure navigation</li>
-                                <li><strong>Pattern Matching</strong> - Regular expression optimization</li>
-                                <li><strong>Memory Optimization</strong> - Efficient data structure design</li>
-                            </ul>
-                        </div>
-                    </div>
-                </details>
-            </div>
-
-            <div class="architecture-grid">
-                <div class="arch-item">
-                    <h4>Core Architecture</h4>
+                    <p>The tool connects directly to PostgreSQL databases and performs comprehensive schema
+                        introspection with:</p>
                     <ul>
-                        <li><strong>Database Introspection:</strong> PostgreSQL metadata extraction</li>
-                        <li><strong>Schema Analysis:</strong> Relationship mapping and constraint detection</li>
-                        <li><strong>Layout Engine:</strong> Automated positioning algorithms</li>
-                        <li><strong>SVG Generation:</strong> Interactive diagram creation</li>
-                        <li><strong>Export System:</strong> Multiple format support</li>
+                        <li>Automated table discovery with column metadata extraction</li>
+                        <li>Foreign key relationship mapping and constraint analysis</li>
+                        <li>Data type recognition and nullable field identification</li>
+                        <li>Index detection and primary key identification</li>
+                        <li>Multi-schema support for complex database architectures</li>
                     </ul>
+
+                    <p><strong>Implementation Details:</strong> Uses PostgreSQL's information_schema and
+                        pg_catalog system tables for comprehensive metadata extraction. Handles various
+                        PostgreSQL versions.</p>
                 </div>
 
-                <div class="arch-item">
-                    <h4>Key Features</h4>
-                    <ul>
-                        <li><strong>Real-time Generation:</strong> Live database schema reading</li>
-                        <li><strong>Interactive Elements:</strong> Hover states and click events</li>
-                        <li><strong>Responsive Design:</strong> Scalable for all screen sizes</li>
-                        <li><strong>CI/CD Ready:</strong> Command-line automation support</li>
-                        <li><strong>Multi-Schema:</strong> Complex database support</li>
-                    </ul>
+                <div class="interactive-erd-container">
+                    <div class="erd-header">
+                        <p class="erd-description">This is the pypgsvg output of an interesting database schema,
+                            grab the image to move and mousewheel to zoom.</p>
+                    </div>
+                    <div class="erd-frame">
+                        <iframe src="/demo-erd-complex?clean=true" class="interactive-erd"
+                            title="Interactive Entity Relationship Diagram" frameborder="0" scrolling="auto">
+                            <p>Your browser doesn't support iframes. <a href="/demo-erd-complex?clean=true"
+                                    target="_blank">View the interactive ERD here</a>.</p>
+                        </iframe>
+                    </div>
+                    <div class="erd-footer">
+                        <a href="/demo-erd-complex?clean=true" target="_blank" class="btn-secondary btn-small">
+                            Explore in Full Screen →
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="project-links">
-                <h3>Project Resources</h3>
+            <div class="feature-section">
+                <h4>Interactive SVG Generation & Visualization</h4>
+                <div class="feature-description">
+                    <p>Static database diagrams become outdated quickly and lack interactivity. Teams need
+                        dynamic, explorable diagrams that can be embedded in documentation and presentations.
+                    </p>
+                    <p><strong>Technical Solution:</strong> Advanced SVG generation engine that creates
+                        interactive, scalable diagrams:</p>
+                    <ul>
+                        <li>Dynamic layout algorithms for optimal table positioning</li>
+                        <li>Interactive hover states showing detailed column information</li>
+                        <li>Clickable relationships for relationship exploration</li>
+                        <li>Responsive design that scales for different screen sizes</li>
+                        <li>Export capabilities for documentation and presentations</li>
+                    </ul>
+                    <p><strong>Implementation Details:</strong> Custom SVG rendering engine with coordinate
+                        calculation algorithms, CSS styling integration, and JavaScript event handling for
+                        interactivity. Optimized for performance with large schemas containing hundreds of
+                        tables.</p>
+                </div>
+
+                <div class="screenshot-showcase">
+                    <div class="screenshot-frame">
+                        <p class="screenshot-label">Interactive SVG diagram with hover effects and relationship
+                            highlighting</p>
+                        <div class="screenshot-container">
+                            <img src="/assets/screenshots/pypgsvg/pypgsvg-hover.png"
+                                alt="Interactive SVG diagram showing hover effects and relationship highlighting"
+                                class="screenshot-image showcase-screenshot"
+                                onerror="this.parentElement.innerHTML='<div class=&quot;screenshot-placeholder-text&quot;>Interactive SVG diagram example</div>'">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="tech-summary">
+                <h4>Technical Highlights</h4>
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <h5>Core Technologies</h5>
+                        <p>Python 3.8+, PostgreSQL, Graphviz, SVG, JavaScript, CSS3</p>
+                    </div>
+                    <div class="tech-item">
+                        <h5>Testing & Quality</h5>
+                        <p>pytest with 90+ % coverage, Playwright browser testing, CI/CD integration</p>
+                    </div>
+                    <div class="tech-item">
+                        <h5>Database Features</h5>
+                        <p>Real-time schema introspection, foreign key analysis, multi-schema support</p>
+                    </div>
+                    <div class="tech-item">
+                        <h5>Visualization</h5>
+                        <p>Interactive SVG output, responsive design, export capabilities</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comprehensive Technology Details (Collapsed for SEO) -->
+            <details class="tech-details-expandable">
+                <summary class="tech-details-summary">
+                    <h4>Complete Technology Stack <span class="expand-icon">▼</span></h4>
+                    <p class="tech-details-subtitle">Comprehensive list of all technologies and libraries used</p>
+                </summary>
+                <div class="tech-details-content">
+                    <div class="tech-category">
+                        <h5>Backend Technologies</h5>
+                        <ul>
+                            <li><strong>Python 3.8+</strong> - Primary programming language with modern feature support
+                            </li>
+                            <li><strong>Graphviz (>=0.20.1)</strong> - Graph visualization library for automatic layout
+                                generation</li>
+                            <li><strong>argparse</strong> - Command-line interface parsing and validation</li>
+                            <li><strong>xml.etree.ElementTree</strong> - XML parsing and SVG manipulation</li>
+                            <li><strong>re (Regular Expressions)</strong> - SQL pattern matching and data extraction
+                            </li>
+                            <li><strong>tempfile</strong> - Secure temporary file handling for processing</li>
+                            <li><strong>base64</strong> - Binary data encoding for embedded resources</li>
+                            <li><strong>datetime</strong> - Timestamp generation and metadata tracking</li>
+                            <li><strong>os/sys</strong> - System integration and file path management</li>
+                            <li><strong>logging</strong> - Comprehensive error reporting and debugging</li>
+                            <li><strong>webbrowser</strong> - Cross-platform browser integration</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-category">
+                        <h5>Frontend Technologies</h5>
+                        <ul>
+                            <li><strong>SVG (Scalable Vector Graphics)</strong> - Vector-based diagram rendering</li>
+                            <li><strong>JavaScript ES6+</strong> - Interactive behavior and DOM manipulation</li>
+                            <li><strong>CSS3</strong> - Advanced styling with gradients, shadows, and animations</li>
+                            <li><strong>HTML5</strong> - Semantic markup and modern web standards</li>
+                            <li><strong>Event Listeners</strong> - Mouse, keyboard, and touch interaction handling</li>
+                            <li><strong>Canvas API</strong> - High-performance graphics rendering</li>
+                            <li><strong>Drag & Drop API</strong> - Interactive element manipulation</li>
+                            <li><strong>Viewport Management</strong> - Responsive design and zoom controls</li>
+                            <li><strong>Local Storage</strong> - Client-side state persistence</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-category">
+                        <h5>Testing & Quality Assurance</h5>
+                        <ul>
+                            <li><strong>pytest (>=7.0.0)</strong> - Python unit testing framework</li>
+                            <li><strong>pytest-cov (>=4.0.0)</strong> - Code coverage analysis and reporting</li>
+                            <li><strong>pytest-mock</strong> - Advanced mocking and test fixtures</li>
+                            <li><strong>Playwright (>=1.37.0)</strong> - Cross-browser automation testing</li>
+                            <li><strong>Chrome/Firefox/Safari</strong> - Multi-browser compatibility testing</li>
+                            <li><strong>Headless Testing</strong> - CI/CD pipeline integration</li>
+                            <li><strong>Visual Regression Testing</strong> - UI consistency validation</li>
+                            <li><strong>Coverage Reports</strong> - HTML/XML test coverage reporting</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-category">
+                        <h5>Development & Deployment</h5>
+                        <ul>
+                            <li><strong>setuptools</strong> - Python package creation and distribution</li>
+                            <li><strong>pip</strong> - Python package installation and dependency management</li>
+                            <li><strong>PyPI</strong> - Public package repository and distribution</li>
+                            <li><strong>Virtual Environments</strong> - Isolated development environments</li>
+                            <li><strong>Git</strong> - Version control and collaborative development</li>
+                            <li><strong>GitHub</strong> - Code hosting and issue tracking</li>
+                            <li><strong>Bash Scripting</strong> - Automated testing and deployment scripts</li>
+                            <li><strong>Entry Points</strong> - Command-line executable generation</li>
+                            <li><strong>Cross-Platform Support</strong> - Windows, macOS, and Linux compatibility</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-category">
+                        <h5>Database & Data Processing</h5>
+                        <ul>
+                            <li><strong>PostgreSQL</strong> - Primary database system support</li>
+                            <li><strong>SQL Parsing</strong> - Complex schema introspection and analysis</li>
+                            <li><strong>information_schema</strong> - Metadata extraction from system catalogs</li>
+                            <li><strong>pg_catalog</strong> - PostgreSQL system table analysis</li>
+                            <li><strong>Foreign Key Analysis</strong> - Relationship mapping and constraint detection
+                            </li>
+                            <li><strong>Data Type Recognition</strong> - PostgreSQL type system integration</li>
+                            <li><strong>Trigger Detection</strong> - Database automation discovery</li>
+                            <li><strong>Index Analysis</strong> - Performance optimization identification</li>
+                        </ul>
+                    </div>
+
+                    <div class="tech-category">
+                        <h5>Algorithms & Computer Science</h5>
+                        <ul>
+                            <li><strong>Graph Theory</strong> - Entity relationship modeling and visualization</li>
+                            <li><strong>Layout Algorithms</strong> - Automatic node positioning and edge routing</li>
+                            <li><strong>Color Theory</strong> - Accessible color palette generation</li>
+                            <li><strong>Hash Functions</strong> - Consistent color assignment algorithms</li>
+                            <li><strong>String Algorithms</strong> - Text processing and sanitization</li>
+                            <li><strong>Tree Traversal</strong> - Hierarchical data structure navigation</li>
+                            <li><strong>Pattern Matching</strong> - Regular expression optimization</li>
+                            <li><strong>Memory Optimization</strong> - Efficient data structure design</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="architecture-grid">
+            <div class="arch-item">
+                <h4>Core Architecture</h4>
                 <ul>
-                    <li><a href="https://github.com/blackburnd/pypgsvg" target="_blank">GitHub Repository</a></li>
-                    <li><a href="https://pypi.org/project/pypgsvg/" target="_blank">PyPI Package</a></li>
-                    <li><a href="/admin/sql/generate-erd" target="_blank">Live Demo (Admin Access)</a></li>
+                    <li><strong>Database Introspection:</strong> PostgreSQL metadata extraction</li>
+                    <li><strong>Schema Analysis:</strong> Relationship mapping and constraint detection</li>
+                    <li><strong>Layout Engine:</strong> Automated positioning algorithms</li>
+                    <li><strong>SVG Generation:</strong> Interactive diagram creation</li>
+                    <li><strong>Export System:</strong> Multiple format support</li>
                 </ul>
             </div>
+
+            <div class="arch-item">
+                <h4>Key Features</h4>
+                <ul>
+                    <li><strong>Real-time Generation:</strong> Live database schema reading</li>
+                    <li><strong>Interactive Elements:</strong> Hover states and click events</li>
+                    <li><strong>Responsive Design:</strong> Scalable for all screen sizes</li>
+                    <li><strong>CI/CD Ready:</strong> Command-line automation support</li>
+                    <li><strong>Multi-Schema:</strong> Complex database support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="project-links">
+            <h3>Project Resources</h3>
+            <ul>
+                <li><a href="https://github.com/blackburnd/pypgsvg" target="_blank">GitHub Repository</a></li>
+                <li><a href="https://pypi.org/project/pypgsvg/" target="_blank">PyPI Package</a></li>
+                <li><a href="/admin/sql/generate-erd" target="_blank">Live Demo (Admin Access)</a></li>
+            </ul>
+        </div>
         </div>
 
         <!-- Bottom Navigation -->
