@@ -10,40 +10,39 @@
 
 {% block content %}
 <article class="bc clearfix">
-    <section class="project-showcase-content">
-        <div class="project-header">
-            <!-- Top Navigation -->
-            <div class="showcase-navigation">
-                {% if prev_project %}
-                <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
-                    ← {{ prev_project.title }}
-                </a>
-                {% else %}
-                <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
-                {% endif %}
+    <div class="project-header">
+        <!-- Top Navigation -->
+        <div class="showcase-navigation">
+            {% if prev_project %}
+            <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+                ← {{ prev_project.title }}
+            </a>
+            {% else %}
+            <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
+            {% endif %}
 
-                <div class="project_lintitle">
-                    <h1>pypgsvg</h1>
-                    <p class="project-tagline">Automated PostgreSQL Entity Relationship Diagram Generator</p>
-                    <a href="https://github.com/blackburnd/pypgsvg" target="_blank" class="btn-primary-small">
-                        View on GitHub →
-                    </a>
-                </div>
-
-                {% if next_project %}
-                <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
-                    {{ next_project.title }} →
+            <div class="project_lintitle">
+                <h1>pypgsvg</h1>
+                <p class="project-tagline">Automated PostgreSQL Entity Relationship Diagram Generator</p>
+                <a href="https://github.com/blackburnd/pypgsvg" target="_blank" class="btn-primary-small">
+                    View on GitHub →
                 </a>
-                {% else %}
-                <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
-                {% endif %}
             </div>
+
+            {% if next_project %}
+            <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+                {{ next_project.title }} →
+            </a>
+            {% else %}
+            <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
+            {% endif %}
         </div>
 
         <div class="project-content">
             <div class="project-overview">
                 <h2>Project Overview</h2>
-                <div class="screenshot-container" style="float: right; width: 33%; margin-left: 20px; margin-bottom: 15px;">
+                <div class="screenshot-container"
+                    style="float: right; width: 33%; margin-left: 20px; margin-bottom: 15px;">
                     <img src="/assets/screenshots/pypgsvg/pypgsvg-hover.png"
                         alt="Interactive SVG diagram showing hover effects and relationship highlighting"
                         class="screenshot-image showcase-screenshot"
@@ -158,9 +157,11 @@
 
                 <div class="interactive-erd-container">
                     <div class="erd-header">
-                        <p class="erd-description">This is the pypgsvg output of a more interesting database schema of a recent project,
-                            grab the image to move and mousewheel to zoom, the informational windows are hidden in the iframe.
-                        for the full experience see the full screen version.</p>
+                        <p class="erd-description">This is the pypgsvg output of a more interesting database schema of a
+                            recent project,
+                            grab the image to move and mousewheel to zoom, the informational windows are hidden in the
+                            iframe.
+                            for the full experience see the full screen version.</p>
                     </div>
                     <div class="erd-frame">
                         <iframe src="/demo-erd-complex?hide=t" class="interactive-erd"
@@ -371,29 +372,29 @@
                 <li><a href="/admin/sql/generate-erd" target="_blank">Live Demo (Admin Access)</a></li>
             </ul>
         </div>
-        </div>
+    </div>
 
-        <!-- Bottom Navigation -->
-        <div class="showcase-navigation">
-            {% if prev_project %}
-            <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
-                ← {{ prev_project.title }}
-            </a>
-            {% else %}
-            <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
-            {% endif %}
+    <!-- Bottom Navigation -->
+    <div class="showcase-navigation">
+        {% if prev_project %}
+        <a href="/showcase/{{ prev_project.slug }}/" class="nav-button prev-button">
+            ← {{ prev_project.title }}
+        </a>
+        {% else %}
+        <a href="/work/" class="nav-button prev-button">← Back to Portfolio</a>
+        {% endif %}
 
-            <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
+        <a href="/work/" class="nav-button back-button">Back to Portfolio</a>
 
-            {% if next_project %}
-            <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
-                {{ next_project.title }} →
-            </a>
-            {% else %}
-            <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
-            {% endif %}
-        </div>
-        </div>
+        {% if next_project %}
+        <a href="/showcase/{{ next_project.slug }}/" class="nav-button next-button">
+            {{ next_project.title }} →
+        </a>
+        {% else %}
+        <a href="/work/" class="nav-button next-button">Back to Portfolio →</a>
+        {% endif %}
+    </div>
+    </div>
     </section>
 </article>
 {% endblock %}
