@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Memory Statistics - Daniel Blackburn{% endblock %}
+
+{% block body_class %}memory-admin claro{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', path='analytics-admin.css') }}">
+<style>
+.memory-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.memory-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.memory-stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #007acc;
+}
+
+.memory-stat-card h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.memory-stat-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #007acc;
+    margin-bottom: 5px;
+}
+
+.memory-stat-subtitle {
+    color: #666;
+    font-size: 12px;
+}
+
+.memory-processes {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.memory-processes h2 {
+    background: #f8f9fa;
+    margin: 0;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.process-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.process-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-weight: 600;
+    color: #495057;
+}
+
+.process-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.process-table tr:hover {
+    background: #f8f9fa;
+}
+
+.memory-value {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-weight: bold;
+}
+
+.high-memory {
+    color: #dc3545;
+}
+
+.medium-memory {
+    color: #fd7e14;
+}
+
+.low-memory {
+    color: #28a745;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="memory-container">
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Memory Statistics</h1>
+                <p class="header-subtitle">System memory usage and process monitoring</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Memory Stats Section -->
+    <div class="memory-stats">
+        <div class="memory-stat-card">
+            <h3>Total Memory</h3>
+            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.total_memory / 1024 / 1024 / 1024) }} GB</div>
+            <div class="memory-stat-subtitle">System RAM</div>
+        </div>
+
+        <div class="memory-stat-card">
+            <h3>Available Memory</h3>
+            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.available_memory / 1024 / 1024 / 1024) }} GB</div>
+            <div class="memory-stat-subtitle">Free RAM</div>
+        </div>
+
+        <div class="memory-stat-card">
+            <h3>Used Memory</h3>
+            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.used_memory / 1024 / 1024 / 1024) }} GB</div>
+            <div class="memory-stat-subtitle">{{ "%.1f"|format(memory_stats.memory_percent) }}% of total</div>
+        </div>
+
+        <div class="memory-stat-card">
+            <h3>Current Process</h3>
+            <div class="memory-stat-number">{{ "%.0f"|format(memory_stats.current_process_memory / 1024 / 1024) }} MB</div>
+            <div class="memory-stat-subtitle">Portfolio app memory</div>
+        </div>
+    </div>
+
+    <!-- Process Details -->
+    {% if memory_stats.top_processes %}
+    <div class="memory-processes">
+        <h2>Top Memory Consuming Processes</h2>
+        <table class="process-table">
+            <thead>
+                <tr>
+                    <th>Process Name</th>
+                    <th>PID</th>
+                    <th>Memory Usage</th>
+                    <th>Memory %</th>
+                    <th>CPU %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for process in memory_stats.top_processes %}
+                <tr>
+                    <td>{{ process.name }}</td>
+                    <td>{{ process.pid }}</td>
+                    <td class="memory-value {% if process.memory_mb > 1000 %}high-memory{% elif process.memory_mb > 100 %}medium-memory{% else %}low-memory{% endif %}">
+                        {{ "%.1f"|format(process.memory_mb) }} MB
+                    </td>
+                    <td>{{ "%.1f"|format(process.memory_percent) }}%</td>
+                    <td>{{ "%.1f"|format(process.cpu_percent) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Additional System Info -->
+    {% if memory_stats.swap_memory %}
+    <div class="memory-processes" style="margin-top: 20px;">
+        <h2>Swap Memory</h2>
+        <div class="memory-stats">
+            <div class="memory-stat-card">
+                <h3>Total Swap</h3>
+                <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.swap_memory.total / 1024 / 1024 / 1024) }} GB</div>
+            </div>
+            <div class="memory-stat-card">
+                <h3>Used Swap</h3>
+                <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.swap_memory.used / 1024 / 1024 / 1024) }} GB</div>
+                <div class="memory-stat-subtitle">{{ "%.1f"|format(memory_stats.swap_memory.percent) }}% used</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

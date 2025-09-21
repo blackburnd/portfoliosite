@@ -35,6 +35,7 @@ from auth import require_admin_auth
 from database import close_database, database, init_database, get_portfolio_id
 from log_capture import add_log
 from ttw_oauth_manager import TTWOAuthManager
+import memhunt
 
 
 def get_client_ip(request: Request) -> str:
@@ -1082,6 +1083,22 @@ async def analytics_top_ips_api(
 ):
     """Get top IP addresses with visit counts"""
     return await analytics.get_top_ips(days)
+
+
+@app.get("/admin/memory", response_class=HTMLResponse)
+async def memory_admin(
+    request: Request, 
+    admin: dict = Depends(require_admin_auth)
+):
+    """Memory monitoring page - requires admin authentication"""
+    # Get memory statistics using memhunt
+    memory_stats = memhunt.get_memory_stats()
+    
+    return templates.TemplateResponse("memory_admin.html", {
+        "request": request,
+        "memory_stats": memory_stats,
+        "user": admin
+    })
 
 
 @app.post("/analytics/mouse-activity", response_class=JSONResponse)
