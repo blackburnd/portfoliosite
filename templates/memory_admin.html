@@ -28,6 +28,10 @@
     border-left: 4px solid #007acc;
 }
 
+.memory-stat-card.error {
+    border-left-color: #dc3545;
+}
+
 .memory-stat-card h3 {
     margin: 0 0 10px 0;
     color: #333;
@@ -48,58 +52,58 @@
     font-size: 12px;
 }
 
-.memory-processes {
+.memory-details {
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     overflow: hidden;
+    margin-bottom: 20px;
 }
 
-.memory-processes h2 {
+.memory-details h2 {
     background: #f8f9fa;
     margin: 0;
     padding: 20px;
     border-bottom: 1px solid #e9ecef;
 }
 
-.process-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.process-table th {
-    background: #f8f9fa;
-    padding: 12px;
-    text-align: left;
-    border-bottom: 2px solid #e9ecef;
-    font-weight: 600;
-    color: #495057;
-}
-
-.process-table td {
-    padding: 12px;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.process-table tr:hover {
-    background: #f8f9fa;
-}
-
-.memory-value {
+.memory-content {
+    padding: 20px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-weight: bold;
+    font-size: 12px;
+    background: #f8f9fa;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-.high-memory {
+.error-message {
     color: #dc3545;
+    padding: 20px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin: 20px 0;
 }
 
-.medium-memory {
-    color: #fd7e14;
+.status-indicator {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
-.low-memory {
-    color: #28a745;
+.status-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
 }
 </style>
 {% endblock %}
@@ -110,85 +114,52 @@
         <div class="header-content">
             <div class="header-text">
                 <h1>Memory Statistics</h1>
-                <p class="header-subtitle">System memory usage and process monitoring</p>
+                <p class="header-subtitle">
+                    System memory usage and process monitoring
+                    <span class="status-indicator {% if memory_stats.status == 'success' %}status-success{% else %}status-error{% endif %}">
+                        {{ memory_stats.status }}
+                    </span>
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Memory Stats Section -->
-    <div class="memory-stats">
-        <div class="memory-stat-card">
-            <h3>Total Memory</h3>
-            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.total_memory / 1024 / 1024 / 1024) }} GB</div>
-            <div class="memory-stat-subtitle">System RAM</div>
-        </div>
-
-        <div class="memory-stat-card">
-            <h3>Available Memory</h3>
-            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.available_memory / 1024 / 1024 / 1024) }} GB</div>
-            <div class="memory-stat-subtitle">Free RAM</div>
-        </div>
-
-        <div class="memory-stat-card">
-            <h3>Used Memory</h3>
-            <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.used_memory / 1024 / 1024 / 1024) }} GB</div>
-            <div class="memory-stat-subtitle">{{ "%.1f"|format(memory_stats.memory_percent) }}% of total</div>
-        </div>
-
-        <div class="memory-stat-card">
-            <h3>Current Process</h3>
-            <div class="memory-stat-number">{{ "%.0f"|format(memory_stats.current_process_memory / 1024 / 1024) }} MB</div>
-            <div class="memory-stat-subtitle">Portfolio app memory</div>
-        </div>
-    </div>
-
-    <!-- Process Details -->
-    {% if memory_stats.top_processes %}
-    <div class="memory-processes">
-        <h2>Top Memory Consuming Processes</h2>
-        <table class="process-table">
-            <thead>
-                <tr>
-                    <th>Process Name</th>
-                    <th>PID</th>
-                    <th>Memory Usage</th>
-                    <th>Memory %</th>
-                    <th>CPU %</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for process in memory_stats.top_processes %}
-                <tr>
-                    <td>{{ process.name }}</td>
-                    <td>{{ process.pid }}</td>
-                    <td class="memory-value {% if process.memory_mb > 1000 %}high-memory{% elif process.memory_mb > 100 %}medium-memory{% else %}low-memory{% endif %}">
-                        {{ "%.1f"|format(process.memory_mb) }} MB
-                    </td>
-                    <td>{{ "%.1f"|format(process.memory_percent) }}%</td>
-                    <td>{{ "%.1f"|format(process.cpu_percent) }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% if memory_stats.status == "error" %}
+    <div class="error-message">
+        <strong>Error:</strong> {{ memory_stats.error }}
     </div>
     {% endif %}
 
-    <!-- Additional System Info -->
-    {% if memory_stats.swap_memory %}
-    <div class="memory-processes" style="margin-top: 20px;">
-        <h2>Swap Memory</h2>
-        <div class="memory-stats">
-            <div class="memory-stat-card">
-                <h3>Total Swap</h3>
-                <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.swap_memory.total / 1024 / 1024 / 1024) }} GB</div>
-            </div>
-            <div class="memory-stat-card">
-                <h3>Used Swap</h3>
-                <div class="memory-stat-number">{{ "%.1f"|format(memory_stats.swap_memory.used / 1024 / 1024 / 1024) }} GB</div>
-                <div class="memory-stat-subtitle">{{ "%.1f"|format(memory_stats.swap_memory.percent) }}% used</div>
-            </div>
+    <!-- Memory Summary -->
+    <div class="memory-details">
+        <h2>Memory Summary</h2>
+        <div class="memory-content">{{ memory_stats.memory_summary }}</div>
+    </div>
+
+    <!-- Biggest Memory Consumer -->
+    <div class="memory-details">
+        <h2>Biggest Memory Consumer</h2>
+        <div class="memory-content">{{ memory_stats.biggest_offender }}</div>
+    </div>
+
+    <!-- Relative Memory Analysis -->
+    <div class="memory-details">
+        <h2>Relative Memory Analysis</h2>
+        <div class="memory-content">{{ memory_stats.relative_memory }}</div>
+    </div>
+
+    <!-- Additional Tools -->
+    <div class="memory-details">
+        <h2>Memory Analysis Tools</h2>
+        <div style="padding: 20px;">
+            <p>This memory monitoring system uses <strong>memhunt</strong> to provide detailed memory analysis:</p>
+            <ul>
+                <li><strong>Memory Summary:</strong> Overview of all objects and their memory usage</li>
+                <li><strong>Biggest Offender:</strong> Identifies the type consuming the most memory</li>
+                <li><strong>Relative Memory:</strong> Detailed breakdown of memory consumption by type</li>
+            </ul>
+            <p>Data is refreshed each time you visit this page.</p>
         </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}

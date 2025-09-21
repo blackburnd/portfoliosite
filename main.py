@@ -35,7 +35,7 @@ from auth import require_admin_auth
 from database import close_database, database, init_database, get_portfolio_id
 from log_capture import add_log
 from ttw_oauth_manager import TTWOAuthManager
-import memhunt
+from memhunt.browser.views import DebugView
 
 
 def get_client_ip(request: Request) -> str:
@@ -1091,8 +1091,31 @@ async def memory_admin(
     admin: dict = Depends(require_admin_auth)
 ):
     """Memory monitoring page - requires admin authentication"""
+    # Create a memhunt DebugView instance
+    debug_view = DebugView()
+    
     # Get memory statistics using memhunt
-    memory_stats = memhunt.get_memory_stats()
+    try:
+        memory_summary = debug_view.memory()
+        biggest_offender = debug_view.get_biggest_offender()
+        relative_memory = debug_view.relative_memory()
+        
+        # Create a structured data object for the template
+        memory_stats = {
+            "memory_summary": memory_summary,
+            "biggest_offender": biggest_offender,
+            "relative_memory": relative_memory,
+            "status": "success"
+        }
+    except Exception as e:
+        # Fallback data in case of error
+        memory_stats = {
+            "memory_summary": f"Error getting memory data: {str(e)}",
+            "biggest_offender": "N/A",
+            "relative_memory": "N/A", 
+            "status": "error",
+            "error": str(e)
+        }
     
     return templates.TemplateResponse("memory_admin.html", {
         "request": request,
