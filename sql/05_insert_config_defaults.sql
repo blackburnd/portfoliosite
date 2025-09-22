@@ -58,7 +58,7 @@ INSERT INTO site_config (portfolio_id, config_key, config_value, description, up
 SELECT 
     portfolio_id,
     'nav_work_label',
-    'Select Work',
+    'Open Source',
     'Label for work/portfolio navigation link',
     NOW()
 FROM portfolios
