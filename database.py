@@ -618,7 +618,7 @@ async def update_google_oauth_token_usage(
     result = await database.execute(
         query, {"portfolio_id": portfolio_id, "email": email}
     )
-    return result > 0
+    return (result or 0) > 0
 
 
 async def revoke_oauth_tokens(

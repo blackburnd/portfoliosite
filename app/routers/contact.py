@@ -59,15 +59,23 @@ async def send_contact_email(
             )
             return False
 
+        # Parse expiry time if available
+        expiry = None
+        if oauth_data.get('token_expires_at'):
+            from datetime import datetime
+            expiry = datetime.fromisoformat(oauth_data['token_expires_at'])
+
         credentials = Credentials(
             token=oauth_data['access_token'],
             refresh_token=oauth_data.get('refresh_token'),
             token_uri="https://oauth2.googleapis.com/token",
             client_id=google_config['client_id'],
             client_secret=google_config['client_secret'],
-            scopes=oauth_data['granted_scopes'].split()
+            scopes=oauth_data['granted_scopes'].split(),
+            expiry=expiry
         )
 
+        # Check if credentials are expired and refresh if needed
         if credentials.expired and credentials.refresh_token:
             credentials.refresh(GoogleRequest())
             await save_google_oauth_tokens(
