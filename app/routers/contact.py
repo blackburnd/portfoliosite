@@ -46,6 +46,13 @@ async def send_contact_email(
             )
             return False
 
+        # Debug logging for oauth_data structure
+        logger.info(f"Gmail API: OAuth data keys: {list(oauth_data.keys())}")
+        logger.info(
+            f"Gmail API: Token expires at: "
+            f"{oauth_data.get('token_expires_at')}"
+        )
+
         ttw_manager = TTWOAuthManager()
         google_config = await ttw_manager.get_oauth_app_config(
             provider='google'
@@ -76,16 +83,38 @@ async def send_contact_email(
         )
 
         # Check if credentials are expired and refresh if needed
-        if credentials.expired and credentials.refresh_token:
-            credentials.refresh(GoogleRequest())
-            await save_google_oauth_tokens(
-                portfolio_id,
-                oauth_data['admin_email'],
-                credentials.token,
-                credentials.refresh_token,
-                credentials.expiry,
-                " ".join(credentials.scopes)
+        try:
+            # Check if we have a refresh token before checking expiry
+            if credentials.refresh_token:
+                # Safely check if credentials are expired
+                try:
+                    is_expired = credentials.expired
+                except Exception as expiry_error:
+                    logger.warning(
+                        f"Gmail API: Could not check credential expiry: "
+                        f"{expiry_error}"
+                    )
+                    # Assume expired if we can't check
+                    is_expired = True
+                
+                if is_expired:
+                    logger.info("Gmail API: Refreshing expired credentials")
+                    credentials.refresh(GoogleRequest())
+                    await save_google_oauth_tokens(
+                        portfolio_id,
+                        oauth_data['admin_email'],
+                        credentials.token,
+                        credentials.refresh_token,
+                        credentials.expiry,
+                        " ".join(credentials.scopes)
+                    )
+            else:
+                logger.warning("Gmail API: No refresh token available")
+        except Exception as refresh_error:
+            logger.error(
+                f"Gmail API: Error during credential refresh: {refresh_error}"
             )
+            # Continue with existing credentials
 
         service = build('gmail', 'v1', credentials=credentials)
 
