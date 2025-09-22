@@ -10,7 +10,7 @@ import logging
 from auth import verify_token, is_authorized_user
 from database import (
     database, get_google_oauth_tokens, save_google_oauth_tokens,
-    update_google_oauth_token_usage
+    update_google_oauth_token_usage, get_portfolio_id
 )
 from log_capture import add_log
 from google.oauth2.credentials import Credentials
@@ -33,7 +33,8 @@ async def send_contact_email(
             "CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com"
         )
 
-        oauth_data = await get_google_oauth_tokens()
+        portfolio_id = get_portfolio_id()
+        oauth_data = await get_google_oauth_tokens(portfolio_id)
 
         if not oauth_data or not oauth_data.get('access_token'):
             logger.warning(
@@ -46,7 +47,9 @@ async def send_contact_email(
             return False
 
         ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_oauth_app_config(provider='google')
+        google_config = await ttw_manager.get_oauth_app_config(
+            provider='google'
+        )
 
         if not google_config:
             logger.warning("Gmail API: No OAuth app configuration found")
@@ -68,11 +71,12 @@ async def send_contact_email(
         if credentials.expired and credentials.refresh_token:
             credentials.refresh(GoogleRequest())
             await save_google_oauth_tokens(
+                portfolio_id,
+                oauth_data['admin_email'],
                 credentials.token,
                 credentials.refresh_token,
                 credentials.expiry,
-                " ".join(credentials.scopes),
-                oauth_data['requested_scopes']
+                " ".join(credentials.scopes)
             )
 
         service = build('gmail', 'v1', credentials=credentials)
@@ -107,7 +111,9 @@ This email was automatically generated from your portfolio website.
             userId='me', body=message_obj
         ).execute()
 
-        await update_google_oauth_token_usage()
+        await update_google_oauth_token_usage(
+            portfolio_id, oauth_data['admin_email']
+        )
 
         logger.info(
             f"Gmail API: Contact notification email sent for submission "
