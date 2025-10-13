@@ -8,7 +8,9 @@ from jose import jwt, JWTError
 import secrets
 import logging
 
+
 logger = logging.getLogger(__name__)
+
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
