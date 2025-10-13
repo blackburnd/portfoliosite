@@ -11,13 +11,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-# Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 
-# Authorized emails - load from environment as fallback
+
 authorized_emails_raw = os.getenv("AUTHORIZED_EMAILS", "")
 print(f"DEBUG: Raw AUTHORIZED_EMAILS from env: '{authorized_emails_raw}'")
 print(f"DEBUG: Length of raw string: {len(authorized_emails_raw)}")
