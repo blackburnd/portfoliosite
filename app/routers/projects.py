@@ -569,3 +569,13 @@ async def rename_screenshot(
             {"success": False, "message": f"Rename failed: {str(e)}"},
             status_code=500
         )
+
+
+@router.get("/other_projects/", response_class=HTMLResponse)
+async def other_projects(request: Request):
+    """Serve the other projects page"""
+    return templates.TemplateResponse("other_projects.html", {
+        "request": request,
+        "title": "Other Projects - Daniel Blackburn",
+        "current_page": "other_projects"
+    })
