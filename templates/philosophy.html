@@ -126,6 +126,18 @@
     .project-overview .lead {
         text-align: justify;
     }
+
+    .inline-image-pair {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-start;
+        gap: 20px;
+        margin: 2rem 0;
+    }
+    .inline-image-pair .gallery-item {
+        width: 45%;
+        margin-bottom: 0;
+    }
 </style>
 {% endblock %}
 
@@ -162,14 +174,39 @@
                 <p>As a lifelong student, my approach to technology is grounded in a deep curiosity for the "why" behind the "how." 
                     I believe that true mastery comes not just from using a tool, but from understanding its design, its limitations, and its place in the broader ecosystem.
                     This philosophy guides how I learn, how I build, and how I solve problems.</p>
-                
+
+                <div class="inline-image-pair">
+                    <div class="gallery-item">
+                        <img src="/assets/files/h1/towed.jpeg" alt="H1 being towed">
+                        <figcaption>A surprise oil leak led to a seized engine—the perfect excuse to install the new Optimizer 6500. The original engine was the weakest link.</figcaption>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="/assets/files/h1/optimizer.jpeg" alt="Engine optimizer tuning tool">
+                        <figcaption>The long-awaited Optimizer 6500, ready to provide a much-needed performance boost.</figcaption>
+                    </div>
+                </div>
+
                 <h3>A Solid Foundation</h3>
                 <ul>
-                    <li><strong>Fundamentals First:</strong> I prioritize understanding core concepts—like data structures, network protocols, or OS fundamentals—before diving into specific frameworks. 
-                        This creates a durable foundation that outlasts any single technology.</li>
+                    <li><strong>Fundamentals First:</strong> I prioritize understanding core concepts—data structures, network protocols, OS fundamentals—before committing to a framework. This "measure twice, cut once" approach avoids costly migrations and ensures the chosen solution is genuinely the best fit. It’s about replacing the broken mirror, not buying a new car.</li>
                     <li><strong>Deliberate Practice:</strong> I'm currently exploring <strong>Advanced AI/ML techniques in Google Cloud</strong> to understand how to build more intelligent, data-driven applications.</li>
-                    <li><strong>Intellectual Honesty (The Value of Failure):</strong> Not every experiment succeeds. A recent attempt to build a distributed task queue with a novel consensus algorithm taught me valuable lessons about the trade-offs between simplicity and scalability, reinforcing the value of proven solutions like RabbitMQ or Celery in production environments.</li>
+                    <li><strong>Intellectual Honesty (The Value of Failure):</strong> Not every experiment succeeds. The most valuable lessons often come from experience, turning failures into a durable understanding of what not to do.</li>
                 </ul>
+            </section>
+
+            <section id="ai-journey" class="philosophy-section">
+                <h2>The AI Integration Journey</h2>
+                <p>As someone skilled in areas most affected by AI, I've embraced it as a powerful augmentation to my workflow, not a replacement. 
+                    My focus is on using AI strategically to enhance productivity and solve more complex problems.</p>
+                
+                <h3>Experiments & Augmentation</h3>
+                <ul>
+                    <li><strong>Google Cloud Platform AI:</strong> I am actively experimenting with GCP's AI services to explore automated log analysis, predictive monitoring, and building intelligent data pipelines.</li>
+                    <li><strong>GitHub Copilot as a Partner:</strong> I use Copilot as a "pair programmer" to accelerate development. It's excellent for boilerplate code, generating unit tests,
+                         and exploring alternative implementations, which frees me up to focus on higher-level architecture and problem-solving. This site itself was built with significant assistance from Copilot.</li>
+                </ul>
+
+                
             </section>
 
                 <div class="project-details">
@@ -190,10 +227,7 @@
                             <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
                             <figcaption>I custom CNC machined and tapped a new aluminum plate for the new turbo drain.</figcaption>
                         </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/optimizer.jpeg" alt="Engine optimizer tuning tool">
-                            <figcaption>Long awaited new Optimizer 6500 has arrived.</figcaption>
-                        </div>
+              
                         <div class="gallery-item">
                             <img src="/assets/files/h1/rockers.jpeg" alt="1.6 roller rockers">
                             <figcaption>HK 1.6 roller rockers from Quadstar.</figcaption>
@@ -214,10 +248,7 @@
                             <img src="/assets/files/h1/tirerack.jpeg" alt="Custom tire rack">
                             <figcaption>This tirerack is amazing, had another rim made to match the other 4.</figcaption>
                         </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/towed.jpeg" alt="H1 being towed">
-                            <figcaption>The excitement of the wedding and distractions allowed me miss an surprise oil leak, run the engine without oil. Finally time for the new optimizer!. The engine in this model was the weakest link.</figcaption>
-                        </div>
+                   
                     </div>
                 </div>
             </section>
@@ -261,22 +292,6 @@
                     <p class="problem"><strong>Problem:</strong> Excited by a generous $1500 credit, I set up this personal site on GCP using "best practices": a separate Cloud SQL instance and a dedicated app server. While quick to configure, I soon discovered this overkill architecture was burning through credits at a projected rate of $40/day.</p>
                     <p class="solution"><strong>Solution:</strong> I quickly refactored. By consolidating services and installing PostgreSQL directly on the app server instance and downgrading the virtual hardware, I reduced the daily cost to about $0.18. It was a practical lesson in right-sizing infrastructure to the problem at hand, not just following abstract best practices.</p>
                 </div>
-            </section>
-
-            <!-- Section 4: AI Integration Journey -->
-            <section id="ai-journey" class="philosophy-section">
-                <h2>The AI Integration Journey</h2>
-                <p>As someone skilled in areas most affected by AI, I've embraced it as a powerful augmentation to my workflow, not a replacement. 
-                    My focus is on using AI strategically to enhance productivity and solve more complex problems.</p>
-                
-                <h3>Experiments & Augmentation</h3>
-                <ul>
-                    <li><strong>Google Cloud Platform AI:</strong> I am actively experimenting with GCP's AI services to explore automated log analysis, predictive monitoring, and building intelligent data pipelines.</li>
-                    <li><strong>GitHub Copilot as a Partner:</strong> I use Copilot as a "pair programmer" to accelerate development. It's excellent for boilerplate code, generating unit tests,
-                         and exploring alternative implementations, which frees me up to focus on higher-level architecture and problem-solving. This site itself was built with significant assistance from Copilot.</li>
-                </ul>
-
-                
             </section>
 
         </div>
