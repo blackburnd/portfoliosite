@@ -188,7 +188,7 @@
                         </div>
                         <div class="gallery-item">
                             <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
-                            <figcaption>I custom CNC machined a new aluminum plate for the new turbo drain.</figcaption>
+                            <figcaption>I custom CNC machined and tapped a new aluminum plate for the new turbo drain.</figcaption>
                         </div>
                         <div class="gallery-item">
                             <img src="/assets/files/h1/optimizer.jpeg" alt="Engine optimizer tuning tool">
@@ -230,27 +230,29 @@
                 <div class="tool-philosophy-grid">
                     <div class="story-card">
                         <h4>The Emacs Ecosystem</h4>
-                        <p>I use Emacs for 99% of my programming. This isn't about nostalgia; it's about creating a fully integrated, distraction-free environment tailored to my exact workflow.
+                        <p>I use Emacs for 99% of my programming. This isn't about nostalgia; it's about creating a fully integrated, distraction-free environment tailored to my exact workflow, without the bells and whistles.
                              By deeply knowing my primary tool, I can automate repetitive tasks, debug more efficiently, and maintain focus in a way that a collection of disparate tools can't match.</p>
                     </div>
                     <div class="story-card">
                         <h4>Building from Scratch</h4>
                         <p>When faced with the need for point-and-click functionality in a legacy system, I chose to build it from the ground up rather than integrating a heavy, modern framework.
-                             This decision resulted in a lightweight, zero-dependency solution that was easier to maintain and perfectly suited to the problem, demonstrating that the "right" tool is sometimes the one you build yourself.</p>
+                             These decisions results in lightweight, zero-dependency solutions that are easier to maintain and more perfectly suited to the problem, 
+                             demonstrating that the "right" tool is sometimes the one you build yourself.</p>
                     </div>
                 </div>
             </section>
 
             <section id="war-stories" class="philosophy-section">
                 <h2>War Stories: Impact-Driven Solutions</h2>
-                <p>Technology is most valuable when it solves a real-world problem. Here are a few stories from the trenches where a deep understanding of fundamentals led to significant business impact.</p>
+                <p>Technology is most valuable when it solves a real-world problem. Here are a few stories where a deep understanding of fundamentals led to significant business impact.</p>
 
                 <div class="story-card">
                     <h4>The Emergency REPL: From Hours to Minutes</h4>
                     <p class="problem"><strong>Problem:</strong> Debugging critical, time-sensitive issues in a locked-down production environment was a nightmare. The operations team spent hours trying to replicate issues with limited tools.</p>
-                    <p class="solution"><strong>Solution:</strong> I built a custom, secure Python-like REPL (Read-Eval-Print Loop) that could be safely injected into the live environment.
-                         This gave developers a powerful diagnostic tool to inspect state and test fixes in real-time, reducing emergency response time from hours to minutes and saving the team countless late nights.</p>
-                </div>
+                    <p class="solution"><strong>Solution:</strong> I built a custom, secure Python-like REPL (Read-Eval-Print Loop) that could be safely injected into the live environment. 
+                        This gave developers a powerful diagnostic tool to inspect state and test fixes in real-time, reducing emergency response time from hours to minutes. 
+                        To handle the complexities of a clustered environment, I extended the tool to support multi-line script evaluation and added the ability to target specific nodes behind the HAProxy load balancer, 
+                        ensuring patches could be applied with surgical precision.</p>
 
             
 
