@@ -571,11 +571,11 @@ async def rename_screenshot(
         )
 
 
-@router.get("/other_projects/", response_class=HTMLResponse)
-async def other_projects(request: Request):
-    """Serve the other projects page"""
-    return templates.TemplateResponse("other_projects.html", {
+@router.get("/philosophy/", response_class=HTMLResponse)
+async def philosophy(request: Request):
+    """Serve the philosophy page"""
+    return templates.TemplateResponse("philosophy.html", {
         "request": request,
-        "title": "Other Projects - Daniel Blackburn",
-        "current_page": "other_projects"
+        "title": "Philosophy & Projects - Daniel Blackburn",
+        "current_page": "philosophy"
     })
