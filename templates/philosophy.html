@@ -109,6 +109,23 @@
         color: #555;
         font-size: 0.9em;
     }
+
+    .screenshot-container {
+        float: right;
+        width: 33%;
+        min-width: 280px;
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+    .screenshot-container .screenshot {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .project-overview .lead {
+        text-align: justify;
+    }
 </style>
 {% endblock %}
 
@@ -117,11 +134,34 @@
     <div class="project-header">
         <div class="project-content">
             
-            <!-- Section 1: Philosophy & Practice -->
+            <!-- Section 1: Personal Projects (H1 Story) -->
+            <section id="personal-projects" class="philosophy-section">
+                <div class="project-overview">
+                    <h2>Hands-On History: A Solid Foundation</h2>
+                    <div class="screenshot-container">
+                        <img src="/assets/files/h1/Splash.JPG"
+                            alt="1998 AM General H1"
+                            class="screenshot">
+                    </div>
+                    <p class="lead">
+                        In 1994, at the Dade County Youth Fair in Miami, I was introduced to the last vehicle I ever thought I'd want. 
+                        The Forestry Service had an AM General H1 on display, elevated on an articulating frame that let you walk underneath. 
+                        As a fourteen-year-old who had just spent hours trying to fix my mother's Ford Bronco, I was captivated. 
+                        My father and I, both amateur mechanics out of necessity, were in awe of its rugged, purpose-built design. 
+                        He remarked, "You know, this would be the last truck you ever had to buy." He saw a solid foundation where everything else 
+                        was just a serviceable component—a lesson in durability and smart engineering.
+                    </p>
+                    <p class="lead">
+                        In 2013, I finally bought one, it was not perfect, but it was going to last. This project has been a long-term lesson in mechanical engineering, patience,
+                         and the joy of working on a system built to last.
+                    </p>
+                </div>
+     <!-- Section 2: Philosophy & Practice -->
             <section id="philosophy" class="philosophy-section">
-                <h2>Philosophy & Practice</h2>
-                <p>As a lifelong academic, my approach to technology is grounded in a deep curiosity for the "why" behind the "how." 
-                    I believe that true mastery comes not just from using a tool, but from understanding its design, its limitations, and its place in the broader ecosystem. This philosophy guides how I learn, how I build, and how I solve problems.</p>
+                <h2>Foundations in understanding</h2>
+                <p>As a lifelong student, my approach to technology is grounded in a deep curiosity for the "why" behind the "how." 
+                    I believe that true mastery comes not just from using a tool, but from understanding its design, its limitations, and its place in the broader ecosystem.
+                    This philosophy guides how I learn, how I build, and how I solve problems.</p>
                 
                 <h3>A Solid Foundation</h3>
                 <ul>
@@ -132,7 +172,56 @@
                 </ul>
             </section>
 
-            <!-- Section 2: Unconventional Technical Choices -->
+                <div class="project-details">
+                    <h3>Project Gallery &amp; Milestones</h3>
+                    <p>A collection of photos documenting the work, repairs, and upgrades I've performed over the years.</p>
+
+                    <div class="image-gallery">
+                        
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/exhaust1.jpeg" alt="Custom exhaust system">
+                            <figcaption>An attempt at a stainless exhaust.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/firstattemptexhaust.jpeg" alt="First attempt at exhaust crossover">
+                            <figcaption>The first, less-than-perfect attempt at exhaust and welding.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
+                            <figcaption>I custom CNC machined a new aluminum plate for the new turbo drain.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/optimizer.jpeg" alt="Engine optimizer tuning tool">
+                            <figcaption>Long awaited new Optimizer 6500 has arrived.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/rockers.jpeg" alt="1.6 roller rockers">
+                            <figcaption>HK 1.6 roller rockers from Quadstar.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/studs.jpeg" alt="ARP head studs">
+                            <figcaption>ARP2000 head studs, ready for the boost.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/tcase.jpeg" alt="Transfer case">
+                            <figcaption>The re-sealed and re-installed transfer case.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/tcaseopen.jpeg" alt="Inside the transfer case">
+                            <figcaption>A look inside.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/tirerack.jpeg" alt="Custom tire rack">
+                            <figcaption>This tirerack is amazing, had another rim made to match the other 4.</figcaption>
+                        </div>
+                        <div class="gallery-item">
+                            <img src="/assets/files/h1/towed.jpeg" alt="H1 being towed">
+                            <figcaption>The excitement of the wedding and distractions allowed me miss an surprise oil leak, run the engine without oil. Finally time for the new optimizer!. The engine in this model was the weakest link.</figcaption>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="dev-environment" class="philosophy-section">
                 <h2>Why I Build My Own Tools</h2>
                 <p>In an industry that often favors off-the-shelf solutions, I've found immense value in building and deeply understanding my own development environment.
@@ -152,7 +241,6 @@
                 </div>
             </section>
 
-            <!-- Section 3: Problem-Solution Narratives & "War Stories" -->
             <section id="war-stories" class="philosophy-section">
                 <h2>War Stories: Impact-Driven Solutions</h2>
                 <p>Technology is most valuable when it solves a real-world problem. Here are a few stories from the trenches where a deep understanding of fundamentals led to significant business impact.</p>
@@ -164,17 +252,20 @@
                          This gave developers a powerful diagnostic tool to inspect state and test fixes in real-time, reducing emergency response time from hours to minutes and saving the team countless late nights.</p>
                 </div>
 
+            
+
                 <div class="story-card">
-                    <h4>The VMware Debugging Environment</h4>
-                    <p class="problem"><strong>Problem:</strong> "It works on my machine" was a constant source of friction. Subtle differences between development and production environments led to bugs that were impossible to reproduce locally.</p>
-                    <p class="solution"><strong>Solution:</strong> I architected a development workflow using VMware to create perfect, bit-for-bit replicas of the production environment. This eliminated an entire class of bugs, streamlined the QA process, and ensured that what we tested was what we shipped.</p>
+                    <h4>The $40/Day Personal Website</h4>
+                    <p class="problem"><strong>Problem:</strong> Excited by a generous $1500 credit, I set up this personal site on GCP using "best practices": a separate Cloud SQL instance and a dedicated app server. While quick to configure, I soon discovered this overkill architecture was burning through credits at a projected rate of $40/day.</p>
+                    <p class="solution"><strong>Solution:</strong> I quickly refactored. By consolidating services and installing PostgreSQL directly on the app server instance and downgrading the virtual hardware, I reduced the daily cost to about $0.18. It was a practical lesson in right-sizing infrastructure to the problem at hand, not just following abstract best practices.</p>
                 </div>
             </section>
 
             <!-- Section 4: AI Integration Journey -->
             <section id="ai-journey" class="philosophy-section">
                 <h2>The AI Integration Journey</h2>
-                <p>As someone skilled in areas most affected by AI, I've embraced it as a powerful augmentation to my workflow, not a replacement. My focus is on using AI strategically to enhance productivity and solve more complex problems.</p>
+                <p>As someone skilled in areas most affected by AI, I've embraced it as a powerful augmentation to my workflow, not a replacement. 
+                    My focus is on using AI strategically to enhance productivity and solve more complex problems.</p>
                 
                 <h3>Experiments & Augmentation</h3>
                 <ul>
@@ -182,77 +273,8 @@
                     <li><strong>GitHub Copilot as a Partner:</strong> I use Copilot as a "pair programmer" to accelerate development. It's excellent for boilerplate code, generating unit tests,
                          and exploring alternative implementations, which frees me up to focus on higher-level architecture and problem-solving. This site itself was built with significant assistance from Copilot.</li>
                 </ul>
-            </section>
 
-            <!-- Section 5: Personal Projects (H1 Story) -->
-            <section id="personal-projects" class="philosophy-section">
-                <div class="project-overview">
-                    <h2>Hands-On History: 1998 AM General H1</h2>
-                    <div class="screenshot-container"
-                        style="float: right; width: 33%; min-width: 280px; margin-left: 20px; margin-bottom: 15px;">
-                        <img src="/assets/files/h1/Splash.JPG"
-                            alt="1998 AM General H1"
-                            class="screenshot">
-                    </div>
-                    <p class="lead">
-                        In 1994, at the Dade County Youth Fair in Miami, I was introduced to the last vehicle I ever thought I'd want. The Forestry Service had an AM General H1 on display, elevated on an articulating frame that let you walk underneath. As a fourteen-year-old who had just spent hours trying to fix my mother's Ford Bronco, I was captivated. My father and I, both amateur mechanics out of necessity, were in awe of its rugged, purpose-built design. He remarked, "You know, this would be the last truck you ever had to buy." He saw a solid foundation where everything else was just a serviceable component—a lesson in durability and smart engineering.
-                    </p>
-                    <p class="lead">
-                        In 2013, I finally bought one. This project has been a long-term lesson in mechanical engineering, patience, and the joy of working on a system built to last.
-                    </p>
-                </div>
-
-                <div class="project-details">
-                    <h3>Project Gallery &amp; Milestones</h3>
-                    <p>A collection of photos documenting the work, repairs, and upgrades I've performed over the years.</p>
-
-                    <div class="image-gallery">
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/Splash.JPG" alt="H1 in the water">
-                            <figcaption>The H1 in its natural habitat, crossing a river.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/exhaust1.jpeg" alt="Custom exhaust system">
-                            <figcaption>Fabricating a custom 4-inch stainless steel exhaust.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/firstattemptexhaust.jpeg" alt="First attempt at exhaust crossover">
-                            <figcaption>The first, less-than-perfect attempt at the exhaust crossover pipe.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
-                            <figcaption>Installing a Fumoto valve for cleaner oil changes.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/optimizer.jpeg" alt="Engine optimizer tuning tool">
-                            <figcaption>Using the Optimizer to fine-tune the engine's performance.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/rockers.jpeg" alt="1.6 roller rockers">
-                            <figcaption>Upgrading to 1.6 roller rockers for improved efficiency.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/studs.jpeg" alt="ARP head studs">
-                            <figcaption>Installing ARP head studs to strengthen the engine block.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/tcase.jpeg" alt="Re-sealed transfer case">
-                            <figcaption>The re-sealed and re-installed transfer case.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/tcaseopen.jpeg" alt="Inside the transfer case">
-                            <figcaption>A look inside the transfer case during re-sealing.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/tirerack.jpeg" alt="Custom tire rack">
-                            <figcaption>The custom-built tire rack for long expeditions.</figcaption>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="/assets/files/h1/towed.jpeg" alt="H1 being towed">
-                            <figcaption>The inevitable 'tow of shame' after a failure.</figcaption>
-                        </div>
-                    </div>
-                </div>
+                
             </section>
 
         </div>
