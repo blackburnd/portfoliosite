@@ -6,147 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="/assets/showcase.css">
-<style>
-    .philosophy-page .project-content {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .philosophy-section {
-        margin-bottom: 4rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #eee;
-    }
-
-    .philosophy-section:last-child {
-        border-bottom: none;
-    }
-
-    .philosophy-section h2 {
-        font-size: 2.5rem;
-        margin-bottom: 1.5rem;
-        color: #333;
-        border-left: 4px solid #007acc;
-        padding-left: 15px;
-    }
-
-    .philosophy-section h3 {
-        font-size: 1.8rem;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        color: #444;
-    }
-
-    .philosophy-section p,
-    .philosophy-section li {
-        font-size: 1.1rem;
-        line-height: 1.7;
-        color: #555;
-        text-align: justify;
-    }
-
-    .story-card {
-        background: #f9f9f9;
-        border-radius: 8px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border: 1px solid #e9ecef;
-    }
-
-    .story-card h4 {
-        margin-top: 0;
-        color: #007acc;
-    }
-
-    .story-card .problem {
-        font-style: italic;
-        color: #777;
-        border-left: 3px solid #dc3545;
-        padding-left: 15px;
-        margin-bottom: 1rem;
-    }
-
-    .story-card .solution {
-        font-weight: bold;
-        color: #28a745;
-    }
-
-    .tool-philosophy-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-    }
-
-    @media (max-width: 768px) {
-        .tool-philosophy-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .image-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
-        margin-top: 30px;
-    }
-
-    .gallery-item {
-        border-radius: 4px;
-        overflow: hidden;
-        text-align: center;
-        background-color: #f9f9f9;
-    }
-
-    .gallery-item img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
-
-    .gallery-item img:hover {
-        transform: scale(1.05);
-    }
-
-    .gallery-item figcaption {
-        padding: 10px;
-        font-style: italic;
-        color: #555;
-        font-size: 0.9em;
-    }
-
-    .screenshot-container {
-        float: right;
-        width: 33%;
-        min-width: 280px;
-        margin-left: 20px;
-        margin-bottom: 15px;
-    }
-
-    .screenshot-container .screenshot {
-        width: 100%;
-        height: auto;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .project-overview .lead {
-        text-align: justify;
-    }
-
-    .inline-image-pair {
-        display: flex;
-        justify-content: space-around;
-        align-items: flex-start;
-        gap: 20px;
-        margin: 2rem 0;
-    }
-
-    .inline-image-pair .gallery-item {
-        width: 45%;
-        margin-bottom: 0;
-    }
-</style>
+<link rel="stylesheet" href="/assets/philosophy.css">
 {% endblock %}
 
 {% block content %}
@@ -290,7 +150,7 @@
                 <div class="image-gallery">
 
                     <div class="gallery-item">
-                        <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
+                        <img src="/assets/files/h1/oil_drain.jpg" alt="Fumoto oil drain valve">
                         <figcaption>I custom CNC machined and tapped a new aluminum plate for the new turbo drain.
                         </figcaption>
                     </div>
@@ -398,7 +258,7 @@
         <div class="image-gallery">
 
             <div class="gallery-item">
-                <img src="/assets/files/h1/oil_drain.jpeg" alt="Fumoto oil drain valve">
+                <img src="/assets/files/h1/oil_drain.jpg" alt="Fumoto oil drain valve">
                 <figcaption>I custom CNC machined and tapped a new aluminum plate for the new turbo drain.
                 </figcaption>
             </div>
@@ -445,3 +305,4 @@
     </div>
 </article>
 {% endblock %}
+                               
