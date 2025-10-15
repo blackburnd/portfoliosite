@@ -317,18 +317,15 @@
 
                 <div class="story-card">
                     <h4>The Emergency REPL: From Hours to Minutes</h4>
-                    <p class="problem"><strong>Problem:</strong> Debugging critical, time-sensitive issues in a
-                        locked-down production environment was a nightmare. The operations team spent hours trying
-                        to
-                        replicate issues with limited tools.</p>
-                    <p class="solution"><strong>Solution:</strong> I built a custom, secure Python-like REPL
-                        (Read-Eval-Print Loop) that could be safely injected into the live environment. This gave
-                        developers a powerful diagnostic tool to inspect state and test fixes in real-time, reducing
-                        emergency response time from hours to minutes. To handle the complexities of a clustered
-                        environment, I extended the tool to support multi-line script evaluation and added the
-                        ability
-                        to target specific nodes behind the HAProxy load balancer, ensuring patches could be applied
-                        with surgical precision.</p>
+                    <p class="problem"><strong>Problem:</strong> We had months to plan for a hosting provider change on a production system
+                        that cannot be down for longer than our timebox and rollbacks were not possible. The potential need for debugging critical, 
+                        time-sensitive issues in a proper locked-down new foreign production environment was immenent and experience whispered of a incoming nightmare. 
+                        </p>
+                    <p class="solution"><strong>Solution:</strong> I proactively built a highly logged custom, secure Python-like REPL
+                        (Read-Eval-Print Loop) that could be safely injected into any of the live python environments. This was used
+                        a powerful diagnostic and repair tool, reducing emergency response time from hours or minutes to seconds. Used for years for pre-release
+                        and post-release steps and built to authenticate and target individual nodes fooling the HAProxy load balancer, ensuring patches could be applied
+                        with surgical precision, and sometimes as cron jobs.</p>A
                 </div>
                 <div class="story-card">
 
