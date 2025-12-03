@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app.resolvers as resolvers
-from app.routers import admin, contact, logs, oauth, projects, showcase, sql, work
+from app.routers import admin, contact, contact_admin, logs, oauth, projects, showcase, sql, work
 from database import database, init_database, close_database
 
 
@@ -56,6 +56,7 @@ class WorkItem(BaseModel):
 # Include all modular routers
 app.include_router(admin.router)
 app.include_router(contact.router)
+app.include_router(contact_admin.router)
 app.include_router(logs.router)
 app.include_router(oauth.router)
 app.include_router(projects.router)

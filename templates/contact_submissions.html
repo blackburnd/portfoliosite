@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Submissions - Daniel Blackburn{% endblock %}
+
+{% block body_class %}contact-submissions claro{% endblock %}
+
+{% block extra_head %}
+<style>
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.85em;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .status-unread {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-read {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    tr.unread {
+        background-color: #fffef0;
+    }
+    tr.read {
+        opacity: 0.7;
+    }
+    .compact-btn {
+        padding: 2px 6px;
+        margin: 0 2px;
+        border: 1px solid #ccc;
+        background: white;
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 1.1em;
+    }
+    .compact-btn:hover {
+        background: #f0f0f0;
+    }
+</style>
+<script src="/assets/js/contact_submissions.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <div class="logs-controls-row compact-controls">
+        <input type="text" id="searchBox" placeholder="Search..." class="compact-input" />
+        <select id="statusFilter" class="compact-select" title="Status">
+            <option value="">All Status</option>
+            <option value="unread" selected>Unread</option>
+            <option value="read">Read</option>
+        </select>
+        <select id="timeFilter" class="compact-select" title="Time">
+            <option value="">All Time</option>
+            <option value="1h">1h</option>
+            <option value="24h">24h</option>
+            <option value="7d">7d</option>
+        </select>
+        <button id="clearFiltersBtn" style="display: none;" class="compact-btn" onclick="clearFilters()" title="Clear">✕</button>
+        <button id="clearAllBtn" class="compact-btn" onclick="clearAllSubmissions()" title="Clear All Submissions">Clear All</button>
+    </div>
+
+    <div id="searchStatus" class="search-status" style="display: none;"></div>
+
+    <div class="logs-stats compact-stats" id="submissionsStats">
+        <span id="totalCount">Total: 0</span>
+        <span id="filteredSubmissions">Loaded: 0</span>
+        <span id="unreadCount">Unread: 0</span>
+        <span id="readCount">Read: 0</span>
+    </div>
+
+    <div class="logs-table-container">
+        <table class="logs-table compact-table">
+            <thead>
+                <tr>
+                    <th data-sort="created_at" class="sortable compact-th" style="width: 130px;">Date <span class="sort-indicator"></span></th>
+                    <th class="compact-th" style="width: 50px;">Age</th>
+                    <th data-sort="name" class="sortable compact-th" style="width: 120px;">Name <span class="sort-indicator"></span></th>
+                    <th data-sort="email" class="sortable compact-th" style="width: 150px;">Email <span class="sort-indicator"></span></th>
+                    <th data-sort="subject" class="sortable compact-th" style="width: 200px;">Subject <span class="sort-indicator"></span></th>
+                    <th class="compact-th" style="width: 300px;">Message</th>
+                    <th data-sort="is_read" class="sortable compact-th" style="width: 70px;">Status <span class="sort-indicator"></span></th>
+                    <th class="compact-th" style="width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="submissionsTableBody">
+                <tr>
+                    <td colspan="8" class="loading">Loading submissions...</td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="loadingIndicator" class="loading" style="display: none;">Loading more submissions...</div>
+        <div id="noMoreSubmissions" class="no-more-logs" style="display: none;">No more submissions to load</div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="scrollTrigger" class="scroll-trigger"></div>
+    </div>
+</div>
+{% endblock %}
