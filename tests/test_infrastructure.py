@@ -2,7 +2,7 @@
 Integration tests using the test app to verify test infrastructure.
 """
 import pytest
-from tests.test_app import test_client, test_app
+from .test_app import test_client, test_app
 
 
 @pytest.mark.unit

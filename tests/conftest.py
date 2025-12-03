@@ -35,7 +35,7 @@ try:
 except (ImportError, PermissionError, OSError, Exception):
     # If main can't be imported due to missing dependencies or permissions,
     # use our test app instead
-    from tests.test_app import test_app as app
+    from .test_app import test_app as app
 
 from httpx import AsyncClient  # noqa: E402
 
