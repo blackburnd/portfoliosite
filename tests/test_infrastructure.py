@@ -2,7 +2,19 @@
 Integration tests using the test app to verify test infrastructure.
 """
 import pytest
-from .test_app import test_client, test_app
+
+# Handle different import contexts (direct pytest run vs module import)
+try:
+    from .test_app import test_client, test_app
+except ImportError:
+    try:
+        from test_app import test_client, test_app
+    except ImportError:
+        import sys
+        import os
+        # Add tests directory to path
+        sys.path.insert(0, os.path.dirname(__file__))
+        from test_app import test_client, test_app
 
 
 @pytest.mark.unit
