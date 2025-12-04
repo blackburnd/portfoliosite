@@ -24,7 +24,7 @@ from strawberry.fastapi import GraphQLRouter
 # --- Local Application Imports ---
 from analytics_middleware import AnalyticsMiddleware
 from app.resolvers import schema
-from app.routers import contact, projects, work, showcase, logs, sql
+from app.routers import contact, contact_admin, projects, work, showcase, logs, sql
 from app.routers.oauth import router as google_oauth_router
 from app.routers.site_config import router as site_config_router
 from app.routers.site_config_migration import (
