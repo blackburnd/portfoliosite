@@ -37,11 +37,11 @@ class TestAuthenticationUtils:
         data = {"sub": "test@example.com"}
         expires_delta = timedelta(minutes=30)
         token = create_access_token(data, expires_delta)
-        
+
         decoded = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        exp_time = datetime.fromtimestamp(decoded["exp"])
+        exp_time = datetime.utcfromtimestamp(decoded["exp"])
         expected_time = datetime.utcnow() + expires_delta
-        
+
         # Allow 1 minute tolerance for timing differences
         assert abs((exp_time - expected_time).total_seconds()) < 60
 
