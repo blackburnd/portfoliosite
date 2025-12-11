@@ -3816,3 +3816,377 @@ p.editable-content.editing .content-textarea {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* ============================================
+   CONTACT PAGE STYLING - Professional & Polished
+   ============================================ */
+
+body.contact {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecef 100%);
+}
+
+.contact .bc {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    padding: 0;
+    overflow: hidden;
+}
+
+.contact-content {
+    padding: 50px 60px;
+}
+
+.contact-content h2 {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.contact-content > p {
+    font-size: 1.15em;
+    line-height: 1.7;
+    color: #555;
+    margin-bottom: 35px;
+    max-width: 700px;
+}
+
+/* Contact Info Section */
+.contact-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    color: white;
+}
+
+.contact-info h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: white;
+}
+
+.contact-info p {
+    margin: 12px 0;
+    font-size: 1.05em;
+    line-height: 1.6;
+}
+
+.contact-info strong {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.contact-info a {
+    color: white;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    transition: border-color 0.3s ease;
+}
+
+.contact-info a:hover {
+    border-bottom-color: white;
+}
+
+/* Contact Form Styling */
+.contact-form {
+    margin-top: 40px;
+}
+
+.contact-form .form-group {
+    margin-bottom: 25px;
+}
+
+.contact-form .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 1em;
+    letter-spacing: 0.3px;
+}
+
+.contact-form .form-group input,
+.contact-form .form-group textarea {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background: #fafbfc;
+}
+
+.contact-form .form-group input:focus,
+.contact-form .form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.08);
+}
+
+.contact-form .form-group textarea {
+    min-height: 180px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.contact-form .form-group input::placeholder,
+.contact-form .form-group textarea::placeholder {
+    color: #aaa;
+}
+
+/* Submit Button */
+.contact-form .btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.contact-form .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.contact-form .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+/* Thank You Page Styling */
+body.thank-you .bc {
+    max-width: 800px;
+    margin: 60px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    padding: 60px;
+    text-align: center;
+}
+
+.thank-you-header {
+    margin-bottom: 30px;
+}
+
+.thank-you-header h1 {
+    font-size: 2.8em;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.success-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    font-size: 3em;
+    margin: 20px auto;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.thank-you-message h2 {
+    font-size: 1.8em;
+    color: #333;
+    margin: 30px 0 20px;
+    font-weight: 600;
+}
+
+.thank-you-message > p {
+    font-size: 1.15em;
+    line-height: 1.7;
+    color: #555;
+    margin-bottom: 40px;
+}
+
+.next-steps,
+.contact-alternatives {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.next-steps h3,
+.contact-alternatives h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    color: #333;
+}
+
+.next-steps ul {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.next-steps li {
+    padding: 10px 0;
+    padding-left: 30px;
+    position: relative;
+    line-height: 1.6;
+    color: #555;
+}
+
+.next-steps li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.contact-alternatives p {
+    margin: 10px 0;
+    line-height: 1.6;
+    color: #555;
+}
+
+.contact-alternatives strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.contact-alternatives a {
+    color: #667eea;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.contact-alternatives a:hover {
+    border-bottom-color: #667eea;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.action-buttons .btn {
+    padding: 14px 30px;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.action-buttons .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.action-buttons .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.action-buttons .btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.action-buttons .btn-secondary:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design for Contact Pages */
+@media (max-width: 768px) {
+    .contact-content {
+        padding: 40px 30px;
+    }
+    
+    .contact-content h2 {
+        font-size: 2em;
+    }
+    
+    .contact-info {
+        padding: 25px;
+    }
+    
+    .contact-form .form-group textarea {
+        min-height: 150px;
+    }
+    
+    body.thank-you .bc {
+        padding: 40px 30px;
+        margin: 30px 20px;
+    }
+    
+    .thank-you-header h1 {
+        font-size: 2.2em;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-content {
+        padding: 30px 20px;
+    }
+    
+    .contact-content h2 {
+        font-size: 1.8em;
+    }
+    
+    .contact-info {
+        padding: 20px;
+    }
+    
+    .contact-info h3 {
+        font-size: 1.2em;
+    }
+    
+    .contact-form .btn {
+        width: 100%;
+        padding: 14px 20px;
+    }
+    
+    body.thank-you .bc {
+        padding: 30px 20px;
+    }
+    
+    .success-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2em;
+    }
+}
