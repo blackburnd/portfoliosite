@@ -53,11 +53,8 @@ async def get_smtp_status(
         
         config = {}
         for row in rows:
-            # Don't send password to frontend, just indicate if it's set
-            if row['config_key'] == 'smtp_password':
-                config[row['config_key']] = '********' if row['config_value'] else ''
-            else:
-                config[row['config_key']] = row['config_value']
+            # Return actual password so it can be edited
+            config[row['config_key']] = row['config_value']
         
         # Check if all required settings are present
         required = ['smtp_username', 'smtp_password', 'smtp_host', 'smtp_port']
@@ -184,6 +181,9 @@ async def test_smtp_connection(
                 "message": "SMTP username and password are required"
             }, status_code=400)
         
+        # Get admin email
+        admin_email = admin.get('email', admin.get('username', 'admin@blackburnsystems.com'))
+        
         # Test connection
         with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.starttls()
@@ -193,29 +193,31 @@ async def test_smtp_connection(
             msg = MIMEText("This is a test email from your portfolio website SMTP configuration.")
             msg['Subject'] = "SMTP Test - Portfolio Website"
             msg['From'] = smtp_from
-            msg['To'] = admin.get('email')
+            msg['To'] = admin_email
             
             server.send_message(msg)
         
-        logger.info(f"SMTP test successful, email sent to {admin.get('email')}")
+        logger.info(f"SMTP test successful, email sent to {admin_email}")
         
         return JSONResponse({
             "status": "success",
-            "message": f"Test email sent successfully to {admin.get('email')}"
+            "message": f"Test email sent successfully to {admin_email}"
         })
         
-    except smtplib.SMTPAuthenticationError:
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"SMTP authentication failed: {e}")
         return JSONResponse({
             "status": "error",
             "message": "Authentication failed. Check your username and password."
         }, status_code=400)
     except smtplib.SMTPException as e:
+        logger.error(f"SMTP error during test: {e}")
         return JSONResponse({
             "status": "error",
             "message": f"SMTP error: {str(e)}"
         }, status_code=400)
     except Exception as e:
-        logger.error(f"Error testing SMTP: {e}")
+        logger.error(f"Error testing SMTP: {e}", exc_info=True)
         return JSONResponse({
             "status": "error",
             "message": f"Error: {str(e)}"

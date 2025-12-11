@@ -186,7 +186,12 @@
             
             <div class="form-group">
                 <label for="smtp_password">SMTP Password *</label>
-                <input type="password" id="smtp_password" name="smtp_password" required>
+                <div style="position: relative;">
+                    <input type="password" id="smtp_password" name="smtp_password" required style="padding-right: 45px;">
+                    <button type="button" id="toggle-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.2em;" title="Toggle password visibility">
+                        👁️
+                    </button>
+                </div>
                 <div class="help-text">Use an app password for Gmail (not your account password)</div>
             </div>
             
@@ -239,6 +244,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('smtp-config-form').addEventListener('submit', saveConfig);
     document.getElementById('test-smtp-btn').addEventListener('click', testSmtp);
+    
+    // Password visibility toggle
+    document.getElementById('toggle-password').addEventListener('click', function() {
+        const passwordInput = document.getElementById('smtp_password');
+        const toggleBtn = this;
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleBtn.textContent = '🙈';
+            toggleBtn.title = 'Hide password';
+        } else {
+            passwordInput.type = 'password';
+            toggleBtn.textContent = '👁️';
+            toggleBtn.title = 'Show password';
+        }
+    });
 });
 
 async function loadSmtpStatus() {
