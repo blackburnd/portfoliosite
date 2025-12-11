@@ -24,21 +24,34 @@ async def send_contact_email(
 ):
     """Send email notification using SMTP."""
     try:
-        # Get SMTP configuration from environment variables
-        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        smtp_username = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
-        smtp_from_email = os.getenv("SMTP_FROM_EMAIL", smtp_username)
-        recipient_email = os.getenv(
+        portfolio_id = get_portfolio_id()
+        
+        # Get SMTP configuration from database first, fallback to environment
+        query = """
+        SELECT config_key, config_value 
+        FROM site_config 
+        WHERE portfolio_id = :portfolio_id 
+        AND config_key LIKE 'smtp_%' OR config_key = 'contact_notification_email'
+        """
+        
+        rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
+        db_config = {row['config_key']: row['config_value'] for row in rows}
+        
+        # Use database config if available, otherwise use environment variables
+        smtp_host = db_config.get('smtp_host') or os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(db_config.get('smtp_port') or os.getenv("SMTP_PORT", "587"))
+        smtp_username = db_config.get('smtp_username') or os.getenv("SMTP_USERNAME")
+        smtp_password = db_config.get('smtp_password') or os.getenv("SMTP_PASSWORD")
+        smtp_from_email = db_config.get('smtp_from_email') or os.getenv("SMTP_FROM_EMAIL", smtp_username)
+        recipient_email = db_config.get('contact_notification_email') or os.getenv(
             "CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com"
         )
 
         # Check if SMTP is configured
         if not smtp_username or not smtp_password:
             logger.warning(
-                "SMTP not configured. Set SMTP_USERNAME and SMTP_PASSWORD "
-                "environment variables."
+                "SMTP not configured. Configure at /admin/smtp or set "
+                "SMTP_USERNAME and SMTP_PASSWORD environment variables."
             )
             add_log(
                 "WARNING", 

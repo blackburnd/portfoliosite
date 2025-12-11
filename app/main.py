@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app.resolvers as resolvers
-from app.routers import admin, contact, contact_admin, logs, oauth, projects, showcase, sql, work
+from app.routers import admin, contact, contact_admin, logs, oauth, projects, showcase, smtp_config, sql, work
 from database import database, init_database, close_database
 
 
@@ -61,6 +61,7 @@ app.include_router(logs.router)
 app.include_router(oauth.router)
 app.include_router(projects.router)
 app.include_router(showcase.router)
+app.include_router(smtp_config.router)
 app.include_router(sql.router)
 app.include_router(work.router)
 

@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}SMTP Configuration - Admin{% endblock %}
+
+{% block body_class %}smtp-admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.smtp-admin-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.config-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.config-card h2 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
+
+.config-card .subtitle {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group .help-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.status-configured {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-not-configured {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.setup-instructions {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    margin-top: 20px;
+}
+
+.setup-instructions h3 {
+    margin-top: 0;
+    color: #667eea;
+}
+
+.setup-instructions ol {
+    margin-left: 20px;
+}
+
+.setup-instructions li {
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="smtp-admin-container">
+    <div class="config-card">
+        <h2>SMTP Email Configuration</h2>
+        <p class="subtitle">Configure SMTP settings for contact form email notifications</p>
+        
+        <div id="status-display" class="loading">
+            Loading configuration...
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <form id="smtp-config-form" style="display: none;">
+            <div class="form-group">
+                <label for="smtp_username">SMTP Username / Email *</label>
+                <input type="email" id="smtp_username" name="smtp_username" required>
+                <div class="help-text">Your email address (e.g., yourapp@gmail.com)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="smtp_password">SMTP Password *</label>
+                <input type="password" id="smtp_password" name="smtp_password" required>
+                <div class="help-text">Use an app password for Gmail (not your account password)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="smtp_host">SMTP Host *</label>
+                <input type="text" id="smtp_host" name="smtp_host" value="smtp.gmail.com" required>
+                <div class="help-text">SMTP server address (default: smtp.gmail.com)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="smtp_port">SMTP Port *</label>
+                <input type="number" id="smtp_port" name="smtp_port" value="587" required>
+                <div class="help-text">SMTP port (587 for TLS, 465 for SSL)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="smtp_from_email">From Email Address</label>
+                <input type="email" id="smtp_from_email" name="smtp_from_email">
+                <div class="help-text">Email address to send from (defaults to SMTP username)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="contact_notification_email">Notification Email *</label>
+                <input type="email" id="contact_notification_email" name="contact_notification_email" required>
+                <div class="help-text">Where to receive contact form submissions</div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button type="submit" class="btn btn-primary">Save Configuration</button>
+                <button type="button" id="test-smtp-btn" class="btn btn-secondary">Send Test Email</button>
+            </div>
+        </form>
+        
+        <div class="setup-instructions">
+            <h3>📧 Gmail App Password Setup</h3>
+            <ol>
+                <li>Go to <a href="https://myaccount.google.com/security" target="_blank">Google Account Security</a></li>
+                <li>Enable <strong>2-Step Verification</strong> if not already enabled</li>
+                <li>Search for "App passwords" or go to <a href="https://myaccount.google.com/apppasswords" target="_blank">App Passwords</a></li>
+                <li>Select <strong>Mail</strong> and generate a password</li>
+                <li>Copy the 16-character password and use it above</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadSmtpStatus();
+    
+    document.getElementById('smtp-config-form').addEventListener('submit', saveConfig);
+    document.getElementById('test-smtp-btn').addEventListener('click', testSmtp);
+});
+
+async function loadSmtpStatus() {
+    try {
+        const response = await fetch('/admin/smtp/status');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const statusDiv = document.getElementById('status-display');
+            const badge = data.configured 
+                ? '<span class="status-badge status-configured">✓ Configured</span>'
+                : '<span class="status-badge status-not-configured">⚠ Not Configured</span>';
+            statusDiv.innerHTML = `<p>Status: ${badge}</p>`;
+            
+            // Show the form
+            document.getElementById('smtp-config-form').style.display = 'block';
+            
+            // Populate form with existing values
+            if (data.config) {
+                document.getElementById('smtp_username').value = data.config.smtp_username || '';
+                document.getElementById('smtp_password').value = data.config.smtp_password || '';
+                document.getElementById('smtp_host').value = data.config.smtp_host || 'smtp.gmail.com';
+                document.getElementById('smtp_port').value = data.config.smtp_port || '587';
+                document.getElementById('smtp_from_email').value = data.config.smtp_from_email || '';
+                document.getElementById('contact_notification_email').value = data.config.contact_notification_email || '';
+            }
+        }
+    } catch (error) {
+        showAlert('Error loading SMTP status: ' + error.message, 'error');
+    }
+}
+
+async function saveConfig(e) {
+    e.preventDefault();
+    
+    const formData = {
+        smtp_username: document.getElementById('smtp_username').value,
+        smtp_password: document.getElementById('smtp_password').value,
+        smtp_host: document.getElementById('smtp_host').value,
+        smtp_port: document.getElementById('smtp_port').value,
+        smtp_from_email: document.getElementById('smtp_from_email').value || document.getElementById('smtp_username').value,
+        contact_notification_email: document.getElementById('contact_notification_email').value
+    };
+    
+    try {
+        const response = await fetch('/admin/smtp/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showAlert('SMTP configuration saved successfully!', 'success');
+            loadSmtpStatus();
+        } else {
+            showAlert('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('Error saving configuration: ' + error.message, 'error');
+    }
+}
+
+async function testSmtp() {
+    showAlert('Sending test email...', 'info');
+    
+    try {
+        const response = await fetch('/admin/smtp/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showAlert(data.message, 'success');
+        } else {
+            showAlert('Test failed: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showAlert('Error testing SMTP: ' + error.message, 'error');
+    }
+}
+
+function showAlert(message, type) {
+    const container = document.getElementById('alert-container');
+    const alertClass = type === 'success' ? 'alert-success' : 
+                       type === 'error' ? 'alert-error' : 'alert-info';
+    
+    container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, 5000);
+}
+</script>
+{% endblock %}
