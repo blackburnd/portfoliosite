@@ -4,19 +4,14 @@ from fastapi.templating import Jinja2Templates
 import uuid
 import traceback
 import os
-import base64
 import logging
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from auth import verify_token, is_authorized_user
-from database import (
-    database, get_google_oauth_tokens, save_google_oauth_tokens,
-    update_google_oauth_token_usage, get_portfolio_id
-)
+from database import database, get_portfolio_id
 from log_capture import add_log
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request as GoogleRequest
-from googleapiclient.discovery import build
-from ttw_oauth_manager import TTWOAuthManager
 
 
 router = APIRouter()
@@ -27,98 +22,40 @@ logger = logging.getLogger('portfoliosite')
 async def send_contact_email(
     name: str, email: str, subject: str, message: str, contact_id: int
 ):
-    """Send email notification using Gmail API."""
+    """Send email notification using SMTP."""
     try:
+        # Get SMTP configuration from environment variables
+        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        smtp_from_email = os.getenv("SMTP_FROM_EMAIL", smtp_username)
         recipient_email = os.getenv(
-            "CONTACT_NOTIFICATION_EMAIL", "danielb@blackburnsystems.com"
+            "CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com"
         )
 
-        portfolio_id = get_portfolio_id()
-        oauth_data = await get_google_oauth_tokens(portfolio_id)
-
-        if not oauth_data or not oauth_data.get('access_token'):
+        # Check if SMTP is configured
+        if not smtp_username or not smtp_password:
             logger.warning(
-                "Gmail API: No OAuth credentials found for email sending"
+                "SMTP not configured. Set SMTP_USERNAME and SMTP_PASSWORD "
+                "environment variables."
             )
             add_log(
-                "WARNING", "Gmail API: No OAuth credentials found",
-                "gmail_api_no_credentials"
+                "WARNING", 
+                "SMTP not configured - email notification skipped",
+                "smtp_not_configured"
             )
             return False
 
-        # Debug logging for oauth_data structure
-        logger.info(f"Gmail API: OAuth data keys: {list(oauth_data.keys())}")
-        logger.info(
-            f"Gmail API: Token expires at: "
-            f"{oauth_data.get('token_expires_at')}"
-        )
+        # Create email message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"New Contact Form Submission #{contact_id}: {subject or 'No Subject'}"
+        msg['From'] = smtp_from_email
+        msg['To'] = recipient_email
+        msg['Reply-To'] = email
 
-        ttw_manager = TTWOAuthManager()
-        google_config = await ttw_manager.get_oauth_app_config(
-            provider='google'
-        )
-
-        if not google_config:
-            logger.warning("Gmail API: No OAuth app configuration found")
-            add_log(
-                "WARNING", "Gmail API: No OAuth app configuration found",
-                "gmail_api_no_config"
-            )
-            return False
-
-        # Parse expiry time if available
-        expiry = None
-        if oauth_data.get('token_expires_at'):
-            from datetime import datetime
-            expiry = datetime.fromisoformat(oauth_data['token_expires_at'])
-
-        credentials = Credentials(
-            token=oauth_data['access_token'],
-            refresh_token=oauth_data.get('refresh_token'),
-            token_uri="https://oauth2.googleapis.com/token",
-            client_id=google_config['client_id'],
-            client_secret=google_config['client_secret'],
-            scopes=oauth_data['granted_scopes'].split(),
-            expiry=expiry
-        )
-
-        # Check if credentials are expired and refresh if needed
-        try:
-            # Check if we have a refresh token before checking expiry
-            if credentials.refresh_token:
-                # Safely check if credentials are expired
-                try:
-                    is_expired = credentials.expired
-                except Exception as expiry_error:
-                    logger.warning(
-                        f"Gmail API: Could not check credential expiry: "
-                        f"{expiry_error}"
-                    )
-                    # Assume expired if we can't check
-                    is_expired = True
-                
-                if is_expired:
-                    logger.info("Gmail API: Refreshing expired credentials")
-                    credentials.refresh(GoogleRequest())
-                    await save_google_oauth_tokens(
-                        portfolio_id,
-                        oauth_data['admin_email'],
-                        credentials.token,
-                        credentials.refresh_token,
-                        credentials.expiry,
-                        " ".join(credentials.scopes)
-                    )
-            else:
-                logger.warning("Gmail API: No refresh token available")
-        except Exception as refresh_error:
-            logger.error(
-                f"Gmail API: Error during credential refresh: {refresh_error}"
-            )
-            # Continue with existing credentials
-
-        service = build('gmail', 'v1', credentials=credentials)
-
-        email_body = f"""
+        # Email body
+        text_body = f"""
 New contact form submission received:
 
 Contact ID: {contact_id}
@@ -131,50 +68,63 @@ Message:
 
 ---
 This email was automatically generated from your portfolio website.
+Reply directly to this email to respond to {name}.
         """.strip()
 
-        message_obj = {
-            'raw': base64.urlsafe_b64encode(
-                f"To: {recipient_email}\r\n"
-                f"From: {recipient_email}\r\n"
-                f"Subject: New Contact Form Submission #{contact_id}: "
-                f"{subject or 'No Subject'}\r\n"
-                f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
-                f"{email_body}".encode('utf-8')
-            ).decode('utf-8')
-        }
+        html_body = f"""
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2 style="color: #667eea;">New Contact Form Submission</h2>
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Contact ID:</strong> {contact_id}</p>
+        <p><strong>Name:</strong> {name}</p>
+        <p><strong>Email:</strong> <a href="mailto:{email}">{email}</a></p>
+        <p><strong>Subject:</strong> {subject or 'No Subject'}</p>
+    </div>
+    <div style="background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0;">
+        <h3>Message:</h3>
+        <p style="white-space: pre-wrap;">{message}</p>
+    </div>
+    <hr style="border: none; border-top: 1px solid #e1e5e9; margin: 30px 0;">
+    <p style="font-size: 12px; color: #666;">
+        This email was automatically generated from your portfolio website.<br>
+        Reply directly to this email to respond to {name}.
+    </p>
+</body>
+</html>
+        """.strip()
 
-        result = service.users().messages().send(
-            userId='me', body=message_obj
-        ).execute()
+        # Attach both plain text and HTML versions
+        part1 = MIMEText(text_body, 'plain')
+        part2 = MIMEText(html_body, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
 
-        await update_google_oauth_token_usage(
-            portfolio_id, oauth_data['admin_email']
-        )
+        # Send email via SMTP
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(msg)
 
         logger.info(
-            f"Gmail API: Contact notification email sent for submission "
-            f"#{contact_id}, Message ID: {result.get('id')}"
+            f"SMTP: Contact notification email sent for submission #{contact_id}"
         )
         add_log(
             "INFO",
-            f"Gmail API: Email sent for submission #{contact_id}, "
-            f"Message ID: {result.get('id')}",
-            "gmail_api_email_sent"
+            f"Email notification sent for contact submission #{contact_id}",
+            "contact_email_sent"
         )
         return True
 
     except Exception as e:
         full_traceback = traceback.format_exc()
-        logger.error(f"Gmail API: Failed to send email: {str(e)}")
-        logger.error(f"Gmail API error traceback: {full_traceback}")
+        logger.error(f"SMTP: Failed to send email: {str(e)}")
+        logger.error(f"SMTP error traceback: {full_traceback}")
         add_log(
-            "ERROR", f"Gmail API: Failed to send email: {str(e)}",
-            "gmail_api_email_error"
-        )
-        add_log(
-            "ERROR", f"Gmail API traceback: {full_traceback}",
-            "gmail_api_traceback"
+            "ERROR", 
+            f"Failed to send contact email: {str(e)}",
+            "contact_email_error",
+            extra={"traceback": full_traceback}
         )
         return False
 
@@ -271,6 +221,19 @@ async def contact_submit(request: Request):
         email_sent = await send_contact_email(
             name, email, subject, message, contact_id
         )
+
+        if not email_sent:
+            logger.warning(
+                f"Contact #{contact_id}: Email notification failed to send. "
+                "Check Gmail OAuth configuration at /admin/google/oauth"
+            )
+            add_log(
+                level="WARNING",
+                module="contact_form",
+                message=f"Contact #{contact_id}: Email failed - OAuth may not be configured",
+                function="contact_submit",
+                extra="Visit /admin/google/oauth to authorize Gmail API"
+            )
 
         add_log(
             level="INFO",
