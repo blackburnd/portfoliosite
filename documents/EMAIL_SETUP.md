@@ -1,51 +1,84 @@
-# Email Configuration for Contact Form
+# SMTP Email Configuration for Contact Form
 
-## Environment Variables Required
+## Security: Never Commit Credentials
 
-Add these environment variables to your `.env` file or production environment:
+**NEVER** commit SMTP credentials to the repository. They should only exist on the production server.
 
-### Gmail SMTP Configuration (Recommended)
-```env
-# SMTP Server Configuration
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+## Quick Setup (Recommended)
 
-# Where to send contact form notifications
-CONTACT_NOTIFICATION_EMAIL=blackburnd@gmail.com
+### Step 1: Get Gmail App Password
+
+1. Go to [Google Account Security](https://myaccount.google.com/security)
+2. Enable **2-Step Verification** 
+3. Go to [App Passwords](https://myaccount.google.com/apppasswords)
+4. Generate password for **Mail**
+5. Copy the 16-character password
+
+### Step 2: Configure on Production Server
+
+SSH into production and run the automated script:
+
+```bash
+# SSH into the server
+gcloud compute ssh blackburnd@instance-20250825-143058 --zone us-central1-c
+
+# Navigate to app directory
+cd /opt/portfoliosite
+git pull
+
+# Run configuration script
+sudo ./configure_smtp.sh
 ```
 
-### Gmail App Password Setup
-1. Enable 2FA on your Gmail account
-2. Go to Google Account settings → Security → 2-Step Verification → App passwords
-3. Generate an app password for "Mail"
-4. Use this app password as `SMTP_PASSWORD` (not your regular Gmail password)
+The script will:
+- Prompt for SMTP credentials (password input is hidden)
+- Store them securely in `/etc/environment`
+- Set proper file permissions (600)
+- Restart the service to apply changes
 
-### Other Email Providers
+### Step 3: Test
 
-#### Outlook/Hotmail
-```env
-SMTP_SERVER=smtp-mail.outlook.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@outlook.com
-SMTP_PASSWORD=your-password
+1. Visit https://www.blackburnsystems.com/contact/
+2. Submit a test message
+3. Check email and logs: `sudo journalctl -u portfolio -f`
+
+## Environment Variables
+
+These are configured in `/etc/environment` on the production server:
+
+```bash
+SMTP_USERNAME="your-email@gmail.com"       # Your Gmail address
+SMTP_PASSWORD="your-app-password"          # 16-char app password
+SMTP_HOST="smtp.gmail.com"                 # SMTP server
+SMTP_PORT="587"                            # SMTP port
+SMTP_FROM_EMAIL="your-email@gmail.com"     # From address
+CONTACT_NOTIFICATION_EMAIL="your-email@gmail.com"  # Where to receive contacts
 ```
 
-#### Yahoo Mail
-```env
-SMTP_SERVER=smtp.mail.yahoo.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@yahoo.com
-SMTP_PASSWORD=your-app-password
+## Other Email Providers
+
+### SendGrid
+```bash
+SMTP_HOST="smtp.sendgrid.net"
+SMTP_PORT="587"
+SMTP_USERNAME="apikey"
+SMTP_PASSWORD="your-sendgrid-api-key"
 ```
 
-#### Custom SMTP Server
-```env
-SMTP_SERVER=mail.yourdomain.com
-SMTP_PORT=587
-SMTP_USERNAME=noreply@yourdomain.com
-SMTP_PASSWORD=your-password
+### AWS SES
+```bash
+SMTP_HOST="email-smtp.us-east-1.amazonaws.com"
+SMTP_PORT="587"
+SMTP_USERNAME="your-ses-username"
+SMTP_PASSWORD="your-ses-password"
+```
+
+### Mailgun
+```bash
+SMTP_HOST="smtp.mailgun.org"
+SMTP_PORT="587"
+SMTP_USERNAME="postmaster@your-domain.mailgun.org"
+SMTP_PASSWORD="your-mailgun-password"
 ```
 
 ## Testing
