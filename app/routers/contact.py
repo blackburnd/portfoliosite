@@ -30,7 +30,7 @@ async def send_contact_email(
     """Send email notification using Gmail API."""
     try:
         recipient_email = os.getenv(
-            "CONTACT_NOTIFICATION_EMAIL", "blackburnd@gmail.com"
+            "CONTACT_NOTIFICATION_EMAIL", "danielb@blackburnsystems.com"
         )
 
         portfolio_id = get_portfolio_id()
