@@ -26,7 +26,7 @@ async def smtp_admin_page(
         "request": request,
         "current_page": "smtp_admin",
         "user_authenticated": True,
-        "user_email": admin.get("email"),
+        "user_email": admin.get("email", ""),
         "user_info": admin
     })
 
