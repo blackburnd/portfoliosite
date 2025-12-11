@@ -90,14 +90,14 @@ async def save_smtp_config(
         data = await request.json()
         portfolio_id = get_portfolio_id()
         
-        # Settings to save
+        # Settings to save (strip whitespace from credentials)
         settings = {
-            'smtp_username': data.get('smtp_username', ''),
-            'smtp_password': data.get('smtp_password', ''),
-            'smtp_host': data.get('smtp_host', 'smtp.gmail.com'),
+            'smtp_username': data.get('smtp_username', '').strip(),
+            'smtp_password': data.get('smtp_password', '').replace(' ', ''),  # Remove all spaces from password
+            'smtp_host': data.get('smtp_host', 'smtp.gmail.com').strip(),
             'smtp_port': data.get('smtp_port', '587'),
-            'smtp_from_email': data.get('smtp_from_email', ''),
-            'contact_notification_email': data.get('contact_notification_email', '')
+            'smtp_from_email': data.get('smtp_from_email', '').strip(),
+            'contact_notification_email': data.get('contact_notification_email', '').strip()
         }
         
         # Save each setting to site_config table
@@ -173,8 +173,8 @@ async def test_smtp_connection(
         
         smtp_host = config.get('smtp_host', 'smtp.gmail.com')
         smtp_port = int(config.get('smtp_port', '587'))
-        smtp_username = config.get('smtp_username')
-        smtp_password = config.get('smtp_password')
+        smtp_username = config.get('smtp_username', '').strip() if config.get('smtp_username') else None
+        smtp_password = config.get('smtp_password', '').replace(' ', '') if config.get('smtp_password') else None
         smtp_from = config.get('smtp_from_email', smtp_username)
         
         if not smtp_username or not smtp_password:

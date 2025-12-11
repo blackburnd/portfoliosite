@@ -361,16 +361,32 @@ async function saveRow(key) {
             })
         });
         
-        if (response.ok) {
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
             const valueDisplay = row.querySelector('.value-display');
             const displayValue = newValue.length > 100 ? newValue.substring(0, 100) + '...' : newValue;
             valueDisplay.textContent = displayValue;
             cancelEdit(key);
+            
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success';
+            alertDiv.textContent = `✓ Successfully updated ${key}`;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
         } else {
-            alert('Failed to update variable');
+            const errorMsg = result.detail || result.message || 'Failed to update variable';
+            alert('Failed to update: ' + errorMsg);
+            console.error('Update failed:', result);
         }
     } catch (error) {
         alert('Error updating variable: ' + error.message);
+        console.error('Update error:', error);
     }
 }
 

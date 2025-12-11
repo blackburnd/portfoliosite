@@ -16,18 +16,6 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-import logging
-from datetime import datetime
-
-from auth import require_admin_auth
-from site_config import SiteConfigManager
-
-router = APIRouter()
-templates = Jinja2Templates(directory="templates")
-logger = logging.getLogger(__name__)
 
 # Configuration categories for form organization
 CONFIG_CATEGORIES = {
