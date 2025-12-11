@@ -45,7 +45,7 @@ async def get_smtp_status(
         SELECT config_key, config_value 
         FROM site_config 
         WHERE portfolio_id = :portfolio_id 
-        AND config_key LIKE 'smtp_%'
+        AND (config_key LIKE 'smtp_%' OR config_key = 'contact_notification_email')
         ORDER BY config_key
         """
         
@@ -163,11 +163,13 @@ async def test_smtp_connection(
         SELECT config_key, config_value 
         FROM site_config 
         WHERE portfolio_id = :portfolio_id 
-        AND config_key LIKE 'smtp_%'
+        AND (config_key LIKE 'smtp_%' OR config_key = 'contact_notification_email')
         """
         
         rows = await database.fetch_all(query, {"portfolio_id": portfolio_id})
         config = {row['config_key']: row['config_value'] for row in rows}
+        
+        logger.info(f"SMTP test config loaded: {list(config.keys())}")
         
         smtp_host = config.get('smtp_host', 'smtp.gmail.com')
         smtp_port = int(config.get('smtp_port', '587'))
@@ -176,9 +178,10 @@ async def test_smtp_connection(
         smtp_from = config.get('smtp_from_email', smtp_username)
         
         if not smtp_username or not smtp_password:
+            logger.error(f"SMTP test failed: missing credentials. Has username: {bool(smtp_username)}, Has password: {bool(smtp_password)}")
             return JSONResponse({
                 "status": "error",
-                "message": "SMTP username and password are required"
+                "message": f"SMTP username and password are required. Please save configuration first."
             }, status_code=400)
         
         # Get admin email
