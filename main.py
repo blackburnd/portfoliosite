@@ -24,7 +24,7 @@ from strawberry.fastapi import GraphQLRouter
 # --- Local Application Imports ---
 from analytics_middleware import AnalyticsMiddleware
 from app.resolvers import schema
-from app.routers import contact, contact_admin, projects, work, showcase, logs, sql
+from app.routers import contact, contact_admin, projects, work, showcase, logs, sql, smtp_config
 from app.routers.oauth import router as google_oauth_router
 from app.routers.site_config import router as site_config_router
 from app.routers.site_config_migration import (
@@ -954,6 +954,7 @@ app.include_router(work.router, tags=["work"])
 app.include_router(showcase.router, tags=["showcase"])
 app.include_router(logs.router, tags=["logs"])
 app.include_router(sql.router, tags=["sql"])
+app.include_router(smtp_config.router, tags=["smtp", "admin"])
 app.include_router(site_config_router, tags=["config"])
 app.include_router(site_config_migration_router, tags=["migration"])
 
