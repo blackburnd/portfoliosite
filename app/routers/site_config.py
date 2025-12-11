@@ -210,6 +210,51 @@ async def config_category_form(
         )
 
 
+@router.post("/admin/config/update")
+async def update_config_variable(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Update a configuration variable"""
+    try:
+        data = await request.json()
+        key = data.get("key")
+        value = data.get("value")
+        
+        if not key:
+            raise HTTPException(status_code=400, detail="Key is required")
+        
+        config_manager = SiteConfigManager()
+        await config_manager.set_config(key, value)
+        
+        return {"success": True, "message": f"Updated {key}"}
+    except Exception as e:
+        logger.error(f"Error updating config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/config/delete")
+async def delete_config_variable(
+    request: Request,
+    _=Depends(require_admin_auth)
+):
+    """Delete a configuration variable"""
+    try:
+        data = await request.json()
+        key = data.get("key")
+        
+        if not key:
+            raise HTTPException(status_code=400, detail="Key is required")
+        
+        config_manager = SiteConfigManager()
+        await config_manager.delete_config(key)
+        
+        return {"success": True, "message": f"Deleted {key}"}
+    except Exception as e:
+        logger.error(f"Error deleting config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/admin/config/{category}")
 async def update_category_config(
     request: Request,
@@ -324,51 +369,6 @@ async def bulk_update_config(
         )
 
 
-@router.post("/admin/config/update")
-async def update_config_variable(
-    request: Request,
-    _=Depends(require_admin_auth)
-):
-    """Update a configuration variable"""
-    try:
-        data = await request.json()
-        key = data.get("key")
-        value = data.get("value")
-        
-        if not key:
-            raise HTTPException(status_code=400, detail="Key is required")
-        
-        config_manager = SiteConfigManager()
-        await config_manager.set_config(key, value)
-        
-        return {"success": True, "message": f"Updated {key}"}
-    except Exception as e:
-        logger.error(f"Error updating config: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/admin/config/delete")
-async def delete_config_variable(
-    request: Request,
-    _=Depends(require_admin_auth)
-):
-    """Delete a configuration variable"""
-    try:
-        data = await request.json()
-        key = data.get("key")
-        
-        if not key:
-            raise HTTPException(status_code=400, detail="Key is required")
-        
-        config_manager = SiteConfigManager()
-        await config_manager.delete_config(key)
-        
-        return {"success": True, "message": f"Deleted {key}"}
-    except Exception as e:
-        logger.error(f"Error deleting config: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/admin/config/add")
 async def add_config_variable(
     request: Request,
@@ -399,4 +399,5 @@ async def add_config_variable(
     except Exception as e:
         logger.error(f"Error adding config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
