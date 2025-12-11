@@ -154,23 +154,71 @@ async def auth_callback(request: Request):
                 status_code=302
             )
 
-        session_state = request.session.get('oauth_state')
-
-        if not callback_state or callback_state != session_state:
+        # Validate CSRF state - check database first, fall back to session
+        from database import database
+        
+        if not callback_state:
             log_with_context(
-                "ERROR", "auth_callback", "CSRF validation failed", request
+                "ERROR", "auth_callback", "No state parameter in callback", request
             )
-            if callback_state:
-                await update_oauth_session_with_callback(
-                    oauth_state=callback_state,
-                    code=None,
-                    error="CSRF validation failed"
+            return HTMLResponse(
+                "<h1>Security Error</h1><p>No state parameter received.</p>",
+                status_code=400
+            )
+        
+        # First, try to validate against database (survives server restarts)
+        state_valid = False
+        state_check_query = """
+        SELECT oauth_state, created_at 
+        FROM google_oauth_tokens 
+        WHERE oauth_state = :state 
+        AND created_at > NOW() - INTERVAL '1 hour'
+        AND workflow_status = 'initiated'
+        LIMIT 1
+        """
+        
+        try:
+            state_record = await database.fetch_one(
+                state_check_query, {"state": callback_state}
+            )
+            if state_record:
+                state_valid = True
+                log_with_context(
+                    "DEBUG", "auth_callback", 
+                    "State validated via database", request
                 )
+        except Exception as e:
+            log_with_context(
+                "WARNING", "auth_callback", 
+                f"Database state check failed: {e}, falling back to session", request
+            )
+        
+        # Fall back to session-based validation if no database record
+        if not state_valid:
+            session_state = request.session.get('oauth_state')
+            if session_state and callback_state == session_state:
+                state_valid = True
+                log_with_context(
+                    "DEBUG", "auth_callback", 
+                    "State validated via session", request
+                )
+        
+        if not state_valid:
+            log_with_context(
+                "ERROR", "auth_callback", 
+                f"CSRF validation failed for state: {callback_state}", request
+            )
+            await update_oauth_session_with_callback(
+                oauth_state=callback_state,
+                code=None,
+                error="CSRF validation failed"
+            )
             return HTMLResponse(
                 "<h1>Security Error</h1><p>CSRF validation failed.</p>",
                 status_code=400
             )
 
+        # Clear session state
         request.session.pop('oauth_state', None)
 
         code = request.query_params.get('code')
