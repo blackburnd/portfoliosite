@@ -3835,12 +3835,11 @@ body.contact {
 }
 
 .contact-content {
-    padding: 50px 60px;
+    padding: 5px 6px;
 }
 
 .contact-content h2 {
     font-size: 2.5em;
-    margin-bottom: 15px;
     color: #1a1a1a;
     font-weight: 700;
     letter-spacing: -0.5px;
@@ -3851,7 +3850,6 @@ body.contact {
     line-height: 1.7;
     color: #555;
     margin-bottom: 35px;
-    max-width: 700px;
 }
 
 /* Contact Info Section */
