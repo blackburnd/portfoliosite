@@ -114,8 +114,11 @@ body {
 }
 
 .title-container {
-    position: relative;
+    position: absolute;
     margin-bottom: 5px; /* Small gap between title area and tagline */
+    max-width: 50vw;
+    right: 8rem;
+    left: auto;
 }
 
 .brand {
@@ -127,7 +130,7 @@ body {
 .brand a {
     text-decoration: none;
     color: #333;
-    font-size: 2.2em; /* Increased from 2em - slightly larger */
+    font-size: 3em; /* Increased for more prominent header */
     font-weight: bold;
 }
 
@@ -136,30 +139,7 @@ body {
     margin: 5px 0 0 0; /* Move closer to H1 - reduced top margin */
 }
 
-/* Social Links in Navigation */
-.social-links {
-    display: flex !important;
-    gap: 15px;
-    align-items: center;
-    margin-left: auto; /* Push social links to the far right */
-}
-
-.social-links a {
-    text-decoration: none !important;
-    color: #333 !important;
-    font-size: 0.9em;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.social-links a:hover {
-    background-color: #f0f0f0;
-    text-decoration: underline !important;
-}
+/* Social links are now in the footer - see .footer-social styles */
 
 /* Authentication and admin links */
 .auth-admin-section {
@@ -171,15 +151,19 @@ body {
 }
 
 .auth-link {
-    background-color: #666;
-    color: white !important;
+    background-color: transparent;
+    color: #999 !important; /* Subtle gray text */
     padding: 5px 12px;
     border-radius: 4px;
     text-decoration: none;
+    font-size: 0.85em; /* Slightly smaller */
+    opacity: 0.6; /* Reduced visibility */
 }
 
 .auth-link:hover {
-    background-color: #555;
+    background-color: #f5f5f5; /* Very subtle background on hover */
+    color: #666 !important; /* Slightly darker on hover */
+    opacity: 1; /* Full opacity on hover */
     text-decoration: none;
 }
 
@@ -252,8 +236,29 @@ nav ul {
 }
 
 .primary-nav {
+    display: flex;
+    gap: 25px;
+    align-items: center;
     border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    padding-bottom: 15px;
+    margin-top: 10px;
+}
+
+.primary-nav li {
+    list-style: none;
+}
+
+.primary-nav a {
+    text-decoration: none;
+    color: #333;
+    font-size: 1em;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.primary-nav a:hover {
+    background-color: #f5f5f5;
 }
 
 /* Admin Navigation Styling */
@@ -385,34 +390,33 @@ nav a:hover {
     text-decoration: underline;
 }
 
-/* Active page indicator */
+/* Active page indicator - subtle underline instead of dark background */
 nav li.active a {
-    background-color: #333;
-    color: white;
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
+    border-bottom: 2px solid #333;
+    font-weight: 500;
 }
 
 nav li.active a:hover {
-    text-decoration: none;
+    background-color: #f5f5f5;
 }
 
-/* Icon styling for social links */
-.linkedin a::before {
-    content: "🔗";
-    margin-right: 4px;
+/* Emphasize "Let's Talk" as primary CTA */
+.primary-nav li.contact a {
+    background-color: #4A90E2;
+    color: white;
+    font-weight: 500;
 }
 
-.github a::before {
-    content: "🐙";
-    margin-right: 4px;
+.primary-nav li.contact a:hover {
+    background-color: #3A7BC8;
 }
 
-.pypi a::before {
-    content: "📦";
-    margin-right: 4px;
+.primary-nav li.contact.active a {
+    background-color: #3A7BC8;
+    border-bottom: none;
 }
+
+/* Icon styling removed - using inline emojis in HTML instead */
 
 /* Content Styles */
 .bc {
@@ -519,7 +523,7 @@ nav li.active a:hover {
 /* Profile Image Styles */
 .profile-image {
     float: left;
-    width: 280px;
+    width: 35vw;
     margin: 0 30px 20px 0;
     text-align: center;
 }
@@ -558,11 +562,36 @@ nav li.active a:hover {
 }
 
 .footer {
-    margin-top: 10px;
-    padding: 20px 0;
+    margin-top: 40px;
+    padding: 30px 0;
     border-top: 1px solid #eee;
     text-align: center;
     color: #666;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.footer-social {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.footer-social a {
+    text-decoration: none;
+    color: #666;
+    font-size: 0.9em;
+    transition: color 0.2s ease;
+}
+
+.footer-social a:hover {
+    color: #333;
+    text-decoration: underline;
 }
 
 /* Admin Page Styles */
@@ -806,7 +835,9 @@ input[type="checkbox"] {
     }
 
     .intro-flex {
-        margin-bottom: 25px;
+        position: absolute;
+        margin-top: 11rem;
+        margin-bottom: 1rem;
     }
 }
 
@@ -3061,7 +3092,7 @@ td[style*="#abd6ff"] {
 }
 
 .project-header {
-    margin-bottom: 40px;
+    margin-bottom: 1rem;
 }
 
 .breadcrumb {
@@ -4216,6 +4247,7 @@ body.thank-you .bc {
     color:#555;
     font-family:Segoe UI;
     font-size:18.4px;
+
     line-height:31.28px;
     margin:1rem 1rem 6rem 6rem;
 }

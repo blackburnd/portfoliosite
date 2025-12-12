@@ -59,14 +59,8 @@
                 <p class="tagline">Curious. Academic. <span class="amp">&amp;</span> Novel Solutions Work.</p>
             </div>
             {% endif %}
-            <li class="social-links">
-                <a href="https://linkedin.com/in/blackburnd" target="_blank" title="LinkedIn">🔗 linkedin</a>
-                <a href="https://github.com/blackburnd" target="_blank" title="GitHub">🐙 github</a>
-                <a href="https://pypi.org/user/blackburnd/" target="_blank" title="PyPI">📦 pypi</a>
-            </li>
-
         </div>
-        
+
         <!-- Login button for non-authenticated users -->
         {% if not user_authenticated %}
         <div class="header-right">
@@ -82,13 +76,15 @@
     <!-- Primary navigation -->
     <nav>
         <ul class="primary-nav">
+            {% if current_page != 'home' %}
             <li class="me {{ 'active' if current_page == 'home' else '' }}">
                 <a href="/">Overview</a>
             </li>
+            {% endif %}
             <li class="projects {{ 'active' if current_page == 'work' else '' }}">
                 <a href="/work/">Open Source</a>
             </li>
-               <li class="philosophy {{ 'active' if current_page == 'philosophy' else '' }}">
+            <li class="philosophy {{ 'active' if current_page == 'philosophy' else '' }}">
                 <a href="/philosophy/">Philosophy &amp; Projects</a>
             </li>
             <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
@@ -97,7 +93,6 @@
             <li class="resume">
                 <a href="/resume" target="_blank">Résumé</a>
             </li>
-         
         </ul>
     </nav>
 </header>
