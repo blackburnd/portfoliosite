@@ -4191,13 +4191,15 @@ body.thank-you .bc {
     }
 }
 
+
 #letstalk
 {
     color:#1a1a1a;
     font-size:40px;
     font-weight:700;
     letter-spacing:-0.5px;
-    margin:    33.2px 0px 15px
+    margin:0 px 0px 0px;
+    padding: 30px;
 }
 
 #contactinfoblock {
@@ -4213,5 +4215,6 @@ body.thank-you .bc {
     font-family:Segoe UI;
     font-size:18.4px;
     line-height:31.28px;
-    margin:18.4px 0px 35px;
+    margin:1px 0px 40px;
+    padding: 30px;
 }
