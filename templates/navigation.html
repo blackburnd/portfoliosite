@@ -53,12 +53,10 @@
     <!-- Main header section -->
     <div class="header-top">
         <div class="header-left">
-            {% if current_page in ['home', 'work', 'contact'] %}
             <div class="title-container">
                 <h1 class="brand"><a href="/">Daniel Blackburn</a></h1>
                 <p class="tagline">Curious. Academic. <span class="amp">&amp;</span> Novel Solutions Work.</p>
             </div>
-            {% endif %}
         </div>
 
         <!-- Login button for non-authenticated users -->
@@ -76,16 +74,11 @@
     <!-- Primary navigation -->
     <nav>
         <ul class="primary-nav">
-            {% if current_page != 'home' %}
-            <li class="me {{ 'active' if current_page == 'home' else '' }}">
-                <a href="/">Overview</a>
-            </li>
-            {% endif %}
             <li class="projects {{ 'active' if current_page == 'work' else '' }}">
                 <a href="/work/">Open Source</a>
             </li>
             <li class="philosophy {{ 'active' if current_page == 'philosophy' else '' }}">
-                <a href="/philosophy/">Philosophy &amp; Projects</a>
+                <a href="/philosophy/">Extra Curricular</a>
             </li>
             <li class="contact {{ 'active' if current_page == 'contact' else '' }}">
                 <a href="/contact/"><span>Let's</span> Talk</a>
