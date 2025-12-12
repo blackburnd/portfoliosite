@@ -136,7 +136,8 @@ body {
 
 .tagline {
     color: #666;
-    margin: 5px 0 0 0; /* Move closer to H1 - reduced top margin */
+    margin: 5px 0 0 0;
+    text-align: right;
 }
 
 /* Social links are now in the footer - see .footer-social styles */
@@ -239,7 +240,6 @@ nav ul {
     display: flex;
     gap: 25px;
     align-items: center;
-    border-bottom: 1px solid #eee;
     padding-bottom: 15px;
     margin-top: 10px;
 }
@@ -251,10 +251,11 @@ nav ul {
 .primary-nav a {
     text-decoration: none;
     color: #333;
-    font-size: 1em;
-    padding: 8px 12px;
+    font-size: 1.15em;
+    padding: 10px 15px;
     border-radius: 4px;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .primary-nav a:hover {
@@ -3856,150 +3857,208 @@ p.editable-content.editing .content-textarea {
    ============================================ */
 
 body.contact {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecef 100%);
+    background: #ffffff;
 }
 
 .contact .bc {
-    max-width: 900px;
-    margin: 40px auto;
+    max-width: 1400px;
+    margin: 10px auto 5px auto;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-    padding: 0;
-    overflow: hidden;
+    padding: 5px 80px 10px 80px;
 }
 
 .contact-content {
-    padding: 5px 6px;
+    padding: 0;
 }
 
-.contact-content h2 {
+.contact-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 0;
+    margin-top: 10px;
+    margin-bottom: 4rem;
+}
+
+.contact-header h2 {
     font-size: 2.5em;
-    color: #1a1a1a;
+    color: #000;
     font-weight: 700;
+    margin-bottom: 12px;
     letter-spacing: -0.5px;
 }
 
-.contact-content > p {
-    font-size: 1.15em;
-    line-height: 1.7;
-    color: #555;
-    margin-bottom: 35px;
+.contact-header p {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #333;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+/* Two Column Layout */
+.contact-layout {
+    display: grid !important;
+    grid-template-columns: 1fr 1.8fr !important;
+    gap: 40px !important;
+    align-items: start;
 }
 
 /* Contact Info Section */
-.contact-info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 30px;
-    border-radius: 8px;
-    margin-bottom: 40px;
-    color: white;
-}
-
-.contact-info h3 {
+.contact-info-section h3 {
+    font-size: 1.3em;
+    color: #000;
+    font-weight: 700;
+    margin-bottom: 15px;
     margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.4em;
-    font-weight: 600;
-    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.contact-info p {
-    margin: 12px 0;
+.contact-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contact-method-item {
+    display: block !important;
+    padding: 14px 18px !important;
+    background: #fff !important;
+    border: 2px solid #000 !important;
+    text-decoration: none !important;
+    color: #000 !important;
+    transition: all 0.3s ease !important;
+    min-height: 65px;
+    display: flex !important;
+    align-items: center;
+}
+
+.contact-method-item:hover {
+    background: #000 !important;
+    color: #fff !important;
+    transform: translateX(5px);
+}
+
+.contact-method-item:visited {
+    color: #000;
+}
+
+.contact-method-item:hover:visited {
+    color: #fff;
+}
+
+.contact-method-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.contact-method-details strong {
+    font-size: 0.85em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: inherit;
+    margin-bottom: 2px;
+}
+
+.contact-method-details span {
     font-size: 1.05em;
-    line-height: 1.6;
+    font-weight: 400;
+    color: inherit;
+    line-height: 1.4;
 }
 
-.contact-info strong {
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+.contact-method-item:hover .contact-method-details strong,
+.contact-method-item:hover .contact-method-details span {
+    color: #fff;
 }
 
-.contact-info a {
-    color: white;
-    text-decoration: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
-    transition: border-color 0.3s ease;
+/* Contact Form Section */
+.contact-form-section h3 {
+    font-size: 1.3em;
+    color: #000;
+    font-weight: 700;
+    margin-bottom: 15px;
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.contact-info a:hover {
-    border-bottom-color: white;
-}
-
-/* Contact Form Styling */
 .contact-form {
-    margin-top: 40px;
+    margin-top: 0;
 }
 
 .contact-form .form-group {
-    margin-bottom: 25px;
+    margin-bottom: 12px;
 }
 
 .contact-form .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #333;
-    font-weight: 600;
-    font-size: 1em;
-    letter-spacing: 0.3px;
+    color: #000;
+    font-weight: 700;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .contact-form .form-group input,
 .contact-form .form-group textarea {
     width: 100%;
-    padding: 14px 18px;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
+    padding: 12px 15px;
+    border: 2px solid #000;
     font-size: 1em;
     font-family: inherit;
     transition: all 0.3s ease;
     box-sizing: border-box;
-    background: #fafbfc;
+    background: #fff;
 }
 
 .contact-form .form-group input:focus,
 .contact-form .form-group textarea:focus {
     outline: none;
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.08);
+    background: #fafafa;
+    border-color: #000;
 }
 
 .contact-form .form-group textarea {
-    min-height: 180px;
+    min-height: 110px;
     resize: vertical;
     line-height: 1.6;
 }
 
 .contact-form .form-group input::placeholder,
 .contact-form .form-group textarea::placeholder {
-    color: #aaa;
+    color: #999;
+    font-style: italic;
 }
 
 /* Submit Button */
 .contact-form .btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 16px 40px;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: 600;
+    background: #000;
+    color: #fff;
+    border: 2px solid #000;
+    padding: 14px 60px;
+    font-size: 0.95em;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    text-transform: none;
-    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    width: 100%;
+    margin-top: 5px;
 }
 
 .contact-form .btn:hover {
+    background: #fff;
+    color: #000;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .contact-form .btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
 }
 
 /* Thank You Page Styling */
@@ -4156,67 +4215,98 @@ body.thank-you .bc {
 }
 
 /* Responsive Design for Contact Pages */
+@media (max-width: 1024px) {
+    .contact .bc {
+        padding: 50px 40px;
+    }
+
+    .contact-layout {
+        gap: 50px;
+    }
+}
+
 @media (max-width: 768px) {
-    .contact-content {
+    .contact .bc {
         padding: 40px 30px;
+        margin: 20px;
     }
-    
-    .contact-content h2 {
-        font-size: 2em;
+
+    .contact-header {
+        margin-bottom: 40px;
+        padding-bottom: 30px;
     }
-    
-    .contact-info {
-        padding: 25px;
+
+    .contact-header h2 {
+        font-size: 2.2em;
     }
-    
+
+    .contact-header p {
+        font-size: 1.1em;
+    }
+
+    .contact-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .contact-method-item {
+        padding: 15px;
+    }
+
     .contact-form .form-group textarea {
         min-height: 150px;
     }
-    
+
     body.thank-you .bc {
         padding: 40px 30px;
         margin: 30px 20px;
     }
-    
+
     .thank-you-header h1 {
         font-size: 2.2em;
     }
-    
+
     .action-buttons {
         flex-direction: column;
     }
-    
+
     .action-buttons .btn {
         width: 100%;
     }
 }
 
 @media (max-width: 480px) {
-    .contact-content {
+    .contact .bc {
         padding: 30px 20px;
+        margin: 10px;
     }
-    
-    .contact-content h2 {
+
+    .contact-header h2 {
         font-size: 1.8em;
     }
-    
-    .contact-info {
-        padding: 20px;
+
+    .contact-header p {
+        font-size: 1em;
     }
-    
-    .contact-info h3 {
-        font-size: 1.2em;
+
+    .contact-info-section h3,
+    .contact-form-section h3 {
+        font-size: 1.5em;
     }
-    
+
+    .contact-method-item {
+        padding: 20px 15px;
+    }
+
     .contact-form .btn {
         width: 100%;
-        padding: 14px 20px;
+        padding: 16px 30px;
     }
-    
+
     body.thank-you .bc {
         padding: 30px 20px;
     }
-    
+
     .success-icon {
         width: 60px;
         height: 60px;
@@ -4253,5 +4343,5 @@ body.thank-you .bc {
 }
 
 #bw {
-    margin: 5rem;
+    margin-bottom:6rem;
 }
