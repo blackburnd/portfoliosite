@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html class="no-js wf-freightsanspro-n3-active wf-freightsanspro-n9-active wf-freightsanspro-n4-active wf-freightsanspro-i9-active wf-freightdisplaypro-n7-active wf-freightdisplaypro-i7-active wf-active">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Core JavaScript -->
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="/assets/style.css">
+    
+    <!-- Page-specific CSS -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Analytics -->
+    {% block analytics %}
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-27877508-5');
+    </script>
+    
+    <!-- Mouse Activity Analytics for Bot Filtering -->
+    <script src="/assets/js/mouse-analytics.js"></script>
+    {% endblock %}
+    
+    <!-- Page-specific head content -->
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    <div class="wrap">
+        <div class="fg">
+            <!-- Main Content -->
+            <div id="bw" aria-live="polite">
+                {% block content %}{% endblock %}
+            </div>
+            <!-- Footer -->
+            <footer class="footer" role="contentinfo">
+                <p class="copyright">© 2025 Blackburn. <a href="/privacy/">Privacy Policy</a></p>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- Core JavaScript -->
+    <script src="/assets/js/auth-login.js?v=20250911b"></script>
+    
+    <!-- Page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
